@@ -1,101 +1,30 @@
-import * as React from "react"
+import { cn } from "@/lib/utils";
 
-import { cn } from "@/lib/utils"
+export function Card({ className, as: Tag = "section", ...props }) {
+  return <Tag className={cn("min-w-0 rounded-xl border border-line bg-surface", className)} {...props} />;
+}
 
-function Card({
-  className,
-  ...props
-}) {
+export function CardHeader({ title, description, actions, className, children }) {
   return (
-    <div
-      data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
-        className
-      )}
-      {...props} />
+    <div className={cn("flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3", className)}>
+      <div className="min-w-0">
+        {title && <h2 className="text-sm font-semibold text-ink">{title}</h2>}
+        {description && <p className="mt-0.5 text-xs text-ink-muted">{description}</p>}
+        {children}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
   );
 }
 
-function CardHeader({
-  className,
-  ...props
-}) {
-  return (
-    <div
-      data-slot="card-header"
-      className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
-        className
-      )}
-      {...props} />
-  );
+export function CardBody({ className, ...props }) {
+  return <div className={cn("p-4", className)} {...props} />;
 }
 
-function CardTitle({
-  className,
-  ...props
-}) {
-  return (
-    <div
-      data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
-      {...props} />
-  );
+export function CardTitle({ className, children }) {
+  return <h3 className={cn("text-sm font-semibold text-ink", className)}>{children}</h3>;
 }
 
-function CardDescription({
-  className,
-  ...props
-}) {
-  return (
-    <div
-      data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props} />
-  );
-}
-
-function CardAction({
-  className,
-  ...props
-}) {
-  return (
-    <div
-      data-slot="card-action"
-      className={cn(
-        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-        className
-      )}
-      {...props} />
-  );
-}
-
-function CardContent({
-  className,
-  ...props
-}) {
-  return (<div data-slot="card-content" className={cn("px-6", className)} {...props} />);
-}
-
-function CardFooter({
-  className,
-  ...props
-}) {
-  return (
-    <div
-      data-slot="card-footer"
-      className={cn("flex items-center px-6 [.border-t]:pt-6", className)}
-      {...props} />
-  );
-}
-
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardAction,
-  CardDescription,
-  CardContent,
+export function CardContent({ className, ...props }) {
+  return <div className={cn("p-4", className)} {...props} />;
 }

@@ -8,6 +8,40 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-fg: var(--brand-fg);
+  --color-nav: var(--nav);
+  --color-nav-raised: var(--nav-raised);
+  --color-nav-line: var(--nav-line);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-muted: var(--nav-muted);
+  --color-nav-active: var(--nav-active);
+  --color-nav-active-ink: var(--nav-active-ink);
+  --color-success-bg: var(--success-bg);
+  --color-success-ink: var(--success-ink);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger: var(--danger);
+  --color-info-bg: var(--info-bg);
+  --color-info-ink: var(--info-ink);
+  --color-neutral-bg: var(--neutral-bg);
+  --color-neutral-ink: var(--neutral-ink);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -26,6 +60,7 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-fg: var(--accent-fg);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
@@ -45,29 +80,65 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --canvas: #f5f7f4;
+  --surface: #ffffff;
+  --surface-muted: #f8faf7;
+  --line: #e4e9e2;
+  --line-strong: #cfd8cc;
+  --ink: #17231b;
+  --ink-soft: #3d4b41;
+  --ink-muted: #6b786f;
+  --brand-50: #eef8f1;
+  --brand-100: #d6efdf;
+  --brand-200: #ade0c0;
+  --brand-500: #24a058;
+  --brand-600: #1b8a4b;
+  --brand-700: #156f3c;
+  --brand-800: #115a31;
+  --brand-fg: #ffffff;
+  --accent-fg: #ffffff;
+  --nav: #0e3b26;
+  --nav-raised: #134a31;
+  --nav-line: rgb(255 255 255 / 0.08);
+  --nav-ink: #e6f1ea;
+  --nav-muted: #9fbfac;
+  --nav-active: #ffffff;
+  --nav-active-ink: #0e3b26;
+  --success-bg: #e6f6ec;
+  --success-ink: #146c39;
+  --warning-bg: #fdf3dc;
+  --warning-ink: #8a5a00;
+  --danger-bg: #fdecec;
+  --danger-ink: #b42318;
+  --danger: #d92d20;
+  --info-bg: #e8f1fd;
+  --info-ink: #1d4f91;
+  --neutral-bg: #eef1ee;
+  --neutral-ink: #4a574e;
+  --background: #f5f7f4;
+  --foreground: #17231b;
+  --card: #ffffff;
+  --card-foreground: #17231b;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --primary: #1b8a4b;
+  --primary-foreground: #ffffff;
+  --secondary: #f8faf7;
+  --secondary-foreground: #17231b;
+  --muted: #f8faf7;
+  --muted-foreground: #6b786f;
+  --accent: #e8740c;
+  --accent-fg: #ffffff;
+  --accent-foreground: #17231b;
+  --destructive: #d92d20;
+  --border: #e4e9e2;
+  --input: #e4e9e2;
+  --ring: #1f8a4c;
+  --chart-1: #1b8a4b;
+  --chart-2: #e3a008;
+  --chart-3: #2f6fb5;
+  --chart-4: #c2410c;
+  --chart-5: #7c5cc4;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -79,10 +150,45 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --canvas: #0d1410;
+  --surface: #141d17;
+  --surface-muted: #18231c;
+  --line: #243229;
+  --line-strong: #31443a;
+  --ink: #e7efe9;
+  --ink-soft: #c3d0c7;
+  --ink-muted: #8a9c90;
+  --brand-50: #12261b;
+  --brand-100: #173323;
+  --brand-200: #1f4a32;
+  --brand-500: #36b56d;
+  --brand-600: #2aa05e;
+  --brand-700: #4cc283;
+  --brand-800: #7ad6a3;
+  --brand-fg: #06170d;
+  --accent-fg: #1f1204;
+  --nav: #0a1a12;
+  --nav-raised: #10261a;
+  --nav-line: rgb(255 255 255 / 0.06);
+  --nav-ink: #dbe9e0;
+  --nav-muted: #86a593;
+  --nav-active: #ffffff;
+  --nav-active-ink: #0a1a12;
+  --success-bg: #0f2c1b;
+  --success-ink: #6fd69b;
+  --warning-bg: #2e2410;
+  --warning-ink: #f1c35a;
+  --danger-bg: #331614;
+  --danger-ink: #ff8f85;
+  --danger: #f2554a;
+  --info-bg: #13243a;
+  --info-ink: #8dbbf2;
+  --neutral-bg: #1d2a22;
+  --neutral-ink: #b5c4ba;
+  --background: #0d1410;
+  --foreground: #e7efe9;
+  --card: #141d17;
+  --card-foreground: #e7efe9;
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
@@ -91,17 +197,18 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: #f59a3c;
+  --accent-fg: #1f1204;
+  --accent-foreground: #e7efe9;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: #4cc283;
+  --chart-2: #f1c35a;
+  --chart-3: #6aa6e8;
+  --chart-4: #f08a4b;
+  --chart-5: #a993e6;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -117,6 +224,102 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nav-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .chart-draw {
+    stroke-dasharray: 1;
+    animation: chart-draw 0.9s ease-out both;
+  }
+
+  .chart-fade {
+    animation: chart-fade 0.6s ease-out 0.3s both;
+  }
+
+  .chart-grow-y {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: chart-grow-y 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .chart-grow-x {
+    transform-origin: left center;
+    animation: chart-grow-x 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .chart-donut {
+    animation: chart-donut 0.8s ease-out both;
+  }
+}
+
+.route-progress-run {
+  animation: route-progress-run 8s cubic-bezier(0.1, 0.6, 0.2, 1) forwards;
+}
+
+.route-progress-done {
+  animation: route-progress-done 350ms ease-out forwards;
+}
+
+@keyframes route-progress-run {
+  from { transform: scaleX(0); }
+  10% { transform: scaleX(0.35); }
+  to { transform: scaleX(0.9); }
+}
+
+@keyframes route-progress-done {
+  0% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+@keyframes chart-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes chart-fade {
+  from { opacity: 0; }
+}
+
+@keyframes chart-grow-y {
+  from { transform: scaleY(0); }
+}
+
+@keyframes chart-grow-x {
+  from { transform: scaleX(0); }
+}
+
+@keyframes chart-donut {
+  from { stroke-dasharray: 0 var(--c); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-draw,
+  .chart-fade,
+  .chart-grow-y,
+  .chart-grow-x,
+  .chart-donut {
+    animation: none;
   }
 }

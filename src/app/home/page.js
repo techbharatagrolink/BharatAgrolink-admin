@@ -1,15 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Home</h1>
-
-      <div className="flex gap-3">
-        <Input placeholder="Search anything..." aria-label="Search" className="w-64" />
-        <Button>Search</Button>
-      </div>
-    </div>
-  );
+export default function HomeRedirect() {
+  redirect("/admin/search");
 }

@@ -1,56 +1,57 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva } from "class-variance-authority";
+import Link from "next/link";
+import { Slot } from "@radix-ui/react-slot";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import { cn } from "@/lib/utils"
+const variants = {
+  primary: "bg-brand-600 text-brand-fg hover:bg-brand-700 active:bg-brand-800 border border-transparent",
+  secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-neutral-bg",
+  ghost: "bg-transparent text-ink-soft border border-transparent hover:bg-neutral-bg hover:text-ink",
+  outline: "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-neutral-bg",
+  danger: "bg-danger text-white border border-transparent hover:brightness-95 active:brightness-90",
+  "danger-outline": "bg-surface text-danger-ink border border-line-strong hover:bg-danger-bg",
+  link: "bg-transparent text-brand-700 border border-transparent hover:underline px-0",
+};
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+const sizes = {
+  xs: "h-7 px-2 text-xs gap-1 rounded-md",
+  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-md",
+  md: "h-9 px-3.5 text-sm gap-2 rounded-lg",
+  lg: "h-10 px-4 text-sm gap-2 rounded-lg",
+  icon: "h-9 w-9 rounded-lg justify-center",
+  "icon-sm": "h-8 w-8 rounded-md justify-center",
+};
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props} />
+export function buttonClasses({ variant = "secondary", size = "md", className } = {}) {
+  return cn(
+    "inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-colors select-none",
+    "disabled:opacity-55 disabled:pointer-events-auto aria-disabled:opacity-55",
+    variants[variant],
+    sizes[size],
+    className,
   );
 }
 
-export { Button, buttonVariants }
+export function Button({ asChild = false, variant, size, className, loading = false, disabled, children, type = "button", ...props }) {
+  const Comp = asChild ? Slot : "button";
+  return (
+    <Comp
+      type={asChild ? undefined : type}
+      className={buttonClasses({ variant, size, className })}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+      {children}
+    </Comp>
+  );
+}
+
+export function ButtonLink({ variant, size, className, children, ...props }) {
+  return (
+    <Link className={buttonClasses({ variant, size, className })} {...props}>
+      {children}
+    </Link>
+  );
+}

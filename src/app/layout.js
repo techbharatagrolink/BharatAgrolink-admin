@@ -1,5 +1,5 @@
 import "./globals.css";
-import Sidebar from "@/components/sidebar";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata = {
   title: {
@@ -10,19 +10,20 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+export const viewport = {
+  themeColor: "#0e3b26",
+};
+
+const themeScript = `try{if(localStorage.getItem('ba-admin-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
-        <div className="flex flex-col md:flex-row">
-          <Sidebar />
-          <main className="flex-1 min-w-0 p-4 md:p-6">
-            <p role="note" className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Preview: these pages show sample data and are not connected to live marketplace data yet.
-            </p>
-            {children}
-          </main>
-        </div>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
