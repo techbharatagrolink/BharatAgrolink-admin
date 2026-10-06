@@ -3,10 +3,12 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+export const metadata = { title: "Finance & Payouts" };
+
 export default function FinanceDashboard() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Finance & Payouts</h1>
         <Button>Export Ledger</Button>
       </header>

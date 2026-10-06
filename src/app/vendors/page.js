@@ -9,10 +9,12 @@ import {
   import { Badge } from "@/components/ui/badge";
   import { Button } from "@/components/ui/button";
   
+  export const metadata = { title: "Vendor Management" };
+
   export default function VendorsDashboard() {
     return (
       <div className="space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Vendor Management</h1>
           <div className="flex gap-2">
             <Button>Export</Button>

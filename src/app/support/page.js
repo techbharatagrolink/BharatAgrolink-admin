@@ -10,10 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
+export const metadata = { title: "Customer Support" };
+
 export default function SupportDashboard() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Customer Support</h1>
         <div className="flex gap-2">
           <Button>New Ticket</Button>

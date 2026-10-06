@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+export const metadata = { title: "Settings" };
+
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Admin Controls & Settings</h1>
       </header>
 
@@ -13,8 +15,8 @@ export default function SettingsPage() {
         <CardHeader><CardTitle>Role & Access</CardTitle></CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">Manage role based access for Super Admin / GM / Admin / Ops</p>
-          <div className="flex gap-2">
-            <Input placeholder="Role name" />
+          <div className="flex flex-wrap gap-2">
+            <Input placeholder="Role name" aria-label="Role name" />
             <Button>Add Role</Button>
           </div>
         </CardContent>
@@ -30,7 +32,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader><CardTitle>Data Export</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button>Export Orders</Button>
             <Button>Export Finance</Button>
           </div>

@@ -16,6 +16,8 @@ import {
   
   import { Badge } from "@/components/ui/badge";
   
+  export const metadata = { title: "Sales Management" };
+
   export default function SalesPage() {
     return (
       <div className="space-y-8">
@@ -25,7 +27,7 @@ import {
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Today's Sales</CardTitle>
+              <CardTitle>Today&apos;s Sales</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">₹24,600</p>

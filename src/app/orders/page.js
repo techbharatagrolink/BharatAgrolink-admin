@@ -10,13 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
+export const metadata = { title: "Order Management" };
+
 export default function OrdersDashboard() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Order Management</h1>
-        <div className="flex gap-2">
-          <Input placeholder="Search order id / customer" />
+        <div className="flex flex-wrap gap-2">
+          <Input placeholder="Search order id / customer" aria-label="Search orders" />
           <Button>Filter</Button>
           <Button variant="ghost">Export</Button>
         </div>
@@ -24,15 +26,15 @@ export default function OrdersDashboard() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <Input type="date" />
-        <select className="input px-3 py-2 rounded-md">
+        <Input type="date" aria-label="Order date" className="w-auto" />
+        <select aria-label="Order status" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
           <option>All Status</option>
           <option>Processing</option>
           <option>Shipped</option>
           <option>Delivered</option>
           <option>RTO</option>
         </select>
-        <select className="input px-3 py-2 rounded-md">
+        <select aria-label="Payment method" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
           <option>All Payments</option>
           <option>COD</option>
           <option>Prepaid</option>

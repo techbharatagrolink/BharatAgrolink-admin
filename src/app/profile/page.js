@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
+export const metadata = { title: "Profile" };
+
 export default function ProfilePage() {
   return (
     <div className="space-y-6 max-w-md">
@@ -28,13 +30,13 @@ export default function ProfilePage() {
 
       <div className="space-y-4">
         <div>
-          <Label>Name</Label>
-          <Input placeholder="Enter your name" />
+          <Label htmlFor="profile-name">Name</Label>
+          <Input id="profile-name" placeholder="Enter your name" />
         </div>
 
         <div>
-          <Label>Email</Label>
-          <Input type="email" placeholder="Enter your email" />
+          <Label htmlFor="profile-email">Email</Label>
+          <Input id="profile-email" type="email" placeholder="Enter your email" />
         </div>
 
         <div className="flex items-center gap-3">

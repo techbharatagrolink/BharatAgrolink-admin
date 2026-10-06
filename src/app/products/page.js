@@ -10,13 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
+export const metadata = { title: "Product Management" };
+
 export default function ProductsDashboard() {
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Product Management</h1>
-        <div className="flex gap-2">
-          <Input placeholder="Search SKU / title" />
+        <div className="flex flex-wrap gap-2">
+          <Input placeholder="Search SKU / title" aria-label="Search products" />
           <Button>Add Product</Button>
         </div>
       </header>

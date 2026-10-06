@@ -7,7 +7,7 @@ export default function HomePage() {
       <h1 className="text-2xl font-semibold">Home</h1>
 
       <div className="flex gap-3">
-        <Input placeholder="Search anything..." className="w-64" />
+        <Input placeholder="Search anything..." aria-label="Search" className="w-64" />
         <Button>Search</Button>
       </div>
     </div>
