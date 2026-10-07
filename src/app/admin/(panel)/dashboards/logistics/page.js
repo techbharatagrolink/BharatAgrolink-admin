@@ -3,17 +3,19 @@ import { getLogisticsDashboard, RANGES } from "@/lib/services/admin/dashboards";
 import { formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BarChart, HBarList } from "@/components/charts/charts";
 import { MiniTable, RangeSwitch } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Logistics & Operations Dashboard" };
 
 export default async function LogisticsDashboardPage({ searchParams }) {
-  const { allowed } = await checkPermission("dashboard.logistics");
+  const { user, allowed } = await checkPermission("dashboard.logistics");
   if (!allowed) return (<><PageHeader title="Logistics & Operations Dashboard" /><PermissionDenied module="the logistics dashboard" /></>);
   const { range } = await searchParams;
-  const d = await getLogisticsDashboard(range);
+  const result = await getLogisticsDashboard(range, user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Logistics & Operations Dashboard" /><ApiUnavailable error={result.error} what="the logistics dashboard" /></>);
+  const d = result.data;
   return (
     <>
       <PageHeader

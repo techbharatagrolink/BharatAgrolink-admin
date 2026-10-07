@@ -3,7 +3,13 @@ import { getStore, appendAudit } from "@/lib/mock/admin/store";
 import { refundAmount } from "@/lib/mock/admin/engines";
 import { can } from "@/lib/auth/permissions";
 import { validateReason } from "@/lib/validation/admin/forms";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
+
+function liveError(error, fallback) {
+  if (!(error instanceof ApiError)) return { ok: false, message: fallback };
+  return { ok: false, message: error.message };
+}
 
 /**
  * Returns. Planned APIs:
@@ -23,7 +29,16 @@ const NEXT = {
   Received: ["refund", "replace"],
 };
 
-export async function getReturn(id) {
+export async function getReturn(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/returns/${encodeURIComponent(id)}`, { token: user.token });
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const r = s.returns.find((x) => x.id === id);
@@ -40,7 +55,19 @@ export async function getReturn(id) {
   };
 }
 
-export function previewRefund(id, { refundShipping, deductPlatformFee }) {
+export async function previewRefund(id, { refundShipping, deductPlatformFee }, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/returns/${encodeURIComponent(id)}/preview`, {
+        token: user.token,
+        query: { refundShipping: refundShipping ? "1" : "0", deductPlatformFee: deductPlatformFee ? "1" : "0" },
+      });
+      return data?.amount ?? null;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   const s = getStore();
   const r = s.returns.find((x) => x.id === id);
   const line = r && s.orderItems.find((l) => l.id === r.lineId);
@@ -52,6 +79,18 @@ export function previewRefund(id, { refundShipping, deductPlatformFee }) {
 export async function processReturn(id, action, input, user) {
   const permission = action === "refund" ? "refunds" : "returns";
   if (!can(user, permission, "edit")) return { ok: false, message: "You do not have permission to perform this action." };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/returns/${encodeURIComponent(id)}/actions`, {
+        method: "POST",
+        token: user.token,
+        body: { action, refundShipping: Boolean(input?.refundShipping), deductPlatformFee: Boolean(input?.deductPlatformFee), reason: input?.reason || "" },
+      });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update the return.");
+    }
+  }
   const s = getStore();
   const r = s.returns.find((x) => x.id === id);
   if (!r) return { ok: false, message: "Return not found." };
@@ -68,7 +107,7 @@ export async function processReturn(id, action, input, user) {
     r.pickupService = input.pickupService;
     r.refundShipping = Boolean(input.refundShipping);
     r.deductPlatformFee = Boolean(input.deductPlatformFee);
-    r.refundAmount = previewRefund(id, r);
+    r.refundAmount = await previewRefund(id, r);
     r.status = "Awaiting Pickup";
     message = `Return approved. Pickup booked with ${r.pickupService}. Refund on completion: ₹${r.refundAmount}.`;
   } else if (action === "pickup") {

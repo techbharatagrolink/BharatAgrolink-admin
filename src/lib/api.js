@@ -48,6 +48,8 @@ export async function api(path, { token, method = "GET", body, query, signal } =
     cache: "no-store",
     headers: {
       Accept: "application/json",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -77,6 +79,8 @@ export async function apiDownload(path, { token, query } = {}) {
   const response = await fetch(resolveUrl(path, query), {
     cache: "no-store",
     headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });

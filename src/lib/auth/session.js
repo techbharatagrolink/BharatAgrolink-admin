@@ -1,70 +1,71 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getStore } from "@/lib/mock/admin/store";
+import { api, ApiError } from "@/lib/api";
 import { can } from "./permissions";
+import { permissionPages } from "@/lib/services/admin/live-catalog";
 
 /**
- * Demo session. The cookie is httpOnly and HMAC-signed so the browser cannot
- * forge a user id or role. When the backend is connected, replace this with
- * the backend-issued session and load the user + role from the API.
+ * Admin session is the bearer token from POST /admin/auth/login.
+ * The cookie is httpOnly. Profile and page permissions are loaded from
+ * GET /admin/auth/me on every request so a reload shows the current account.
  */
 
 export const SESSION_COOKIE = "ba_admin_session";
-const SESSION_HOURS = 12;
-
-function secret() {
-  const value = process.env.ADMIN_SESSION_SECRET;
-  if (!value && process.env.NODE_ENV === "production" && process.env.VERCEL_ENV === "production") {
-    throw new Error("ADMIN_SESSION_SECRET must be set in production.");
-  }
-  return value || "dev-only-insecure-admin-session-secret";
-}
-
-function sign(payload) {
-  return createHmac("sha256", secret()).update(payload).digest("base64url");
-}
-
-export function encodeSession(userId) {
-  const expires = Date.now() + SESSION_HOURS * 3600000;
-  const payload = `${userId}.${expires}`;
-  return `${payload}.${sign(payload)}`;
-}
-
-function decodeSession(value) {
-  if (!value) return null;
-  const parts = value.split(".");
-  if (parts.length !== 3) return null;
-  const [userId, expires, signature] = parts;
-  const expected = sign(`${userId}.${expires}`);
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  if (Number(expires) < Date.now()) return null;
-  return { userId };
-}
+const TOKEN_RE = /^[a-f0-9]{24}:[a-f0-9]{64}$/;
 
 export const sessionCookieOptions = {
   httpOnly: true,
   sameSite: "lax",
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  maxAge: SESSION_HOURS * 3600,
+  maxAge: 12 * 3600,
 };
 
-export function loadUser(userId) {
-  const store = getStore();
-  const staff = store.staff.find((u) => u.id === userId && u.status === "Active");
-  if (!staff) return null;
-  const role = store.roles.find((r) => r.id === staff.roleId);
-  if (!role) return null;
-  return { ...staff, role };
+function permissionsFrom(pages, superAdmin) {
+  if (superAdmin) return {};
+  const granted = pages || {};
+  const permissions = {};
+  for (const [permission, phpPages] of Object.entries(permissionPages())) {
+    const actions = new Set();
+    for (const page of phpPages) for (const action of granted[page] || []) actions.add(action);
+    if (actions.size) permissions[permission] = [...actions];
+  }
+  return permissions;
 }
+
+function toUser(data, token) {
+  return {
+    id: data.admin.id,
+    name: data.admin.name,
+    email: data.admin.email,
+    designation: data.role?.title || data.admin.company || "",
+    token,
+    role: {
+      id: data.role?.id ?? data.admin.roleId,
+      name: data.superAdmin ? "Super Admin" : data.role?.title || "Staff",
+      superAdmin: Boolean(data.superAdmin),
+      permissions: permissionsFrom(data.pages, data.superAdmin),
+    },
+  };
+}
+
+async function profileFor(token) {
+  const { data } = await api("admin/auth/me", { token });
+  return toUser(data, token);
+}
+
+export function dropAdminProfile() {}
 
 export async function getCurrentAdmin() {
   const jar = await cookies();
-  const session = decodeSession(jar.get(SESSION_COOKIE)?.value);
-  return session ? loadUser(session.userId) : null;
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (!token || !TOKEN_RE.test(token)) return null;
+  try {
+    return await profileFor(token);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return null;
+    throw error;
+  }
 }
 
 export async function requireAdmin() {

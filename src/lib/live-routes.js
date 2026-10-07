@@ -20,5 +20,6 @@ const LIVE_ROUTES = new Set([
 ]);
 
 export function isLiveRoute(pathname) {
-  return LIVE_ROUTES.has(pathname || "");
+  const path = pathname || "";
+  return LIVE_ROUTES.has(path) || path.startsWith("/screens/");
 }

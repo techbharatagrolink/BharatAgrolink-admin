@@ -29,7 +29,7 @@ export default async function LeadDetailPage({ params }) {
     <>
       <PageHeader
         title={lead.name}
-        description={`${lead.id} · ${lead.crop}, ${lead.acreage} acre · ${lead.city}, ${lead.state}`}
+        description={[lead.code || lead.id, [lead.crop, lead.acreage != null ? `${lead.acreage} acre` : null].filter(Boolean).join(", "), [lead.city, lead.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}
         meta={
           <>
             <StatusBadge status={lead.status} />

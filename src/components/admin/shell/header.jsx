@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, BookOpen, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, UserRound } from "lucide-react";
 import { getBreadcrumbs } from "@/lib/content/admin/navigation";
 import { initials } from "@/lib/format";
@@ -13,27 +13,28 @@ import { logoutAction } from "@/lib/actions/admin/auth";
 import { RouteProgress, startRouteProgress } from "./route-progress";
 import { NavIcon } from "./icons";
 
-function Breadcrumbs() {
+function Breadcrumbs({ wide = false }) {
   const pathname = usePathname();
   const crumbs = getBreadcrumbs(pathname);
+  const isAncestor = (i) => i < crumbs.length - 2;
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
       <ol className="flex min-w-0 items-center gap-1 text-[13px] text-ink-muted">
         {crumbs.map((crumb, i) => {
           const last = i === crumbs.length - 1;
           return (
-            <Fragment key={`${crumb.label}-${i}`}>
-              {i > 0 && <ChevronRight className="size-3.5 shrink-0 text-ink-muted/60" aria-hidden />}
-              <li className={cn("min-w-0", i < crumbs.length - 2 && "hidden sm:block", last ? "truncate font-medium text-ink" : "shrink-0")}>
-                {crumb.href && !last ? (
-                  <Link href={crumb.href} className="hover:text-ink hover:underline">
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span aria-current={last ? "page" : undefined}>{crumb.label}</span>
-                )}
-              </li>
-            </Fragment>
+            <li key={`${crumb.label}-${i}`} className={cn("flex min-w-0 items-center gap-1", isAncestor(i) && (wide ? "hidden 2xl:flex" : "hidden sm:flex"), last ? "font-medium text-ink" : "shrink-0")}>
+              {i > 0 && <ChevronRight className={cn("size-3.5 shrink-0 text-ink-muted/60", isAncestor(i - 1) && (wide ? "hidden 2xl:block" : "hidden sm:block"))} aria-hidden />}
+              {crumb.href && !last ? (
+                <Link href={crumb.href} className="hover:text-ink hover:underline">
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="min-w-0 truncate" aria-current={last ? "page" : undefined} title={last ? crumb.label : undefined}>
+                  {crumb.label}
+                </span>
+              )}
+            </li>
           );
         })}
       </ol>
@@ -234,6 +235,7 @@ function Notifications({ items }) {
   const count = items.length;
   return (
     <Popover
+      id="admin-notifications-panel"
       label={`Notifications${count ? `, ${count} need attention` : ""}`}
       panelClassName="w-80"
       trigger={({ toggle, props }) => (
@@ -271,6 +273,7 @@ function Notifications({ items }) {
 function Help() {
   return (
     <Popover
+      id="admin-help-panel"
       label="Help"
       trigger={({ toggle, props }) => (
         <button type="button" onClick={toggle} {...props} className="hidden size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg hover:text-ink sm:flex">
@@ -302,6 +305,7 @@ function Help() {
 function AccountMenu({ user }) {
   return (
     <Popover
+      id="admin-account-panel"
       label="Account menu"
       panelClassName="w-64"
       trigger={({ toggle, props }) => (
@@ -351,10 +355,10 @@ export function Header({ user, navigation = [], notifications, rail, onToggleRai
             {rail ? <PanelLeftOpen className="size-[18px]" aria-hidden /> : <PanelLeftClose className="size-[18px]" aria-hidden />}
           </button>
           <div className="hidden min-w-0 lg:block">
-            <Breadcrumbs />
+            <Breadcrumbs wide />
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 justify-center lg:w-[min(36rem,40vw)] lg:flex-none">
+        <div className="flex min-w-0 flex-1 justify-center lg:w-[min(36rem,32vw)] lg:flex-none">
           <GlobalSearch navigation={navigation} />
         </div>
         <div className="flex shrink-0 items-center justify-end gap-0.5 lg:flex-1 lg:basis-0">

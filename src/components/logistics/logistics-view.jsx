@@ -90,6 +90,32 @@ export function LogisticsView() {
         </Card>
       </div>
 
+      {data?.zones?.length ? (
+        <div>
+          <h2 className="text-lg font-medium mb-2">Zones</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Zone</TableHead>
+                <TableHead>Orders</TableHead>
+                <TableHead>Delivered</TableHead>
+                <TableHead>RTO</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.zones.map((row) => (
+                <TableRow key={row.zone}>
+                  <TableCell>{row.zone}</TableCell>
+                  <TableCell>{formatNumber(row.totalOrders)}</TableCell>
+                  <TableCell>{formatNumber(row.delivered)}</TableCell>
+                  <TableCell>{formatNumber(row.rto)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
+
       <div>
         <h2 className="text-lg font-medium mb-2">Recent Deliveries</h2>
         <Table>

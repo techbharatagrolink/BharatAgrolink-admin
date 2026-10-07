@@ -6,5 +6,5 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
 };
 
-/** Demo mode: no backend is connected; services return mock data. */
-export const demoMode = true;
+/** Pages without an API still show a notice. Live lists and order detail do not. */
+export const demoMode = false;

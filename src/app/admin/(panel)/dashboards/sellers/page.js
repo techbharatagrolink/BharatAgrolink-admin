@@ -4,16 +4,18 @@ import { getVendorDashboard } from "@/lib/services/admin/dashboards";
 import { formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { HBarList } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Seller Dashboard" };
 
 export default async function SellerDashboardPage() {
-  const { allowed } = await checkPermission("dashboard.sellers");
+  const { user, allowed } = await checkPermission("dashboard.sellers");
   if (!allowed) return (<><PageHeader title="Seller Dashboard" /><PermissionDenied module="the seller dashboard" /></>);
-  const d = await getVendorDashboard();
+  const result = await getVendorDashboard(user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Seller Dashboard" /><ApiUnavailable error={result.error} what="the seller dashboard" /></>);
+  const d = result.data;
   return (
     <>
       <PageHeader title="Seller Dashboard" description="Vendor base, onboarding queue and performance scores (fulfilment, dispatch, revenue, tenure, minus RTO/cancellation penalty)." />
@@ -51,7 +53,7 @@ export default async function SellerDashboardPage() {
         <MiniTable
           columns={[
             { key: "name", label: "Vendor", render: (r) => <Link href={`/admin/vendors/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link> },
-            { key: "penaltyRate", label: "RTO + cancel rate", align: "right", render: (r) => `${r.penaltyRate}%` },
+            { key: "penaltyRate", label: "RTO + cancel rate", align: "right", render: (r) => (r.penaltyRate == null ? "—" : `${r.penaltyRate}%`) },
             { key: "score", label: "Score", align: "right" },
           ]}
           rows={d.bottom}

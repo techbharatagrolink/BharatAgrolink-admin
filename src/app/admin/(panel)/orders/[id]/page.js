@@ -11,6 +11,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { PermissionDenied } from "@/components/ui/states";
 import { LineStatusControl } from "@/components/admin/orders/line-status-control";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
+import { canShip, orderShipments } from "@/lib/services/admin/shipping";
+import { OrderShipmentsPanel } from "@/components/admin/shipping/order-shipments-panel";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -27,6 +29,7 @@ export default async function OrderDetailPage({ params, searchParams }) {
   if (!allowed) return (<><PageHeader title="Order details" /><PermissionDenied module="orders" /></>);
   const data = await getOrder(id, user);
   if (!data) notFound();
+  const shipments = canShip(user) && user?.token ? await orderShipments(id, user) : null;
   const { order, customer, groups, totals } = data;
   const showFinance = can(user, "finance") || can(user, "payouts");
 
@@ -61,7 +64,17 @@ export default async function OrderDetailPage({ params, searchParams }) {
                     <div className="min-w-0">
                       <Link href={`/admin/products/${l.productId}`} className="text-sm font-medium text-ink hover:text-brand-700 hover:underline">{l.productName}</Link>
                       <p className="mt-0.5 text-xs text-ink-muted">
-                        SKU {l.sku} · Qty {l.qty} · GST {l.gstPercent}%{l.courier ? ` · ${l.courier} ${l.awb}` : ""}
+                        SKU {l.sku} · Qty {l.qty} · GST {l.gstPercent}%{l.courier ? ` · ${l.courier}` : ""}
+                        {l.awb && (
+                          <>
+                            {" · AWB "}
+                            {l.trackingUrl ? (
+                              <a href={l.trackingUrl} target="_blank" rel="noreferrer" className="font-mono text-brand-700 hover:underline">{l.awb}</a>
+                            ) : (
+                              <span className="font-mono">{l.awb}</span>
+                            )}
+                          </>
+                        )}
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <StatusBadge status={l.status} />
@@ -138,6 +151,16 @@ export default async function OrderDetailPage({ params, searchParams }) {
               />
             </CardBody>
           </Card>
+
+          {shipments && (
+            <OrderShipmentsPanel
+              orderId={order.id}
+              rows={shipments.ok ? shipments.data : []}
+              error={shipments.ok ? null : shipments.message}
+              canAdd={canShip(user, "add")}
+              canEdit={canShip(user, "edit")}
+            />
+          )}
 
           {(data.returns.length > 0 || data.refunds.length > 0 || data.tickets.length > 0) && (
             <Card>

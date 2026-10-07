@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { getCurrentAdmin } from "@/lib/auth/session";
-import { getStore } from "@/lib/mock/admin/store";
-import { demoAccounts } from "@/lib/mock/admin/access";
 import { site } from "@/lib/site";
 import { LoginForm } from "@/components/admin/auth/login-form";
 
@@ -11,12 +9,6 @@ export const metadata = { title: "Log in" };
 export default async function LoginPage({ searchParams }) {
   if (await getCurrentAdmin()) redirect("/admin/dashboard");
   const { next } = await searchParams;
-  const store = getStore();
-  const accounts = demoAccounts.map((a) => {
-    const staff = store.staff.find((s) => s.id === a.userId);
-    const role = store.roles.find((r) => r.id === staff.roleId);
-    return { email: staff.email, name: staff.name, role: role.name, hint: a.hint };
-  });
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_minmax(0,560px)]">
@@ -41,7 +33,7 @@ export default async function LoginPage({ searchParams }) {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Log in to the admin panel</h1>
           <p className="mt-1 text-sm text-ink-muted">Use your staff account. Access is limited to the modules your role allows.</p>
-          <LoginForm accounts={accounts} next={typeof next === "string" ? next : ""} />
+          <LoginForm next={typeof next === "string" ? next : ""} />
         </div>
       </main>
     </div>

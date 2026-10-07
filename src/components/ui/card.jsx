@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export function Card({ className, as: Tag = "section", ...props }) {
-  return <Tag className={cn("min-w-0 rounded-xl border border-line bg-surface", className)} {...props} />;
+  return <Tag className={cn("min-w-0 rounded-xl border border-line bg-surface shadow-sm", className)} {...props} />;
 }
 
 export function CardHeader({ title, description, actions, className, children }) {
@@ -22,7 +22,7 @@ export function CardBody({ className, ...props }) {
 }
 
 export function CardTitle({ className, children }) {
-  return <h3 className={cn("text-sm font-semibold text-ink", className)}>{children}</h3>;
+  return <h2 className={cn("text-sm font-semibold text-ink", className)}>{children}</h2>;
 }
 
 export function CardContent({ className, ...props }) {

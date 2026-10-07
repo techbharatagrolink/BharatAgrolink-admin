@@ -4,7 +4,20 @@ import { nrvPricing, listingEconomics, stockStatus } from "@/lib/mock/admin/engi
 import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
+
+function liveError(error, fallback) {
+  if (!(error instanceof ApiError)) return { ok: false, message: fallback };
+  const fieldErrors = {};
+  if (Array.isArray(error.details)) {
+    for (const issue of error.details) {
+      const key = issue.field || issue.path;
+      if (key) fieldErrors[key] = issue.message;
+    }
+  }
+  return { ok: false, message: error.message, ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}) };
+}
 
 /**
  * Products. Planned APIs:
@@ -27,17 +40,106 @@ export const pricingFields = [
   { name: "gstPercent", label: "GST %", type: "select", options: GST_RATES.map(String), required: true },
 ];
 
+function roundN(value, digits) {
+  const factor = 10 ** digits;
+  return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
+}
+
+/** Same rounding as includes/nrv_pricing.php (display is rounded first, then every line is derived from it). */
 export function calculatePricing(input) {
   const { ok, values, errors } = validateForm(pricingFields, input);
   if (!ok) return { ok: false, fieldErrors: errors, message: "Please fix the highlighted fields." };
   const gstPercent = Number(values.gstPercent);
-  const price = nrvPricing({ nrv: values.nrv, mrp: values.mrp, gstPercent, takeRate: values.takeRate });
-  const econ = listingEconomics({ display: price.display, nrv: values.nrv, gstPercent });
-  const econCod = listingEconomics({ display: price.display, nrv: values.nrv, gstPercent, paymentMode: "cod" });
+  const nrv = roundN(values.nrv, 2);
+  const takeRate = Number(values.takeRate);
+  const display = roundN(nrv / (1 - takeRate / 100), 2);
+  const sale = roundN((display * 100) / (100 + gstPercent), 2);
+  const tcs = roundN((sale * 1) / 100, 2);
+  const serviceCharge = roundN(display - nrv - tcs, 2);
+  const serviceChargeExGst = roundN((serviceCharge * 100) / 118, 2);
+  const price = {
+    ok: true,
+    errors: [],
+    display,
+    sale,
+    tcs,
+    serviceCharge,
+    serviceChargeExGst,
+    bsa: roundN(nrv - tcs, 2),
+    commissionPercent: sale > 0 ? roundN((serviceChargeExGst / sale) * 100, 4) : 0,
+  };
+  if (!(values.mrp > 300)) price.errors.push("MRP must be greater than ₹300.");
+  if (display > values.mrp) price.errors.push("Display price cannot exceed MRP.");
+  if (serviceCharge < 0) price.errors.push("Service charge cannot be negative.");
+  if (takeRate < 25 || takeRate > 45) price.errors.push("Take rate must be between 25% and 45%.");
+  price.ok = price.errors.length === 0;
+  const econ = listingEconomics({ display, nrv, gstPercent });
+  const econCod = listingEconomics({ display, nrv, gstPercent, paymentMode: "cod" });
   return { ok: true, input: { ...values, gstPercent }, price, economics: { prepaid: econ, cod: econCod } };
 }
 
-export async function getProduct(id) {
+/** Calculator screen: figures come from POST /admin/pricing/calculate. Listing contribution stays local. */
+export async function calculatePricingLive(input, user) {
+  const local = calculatePricing(input);
+  if (!local.ok || !user?.token) return local;
+  try {
+    const { data } = await api("admin/pricing/calculate", {
+      method: "POST",
+      token: user.token,
+      body: { nrv: local.input.nrv, mrp: local.input.mrp, takeRate: local.input.takeRate, gstPercent: local.input.gstPercent },
+    });
+    const display = data?.price?.display ?? local.price.display;
+    const gstPercent = local.input.gstPercent;
+    const nrv = local.input.nrv;
+    return {
+      ok: true,
+      input: local.input,
+      price: {
+        ...local.price,
+        ...data.price,
+        ok: Boolean(data.price?.ok) && local.price.ok,
+        errors: [...(data.price?.errors || []), ...local.price.errors],
+      },
+      economics: {
+        prepaid: listingEconomics({ display, nrv, gstPercent }),
+        cod: listingEconomics({ display, nrv, gstPercent, paymentMode: "cod" }),
+      },
+    };
+  } catch (error) {
+    if (error instanceof ApiError) return { ...local, message: error.message };
+    return local;
+  }
+}
+
+function adaptProduct(data) {
+  const p = data.product;
+  const pricing = calculatePricing({
+    mrp: p.mrp ?? "",
+    nrv: p.nrv ?? "",
+    takeRate: p.takeRate ?? "",
+    gstPercent: p.gstPercent == null ? "" : String(p.gstPercent),
+  });
+  const empty = { contribution: null, contributionPct: null, verdict: "ok" };
+  const result = pricing.price
+    ? pricing
+    : {
+        ok: false,
+        price: { ok: false, display: p.display, sale: null, tcs: null, serviceCharge: null, serviceChargeExGst: null, commissionPercent: null, bsa: null, errors: [pricing.message || "Pricing inputs are not stored on this product."] },
+        economics: { prepaid: empty, cod: empty },
+      };
+  return { ...data, product: { ...p, variations: p.variations ?? [] }, pricing: result };
+}
+
+export async function getProduct(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/products/${encodeURIComponent(id)}`, { token: user.token });
+      return adaptProduct(data);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const product = s.products.find((p) => p.id === id);
@@ -81,6 +183,21 @@ export async function updateProductPricing(id, input, rawReason, user) {
   if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to change prices." };
   const reason = validateReason(rawReason, true);
   if (!reason.ok) return { ok: false, message: reason.error };
+  if (user?.token) {
+    const pricing = calculatePricing(input);
+    if (!pricing.ok) return pricing;
+    if (!pricing.price.ok) return { ok: false, message: pricing.price.errors.join(" ") };
+    try {
+      const { data } = await api(`admin/products/${encodeURIComponent(id)}/pricing`, {
+        method: "PATCH",
+        token: user.token,
+        body: { mrp: pricing.input.mrp, nrv: pricing.input.nrv, gstPercent: pricing.input.gstPercent, salePrice: pricing.price.display, reason: reason.reason },
+      });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update the price.");
+    }
+  }
   const product = getStore().products.find((p) => p.id === id);
   if (!product) return { ok: false, message: "Product not found." };
   const pricing = calculatePricing(input);
@@ -99,6 +216,14 @@ export async function adjustStock(id, rawStock, rawReason, user) {
   if (!reason.ok) return { ok: false, message: reason.error };
   const stock = Number(rawStock);
   if (!Number.isInteger(stock) || stock < 0 || stock > 100000) return { ok: false, message: "Stock must be a whole number between 0 and 100,000." };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/products/${encodeURIComponent(id)}/stock`, { method: "PATCH", token: user.token, body: { stock, reason: reason.reason } });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update stock.");
+    }
+  }
   const product = getStore().products.find((p) => p.id === id);
   if (!product) return { ok: false, message: "Product not found." };
   await mockLatency(150);
@@ -124,6 +249,14 @@ export async function setProductStatus(id, action, rawReason, user) {
   if (!can(user, rule.permission, "edit")) return { ok: false, message: "You do not have permission to perform this action." };
   const reason = validateReason(rawReason, rule.reason);
   if (!reason.ok) return { ok: false, message: reason.error };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/products/${encodeURIComponent(id)}/status`, { method: "POST", token: user.token, body: { action, reason: reason.reason } });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update the product.");
+    }
+  }
   const product = getStore().products.find((p) => p.id === id);
   if (!product) return { ok: false, message: "Product not found." };
   if (!rule.from.includes(product.statusCode)) return { ok: false, message: `This product is “${product.status}” and cannot be ${action}d.` };
@@ -143,7 +276,11 @@ export async function setProductStatus(id, action, rawReason, user) {
 
 /* --------------------------------------------------------------- Create */
 
-export function productFormOptions() {
+export async function productFormOptions(user) {
+  if (user?.token) {
+    const { data } = await api("admin/products/options", { token: user.token });
+    return data;
+  }
   const s = getStore();
   return {
     vendors: s.vendors.filter((v) => v.status === "Active").map((v) => ({ value: v.id, label: v.name })),
@@ -181,8 +318,30 @@ function priceVariations(rows, values) {
 
 export async function createProduct(input, user) {
   if (!can(user, "products", "add")) return { ok: false, message: "You do not have permission to add products." };
+  if (user?.token) {
+    const options = await productFormOptions(user);
+    const { ok, values, errors } = validateForm(productFields(options), input);
+    const variations = validateVariations(input.variations);
+    if (!ok || !variations.ok) return { ok: false, fieldErrors: { ...errors, ...variations.errors }, message: "Please fix the highlighted fields." };
+    const pricing = calculatePricing(values);
+    if (!pricing.ok || !pricing.price?.ok) return { ok: false, message: pricing.price?.errors?.join(" ") || pricing.message || "Please fix the highlighted fields." };
+    const priced = (variations.values?.rows ?? []).map((row) => {
+      const rowPrice = calculatePricing({ mrp: row.mrp, nrv: row.nrv, takeRate: values.takeRate, gstPercent: String(values.gstPercent) });
+      return { label: row.label, mrp: row.mrp, display: rowPrice.price?.display, stock: row.stock, weightKg: row.weightKg };
+    });
+    try {
+      const { data } = await api("admin/products", {
+        method: "POST",
+        token: user.token,
+        body: { ...values, salePrice: pricing.price.display, nrv: values.nrv, gstPercent: values.gstPercent, variations: variations.values?.enabled ? priced : [] },
+      });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not create the product.");
+    }
+  }
   const s = getStore();
-  const options = productFormOptions();
+  const options = await productFormOptions();
   const { ok, values, errors } = validateForm(productFields(options), input);
   const variations = validateVariations(input.variations);
   if (!ok || !variations.ok) return { ok: false, fieldErrors: { ...errors, ...variations.errors }, message: "Please fix the highlighted fields." };
@@ -252,13 +411,25 @@ function parseCsv(text) {
   return rows;
 }
 
-export function importTemplate() {
+export async function importTemplate(user) {
+  if (user?.token) {
+    const { data } = await api("admin/products/import/template", { token: user.token });
+    return data.csv;
+  }
   return `${IMPORT_COLUMNS.join(",")}\n"KrishiGold NPK 19:19:19 1 kg",SEL01001,Water Soluble,KrishiGold,31052000,599,330,35,5,120,1.1\n`;
 }
 
 /** Validates a CSV import on the server. Nothing is written in this step. */
 export async function validateImport(text, user) {
   if (!can(user, "products.import", "add")) return { ok: false, message: "You do not have permission to import products." };
+  if (user?.token) {
+    try {
+      const { data } = await api("admin/products/import/validate", { method: "POST", token: user.token, body: { csv: text } });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not validate the file.");
+    }
+  }
   if (typeof text !== "string" || !text.trim()) return { ok: false, message: "The file is empty." };
   if (text.length > MAX_IMPORT_BYTES) return { ok: false, message: "File is larger than 200 KB. Split it into smaller files." };
   await mockLatency(250);

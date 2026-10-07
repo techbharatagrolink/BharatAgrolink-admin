@@ -7,12 +7,12 @@ import { ManualOrderForm } from "@/components/admin/orders/manual-order-form";
 export const metadata = { title: "Create Order" };
 
 export default async function NewOrderPage() {
-  const { allowed } = await checkPermission("orders", "add");
+  const { user, allowed } = await checkPermission("orders", "add");
   if (!allowed) return (<><PageHeader title="Create Order" /><PermissionDenied module="order creation" /></>);
   return (
     <>
       <PageHeader title="Create Order" description="Manual order for phone, WhatsApp or field sales. The order starts as Placed and follows the normal vendor acceptance flow." />
-      <ManualOrderForm options={manualOrderOptions()} />
+      <ManualOrderForm options={await manualOrderOptions(user)} />
     </>
   );
 }

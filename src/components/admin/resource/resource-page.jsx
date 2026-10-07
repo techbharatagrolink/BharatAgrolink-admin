@@ -2,7 +2,7 @@ import { getResource } from "@/lib/content/admin/resources";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { listResource, resolveFormOptions } from "@/lib/services/admin/resources";
-import { LinkTabs, PageHeader } from "@/components/ui/page";
+import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
 import { ResourceTable } from "./resource-table";
@@ -64,6 +64,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
   return (
     <>
       <PageHeader title={resource.title} description={resource.description} actions={headerActions} />
+      {data.unavailable ? <Notice tone="warning">{data.unavailable}</Notice> : null}
       {children}
       {tabs && <LinkTabs tabs={tabs} active={activeTab} />}
       <ResourceTable
@@ -83,7 +84,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
         canAdd={Boolean(resource.form) && can(user, resource.permission, "add") && !resource.noAdd}
         rowActions={permitted(resource.rowActions)}
         bulkActions={permitted(resource.bulkActions)}
-        optionSets={resolveFormOptions(resource)}
+        optionSets={await resolveFormOptions(resource, user)}
       />
     </>
   );

@@ -18,16 +18,16 @@ export default async function RoleDetailPage({ params }) {
   const { id } = await params;
   const { user, allowed } = await checkPermission("roles");
   if (!allowed) return (<><PageHeader title="Edit role" /><PermissionDenied module="roles" /></>);
-  const data = await getRole(id);
+  const data = await getRole(id, user);
   if (!data) notFound();
   const { role } = data;
 
   let lockedReason = null;
   if (role.superAdmin) lockedReason = "The Super Admin role always has full access and cannot be changed.";
-  else if (role.id === user.roleId) lockedReason = "You cannot change your own role. Ask another administrator.";
+  else if (Number(role.id) === Number(user.role?.id ?? user.roleId)) lockedReason = "You cannot change your own role. Ask another administrator.";
   else if (!can(user, "roles", "edit")) lockedReason = "You have view access to roles. Editing needs roles: edit.";
   const editable = !lockedReason;
-  const grantable = user.role.superAdmin ? true : user.role.permissions;
+  const grantable = data.grantable ?? (user.role.superAdmin ? true : user.role.permissions);
   const permissions = role.superAdmin ? Object.fromEntries(data.catalog.map((p) => [p.key, ["view", "add", "edit", "delete"]])) : role.permissions;
 
   return (

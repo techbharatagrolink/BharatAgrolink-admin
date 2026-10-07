@@ -3,7 +3,13 @@ import { getStore, appendAudit } from "@/lib/mock/admin/store";
 import { can } from "@/lib/auth/permissions";
 import { validateReason } from "@/lib/validation/admin/forms";
 import { maskAccount } from "@/lib/format";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency, sum } from "./_query";
+
+function liveError(error, fallback) {
+  if (!(error instanceof ApiError)) return { ok: false, message: fallback };
+  return { ok: false, message: error.message };
+}
 
 /**
  * Vendor payouts. Planned APIs:
@@ -16,7 +22,16 @@ import { mockLatency, sum } from "./_query";
 
 const UTR = /^[A-Z0-9]{10,22}$/;
 
-export async function getPayout(id) {
+export async function getPayout(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/payouts/${encodeURIComponent(id)}`, { token: user.token });
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const p = s.payouts.find((x) => x.id === id);
@@ -34,11 +49,23 @@ export async function getPayout(id) {
 
 export async function payoutAction(id, action, input, user) {
   if (!can(user, "payouts", "edit")) return { ok: false, message: "You do not have permission to change payouts." };
+  const reason = validateReason(input?.reason, true);
+  if (!reason.ok) return { ok: false, message: reason.error };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/payouts/${encodeURIComponent(id)}/actions`, {
+        method: "POST",
+        token: user.token,
+        body: { action, reason: reason.reason || "", transactionId: String(input?.transactionId ?? "").trim(), proofName: String(input?.proofName ?? "").trim() },
+      });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update the payout.");
+    }
+  }
   const s = getStore();
   const p = s.payouts.find((x) => x.id === id);
   if (!p) return { ok: false, message: "Payout not found." };
-  const reason = validateReason(input?.reason, true);
-  if (!reason.ok) return { ok: false, message: reason.error };
   const items = s.payoutItems.filter((i) => i.payoutId === id);
   const vendor = s.vendors.find((v) => v.id === p.vendorId);
 

@@ -174,7 +174,7 @@ export function DataTable({
   const to = Math.min(data.total, data.page * data.pageSize);
 
   return (
-    <div className="min-w-0 rounded-xl border border-line bg-surface">
+    <div className="min-w-0 rounded-xl border border-line bg-surface shadow-sm">
       {(search || filters.length > 0 || dateRange || toolbar || onExport !== undefined) && (
         <div className="flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start xl:justify-between">
           <FilterBar search={search} filters={filters} dateRange={dateRange} className="min-w-0 flex-1" />

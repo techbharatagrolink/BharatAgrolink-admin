@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navigation } from "@/lib/navigation";
@@ -59,6 +59,28 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
   };
   const [openKey, setOpenKey] = useState(activeGroupKey);
   const [lastPath, setLastPath] = useState(pathname);
+  const closeRef = useRef(null);
+  const closeMobileRef = useRef(onCloseMobile);
+
+  useEffect(() => {
+    closeMobileRef.current = onCloseMobile;
+  }, [onCloseMobile]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event) => {
+      if (event.key === "Escape") closeMobileRef.current?.();
+    };
+    document.addEventListener("keydown", onKey);
+    const frame = requestAnimationFrame(() => closeRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
   if (lastPath !== pathname) {
     setLastPath(pathname);
     const key = activeGroupKey();
@@ -69,7 +91,7 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
 
   return (
     <>
-      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/45 md:hidden" onClick={onCloseMobile} aria-hidden />}
+      {mobileOpen && <div className="fixed inset-0 z-40 cursor-pointer bg-black/45 md:hidden" onClick={onCloseMobile} aria-hidden />}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-nav text-nav-ink transition-[width,transform] duration-200",
@@ -84,7 +106,7 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
             {!compact && <span className="truncate text-[11px] font-medium tracking-wide text-nav-muted uppercase">Admin</span>}
           </Link>
           {mobileOpen && (
-            <button type="button" onClick={onCloseMobile} className="ml-auto rounded-md p-1.5 text-nav-muted hover:bg-white/10 hover:text-white md:hidden" aria-label="Close menu">
+            <button ref={closeRef} type="button" onClick={onCloseMobile} className="ml-auto flex size-10 items-center justify-center rounded-md text-nav-muted hover:bg-white/10 hover:text-white md:hidden" aria-label="Close menu">
               <X className="size-5" />
             </button>
           )}
@@ -116,7 +138,7 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
                           )}
                         >
                           <NavIcon name={item.icon} className="size-[18px] shrink-0" />
-                          {!compact && <span className="truncate">{item.label}</span>}
+                          {!compact && <span className="min-w-0 truncate">{item.label}</span>}
                         </Link>
                       </li>
                     );
@@ -155,7 +177,7 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
                         <NavIcon name={item.icon} className={cn("size-[18px] shrink-0", !compact && (open || containsActive) && "text-[#f59a3c]")} />
                         {!compact && (
                           <>
-                            <span className="truncate">{item.label}</span>
+                            <span className="min-w-0 flex-1 truncate">{item.label}</span>
                             <ChevronDown className={cn("ml-auto size-4 shrink-0 transition-transform duration-200", open ? "rotate-180 text-white/80" : "text-nav-muted")} aria-hidden />
                           </>
                         )}
@@ -177,7 +199,7 @@ export function Sidebar({ rail, onToggleRail, mobileOpen, onCloseMobile }) {
                                         active ? "bg-nav-active font-medium text-nav-active-ink" : "text-nav-muted hover:bg-white/8 hover:text-white",
                                       )}
                                     >
-                                      <span className="truncate">{child.label}</span>
+                                      <span className="min-w-0 truncate">{child.label}</span>
                                     </Link>
                                   </li>
                                 );

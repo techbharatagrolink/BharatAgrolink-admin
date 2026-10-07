@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/components/auth-provider";
-import { errorMessage, formatINR, formatNumber, statusVariant } from "@/lib/format";
+import { errorMessage, formatINR, formatNumber, formatWhen, statusVariant } from "@/lib/format";
 
 export function FinanceView() {
   const request = useApi();
@@ -85,13 +85,14 @@ export function FinanceView() {
                 <TableHead>Vendor</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!loading && transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>No payouts.</TableCell>
+                  <TableCell colSpan={6}>No payouts.</TableCell>
                 </TableRow>
               ) : null}
               {transactions.map((row) => (
@@ -100,6 +101,7 @@ export function FinanceView() {
                   <TableCell>{row.vendor || "—"}</TableCell>
                   <TableCell>{row.type || "Payout"}</TableCell>
                   <TableCell>{formatINR(row.amount)}</TableCell>
+                  <TableCell>{formatWhen(row.createdAt)}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
                   </TableCell>

@@ -4,7 +4,7 @@ import { getProductsDashboard } from "@/lib/services/admin/dashboards";
 import { formatDate, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { DonutChart, HBarList } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
@@ -13,9 +13,11 @@ export const metadata = { title: "Product Management Dashboard" };
 const verdictLabels = { ok: "Healthy", below_target: "Below target CM", below_floor: "Below floor CM", loss: "Loss-making" };
 
 export default async function ProductsDashboardPage() {
-  const { allowed } = await checkPermission("dashboard.products");
+  const { user, allowed } = await checkPermission("dashboard.products");
   if (!allowed) return (<><PageHeader title="Product Management Dashboard" /><PermissionDenied module="the product dashboard" /></>);
-  const d = await getProductsDashboard();
+  const result = await getProductsDashboard(user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Product Management Dashboard" /><ApiUnavailable error={result.error} what="the product dashboard" /></>);
+  const d = result.data;
   return (
     <>
       <PageHeader title="Product Management Dashboard" description="Catalog size, approval queue, stock health and listing economics (contribution verdicts are computed on the server)." />

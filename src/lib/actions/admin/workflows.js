@@ -15,7 +15,7 @@ export async function previewRefundAction(id, flags) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   if (!can(user, "returns")) return { ok: false, message: "You do not have permission to view returns." };
-  const amount = previewRefund(str(id), { refundShipping: Boolean(flags?.refundShipping), deductPlatformFee: Boolean(flags?.deductPlatformFee) });
+  const amount = await previewRefund(str(id), { refundShipping: Boolean(flags?.refundShipping), deductPlatformFee: Boolean(flags?.deductPlatformFee) }, user);
   return amount == null ? { ok: false, message: "Return not found." } : { ok: true, amount };
 }
 

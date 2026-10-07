@@ -87,7 +87,7 @@
   --line-strong: #cfd8cc;
   --ink: #17231b;
   --ink-soft: #3d4b41;
-  --ink-muted: #6b786f;
+  --ink-muted: #5a6860;
   --brand-50: #eef8f1;
   --brand-100: #d6efdf;
   --brand-200: #ade0c0;
@@ -126,7 +126,7 @@
   --secondary: #f8faf7;
   --secondary-foreground: #17231b;
   --muted: #f8faf7;
-  --muted-foreground: #6b786f;
+  --muted-foreground: #5a6860;
   --accent: #e8740c;
   --accent-fg: #ffffff;
   --accent-foreground: #17231b;
@@ -231,6 +231,18 @@
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
   }
 }
 

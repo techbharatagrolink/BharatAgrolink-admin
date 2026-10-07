@@ -22,9 +22,9 @@ export default async function CustomerDetailPage({ params, searchParams }) {
   const fallback = await resourceFallback(`/admin/customers/${id}`, searchParams);
   if (fallback) return fallback;
 
-  const { allowed } = await checkPermission("customers");
+  const { user, allowed } = await checkPermission("customers");
   if (!allowed) return (<><PageHeader title="Customer details" /><PermissionDenied module="customers" /></>);
-  const data = await getCustomer(id);
+  const data = await getCustomer(id, user);
   if (!data) notFound();
   const c = data.customer;
 

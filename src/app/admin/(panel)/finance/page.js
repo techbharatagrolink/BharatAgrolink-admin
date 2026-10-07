@@ -6,17 +6,19 @@ import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Notice, PageHeader, ProgressBar, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BarChart } from "@/components/charts/charts";
 import { RangeSwitch } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Profit & Loss" };
 
 export default async function ProfitLossPage({ searchParams }) {
-  const { allowed } = await checkPermission("finance");
+  const { user, allowed } = await checkPermission("finance");
   if (!allowed) return (<><PageHeader title="Profit & Loss" /><PermissionDenied module="finance" /></>);
   const { range } = await searchParams;
-  const d = await getProfitLoss(range);
+  const result = await getProfitLoss(range, user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Profit & Loss" /><ApiUnavailable error={result.error} what="the profit and loss report" /></>);
+  const d = result.data;
 
   return (
     <>

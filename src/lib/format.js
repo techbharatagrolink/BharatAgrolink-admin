@@ -118,14 +118,24 @@ export function statusVariant(status) {
 
 export function presentOrder(order) {
   const lines = Array.isArray(order?.items) ? order.items : [];
-  const tracked = lines.find((line) => line?.trackingUrl) || lines[0] || {};
+  const tracked = lines.find((line) => line?.trackingUrl) || lines.find((line) => line?.courier) || lines[0] || {};
   const customer = order?.customer;
   const name = typeof customer === "string" ? customer : customer?.name;
+  const invoices = [...new Set(lines.map((line) => line?.invoiceNumber).filter(Boolean))];
+  const pickup = lines.map((line) => String(line?.pickupType || "").toLowerCase());
+  const shipping = !lines.length
+    ? "—"
+    : pickup.some((type) => type === "self")
+      ? "Self Shipping"
+      : "Ship By Bharat Agrolink";
   return {
     id: order?.orderId ?? order?.id ?? "—",
     createdAt: formatDateTime(order?.createdAt),
     customer: name || "—",
     courier: tracked.courier || tracked.carrier || "—",
+    invoice: invoices.join(", ") || "—",
+    items: order?.itemCount ?? lines.length,
+    shipping,
     payment: typeof order?.payment === "string" ? order.payment : order?.payment?.mode || "—",
     status: order?.status || "—",
     amount: formatINR(order?.totalAmount ?? order?.amount),

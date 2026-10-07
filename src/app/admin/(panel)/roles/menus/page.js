@@ -9,14 +9,14 @@ import { PermissionDenied } from "@/components/ui/states";
 export const metadata = { title: "Admin Menus" };
 
 export default async function AdminMenusPage() {
-  const { allowed } = await checkPermission("roles");
+  const { user, allowed } = await checkPermission("roles");
   if (!allowed) return (<><PageHeader title="Admin Menus" /><PermissionDenied module="roles" /></>);
-  const tree = await getMenuTree();
+  const tree = await getMenuTree(user);
 
   return (
     <>
       <PageHeader title="Admin Menus" description="The sidebar tree, the permission key each entry checks, the legacy PHP page it replaces and which roles can see it." />
-      <Notice className="mb-4">Menus are defined in code so every entry has a matching route and permission. To verify against production, export the legacy <code className="font-mono">admin_menus</code> table and compare.</Notice>
+      <Notice className="mb-4">This tree is the <code className="font-mono">admin_menus</code> table. A role can open a page when its permissions include view on that menu id.</Notice>
       <div className="space-y-4">
         {tree.map((section) => (
           <Card key={section.section}>

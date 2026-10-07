@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi, useAuth } from "@/components/auth-provider";
@@ -16,8 +16,8 @@ function filtersQuery(filters, page) {
     q: filters.q,
     status: filters.status,
     paymentMode: filters.paymentMode,
-    from: filters.date || undefined,
-    to: filters.date || undefined,
+    from: filters.from || undefined,
+    to: filters.to || undefined,
     page,
     limit: 20,
     sort: "created",
@@ -28,13 +28,14 @@ function filtersQuery(filters, page) {
 export function OrdersOverview() {
   const request = useApi();
   const { session } = useAuth();
-  const [draft, setDraft] = useState({ q: "", status: "", paymentMode: "", date: "" });
-  const [filters, setFilters] = useState({ q: "", status: "", paymentMode: "", date: "" });
+  const [draft, setDraft] = useState({ q: "", status: "", paymentMode: "", from: "", to: "" });
+  const [filters, setFilters] = useState({ q: "", status: "", paymentMode: "", from: "", to: "" });
   const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [delivery, setDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -44,17 +45,19 @@ export function OrdersOverview() {
     setError("");
     try {
       const query = filtersQuery(filters, page);
-      const [list, total, cod, prepaid, rto] = await Promise.all([
+      const [list, total, cod, prepaid, rto, shipping] = await Promise.all([
         request("admin/orders", { query }),
         request("admin/orders", { query: { limit: 1, page: 1 } }),
         request("admin/orders", { query: { limit: 1, page: 1, paymentMode: "cod" } }),
         request("admin/orders", { query: { limit: 1, page: 1, paymentMode: "prepaid" } }),
-        request("admin/orders", { query: { limit: 1, page: 1, status: "RTO" } }),
+        request("admin/orders/rto-summary"),
+        request("admin/orders/delivery-summary"),
       ]);
       setItems(list.data || []);
       setMeta(list.meta);
+      setDelivery(shipping.data);
       const all = total.meta?.total ?? 0;
-      const rtoCount = rto.meta?.total ?? 0;
+      const rtoCount = rto.data?.orders ?? 0;
       const codCount = cod.meta?.total ?? 0;
       const prepaidCount = prepaid.meta?.total ?? 0;
       const paymentTotal = codCount + prepaidCount;
@@ -131,10 +134,17 @@ export function OrdersOverview() {
       <div className="flex gap-3 flex-wrap">
         <Input
           type="date"
-          aria-label="Order date"
+          aria-label="From date"
           className="w-auto"
-          value={draft.date}
-          onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
+          value={draft.from}
+          onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))}
+        />
+        <Input
+          type="date"
+          aria-label="To date"
+          className="w-auto"
+          value={draft.to}
+          onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))}
         />
         <select
           aria-label="Order status"
@@ -169,9 +179,13 @@ export function OrdersOverview() {
         <TableHeader>
           <TableRow>
             <TableHead>Order</TableHead>
+            <TableHead>Date</TableHead>
             <TableHead>Customer</TableHead>
-            <TableHead>Courier</TableHead>
+            <TableHead>Invoice</TableHead>
+            <TableHead>Items</TableHead>
+            <TableHead>Amount</TableHead>
             <TableHead>Payment</TableHead>
+            <TableHead>Shipping</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
@@ -179,25 +193,27 @@ export function OrdersOverview() {
         <TableBody>
           {!loading && rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6}>No orders match these filters.</TableCell>
+              <TableCell colSpan={10}>No orders match these filters.</TableCell>
             </TableRow>
           ) : null}
           {rows.map((order) => (
             <TableRow key={order.id}>
               <TableCell>{order.id}</TableCell>
+              <TableCell>{order.createdAt}</TableCell>
               <TableCell>{order.customer}</TableCell>
-              <TableCell>{order.courier}</TableCell>
+              <TableCell>{order.invoice}</TableCell>
+              <TableCell>{order.items}</TableCell>
+              <TableCell>{order.amount}</TableCell>
               <TableCell>{order.payment}</TableCell>
+              <TableCell>{order.shipping}</TableCell>
               <TableCell>
                 <Badge variant={statusVariant(order.status)}>{order.status}</Badge>
               </TableCell>
               <TableCell className="text-right">
                 {order.trackingUrl ? (
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={order.trackingUrl} target="_blank" rel="noreferrer">
-                      Track
-                    </a>
-                  </Button>
+                  <a className={buttonClasses({ variant: "outline", size: "sm" })} href={order.trackingUrl} target="_blank" rel="noreferrer">
+                    Track
+                  </a>
                 ) : (
                   <Button size="sm" variant="outline" disabled>
                     Track
@@ -242,8 +258,8 @@ export function OrdersOverview() {
         </div>
         <div className="p-4 border rounded-md">
           <div className="text-sm text-muted-foreground">Avg Delivery Time</div>
-          <div className="font-bold text-xl">Unavailable</div>
-          <p className="mt-1 text-xs text-muted-foreground">The admin API does not return an average delivery time.</p>
+          <div className="font-bold text-xl">{delivery ? `${delivery.averageDeliveryDays} days` : "—"}</div>
+          {delivery ? <p className="mt-1 text-xs text-muted-foreground">{delivery.deliveredOrders} delivered orders with a delivery date</p> : null}
         </div>
       </div>
     </div>

@@ -50,7 +50,7 @@ export function SettingsForm({ section, fields, values, canEdit }) {
             {({ id, invalid, describedBy }) => {
               const common = { id, value: form[f.name], disabled: !canEdit, "aria-invalid": invalid || undefined, "aria-describedby": describedBy, onChange: (e) => setForm({ ...form, [f.name]: e.target.value }) };
               if (f.type === "select") return <Select {...common} options={f.options} />;
-              return <Input {...common} type={f.type === "number" ? "number" : f.type === "email" ? "email" : "text"} inputMode={f.type === "number" ? "numeric" : undefined} min={f.min} max={f.max} maxLength={f.maxLength} />;
+              return <Input {...common} type={f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "password" ? "password" : "text"} inputMode={f.type === "number" ? "numeric" : undefined} min={f.min} max={f.max} maxLength={f.maxLength} autoComplete={f.type === "password" ? "new-password" : undefined} />;
             }}
           </Field>
         ))}

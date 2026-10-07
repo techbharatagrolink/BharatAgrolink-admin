@@ -3,6 +3,10 @@ const apiUrl = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http:
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  experimental: {
+    serverComponentsHmrCache: false,
+    staleTimes: { dynamic: 0 },
+  },
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${apiUrl}/:path*` }];
   },

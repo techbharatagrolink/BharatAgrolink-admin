@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { adjustStock, calculatePricing, createProduct, setProductStatus, updateProductPricing, validateImport } from "@/lib/services/admin/products";
+import { adjustStock, calculatePricingLive, createProduct, setProductStatus, updateProductPricing, validateImport } from "@/lib/services/admin/products";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
 const plain = (input, keys) => Object.fromEntries(keys.map((k) => [k, input && typeof input[k] !== "object" ? String(input[k] ?? "") : ""]));
@@ -13,7 +13,7 @@ export async function calculatePricingAction(input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   if (!can(user, "pricing") && !can(user, "products")) return { ok: false, message: "You do not have permission to use the pricing calculator." };
-  return calculatePricing(plain(input, PRICE_KEYS));
+  return calculatePricingLive(plain(input, PRICE_KEYS), user);
 }
 
 export async function updatePricingAction(id, input, reason) {

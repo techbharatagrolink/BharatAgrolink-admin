@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ChartLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatINR, formatNumber } from "@/lib/format";
+import { EmptyState } from "@/components/ui/states";
 
 const palette = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
@@ -16,7 +18,11 @@ function shortNumber(n) {
   if (Math.abs(n) >= 1e7) return `${(n / 1e7).toFixed(1)}Cr`;
   if (Math.abs(n) >= 1e5) return `${(n / 1e5).toFixed(1)}L`;
   if (Math.abs(n) >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
-  return String(Math.round(n));
+  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
+}
+
+function ChartEmpty({ className, message = "No data for this period." }) {
+  return <EmptyState icon={ChartLine} title={message} className={cn("min-h-[180px] rounded-md bg-surface-muted py-8", className)} />;
 }
 
 const isMoney = (s) => s.format === "inr" || /₹/.test(s.label);
@@ -102,7 +108,7 @@ function useHiddenSeries(series) {
   return [hidden, toggle];
 }
 
-export function LineChart({ data, series, height = 220, className, label }) {
+export function LineChart({ data, series, height = 220, className, label, empty }) {
   const width = 640;
   const pad = { top: 12, right: 12, bottom: 26, left: 44 };
   const innerW = width - pad.left - pad.right;
@@ -118,6 +124,7 @@ export function LineChart({ data, series, height = 220, className, label }) {
     const i = Math.round(((f * width - pad.left) / innerW) * (data.length - 1));
     return Math.max(0, Math.min(data.length - 1, i));
   });
+  if (!data.length) return <ChartEmpty className={className} message={empty} />;
 
   return (
     <figure className={cn("relative w-full", className)}>
@@ -155,7 +162,7 @@ export function LineChart({ data, series, height = 220, className, label }) {
   );
 }
 
-export function BarChart({ data, series, height = 220, className, label, stacked = false }) {
+export function BarChart({ data, series, height = 220, className, label, stacked = false, empty }) {
   const width = 640;
   const pad = { top: 12, right: 8, bottom: 26, left: 44 };
   const innerW = width - pad.left - pad.right;
@@ -170,6 +177,7 @@ export function BarChart({ data, series, height = 220, className, label, stacked
   const ticks = [0, 0.5, 1].map((t) => t * max);
   const labelEvery = Math.ceil(data.length / 10);
   const { active, svgProps } = useActiveIndex(data.length, (f) => Math.max(0, Math.min(data.length - 1, Math.floor((f * width - pad.left) / band))));
+  if (!data.length) return <ChartEmpty className={className} message={empty} />;
 
   return (
     <figure className={cn("relative w-full", className)}>

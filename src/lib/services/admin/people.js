@@ -2,6 +2,7 @@ import "server-only";
 import { getStore } from "@/lib/mock/admin/store";
 import { can } from "@/lib/auth/permissions";
 import { maskAccount, maskEmail } from "@/lib/format";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency, countBy, sum } from "./_query";
 
 /**
@@ -13,6 +14,15 @@ import { mockLatency, countBy, sum } from "./_query";
  */
 
 export async function getVendor(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/vendors/${encodeURIComponent(id)}`, { token: user.token });
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const v = s.vendors.find((x) => x.id === id);
@@ -37,7 +47,16 @@ export async function getVendor(id, user) {
   };
 }
 
-export async function getCustomer(id) {
+export async function getCustomer(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/customers/${encodeURIComponent(id)}`, { token: user.token });
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const c = s.customers.find((x) => x.id === id);

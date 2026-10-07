@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { Notice } from "@/components/ui/page";
 
-const DEMO_PASSWORD = "Demo@1234";
-
-export function LoginForm({ accounts, next }) {
+export function LoginForm({ next }) {
   const [state, formAction, pending] = useActionState(loginAction, null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,30 +35,6 @@ export function LoginForm({ accounts, next }) {
           Log in
         </Button>
       </form>
-
-      <div className="mt-5 rounded-xl border border-dashed border-line-strong bg-surface-muted p-4">
-        <p className="text-sm font-semibold text-ink">Demo accounts</p>
-        <p className="mt-0.5 text-xs text-ink-muted">
-          Password for all: <code className="rounded bg-neutral-bg px-1">{DEMO_PASSWORD}</code>. Pick a role to see the permission-aware menu.
-        </p>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-          {accounts.map((account) => (
-            <li key={account.email}>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail(account.email);
-                  setPassword(DEMO_PASSWORD);
-                }}
-                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-left hover:border-brand-200 hover:bg-brand-50"
-              >
-                <span className="block text-[13px] font-medium text-ink">{account.role}</span>
-                <span className="block truncate text-xs text-ink-muted">{account.hint}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronsLeft, ChevronsRight, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { site } from "@/lib/site";
@@ -55,15 +55,31 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
     onToggleRail?.();
   };
   const compact = rail && !mobileOpen;
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKey = (event) => event.key === "Escape" && onCloseMobile?.();
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      previous?.focus?.();
+    };
+  }, [mobileOpen, onCloseMobile]);
 
   return (
     <>
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/45 md:hidden" onClick={onCloseMobile} aria-hidden />}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-nav text-nav-ink transition-[width,transform] duration-200",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-nav text-nav-ink duration-200",
           compact ? "w-16" : "w-[264px]",
-          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+          mobileOpen ? "translate-x-0 transition-[width,transform]" : "-translate-x-full transition-[width,transform,visibility] max-md:invisible md:translate-x-0",
         )}
         aria-label="Admin navigation"
       >
@@ -83,7 +99,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
             )}
           </Link>
           {mobileOpen && (
-            <button type="button" onClick={onCloseMobile} className="ml-auto rounded-md p-1.5 text-nav-muted hover:bg-white/10 hover:text-white md:hidden" aria-label="Close menu">
+            <button ref={closeRef} type="button" onClick={onCloseMobile} className="ml-auto rounded-md p-1.5 text-nav-muted hover:bg-white/10 hover:text-white md:hidden" aria-label="Close menu">
               <X className="size-5" />
             </button>
           )}
@@ -106,6 +122,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                         <Link
                           href={item.href}
                           title={compact ? item.label : undefined}
+                          aria-label={compact ? item.label : undefined}
                           aria-current={active ? "page" : undefined}
                           className={cn(
                             "flex h-9 items-center gap-3 rounded-lg px-2.5 text-[13.5px] font-medium transition-colors",

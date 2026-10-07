@@ -5,17 +5,19 @@ import { formatINR } from "@/lib/format";
 import { PageHeader, ProgressBar, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { LineChart } from "@/components/charts/charts";
 import { MiniTable, RangeSwitch } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Finance & Payout Dashboard" };
 
 export default async function FinanceDashboardPage({ searchParams }) {
-  const { allowed } = await checkPermission("dashboard.finance");
+  const { user, allowed } = await checkPermission("dashboard.finance");
   if (!allowed) return (<><PageHeader title="Finance & Payout Dashboard" /><PermissionDenied module="the finance dashboard" /></>);
   const { range } = await searchParams;
-  const d = await getFinanceDashboard(range);
+  const result = await getFinanceDashboard(range, user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Finance & Payout Dashboard" /><ApiUnavailable error={result.error} what="the finance dashboard" /></>);
+  const d = result.data;
   const s = d.stats;
   return (
     <>
@@ -38,12 +40,13 @@ export default async function FinanceDashboardPage({ searchParams }) {
         <Card className="xl:col-span-2">
           <CardHeader title="Gross sales and commission" description="By delivery date" />
           <CardBody>
-            <LineChart data={d.trend} series={[{ key: "gross", label: "Gross (₹)" }, { key: "commission", label: "Commission ex-GST (₹)" }]} label="Gross and commission trend" />
+            {d.trend.length ? <LineChart data={d.trend} series={[{ key: "gross", label: "Gross (₹)" }, { key: "commission", label: "Commission ex-GST (₹)" }]} label="Gross and commission trend" /> : <p className="text-sm text-ink-muted">No daily trend is available from the finance API yet.</p>}
           </CardBody>
         </Card>
         <Card>
           <CardHeader title="Expense limits" description="Actual vs cap, % of sales" actions={<Link href="/admin/finance/expense-limits" className="text-[13px] font-medium text-brand-700 hover:underline">Details</Link>} />
           <CardBody className="space-y-4">
+            {!d.expenseCaps.length && <p className="text-sm text-ink-muted">No expense-limit percentages are available from the finance API yet.</p>}
             {d.expenseCaps.map((c) => (
               <div key={c.id}>
                 <div className="mb-1 flex justify-between text-sm">
@@ -62,9 +65,9 @@ export default async function FinanceDashboardPage({ searchParams }) {
         <CardHeader title="Payout queue" actions={<Link href="/admin/payouts" className="text-[13px] font-medium text-brand-700 hover:underline">All payouts</Link>} />
         <MiniTable
           columns={[
-            { key: "id", label: "Payout", render: (r) => <Link href={`/admin/payouts/${r.id}`} className="font-mono text-xs font-medium text-brand-700 hover:underline">{r.id}</Link> },
+            { key: "id", label: "Payout", render: (r) => <Link href={`/admin/payouts/${r.id}`} className="font-mono text-xs font-medium text-brand-700 hover:underline" aria-label={`Payout ${r.id}`}>{r.id}</Link> },
             { key: "vendor", label: "Vendor" },
-            { key: "cycle", label: "Cycle" },
+            { key: "cycle", label: "Cycle", render: (r) => r.cycle || "—" },
             { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
             { key: "bsa", label: "Amount (BSA)", align: "right", render: (r) => formatINR(r.bsa) },
           ]}

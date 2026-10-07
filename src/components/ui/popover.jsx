@@ -3,10 +3,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export function Popover({ trigger, children, align = "right", className, panelClassName, label }) {
+export function Popover({ id: idProp, trigger, children, align = "right", className, panelClassName, label }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const id = useId();
+  const autoId = useId();
+  const id = idProp ?? autoId;
 
   useEffect(() => {
     if (!open) return;

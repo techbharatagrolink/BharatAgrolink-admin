@@ -98,7 +98,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
 
   const { user, allowed } = await checkPermission("products");
   if (!allowed) return (<><PageHeader title="Product details" /><PermissionDenied module="products" /></>);
-  const data = await getProduct(id);
+  const data = await getProduct(id, user);
   if (!data) notFound();
   const { product: p, vendor, pricing, sales } = data;
   const canEdit = can(user, "products", "edit");

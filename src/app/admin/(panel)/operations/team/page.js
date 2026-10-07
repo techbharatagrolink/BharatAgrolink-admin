@@ -13,9 +13,9 @@ export const metadata = { title: "Team Dashboard" };
 const pctCell = (v, good = 90) => <span className={cn("tabular", v < good - 15 ? "text-danger-ink" : v < good ? "text-warning-ink" : "text-success-ink")}>{v}%</span>;
 
 export default async function OperationsTeamPage() {
-  const { allowed } = await checkPermission("operations.team");
+  const { user, allowed } = await checkPermission("operations.team");
   if (!allowed) return (<><PageHeader title="Team Dashboard" /><PermissionDenied module="the operations team" /></>);
-  const d = await getOperationsTeam();
+  const d = await getOperationsTeam(user);
   const s = d.stats;
 
   return (

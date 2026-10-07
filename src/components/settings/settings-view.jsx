@@ -130,7 +130,7 @@ export function SettingsView() {
               Export Finance
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">Finance export is unavailable. There is no finance endpoint.</p>
+          <p className="text-sm text-muted-foreground">Ledger CSV export stays in the PHP finance ledger screens. This page does not rebuild that report.</p>
         </CardContent>
       </Card>
 

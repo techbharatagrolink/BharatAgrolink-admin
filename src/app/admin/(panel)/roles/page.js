@@ -10,9 +10,9 @@ import { MiniTable } from "@/components/admin/dashboard/range-switch";
 export const metadata = { title: "Roles & Permissions" };
 
 export default async function RolesPage() {
-  const { allowed } = await checkPermission("roles");
+  const { user, allowed } = await checkPermission("roles");
   if (!allowed) return (<><PageHeader title="Roles & Permissions" /><PermissionDenied module="roles" /></>);
-  const roles = await listRoles();
+  const roles = await listRoles(user);
 
   return (
     <>

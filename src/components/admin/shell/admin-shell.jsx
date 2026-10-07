@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { Info } from "lucide-react";
+import { isLiveAdminPath } from "@/lib/services/admin/live-catalog";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
@@ -42,12 +43,14 @@ function saveRail(value) {
   window.dispatchEvent(new Event(RAIL_EVENT));
 }
 
-export function AdminShell({ user, navigation, badges, notifications, demoMode, children }) {
+export function AdminShell({ user, navigation, badges, notifications, children }) {
   const pathname = usePathname();
+  const showGap = !isLiveAdminPath(pathname);
   const isTablet = useSyncExternalStore(subscribe, () => window.matchMedia(TABLET_QUERY).matches, () => false);
   const desktopRail = useSyncExternalStore(subscribeRail, readRail, () => false);
   const [tabletRail, setTabletRail] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
   const [lastPath, setLastPath] = useState(pathname);
   if (lastPath !== pathname) {
     setLastPath(pathname);
@@ -62,14 +65,14 @@ export function AdminShell({ user, navigation, badges, notifications, demoMode, 
       <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[80] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm">
         Skip to content
       </a>
-      <Sidebar navigation={navigation} badges={badges} rail={rail} onToggleRail={toggleRail} mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
-      <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", rail ? "md:pl-16" : "md:pl-[264px]")}>
+      <Sidebar navigation={navigation} badges={badges} rail={rail} onToggleRail={toggleRail} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+      <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", rail ? "md:pl-16" : "md:pl-[264px]")} inert={mobileOpen || undefined}>
         <Header user={user} navigation={navigation} notifications={notifications} rail={rail} onToggleRail={toggleRail} onOpenMobile={() => setMobileOpen(true)} />
-        {demoMode && (
+        {showGap && (
           <div className="border-b border-warning-ink/15 bg-warning-bg px-3 py-1.5 text-[12.5px] text-warning-ink sm:px-5">
             <p className="mx-auto flex max-w-[1600px] items-center gap-2">
               <Info className="size-3.5 shrink-0" aria-hidden />
-              <span>Demo mode: data comes from mock services, not the live database. Changes last only until the server restarts.</span>
+              <span>This page is not connected to the admin API yet.</span>
             </p>
           </div>
         )}

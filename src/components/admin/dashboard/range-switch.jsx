@@ -10,7 +10,7 @@ export function RangeSwitch({ pathname, ranges, active }) {
           href={`${pathname}?range=${r.value}`}
           scroll={false}
           aria-current={r.value === active ? "true" : undefined}
-          className={cn("rounded-md px-2.5 py-1 text-[13px] font-medium whitespace-nowrap", r.value === active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
+          className={cn("rounded-md px-2.5 py-2.5 text-[13px] sm:py-1 font-medium whitespace-nowrap", r.value === active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
         >
           {r.label}
         </Link>

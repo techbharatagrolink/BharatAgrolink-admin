@@ -5,6 +5,7 @@ import { stockStatus } from "@/lib/mock/admin/engines";
 import { NOW, DAY } from "@/lib/mock/admin/seed";
 import { can } from "@/lib/auth/permissions";
 import { validateReason } from "@/lib/validation/admin/forms";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
 
 /**
@@ -42,7 +43,99 @@ export function parentStatus(lines) {
   return statusPriority.find((s) => lines.some((l) => l.status === s)) ?? lines[0]?.status ?? "Placed";
 }
 
+const PAYMENT_LABEL = { cod: "COD", prepaid: "Prepaid", partial: "Partial", online: "Prepaid" };
+const QUICK_STATUSES = ["Accepted", "Cancelled", "Delivered", "Out for delivery", "Packed", "Placed", "Rejected", "RTO", "RTO Delivered"];
+
+function adaptOrder(data, user) {
+  const items = data.items || [];
+  const byVendor = new Map();
+  const canEdit = can(user, "orders", "edit");
+  for (const item of items) {
+    const vendorId = item.seller?.id ?? "";
+    if (!byVendor.has(vendorId)) {
+      byVendor.set(vendorId, { vendorId, vendor: item.seller?.name || "Vendor", sellerInvoice: item.invoiceNumber || "", lines: [] });
+    }
+    byVendor.get(vendorId).lines.push({
+      id: item.lineId,
+      productId: item.productId,
+      productName: item.name || "Product",
+      sku: item.sku || "—",
+      qty: item.qty,
+      gstPercent: item.tax?.gstPercent ?? 0,
+      courier: item.courier || "",
+      awb: item.trackingId || "",
+      trackingUrl: item.trackingUrl || "",
+      printLabel: item.printLabel || "",
+      status: item.status,
+      returnLastDate: null,
+      price: item.lineTotal,
+      transitions: canEdit ? QUICK_STATUSES.filter((status) => status !== item.status).map((status) => ({ status, requireReason: status === "Cancelled" || status === "Rejected" })) : [],
+    });
+  }
+  const mode = PAYMENT_LABEL[String(data.payment?.mode || "").toLowerCase()] || data.payment?.mode || "";
+  const sum = (pick) => Math.round(items.reduce((total, item) => total + Number(pick(item) || 0), 0) * 100) / 100;
+  return {
+    order: {
+      id: data.orderId,
+      createdAt: data.createdAt,
+      channel: data.source || "Website",
+      status: statusPriority.find((status) => items.some((item) => item.status === status)) || items[0]?.status || "Placed",
+      paymentMode: mode,
+      vendors: byVendor.size,
+      couponCode: data.totals?.couponCode || "",
+      subtotal: data.totals?.subtotal ?? 0,
+      shippingFee: data.totals?.shippingFee ?? 0,
+      handling: data.totals?.handlingFee ?? 0,
+      discount: (data.totals?.orderDiscount || 0) + (data.totals?.couponValue || 0) + (data.totals?.productDiscount || 0),
+      total: data.totals?.orderTotal ?? 0,
+      advance: data.payment?.advanceAmount || 0,
+      platformInvoice: data.invoices?.[0]?.invoiceNumber || "",
+      paymentId: data.payment?.paymentId || "",
+      salesman: data.salesAgent?.name || "",
+      customer: data.address?.name || "",
+      mobile: data.address?.mobile || "",
+      city: data.address?.city || "",
+      state: data.address?.state || "",
+      pincode: data.address?.pincode || "",
+    },
+    customer: data.customer?.userId ? { id: data.customer.userId, orders: "—" } : null,
+    groups: [...byVendor.values()],
+    totals: {
+      taxable: sum((item) => item.tax?.taxable),
+      cgst: sum((item) => item.tax?.cgst),
+      sgst: sum((item) => item.tax?.sgst),
+      igst: sum((item) => item.tax?.igst),
+      tcs: 0,
+      nrv: 0,
+      commission: 0,
+    },
+    returns: [],
+    refunds: [],
+    tickets: [],
+    timeline: [
+      { id: "placed", title: "Order placed", description: `${data.source || "Website"} · ${mode}`, at: data.createdAt },
+      ...(data.remarks || []).map((remark, index) => ({
+        id: remark.id || `remark-${index}`,
+        title: remark.remark || "Remark",
+        description: remark.added_by || "",
+        at: remark.added_at || data.createdAt,
+        actor: remark.added_by,
+      })),
+    ],
+    canEdit,
+  };
+}
+
 export async function getOrder(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/orders/${encodeURIComponent(id)}`, { token: user.token });
+      return adaptOrder(data, user);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const order = s.orders.find((o) => o.id === id);
@@ -93,6 +186,18 @@ function round2(n) {
 
 export async function changeLineStatus({ orderId, lineId, status, reason }, user) {
   if (!can(user, "orders", "edit")) return { ok: false, message: "You do not have permission to change order status." };
+  if (user?.token) {
+    try {
+      await api(`admin/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(lineId)}/status`, {
+        method: "PATCH",
+        token: user.token,
+        body: { status },
+      });
+      return { ok: true, message: `Line updated to ${status}.` };
+    } catch (error) {
+      return { ok: false, message: error instanceof ApiError ? error.message : "Could not update the line." };
+    }
+  }
   const s = getStore();
   const order = s.orders.find((o) => o.id === orderId);
   const line = s.orderItems.find((l) => l.orderId === orderId && String(l.id) === String(lineId));
@@ -138,7 +243,11 @@ export async function changeLineStatus({ orderId, lineId, status, reason }, user
 
 /* ------------------------------------------------------------ Manual order */
 
-export function manualOrderOptions() {
+export async function manualOrderOptions(user) {
+  if (user?.token) {
+    const { data } = await api("admin/orders/manual-options", { token: user.token });
+    return data;
+  }
   const s = getStore();
   return {
     customers: s.customers.filter((c) => c.status === "Active").slice(0, 60).map((c) => ({ value: c.id, label: `${c.name} · ${c.city}` })),
@@ -153,6 +262,17 @@ export function manualOrderOptions() {
  */
 export async function createManualOrder(input, user) {
   if (!can(user, "orders", "add")) return { ok: false, message: "You do not have permission to create orders." };
+  if (user?.token) {
+    try {
+      const { data } = await api("admin/orders", { method: "POST", token: user.token, body: input });
+      return data;
+    } catch (error) {
+      if (!(error instanceof ApiError)) return { ok: false, message: "Could not create the order." };
+      const fieldErrors = {};
+      if (Array.isArray(error.details)) for (const issue of error.details) if (issue.field || issue.path) fieldErrors[issue.field || issue.path] = issue.message;
+      return { ok: false, message: error.message, ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}) };
+    }
+  }
   const s = getStore();
   const customer = s.customers.find((c) => c.id === input.customerId && c.status === "Active");
   if (!customer) return { ok: false, fieldErrors: { customerId: "Choose a customer." }, message: "Please fix the highlighted fields." };

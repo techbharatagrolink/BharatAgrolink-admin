@@ -8,14 +8,14 @@ import { PermissionDenied } from "@/components/ui/states";
 export const metadata = { title: "Integrations" };
 
 export default async function IntegrationsPage() {
-  const { allowed } = await checkPermission("settings");
+  const { user, allowed } = await checkPermission("settings");
   if (!allowed) return (<><PageHeader title="Integrations" /><PermissionDenied module="settings" /></>);
-  const rows = await getIntegrations();
+  const rows = await getIntegrations(user);
 
   return (
     <>
-      <PageHeader title="Integrations" description="Connection status of third-party services. Keys are managed as server environment variables and are never displayed." />
-      <Notice className="mb-4">To connect a service, add its variables in Vercel → Project → Settings → Environment Variables and redeploy.</Notice>
+      <PageHeader title="Integrations" description="Credentials the PHP panel stores in the settings table. Secret values are not shown." />
+      <Notice className="mb-4">SMTP and Soft SMS are the integrations that screen writes. A password is configured when that settings row is non-empty.</Notice>
       <Card>
         <ul className="divide-y divide-line">
           {rows.map((r) => (

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/components/auth-provider";
 import { errorMessage, formatWhen, inr } from "@/lib/format";
@@ -14,16 +15,20 @@ function cellText(row, column) {
   return String(value);
 }
 
-export function ResourceTable({ path, columns, emptyLabel = "No records." }) {
+export function ResourceTable({ path, columns, emptyLabel = "No records.", query = {}, actions = [] }) {
   const request = useApi();
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState("");
+  const queryKey = JSON.stringify(query);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancel = false;
-    request(`admin${path}`, { query: { page: 1, pageSize: 25 } })
+    setLoading(true);
+    setError("");
+    request(`admin${path}`, { query: { page: 1, pageSize: 25, ...query } })
       .then((result) => {
         if (cancel) return;
         setRows(result.data?.rows || []);
@@ -38,7 +43,23 @@ export function ResourceTable({ path, columns, emptyLabel = "No records." }) {
     return () => {
       cancel = true;
     };
-  }, [path, request]);
+  }, [path, queryKey, request]);
+
+  useEffect(() => load(), [load]);
+
+  async function runAction(action, row) {
+    setBusy(`${action.id}-${row.id}`);
+    setError("");
+    try {
+      await request(`admin${path}/actions/${action.id}`, { method: "POST", body: { ids: [row.id] } });
+      load();
+    } catch (err) {
+      setError(errorMessage(err));
+      setLoading(false);
+    } finally {
+      setBusy("");
+    }
+  }
 
   if (error) return <p className="text-sm text-destructive">{error}</p>;
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -52,12 +73,13 @@ export function ResourceTable({ path, columns, emptyLabel = "No records." }) {
             {columns.map((column) => (
               <TableHead key={column.key}>{column.label}</TableHead>
             ))}
+            {actions.length ? <TableHead className="text-right">Action</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length}>{emptyLabel}</TableCell>
+              <TableCell colSpan={columns.length + (actions.length ? 1 : 0)}>{emptyLabel}</TableCell>
             </TableRow>
           ) : null}
           {rows.map((row) => (
@@ -67,6 +89,17 @@ export function ResourceTable({ path, columns, emptyLabel = "No records." }) {
                   {column.badge ? <Badge variant="outline">{cellText(row, column)}</Badge> : cellText(row, column)}
                 </TableCell>
               ))}
+              {actions.length ? (
+                <TableCell className="text-right">
+                  {actions
+                    .filter((action) => !action.when || action.when(row))
+                    .map((action) => (
+                      <Button key={action.id} type="button" size="sm" variant="outline" disabled={busy === `${action.id}-${row.id}`} onClick={() => runAction(action, row)}>
+                        {busy === `${action.id}-${row.id}` ? "Saving…" : action.label}
+                      </Button>
+                    ))}
+                </TableCell>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>

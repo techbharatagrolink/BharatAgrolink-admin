@@ -15,7 +15,7 @@ export function EmptyState({ title = "Nothing here yet", description, action, ic
   );
 }
 
-export function ErrorState({ title = "Something went wrong", description = "We could not load this data. Please try again.", onRetry, className }) {
+export function ErrorState({ title = "Something went wrong", description = "We could not load this data. Please try again.", onRetry, action, className }) {
   return (
     <div role="alert" className={cn("flex flex-col items-center justify-center px-6 py-12 text-center", className)}>
       <span className="mb-3 flex size-11 items-center justify-center rounded-full bg-danger-bg text-danger-ink">
@@ -23,13 +23,26 @@ export function ErrorState({ title = "Something went wrong", description = "We c
       </span>
       <p className="text-sm font-semibold text-ink">{title}</p>
       <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-      {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-muted">
-          <RefreshCw className="size-3.5" aria-hidden /> Try again
-        </button>
+      {(onRetry || action) && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {onRetry && (
+            <button type="button" onClick={onRetry} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-muted">
+              <RefreshCw className="size-3.5" aria-hidden /> Try again
+            </button>
+          )}
+          {action}
+        </div>
       )}
     </div>
   );
+}
+
+export function ApiUnavailable({ error, what = "this data" }) {
+  const status = error?.status;
+  const description = status
+    ? `The admin API could not load ${what} (${error.message}). Refresh the page to try again.`
+    : `The admin API is not reachable right now, so ${what} could not be loaded. Refresh the page in a moment.`;
+  return <ErrorState title="Not connected" description={description} className="rounded-2xl border border-line bg-surface" />;
 }
 
 export function PermissionDenied({ module = "this page" }) {

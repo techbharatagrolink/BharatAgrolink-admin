@@ -2,7 +2,13 @@ import "server-only";
 import { getStore, appendAudit } from "@/lib/mock/admin/store";
 import { can } from "@/lib/auth/permissions";
 import { NOW } from "@/lib/mock/admin/seed";
+import { api, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
+
+function liveError(error, fallback) {
+  if (!(error instanceof ApiError)) return { ok: false, message: fallback };
+  return { ok: false, message: error.message };
+}
 
 /**
  * Helpdesk. Planned APIs:
@@ -18,7 +24,16 @@ export const DEPARTMENTS = ["Finance", "Logistics", "Tech", "Vendor Support", "U
 export const PRIORITIES = ["Normal", "Urgent"];
 export const ASSIGNEES = ["Kunal (Support)", "Ayesha (Support)", "Finance Desk", "Logistics Desk"];
 
-export async function getTicket(id) {
+export async function getTicket(id, user) {
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/support/${encodeURIComponent(id)}`, { token: user.token });
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
+  }
   await mockLatency();
   const s = getStore();
   const t = s.tickets.find((x) => x.id === id);
@@ -33,12 +48,20 @@ export async function getTicket(id) {
 
 export async function addTicketMessage(id, rawMessage, internal, user) {
   if (!can(user, "support", "edit") && !can(user, "support", "add")) return { ok: false, message: "You do not have permission to reply to tickets." };
-  const s = getStore();
-  const t = s.tickets.find((x) => x.id === id);
-  if (!t) return { ok: false, message: "Ticket not found." };
   const message = typeof rawMessage === "string" ? rawMessage.trim() : "";
   if (message.length < 2) return { ok: false, message: "Write a message first." };
   if (message.length > 4000) return { ok: false, message: "Message is too long (max 4000 characters)." };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/support/${encodeURIComponent(id)}/messages`, { method: "POST", token: user.token, body: { message, internal: Boolean(internal) } });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not send the message.");
+    }
+  }
+  const s = getStore();
+  const t = s.tickets.find((x) => x.id === id);
+  if (!t) return { ok: false, message: "Ticket not found." };
   if (["Closed", "Rejected"].includes(t.status) && !internal) return { ok: false, message: "Reopen the ticket before replying to the requester." };
   await mockLatency(150);
   s.ticketMessages.push({ id: `${id}-${Date.now()}`, ticketId: id, senderType: "admin", sender: user.name, message, internal: Boolean(internal), at: new Date().toISOString() });
@@ -49,6 +72,14 @@ export async function addTicketMessage(id, rawMessage, internal, user) {
 
 export async function updateTicket(id, input, user) {
   if (!can(user, "support", "edit")) return { ok: false, message: "You do not have permission to update tickets." };
+  if (user?.token) {
+    try {
+      const { data } = await api(`admin/support/${encodeURIComponent(id)}`, { method: "PATCH", token: user.token, body: input });
+      return data;
+    } catch (error) {
+      return liveError(error, "Could not update the ticket.");
+    }
+  }
   const s = getStore();
   const t = s.tickets.find((x) => x.id === id);
   if (!t) return { ok: false, message: "Ticket not found." };

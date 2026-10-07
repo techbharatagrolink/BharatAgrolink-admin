@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/components/auth-provider";
 import { errorMessage, formatINR, formatNumber } from "@/lib/format";
 
 export function VendorsView() {
   const request = useApi();
+  const [q, setQ] = useState("");
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -22,7 +27,7 @@ export function VendorsView() {
     setError("");
     try {
       const [list, stats] = await Promise.all([
-        request("admin/vendors", { query: { page, pageSize: 25 } }),
+        request("admin/vendors", { query: { page, pageSize: 25, q: query, status: statusFilter || undefined } }),
         request("admin/vendors/overview").catch((err) => ({ error: err })),
       ]);
       setRows(list.data?.rows || []);
@@ -34,7 +39,7 @@ export function VendorsView() {
     } finally {
       setLoading(false);
     }
-  }, [page, request]);
+  }, [page, query, request, statusFilter]);
 
   useEffect(() => {
     load();
@@ -44,6 +49,30 @@ export function VendorsView() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Vendor Management</h1>
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setPage(1);
+            setQuery(q.trim());
+            setStatusFilter(status);
+          }}
+        >
+          <Input aria-label="Search vendors" placeholder="Name, mobile, GSTIN" value={q} onChange={(event) => setQ(event.target.value)} />
+          <select
+            aria-label="Vendor status"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
+            <option value="">All statuses</option>
+            <option value="Active">Active</option>
+            <option value="Pending">Pending</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <Button type="submit">Filter</Button>
+        </form>
       </header>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

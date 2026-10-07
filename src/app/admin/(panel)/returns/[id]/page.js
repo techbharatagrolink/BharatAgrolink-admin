@@ -23,7 +23,7 @@ export default async function ReturnDetailPage({ params, searchParams }) {
 
   const { user, allowed } = await checkPermission("returns");
   if (!allowed) return (<><PageHeader title="Return details" /><PermissionDenied module="returns" /></>);
-  const data = await getReturn(id);
+  const data = await getReturn(id, user);
   if (!data) notFound();
   const { ret, line, order, refund } = data;
   const canEdit = can(user, "returns", "edit");

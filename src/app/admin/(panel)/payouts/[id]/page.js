@@ -24,7 +24,7 @@ export default async function PayoutDetailPage({ params, searchParams }) {
 
   const { user, allowed } = await checkPermission("payouts");
   if (!allowed) return (<><PageHeader title="Payout details" /><PermissionDenied module="vendor payouts" /></>);
-  const data = await getPayout(id);
+  const data = await getPayout(id, user);
   if (!data) notFound();
   const { payout: p, vendor, totals } = data;
 

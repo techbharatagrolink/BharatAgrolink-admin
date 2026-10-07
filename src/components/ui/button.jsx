@@ -24,8 +24,8 @@ const sizes = {
 
 export function buttonClasses({ variant = "secondary", size = "md", className } = {}) {
   return cn(
-    "inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-colors select-none",
-    "disabled:opacity-55 disabled:pointer-events-auto aria-disabled:opacity-55",
+    "inline-flex shrink-0 cursor-pointer items-center justify-center font-medium whitespace-nowrap transition-colors select-none",
+    "disabled:cursor-not-allowed disabled:opacity-55 disabled:pointer-events-auto aria-disabled:cursor-not-allowed aria-disabled:opacity-55",
     variants[variant],
     sizes[size],
     className,

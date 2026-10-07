@@ -3,17 +3,19 @@ import { getOrdersDashboard, RANGES } from "@/lib/services/admin/dashboards";
 import { formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BarChart, DonutChart, HBarList } from "@/components/charts/charts";
 import { RangeSwitch } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Order Management Dashboard" };
 
 export default async function OrdersDashboardPage({ searchParams }) {
-  const { allowed } = await checkPermission("dashboard.orders");
+  const { user, allowed } = await checkPermission("dashboard.orders");
   if (!allowed) return (<><PageHeader title="Order Management Dashboard" /><PermissionDenied module="the order dashboard" /></>);
   const { range } = await searchParams;
-  const d = await getOrdersDashboard(range);
+  const result = await getOrdersDashboard(range, user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Order Management Dashboard" /><ApiUnavailable error={result.error} what="the order dashboard" /></>);
+  const d = result.data;
   return (
     <>
       <PageHeader

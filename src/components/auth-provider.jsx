@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 
@@ -25,6 +25,8 @@ function readStoredSession() {
   }
 }
 
+const subscribeNever = () => () => {};
+
 function persistSession(session) {
   localStorage.setItem(TOKEN_KEY, session.token);
   localStorage.setItem(PROFILE_KEY, JSON.stringify({ expiresAt: session.expiresAt, profile: session.profile }));
@@ -33,13 +35,8 @@ function persistSession(session) {
 export function AuthProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [session, setSession] = useState(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setSession(readStoredSession());
-    setReady(true);
-  }, []);
+  const [session, setSession] = useState(() => (typeof window === "undefined" ? null : readStoredSession()));
+  const ready = useSyncExternalStore(subscribeNever, () => true, () => false);
 
   const logout = useCallback(() => {
     const token = session?.token;
@@ -108,16 +105,17 @@ export function useAuth() {
 
 export function useApi() {
   const { session, logout } = useAuth();
+  const token = session?.token;
   return useCallback(
     async (path, options) => {
-      if (!session?.token) throw new ApiError("Please log in again.", { status: 401, code: "ADMIN_TOKEN_INVALID" });
+      if (!token) throw new ApiError("Please log in again.", { status: 401, code: "ADMIN_TOKEN_INVALID" });
       try {
-        return await api(path, { ...options, token: session.token });
+        return await api(path, { ...options, token });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) logout();
         throw error;
       }
     },
-    [session?.token, logout]
+    [token, logout]
   );
 }

@@ -14,6 +14,10 @@ export const viewport = {
   themeColor: "#0e3b26",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 const themeScript = `try{if(localStorage.getItem('ba-admin-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }) {

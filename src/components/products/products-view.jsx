@@ -11,7 +11,9 @@ import { errorMessage, formatINR, formatNumber, formatPercent } from "@/lib/form
 export function ProductsView() {
   const request = useApi();
   const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -24,7 +26,7 @@ export function ProductsView() {
     setError("");
     try {
       const [list, stats] = await Promise.all([
-        request("admin/products", { query: { q: query, page, limit: 20 } }),
+        request("admin/products", { query: { q: query, status: statusFilter || undefined, page, limit: 20 } }),
         request("admin/products/summary"),
       ]);
       setRows(list.data || []);
@@ -35,7 +37,7 @@ export function ProductsView() {
     } finally {
       setLoading(false);
     }
-  }, [page, query, request]);
+  }, [page, query, request, statusFilter]);
 
   useEffect(() => {
     load();
@@ -51,8 +53,19 @@ export function ProductsView() {
             event.preventDefault();
             setPage(1);
             setQuery(q.trim());
+            setStatusFilter(status);
           }}
         >
+          <select
+            aria-label="Product status"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
+            <option value="">Active and rejected</option>
+            <option value="Active">Active</option>
+            <option value="Rejected">Rejected</option>
+          </select>
           <Input
             placeholder="Search SKU / title"
             aria-label="Search products"

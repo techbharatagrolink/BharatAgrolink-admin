@@ -172,7 +172,7 @@ function GlobalSearch() {
               aria-selected={i === current}
               onMouseEnter={() => setActiveIndex(i)}
               onClick={() => choose(page)}
-              className={cn("mx-1.5 flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm", i === current ? "bg-brand-50 text-ink" : "text-ink-soft")}
+              className={cn("mx-1.5 flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm", i === current ? "bg-brand-50 text-ink" : "text-ink-soft")}
             >
               <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-muted text-ink-muted">
                 <NavIcon name={page.icon} className="size-4" />
@@ -307,7 +307,7 @@ export function Header({ rail, onToggleRail, onOpenMobile }) {
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
       <div className="flex h-14 items-center gap-2 px-3 sm:gap-3 sm:px-5">
         <div className="flex shrink-0 items-center lg:min-w-0 lg:flex-1 lg:basis-0">
-          <button type="button" onClick={onOpenMobile} className="flex size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg md:hidden" aria-label="Open menu">
+          <button type="button" onClick={onOpenMobile} className="flex size-10 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg md:hidden" aria-label="Open menu">
             <Menu className="size-5" />
           </button>
           <button

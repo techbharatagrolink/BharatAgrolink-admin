@@ -37,13 +37,13 @@ export function ExpenseCapEditor({ caps, canEdit }) {
               <div className="mb-1.5 flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium text-ink">{c.label}</span>
                 {c.over ? <Badge tone="danger">Over cap</Badge> : <Badge tone="success">Within cap</Badge>}
-                <span className="ml-auto text-ink-soft tabular">Actual {c.actualPercent}% of sales</span>
+                <span className="ml-auto text-ink-soft tabular">{c.actualPercent == null ? "No delivered GMV this month" : `Actual ${c.actualPercent}% of sales`}</span>
               </div>
-              <ProgressBar value={c.actualPercent} max={c.capPercent} tone={c.over ? "danger" : "brand"} label={`${c.label}: ${c.actualPercent}% of ${c.capPercent}% cap`} />
+              <ProgressBar value={c.actualPercent ?? 0} max={c.capPercent || 1} tone={c.over ? "danger" : "brand"} label={`${c.label}: ${c.actualPercent == null ? "no delivered GMV" : `${c.actualPercent}% of ${c.capPercent}% cap`}`} />
             </div>
             <div className="flex items-center gap-2">
               <label htmlFor={`cap-${c.id}`} className="text-[13px] text-ink-muted">Cap %</label>
-              <Input id={`cap-${c.id}`} type="number" min={0.1} max={50} step={0.1} inputMode="decimal" className="w-20" value={value} disabled={!canEdit} onChange={(e) => setValues({ ...values, [c.id]: e.target.value })} />
+              <Input id={`cap-${c.id}`} type="number" min={0} max={100} step={0.1} inputMode="decimal" className="w-20" value={value} disabled={!canEdit} onChange={(e) => setValues({ ...values, [c.id]: e.target.value })} />
               {canEdit && (
                 <Button size="sm" variant="primary" disabled={!changed || !value} onClick={() => setPending(c)}>
                   Save

@@ -1,165 +1,157 @@
 import "server-only";
-import { getStore, appendAudit } from "@/lib/mock/admin/store";
-import { can } from "@/lib/auth/permissions";
+import { api, ApiError } from "@/lib/api";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
-import { mockLatency } from "./_query";
 
 /**
- * Platform settings. Planned APIs:
- *   GET/PUT /api/admin/settings/{system|minimums|smtp|sms}
- *   PUT     /api/admin/finance/expense-caps          (full admin only)
- *   GET     /api/admin/settings/integrations          (status only)
- * Secrets (SMTP password, SMS/API keys, gateway secrets) are never stored in or
- * returned by the panel; they live in server environment variables.
+ * Platform settings stored in the PHP `settings` table (type / description).
+ * SMTP and SMS passwords are write-only: the API returns configured, never the secret.
  */
+
+const text = (label, extra = {}) => ({ name: extra.name, label, type: "text", required: false, maxLength: extra.maxLength ?? 255, ...extra });
 
 export const SETTINGS_SECTIONS = {
   system: {
     title: "System Settings",
     permission: "settings",
-    api: "system-settings.php → PUT /api/admin/settings/system",
+    api: "system_settings.php → PUT /api/v1/admin/settings/system",
     fields: [
-      { name: "siteName", label: "Marketplace name", type: "text", required: true, maxLength: 80 },
-      { name: "supportEmail", label: "Support email", type: "email", required: true },
-      { name: "supportPhone", label: "Support phone", type: "text", required: true, pattern: "^[6-9]\\d{9}$", patternMessage: "Enter a 10-digit Indian mobile number." },
-      { name: "orderAutoCancelHours", label: "Auto-cancel unconfirmed orders after (hours)", type: "number", required: true, min: 1, max: 168 },
-      { name: "returnWindowDays", label: "Default return window (days)", type: "number", required: true, min: 0, max: 30 },
-      { name: "payoutCycle", label: "Vendor payout cycle", type: "select", required: true, options: ["Weekly (Monday)", "Fortnightly", "Monthly"] },
-      { name: "maintenanceMode", label: "Storefront maintenance mode", type: "select", required: true, options: ["Off", "On"] },
+      text("Store name", { name: "system_name", required: true, maxLength: 150 }),
+      text("Application title", { name: "system_title", maxLength: 150 }),
+      text("Address", { name: "system_address", required: true, maxLength: 500 }),
+      text("Phone", { name: "system_phone", required: true, maxLength: 30 }),
+      { name: "system_email", label: "Email", type: "email", required: true },
+      text("Nimbuspost phone", { name: "system_other_phone", maxLength: 30 }),
+      { name: "system_other_email", label: "Other email", type: "email", required: false },
+      text("Language id", { name: "system_language", required: true, maxLength: 20 }),
+      text("Currency id (or id-symbol)", { name: "system_currency", required: true, maxLength: 40 }),
+      text("Currency symbol", { name: "system_currency_symbol", maxLength: 8 }),
+      text("Timezone", { name: "system_timezone", required: true, maxLength: 80 }),
+      text("GST / VAT number", { name: "system_gst", maxLength: 30 }),
+      { name: "affiliate_commission", label: "Affiliate commission", type: "number", required: false, min: 0, max: 100 },
+      { name: "default_shipping_fee", label: "Default shipping fee (₹)", type: "number", required: false, min: 0, max: 100000 },
+      text("Footer text", { name: "footer_text", maxLength: 2000 }),
+      text("Offers", { name: "offers", maxLength: 4000 }),
+      text("Android app link", { name: "android_app_link", maxLength: 500 }),
+      text("iOS app link", { name: "ios_app_link", maxLength: 500 }),
+      text("Facebook link", { name: "facebook_link", maxLength: 500 }),
+      text("Instagram link", { name: "instagram_link", maxLength: 500 }),
+      text("Twitter link", { name: "twitter_link", maxLength: 500 }),
+      text("YouTube link", { name: "youtube_link", maxLength: 500 }),
+      text("LinkedIn link", { name: "linkedin_link", maxLength: 500 }),
     ],
-    defaults: { siteName: "Bharat AgroLink", supportEmail: "support@bharatagrolink.com", supportPhone: "9826000000", orderAutoCancelHours: 24, returnWindowDays: 7, payoutCycle: "Weekly (Monday)", maintenanceMode: "Off" },
   },
   minimums: {
     title: "Minimum Order & COD",
     permission: "shipping.rules",
-    api: "manage_minimum_order.php, manage_minimum_cod.php → PUT /api/admin/settings/minimums",
+    api: "manage_minimum_order.php, manage_minimum_cod.php → PUT /api/v1/admin/settings/minimums",
     fields: [
-      { name: "minOrderValue", label: "Minimum order value (₹)", type: "number", required: true, min: 0, max: 10000 },
-      { name: "minCodValue", label: "Minimum COD order (₹)", type: "number", required: true, min: 0, max: 10000 },
-      { name: "maxCodValue", label: "Maximum COD order (₹)", type: "number", required: true, min: 500, max: 200000 },
-      { name: "codHandlingFee", label: "COD handling fee (₹)", type: "number", required: true, min: 0, max: 500 },
-      { name: "freeShippingAbove", label: "Free shipping above (₹)", type: "number", required: true, min: 0, max: 100000 },
+      { name: "minOrderValue", label: "Minimum order value (₹)", type: "number", required: true, min: 0, max: 1000000 },
+      { name: "minCodValue", label: "Minimum COD order (₹)", type: "number", required: true, min: 0, max: 1000000 },
     ],
-    defaults: { minOrderValue: 199, minCodValue: 299, maxCodValue: 25000, codHandlingFee: 30, freeShippingAbove: 3000 },
-    check: (v) => (v.minCodValue > v.maxCodValue ? { minCodValue: "Minimum COD cannot exceed maximum COD." } : null),
   },
   smtp: {
     title: "SMTP Settings",
     permission: "settings",
-    api: "smtp-settings → PUT /api/admin/settings/smtp",
+    api: "smtp_settings.php → PUT /api/v1/admin/settings/smtp",
     fields: [
-      { name: "host", label: "SMTP host", type: "text", required: true, maxLength: 120, pattern: "^[a-zA-Z0-9.-]+$", patternMessage: "Enter a host name like smtp.example.com." },
-      { name: "port", label: "Port", type: "number", required: true, min: 1, max: 65535 },
-      { name: "encryption", label: "Encryption", type: "select", required: true, options: ["TLS", "SSL", "None"] },
-      { name: "username", label: "Username", type: "text", required: true, maxLength: 120 },
-      { name: "fromEmail", label: "From email", type: "email", required: true },
-      { name: "fromName", label: "From name", type: "text", required: true, maxLength: 80 },
+      text("Protocol", { name: "smtp_protocol", required: true, maxLength: 20 }),
+      text("SMTP host", { name: "smtp_host", required: true, maxLength: 150 }),
+      { name: "smtp_port", label: "Port", type: "number", required: true, min: 1, max: 65535 },
+      text("Username", { name: "smtp_user", required: true, maxLength: 150 }),
+      { name: "smtp_password", label: "SMTP password (leave blank to keep the saved password)", type: "password", required: false, maxLength: 200 },
     ],
-    defaults: { host: "smtp.zoho.in", port: 587, encryption: "TLS", username: "noreply@bharatagrolink.com", fromEmail: "noreply@bharatagrolink.com", fromName: "Bharat AgroLink" },
-    secrets: [{ env: "SMTP_PASSWORD", label: "SMTP password" }],
+    secrets: [{ field: "smtp_password", label: "SMTP password" }],
   },
   sms: {
     title: "SMS Settings",
     permission: "settings",
-    api: "sms-settings → PUT /api/admin/settings/sms",
+    api: "sms_settings.php → PUT /api/v1/admin/settings/sms",
     fields: [
-      { name: "provider", label: "Provider", type: "select", required: true, options: ["MSG91", "Fast2SMS", "Twilio"] },
-      { name: "senderId", label: "Sender ID (DLT header)", type: "text", required: true, pattern: "^[A-Z]{6}$", patternMessage: "Sender ID must be 6 capital letters." },
-      { name: "dltEntityId", label: "DLT entity ID", type: "text", required: true, pattern: "^\\d{12,19}$", patternMessage: "DLT entity ID is 12–19 digits." },
-      { name: "otpTemplateId", label: "OTP template ID", type: "text", required: true, pattern: "^[A-Za-z0-9]{6,30}$", patternMessage: "Template ID is 6–30 letters or digits." },
+      { name: "active_sms_service", label: "Active SMS service", type: "select", required: true, options: ["soft", "disabled"] },
+      text("URL", { name: "soft_url", required: true, maxLength: 500 }),
+      text("Sender", { name: "soft_sender", required: true, maxLength: 20 }),
+      text("Username", { name: "soft_user", required: true, maxLength: 150 }),
+      { name: "soft_password", label: "SMS password (leave blank to keep the saved password)", type: "password", required: false, maxLength: 200 },
     ],
-    defaults: { provider: "MSG91", senderId: "BAGROL", dltEntityId: "1201160000000000000", otpTemplateId: "64f0b1c2d3e4" },
-    secrets: [{ env: "SMS_API_KEY", label: "Provider API key" }],
+    secrets: [{ field: "soft_password", label: "SMS password" }],
   },
 };
 
-const INTEGRATIONS = [
-  { name: "Razorpay", purpose: "Prepaid payments and refunds", env: ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"] },
-  { name: "Shiprocket", purpose: "Courier booking, checkout", env: ["SHIPROCKET_EMAIL", "SHIPROCKET_PASSWORD"] },
-  { name: "NimbusPost", purpose: "Courier booking and tracking", env: ["NIMBUSPOST_API_KEY"] },
-  { name: "Delhivery", purpose: "Courier booking, reverse pickup", env: ["DELHIVERY_TOKEN"] },
-  { name: "WhatsApp Cloud API", purpose: "WhatsApp bot and order updates", env: ["WHATSAPP_TOKEN", "WHATSAPP_PHONE_ID"] },
-  { name: "VAPI", purpose: "AI voice calls for leads", env: ["VAPI_API_KEY"] },
-  { name: "Firebase Cloud Messaging", purpose: "App push notifications", env: ["FCM_SERVICE_ACCOUNT"] },
-  { name: "Object storage", purpose: "Invoices, images, payout proofs", env: ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY"] },
-  { name: "Backend API", purpose: "PHP admin API base URL", env: ["ADMIN_API_BASE_URL"] },
-];
-
-function settingsStore() {
-  const s = getStore();
-  if (!s.settings) s.settings = Object.fromEntries(Object.entries(SETTINGS_SECTIONS).map(([k, v]) => [k, { ...v.defaults }]));
-  return s.settings;
+function fail(error) {
+  const message = error instanceof ApiError ? error.message : "The admin API could not save these settings.";
+  const field = error instanceof ApiError ? error.details?.field : undefined;
+  return { ok: false, message, fieldErrors: field ? { [field]: message } : undefined };
 }
 
-const secretStatus = (secrets = []) => secrets.map((x) => ({ ...x, configured: Boolean(process.env[x.env]) }));
-
-export async function getSettings(section) {
-  await mockLatency();
+export async function getSettings(section, user) {
   const def = SETTINGS_SECTIONS[section];
   if (!def) return null;
-  const { check, defaults, ...publicDef } = def;
-  return { ...publicDef, values: { ...settingsStore()[section] }, secrets: secretStatus(def.secrets) };
+  const { secrets: secretDefs, ...publicDef } = def;
+  if (!user?.token) return { ...publicDef, values: {}, secrets: (secretDefs ?? []).map((s) => ({ ...s, env: s.field, configured: false })), error: "Your session has expired. Please log in again." };
+  try {
+    const { data } = await api(`admin/settings/${section}`, { token: user.token });
+    const configured = new Map((data?.secrets ?? []).map((s) => [s.field, s]));
+    return {
+      ...publicDef,
+      values: data?.values ?? {},
+      secrets: (secretDefs ?? []).map((s) => ({ ...s, env: s.field, label: configured.get(s.field)?.label || s.label, configured: Boolean(configured.get(s.field)?.configured) })),
+    };
+  } catch (error) {
+    return { ...publicDef, values: {}, secrets: (secretDefs ?? []).map((s) => ({ ...s, env: s.field, configured: false })), error: error instanceof ApiError ? error.message : "Could not load settings." };
+  }
 }
 
 export async function saveSettings(section, input, rawReason, user) {
   const def = SETTINGS_SECTIONS[section];
   if (!def) return { ok: false, message: "Unknown settings section." };
-  if (!can(user, def.permission, "edit")) return { ok: false, message: "You do not have permission to change these settings." };
+  if (!user?.token) return { ok: false, message: "Your session has expired. Please log in again." };
   const reason = validateReason(rawReason, true);
   if (!reason.ok) return { ok: false, message: reason.error, fieldErrors: { __reason: reason.error } };
-  const result = validateForm(def.fields, input);
-  const extra = result.ok && def.check ? def.check(result.values) : null;
-  if (!result.ok || extra) return { ok: false, message: "Please fix the highlighted fields.", fieldErrors: { ...result.errors, ...extra } };
-
-  await mockLatency(150);
-  const store = settingsStore();
-  const before = store[section];
-  const changed = Object.keys(result.values).filter((k) => String(before[k]) !== String(result.values[k]));
-  if (!changed.length) return { ok: false, message: "Nothing changed." };
-  store[section] = { ...before, ...result.values };
-  appendAudit({
-    actorId: user.id,
-    actor: user.name,
-    module: "Settings",
-    action: `Updated ${def.title} (${changed.join(", ")})`,
-    entity: section,
-    before: Object.fromEntries(changed.map((k) => [k, before[k]])),
-    after: Object.fromEntries(changed.map((k) => [k, result.values[k]])),
-    reason: reason.reason,
-  });
-  return { ok: true, message: `${def.title} saved.` };
+  const checked = validateForm(def.fields, input);
+  if (!checked.ok) return { ok: false, message: "Please fix the highlighted fields.", fieldErrors: checked.errors };
+  const values = { ...checked.values };
+  for (const secret of def.secrets ?? []) {
+    if (!String(values[secret.field] ?? "").trim()) delete values[secret.field];
+  }
+  try {
+    const { data } = await api(`admin/settings/${section}`, { method: "PUT", token: user.token, body: { values, reason: reason.reason } });
+    return { ok: true, message: data?.message || `${def.title} saved.` };
+  } catch (error) {
+    return fail(error);
+  }
 }
 
-export async function getIntegrations() {
-  await mockLatency();
-  return INTEGRATIONS.map((i) => ({ name: i.name, purpose: i.purpose, keys: i.env, configured: i.env.every((k) => Boolean(process.env[k])), partial: i.env.some((k) => Boolean(process.env[k])) && !i.env.every((k) => Boolean(process.env[k])) }));
+export async function getIntegrations(user) {
+  if (!user?.token) return [];
+  try {
+    const { data } = await api("admin/settings/integrations", { token: user.token });
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
-/* --------------------------------------------------------- Expense caps */
-
-export async function getExpenseLimits() {
-  await mockLatency();
-  const s = getStore();
-  return {
-    caps: s.expenseCaps.map((c) => ({ ...c, over: c.actualPercent > c.capPercent })),
-    history: s.auditLog.filter((a) => a.module === "Expense limits").slice(0, 10),
-  };
+export async function getExpenseLimits(user) {
+  if (!user?.token) return { caps: [], history: [] };
+  try {
+    const { data } = await api("admin/finance/expense-limits", { token: user.token });
+    return { caps: data?.caps ?? [], history: data?.history ?? [] };
+  } catch (error) {
+    return { caps: [], history: [], error: error instanceof ApiError ? error.message : "Could not load expense limits." };
+  }
 }
 
 export async function updateExpenseCap(id, rawCap, rawReason, user) {
-  if (!user.role.superAdmin) return { ok: false, message: "Only a full admin can change expense caps." };
-  const s = getStore();
-  const cap = s.expenseCaps.find((c) => c.id === id);
-  if (!cap) return { ok: false, message: "Unknown expense cap." };
-  const value = Number(rawCap);
-  if (!Number.isFinite(value) || value <= 0 || value > 50) return { ok: false, message: "Cap must be between 0.1% and 50% of sales.", fieldErrors: { cap: "Enter 0.1–50." } };
-  const reason = validateReason(rawReason, true);
-  if (!reason.ok) return { ok: false, message: reason.error };
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded === cap.capPercent) return { ok: false, message: "Cap is unchanged." };
-  await mockLatency(150);
-  const before = cap.capPercent;
-  cap.capPercent = rounded;
-  appendAudit({ actorId: user.id, actor: user.name, module: "Expense limits", action: `${cap.label} cap ${before}% → ${rounded}%`, entity: id, before: { capPercent: before }, after: { capPercent: rounded }, reason: reason.reason });
-  return { ok: true, message: `${cap.label} cap set to ${rounded}%.` };
+  if (!user?.token) return { ok: false, message: "Your session has expired. Please log in again." };
+  if (!user.role?.superAdmin) return { ok: false, message: "Only a full admin can change expense caps." };
+  try {
+    const { data } = await api(`admin/finance/expense-limits/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      token: user.token,
+      body: { maxPercent: Number(rawCap), reason: rawReason },
+    });
+    return { ok: true, message: data?.message || "Cap updated." };
+  } catch (error) {
+    return fail(error);
+  }
 }

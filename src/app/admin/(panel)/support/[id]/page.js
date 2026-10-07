@@ -23,7 +23,7 @@ export default async function TicketDetailPage({ params, searchParams }) {
 
   const { user, allowed } = await checkPermission("support");
   if (!allowed) return (<><PageHeader title="Ticket" /><PermissionDenied module="support" /></>);
-  const data = await getTicket(id);
+  const data = await getTicket(id, user);
   if (!data) notFound();
   const t = data.ticket;
   const canEdit = can(user, "support", "edit");

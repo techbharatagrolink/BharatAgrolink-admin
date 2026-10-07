@@ -11,7 +11,7 @@ export const metadata = { title: "Expense Limits" };
 export default async function ExpenseLimitsPage() {
   const { user, allowed } = await checkPermission("finance.expenses");
   if (!allowed) return (<><PageHeader title="Expense Limits" /><PermissionDenied module="finance expenses" /></>);
-  const d = await getExpenseLimits();
+  const d = await getExpenseLimits(user);
   const canEdit = Boolean(user.role.superAdmin);
 
   return (

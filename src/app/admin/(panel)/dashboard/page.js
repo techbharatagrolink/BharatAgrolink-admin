@@ -42,7 +42,7 @@ import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BarChart, DonutChart, HBarList, LineChart } from "@/components/charts/charts";
 import { AlertList, MiniTable } from "@/components/admin/dashboard/range-switch";
 import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters";
@@ -52,6 +52,7 @@ import { cn } from "@/lib/utils";
 export const metadata = { title: "Main Dashboard" };
 
 const inr = (v) => formatINR(v, { compact: true });
+const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
 
 function Grid({ children, className }) {
   return <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
@@ -68,7 +69,9 @@ export default async function MainDashboardPage({ searchParams }) {
     );
   }
   const params = await searchParams;
-  const d = await getMainDashboard(params);
+  const result = await getMainDashboard(params, user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="Main Dashboard" /><ApiUnavailable error={result.error} what="the main dashboard" /></>);
+  const d = result.data;
   const { sales, orders, shipping, marketplace, customers, finance, deltas } = d;
   const showFinance = can(user, "finance") || can(user, "payouts");
   const showOrders = can(user, "orders");
@@ -95,7 +98,7 @@ export default async function MainDashboardPage({ searchParams }) {
         </Grid>
       </DashboardSection>
 
-      <DashboardSection id="orders" index={2} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${orders.rtoRate}%`}>
+      <DashboardSection id="orders" index={2} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
         <Grid>
           <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={showOrders ? "/admin/orders" : undefined} />
           <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint="Accepted by vendors" icon={CheckCircle2} />
@@ -109,7 +112,7 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint="Cancelled sub-orders" icon={Ban} tone="danger" />
           <StatCard label="Cancellation rate" value={`${orders.cancellationRate}%`} hint="Of all sub-orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
           <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint="Returned to origin" icon={RotateCcw} tone="danger" href="/admin/rto" />
-          <StatCard label="RTO rate" value={`${orders.rtoRate}%`} hint="Of shipped sub-orders" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} />
+          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of delivered orders plus RTO, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} />
           <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
           <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" />
           <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} />
@@ -152,7 +155,7 @@ export default async function MainDashboardPage({ searchParams }) {
             <StatCard label="GMV (order value)" value={inr(finance.gmv)} delta={deltas.gmv} hint={vs ?? "Customer-paid order value"} icon={CircleDollarSign} tone="info" />
             <StatCard label="Variable cost" value={inr(finance.variableCost)} hint="Payout + PG + courier + discounts" icon={Layers} tone="warning" />
             <StatCard label="Fixed expenses" value={inr(finance.fixedExpenses)} hint={`${inr(finance.fixedMonthly)} a month, pro-rated`} icon={Building2} tone="neutral" href="/admin/finance/expenses" />
-            <StatCard label="Net profit" value={inr(finance.netProfit)} hint="Contribution − fixed expenses" icon={finance.netProfit >= 0 ? TrendingUp : TrendingDown} tone={finance.netProfit >= 0 ? "brand" : "danger"} />
+            <StatCard label="Net profit" value={inr(finance.netProfit)} hint="Contribution − fixed expenses" icon={finance.netProfit == null || finance.netProfit >= 0 ? TrendingUp : TrendingDown} tone={finance.netProfit == null ? "neutral" : finance.netProfit >= 0 ? "brand" : "danger"} />
           </Grid>
         </DashboardSection>
       )}
