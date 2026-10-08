@@ -1,7 +1,7 @@
 # Production image for the admin panel (deployed on Dokploy, Build Type: Dockerfile).
 #
-# NEXT_PUBLIC_API_URL (or API_URL) is read by next.config.mjs when the /api/v1
-# rewrite is built, so pass it as a build argument as well as a runtime variable.
+# The API address is read at runtime: set NEXT_PUBLIC_API_URL (or API_URL) in
+# Dokploy's Environment. Passing it as a build argument too is optional.
 
 FROM node:22-alpine AS deps
 WORKDIR /app

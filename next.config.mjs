@@ -1,5 +1,3 @@
-const apiUrl = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1").replace(/\/$/, "");
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Self-contained server bundle for the Docker image (see Dockerfile).
@@ -9,9 +7,7 @@ const nextConfig = {
     serverComponentsHmrCache: false,
     staleTimes: { dynamic: 0 },
   },
-  async rewrites() {
-    return [{ source: "/api/v1/:path*", destination: `${apiUrl}/:path*` }];
-  },
+  // Browser calls to /api/v1/* are proxied at runtime by src/app/api/v1/[...path]/route.js.
 };
 
 export default nextConfig;
