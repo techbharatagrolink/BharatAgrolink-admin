@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { can } from "./permissions";
+import { can, pageKey } from "./permissions";
 import { permissionPages } from "@/lib/services/admin/live-catalog";
 
 /**
@@ -27,7 +27,7 @@ function permissionsFrom(pages, superAdmin) {
   const permissions = {};
   for (const [permission, phpPages] of Object.entries(permissionPages())) {
     const actions = new Set();
-    for (const page of phpPages) for (const action of granted[page] || []) actions.add(action);
+    for (const page of phpPages) for (const action of granted[pageKey(page)] || []) actions.add(action);
     if (actions.size) permissions[permission] = [...actions];
   }
   return permissions;
@@ -45,6 +45,7 @@ function toUser(data, token) {
       name: data.superAdmin ? "Super Admin" : data.role?.title || "Staff",
       superAdmin: Boolean(data.superAdmin),
       permissions: permissionsFrom(data.pages, data.superAdmin),
+      pages: data.superAdmin ? {} : data.pages || {},
     },
   };
 }

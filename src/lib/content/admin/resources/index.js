@@ -5,6 +5,7 @@ import { financeResources } from "./finance";
 import { crmResources } from "./crm";
 import { b2bOpsResources } from "./b2b-ops";
 import { adminResources } from "./admin";
+import { parityResources, parityRoutes } from "./parity";
 
 /**
  * Declarative list screens. A resource describes columns, filters, actions and
@@ -19,6 +20,7 @@ export const resources = {
   ...crmResources,
   ...b2bOpsResources,
   ...adminResources,
+  ...parityResources,
 };
 
 /** Admin route → resource key, for routes rendered by the generic page. */
@@ -128,6 +130,7 @@ export const resourceRoutes = {
   "/admin/masters/currency": "masters.currency",
   "/admin/settings/email-templates": "settings.emailTemplates",
   "/admin/settings/languages": "settings.languages",
+  ...parityRoutes,
 };
 
 export function getResource(key) {

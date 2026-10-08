@@ -9,6 +9,8 @@ import { site } from "@/lib/site";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { NavIcon } from "./icons";
 
+const pathOf = (href) => (href || "").split(/[?#]/)[0];
+
 function isActive(pathname, href) {
   if (!href) return false;
   return pathname === href;
@@ -18,12 +20,12 @@ function groupContains(pathname, item) {
   return (item.children || []).some((child) => pathname === child.href || (child.href !== "/admin/dashboard" && pathname.startsWith(`${child.href}/`)));
 }
 
-function activeChildHref(pathname, children) {
+function activeChildKey(pathname, children) {
   const exact = children.find((c) => c.href === pathname);
-  if (exact) return exact.href;
+  if (exact) return exact.key;
   return children
-    .filter((c) => pathname.startsWith(`${c.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+    .filter((c) => pathname.startsWith(`${pathOf(c.href)}/`))
+    .sort((a, b) => pathOf(b.href).length - pathOf(a.href).length)[0]?.key;
 }
 
 function Badge({ value }) {
@@ -107,11 +109,11 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
 
         <nav className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain py-3">
           {navigation.map((section) => (
-            <div key={section.section} className="mb-3">
-              {!compact ? (
-                <p className="px-5 pb-1.5 text-[10.5px] font-semibold tracking-[0.08em] text-nav-muted/80 uppercase">{section.section}</p>
-              ) : (
+            <div key={section.section ?? section.items[0]?.key} className="mb-3">
+              {compact ? (
                 <div className="mx-4 mb-2 border-t border-nav-line" aria-hidden />
+              ) : (
+                section.section && <p className="px-5 pb-1.5 text-[10.5px] font-semibold tracking-[0.08em] text-nav-muted/80 uppercase">{section.section}</p>
               )}
               <ul className="space-y-0.5 px-2.5">
                 {section.items.map((item) => {
@@ -138,7 +140,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                   }
                   const containsActive = groupContains(pathname, item);
                   const open = openKey === item.key;
-                  const activeHref = activeChildHref(pathname, item.children);
+                  const activeKey = activeChildKey(pathname, item.children);
                   const groupBadge = item.children.reduce((sum, c) => sum + (c.badge ? badges[c.badge] || 0 : 0), 0);
                   return (
                     <li key={item.key}>
@@ -176,7 +178,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                           <div className="min-h-0 overflow-hidden">
                             <ul id={`nav-${item.key}`} className="mt-0.5 mb-1 ml-[21px] space-y-0.5 border-l border-white/15 pl-3">
                               {item.children.map((child) => {
-                                const active = child.href === activeHref;
+                                const active = child.key === activeKey;
                                 return (
                                   <li key={child.key}>
                                     <Link

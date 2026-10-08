@@ -17,16 +17,34 @@ export function can(user, permission, action = "view") {
   return Array.isArray(granted) && granted.includes(action);
 }
 
+/** PHP grant key for an admin_menus link: its file name with query or #anchor, as the API's pageKey. */
+export function pageKey(link) {
+  const value = String(link ?? "").trim();
+  if (value.startsWith("#dashboard_")) return "dashboard.php";
+  return value.split("/").pop();
+}
+
+/** Whether the role grants `action` on a PHP menu link (header.php's rule for showing a menu item). */
+export function canPage(user, page, action = "view") {
+  if (!user || !user.role) return false;
+  if (user.role.superAdmin) return true;
+  const granted = user.role.pages?.[pageKey(page)];
+  return Array.isArray(granted) && granted.includes(action);
+}
+
+function showLeaf(user, leaf) {
+  if (leaf.page) return canPage(user, leaf.page, "view") && (!leaf.action || canPage(user, leaf.page, leaf.action));
+  return can(user, leaf.permission, "view") && (!leaf.action || can(user, leaf.permission, leaf.action));
+}
+
 export function filterNavigation(tree, user) {
   return tree
     .map((section) => ({
       ...section,
       items: section.items
         .map((item) => {
-          if (!item.children) return can(user, item.permission) ? item : null;
-          const children = item.children.filter(
-            (child) => can(user, child.permission, "view") && (!child.action || can(user, child.permission, child.action)),
-          );
+          if (!item.children) return showLeaf(user, item) ? item : null;
+          const children = item.children.filter((child) => showLeaf(user, child));
           return children.length ? { ...item, children } : null;
         })
         .filter(Boolean),
@@ -47,6 +65,7 @@ export function toClientUser(user) {
       name: user.role.name,
       superAdmin: Boolean(user.role.superAdmin),
       permissions: user.role.permissions || {},
+      pages: user.role.pages || {},
     },
   };
 }

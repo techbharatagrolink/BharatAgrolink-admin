@@ -27,14 +27,22 @@ export default async function ProfitLossPage({ searchParams }) {
         description="Platform revenue against operating costs for delivered orders. Calculated on the server."
         actions={<RangeSwitch pathname="/admin/finance" ranges={RANGES} active={d.period.value} />}
       />
-      <StatGrid>
-        <StatCard label="Delivered GMV" value={formatINR(d.gmv, { compact: true })} tone="neutral" />
-        <StatCard label="Platform revenue" value={formatINR(d.revenue, { compact: true })} hint="Commission + shipping income" />
-        <StatCard label="Operating costs" value={formatINR(d.costs, { compact: true })} tone="warning" />
-        <StatCard label="Net contribution" value={formatINR(d.net, { compact: true })} hint={`${d.marginPct}% of GMV`} tone={d.net >= 0 ? "brand" : "danger"} />
-      </StatGrid>
+      <div id="gmv_booked" className="scroll-mt-24">
+        <StatGrid>
+          <div id="gmv_delivered" className="scroll-mt-24">
+            <StatCard label="Delivered GMV" value={formatINR(d.gmv, { compact: true })} tone="neutral" className="h-full" />
+          </div>
+          <div id="platform_revenue" className="scroll-mt-24">
+            <StatCard label="Platform revenue" value={formatINR(d.revenue, { compact: true })} hint="Commission + shipping income" className="h-full" />
+          </div>
+          <StatCard label="Operating costs" value={formatINR(d.costs, { compact: true })} tone="warning" />
+          <div id="net_profit" className="scroll-mt-24">
+            <StatCard label="Net contribution" value={formatINR(d.net, { compact: true })} hint={`${d.marginPct}% of GMV`} tone={d.net >= 0 ? "brand" : "danger"} className="h-full" />
+          </div>
+        </StatGrid>
+      </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+        <Card id="cm_margin" className="scroll-mt-24 xl:col-span-2">
           <CardHeader title={`Statement · ${d.period.label}`} />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
