@@ -4,7 +4,7 @@ import { nrvPricing, listingEconomics, stockStatus } from "@/lib/mock/admin/engi
 import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
-import { api, ApiError } from "@/lib/api";
+import { api, apiForm, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
 
 function liveError(error, fallback) {
@@ -177,6 +177,67 @@ function applyPricing(product, pricing) {
     verdict: pricing.economics.prepaid.verdict,
     updatedAt: new Date().toISOString(),
   });
+}
+
+export async function getProductOptions(user) {
+  if (!user?.token) return { brands: [], categories: [], returnPolicyOptions: [] };
+  try {
+    const { data } = await api("admin/products/options", { token: user.token });
+    return data;
+  } catch {
+    return { brands: [], categories: [], returnPolicyOptions: [] };
+  }
+}
+
+export async function saveProduct(id, body, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await api(`admin/products/${encodeURIComponent(id)}`, { method: "PATCH", token: user.token, body });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not update the product.");
+  }
+}
+
+export async function uploadProductImages(id, formData, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await apiForm(`admin/products/${encodeURIComponent(id)}/images`, { token: user.token, formData });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not upload the images.");
+  }
+}
+
+export async function removeProductImage(id, url, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await api(`admin/products/${encodeURIComponent(id)}/images`, { method: "DELETE", token: user.token, body: { url } });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not remove the image.");
+  }
+}
+
+export async function saveProductVariation(id, body, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const path = body.id ? `admin/products/${encodeURIComponent(id)}/variations/${body.id}` : `admin/products/${encodeURIComponent(id)}/variations`;
+    const { data } = await api(path, { method: body.id ? "PATCH" : "POST", token: user.token, body });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not save the variation.");
+  }
+}
+
+export async function deleteProductVariation(id, variationId, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await api(`admin/products/${encodeURIComponent(id)}/variations/${variationId}`, { method: "DELETE", token: user.token });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not delete the variation.");
+  }
 }
 
 export async function updateProductPricing(id, input, rawReason, user) {

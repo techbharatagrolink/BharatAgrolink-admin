@@ -77,6 +77,34 @@ export async function api(path, { token, method = "GET", body, query, signal } =
   return { data: payload?.data, meta: payload?.meta ?? null };
 }
 
+/** Multipart upload. Do not set Content-Type; the browser sets the boundary. */
+export async function apiForm(path, { token, method = "POST", formData }) {
+  const response = await fetch(resolveUrl(path), {
+    method,
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  const text = await response.text();
+  let payload = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = null;
+  }
+  if (!response.ok || payload?.success === false) {
+    throw new ApiError(payload?.message || `Request failed (${response.status})`, {
+      code: payload?.code,
+      status: response.status,
+      details: payload?.details,
+    });
+  }
+  return { data: payload?.data, meta: payload?.meta ?? null };
+}
+
 export async function apiDownload(path, { token, query } = {}) {
   const response = await fetch(resolveUrl(path, query), {
     cache: "no-store",

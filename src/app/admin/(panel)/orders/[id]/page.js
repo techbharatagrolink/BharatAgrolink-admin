@@ -3,16 +3,16 @@ import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { getOrder } from "@/lib/services/admin/orders";
-import { formatDate, formatDateTime, formatINR, maskMobile } from "@/lib/format";
+import { formatDateTime, formatINR, maskMobile } from "@/lib/format";
 import { DescriptionList, PageHeader, Timeline } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { PermissionDenied } from "@/components/ui/states";
-import { LineStatusControl } from "@/components/admin/orders/line-status-control";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
 import { canShip, orderShipments } from "@/lib/services/admin/shipping";
 import { OrderShipmentsPanel } from "@/components/admin/shipping/order-shipments-panel";
+import { OrderDesk } from "@/components/admin/orders/order-desk";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -31,7 +31,6 @@ export default async function OrderDetailPage({ params, searchParams }) {
   if (!data) notFound();
   const shipments = canShip(user) && user?.token ? await orderShipments(id, user) : null;
   const { order, customer, groups, totals } = data;
-  const showFinance = can(user, "finance") || can(user, "payouts");
 
   return (
     <>
@@ -49,93 +48,15 @@ export default async function OrderDetailPage({ params, searchParams }) {
         actions={<ButtonLink href="/admin/orders" variant="secondary" size="sm">Back to orders</ButtonLink>}
       />
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <div className="min-w-0 space-y-4 xl:col-span-2">
-          {groups.map((g) => (
-            <Card key={g.vendorId}>
-              <CardHeader
-                title={g.vendor}
-                description={g.sellerInvoice ? `Seller invoice ${g.sellerInvoice}` : "Seller invoice is generated when the vendor accepts"}
-                actions={<Link href={`/admin/vendors/${g.vendorId}`} className="text-[13px] font-medium text-brand-700 hover:underline">Vendor profile</Link>}
-              />
-              <ul className="divide-y divide-line">
-                {g.lines.map((l) => (
-                  <li key={l.id} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <Link href={`/admin/products/${l.productId}`} className="text-sm font-medium text-ink hover:text-brand-700 hover:underline">{l.productName}</Link>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        SKU {l.sku} · Qty {l.qty} · GST {l.gstPercent}%{l.courier ? ` · ${l.courier}` : ""}
-                        {l.awb && (
-                          <>
-                            {" · AWB "}
-                            {l.trackingUrl ? (
-                              <a href={l.trackingUrl} target="_blank" rel="noreferrer" className="font-mono text-brand-700 hover:underline">{l.awb}</a>
-                            ) : (
-                              <span className="font-mono">{l.awb}</span>
-                            )}
-                          </>
-                        )}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <StatusBadge status={l.status} />
-                        {l.returnLastDate && <span className="text-xs text-ink-muted">Return window till {formatDate(l.returnLastDate)}</span>}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
-                      <span className="text-sm font-semibold text-ink tabular">{formatINR(l.price)}</span>
-                      <LineStatusControl orderId={order.id} lineId={l.id} transitions={l.transitions} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))}
+      <OrderDesk
+        order={order}
+        groups={groups}
+        totals={totals}
+        editor={data.editor}
+        canEdit={can(user, "orders", "edit") && Boolean(data.editor)}
+      />
 
-          <Card>
-            <CardHeader title="Payment summary" description="GST is inclusive in the selling price" />
-            <CardBody>
-              <dl className="space-y-1.5 text-sm">
-                {[
-                  ["Items subtotal", order.subtotal],
-                  ["Shipping", order.shippingFee],
-                  ["COD handling", order.handling],
-                  ["Discount", -order.discount],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4">
-                    <dt className="text-ink-muted">{k}</dt>
-                    <dd className="text-ink tabular">{formatINR(v)}</dd>
-                  </div>
-                ))}
-                <div className="flex justify-between gap-4 border-t border-line pt-2 font-semibold">
-                  <dt>Order total</dt>
-                  <dd className="tabular">{formatINR(order.total)}</dd>
-                </div>
-                {order.advance > 0 && (
-                  <div className="flex justify-between gap-4 text-ink-soft">
-                    <dt>Advance paid online (partial COD)</dt>
-                    <dd className="tabular">{formatINR(order.advance)}</dd>
-                  </div>
-                )}
-              </dl>
-              <DescriptionList
-                className="mt-4 border-t border-line pt-4"
-                columns={3}
-                items={[
-                  { label: "Taxable value", value: formatINR(totals.taxable) },
-                  { label: "CGST + SGST", value: formatINR(totals.cgst + totals.sgst) },
-                  { label: "IGST", value: formatINR(totals.igst) },
-                  { label: "TCS (1%)", value: formatINR(totals.tcs) },
-                  showFinance && { label: "NRV (seller)", value: formatINR(totals.nrv) },
-                  showFinance && { label: "Commission", value: formatINR(totals.commission) },
-                  { label: "Platform invoice", value: order.platformInvoice ?? "—" },
-                  { label: "Payment ID", value: order.paymentId ?? "—" },
-                  { label: "Salesman", value: order.salesman ?? "—" },
-                ]}
-              />
-            </CardBody>
-          </Card>
-        </div>
-
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 space-y-4">
           <Card>
             <CardHeader title="Customer" actions={customer && can(user, "customers") ? <Link href={`/admin/customers/${customer.id}`} className="text-[13px] font-medium text-brand-700 hover:underline">Profile</Link> : null} />

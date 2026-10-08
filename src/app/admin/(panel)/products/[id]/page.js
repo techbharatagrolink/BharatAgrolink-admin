@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { getProduct } from "@/lib/services/admin/products";
+import { getProduct, getProductOptions } from "@/lib/services/admin/products";
+import { ProductEditor } from "@/components/admin/products/product-editor";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { DescriptionList, Notice, PageHeader, StatCard, StatGrid, Timeline } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -100,6 +101,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
   if (!allowed) return (<><PageHeader title="Product details" /><PermissionDenied module="products" /></>);
   const data = await getProduct(id, user);
   if (!data) notFound();
+  const options = can(user, "products", "edit") ? await getProductOptions(user) : null;
   const { product: p, vendor, pricing, sales } = data;
   const canEdit = can(user, "products", "edit");
   const canApprove = can(user, "products.approval", "edit");
@@ -107,6 +109,10 @@ export default async function ProductDetailPage({ params, searchParams }) {
     ...(canApprove && [0, 2].includes(p.statusCode) ? ["approve", "reject"] : []),
     ...(canEdit && p.statusCode === 1 ? ["deactivate"] : []),
   ];
+
+  if (canEdit && options) {
+    return <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} />;
+  }
 
   return (
     <>
@@ -147,7 +153,16 @@ export default async function ProductDetailPage({ params, searchParams }) {
               )}
             </CardBody>
           </Card>
-          <VariationsCard product={p} />
+          {canEdit && options ? (
+            <Card>
+              <CardHeader title="Edit product" description="The same catalog fields as the PHP product editor. Images upload to Cloudflare R2." />
+              <CardBody>
+                <ProductEditor product={p} options={options} />
+              </CardBody>
+            </Card>
+          ) : (
+            <VariationsCard product={p} />
+          )}
         </div>
         <div className="min-w-0 space-y-4">
           <Card>

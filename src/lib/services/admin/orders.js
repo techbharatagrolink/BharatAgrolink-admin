@@ -69,6 +69,20 @@ function adaptOrder(data, user) {
       status: item.status,
       returnLastDate: null,
       price: item.lineTotal,
+      unitPrice: item.price,
+      sellingPrice: item.sellingPrice ?? item.price,
+      vendorNrv: item.vendorNrv?.unit ?? 0,
+      vendorNrvTotal: item.vendorNrv?.total ?? 0,
+      deliveryDate: item.deliveryDate || "",
+      invoice: item.invoiceNumber || "",
+      image: item.image || "",
+      cgst: item.tax?.cgst ?? 0,
+      sgst: item.tax?.sgst ?? 0,
+      igst: item.tax?.igst ?? 0,
+      taxable: item.tax?.taxable ?? 0,
+      pickupType: item.pickupType || "",
+      box: item.packedBox || { weight: "", length: "", width: "", height: "" },
+      sellerId: item.seller?.id || "",
       transitions: canEdit ? QUICK_STATUSES.filter((status) => status !== item.status).map((status) => ({ status, requireReason: status === "Cancelled" || status === "Rejected" })) : [],
     });
   }
@@ -89,6 +103,9 @@ function adaptOrder(data, user) {
       discount: (data.totals?.orderDiscount || 0) + (data.totals?.couponValue || 0) + (data.totals?.productDiscount || 0),
       total: data.totals?.orderTotal ?? 0,
       advance: data.payment?.advanceAmount || 0,
+      partial: Boolean(data.payment?.isPartial),
+      walletUsed: data.payment?.walletUsed || 0,
+      couponValue: data.totals?.couponValue || 0,
       platformInvoice: data.invoices?.[0]?.invoiceNumber || "",
       paymentId: data.payment?.paymentId || "",
       salesman: data.salesAgent?.name || "",
@@ -108,6 +125,26 @@ function adaptOrder(data, user) {
       tcs: 0,
       nrv: 0,
       commission: 0,
+    },
+    editor: {
+      address: {
+        name: data.address?.name || "",
+        mobile: data.address?.mobile || "",
+        alternateMobile: data.address?.alternateMobile || "",
+        email: data.address?.email || "",
+        address: data.address?.address || "",
+        area: data.address?.area || "",
+        city: data.address?.city || "",
+        state: data.address?.state || "",
+        country: data.address?.country || "India",
+        pincode: data.address?.pincode || "",
+        type: data.address?.type || "",
+      },
+      payment: {
+        mode: String(data.payment?.mode || "cod").toLowerCase(),
+        paymentId: data.payment?.paymentId || "",
+        advanceAmount: data.payment?.advanceAmount || 0,
+      },
     },
     returns: [],
     refunds: [],
@@ -182,6 +219,36 @@ export async function getOrder(id, user) {
 
 function round2(n) {
   return Math.round(n * 100) / 100;
+}
+
+async function putOrder(path, body, user, fallback) {
+  if (!can(user, "orders", "edit")) return { ok: false, message: "You do not have permission to edit this order." };
+  try {
+    const { data } = await api(path, { method: "PUT", token: user.token, body });
+    return { ok: true, message: data?.message || "Saved.", ...data };
+  } catch (error) {
+    return { ok: false, message: error instanceof ApiError ? error.message : fallback };
+  }
+}
+
+export async function updateOrderAddress(orderId, body, user) {
+  return putOrder(`admin/orders/${encodeURIComponent(orderId)}/address`, body, user, "Could not update the address.");
+}
+
+export async function updateOrderPayment(orderId, body, user) {
+  return putOrder(`admin/orders/${encodeURIComponent(orderId)}/payment`, body, user, "Could not update the payment.");
+}
+
+export async function updateOrderAwb(orderId, body, user) {
+  return putOrder(`admin/orders/${encodeURIComponent(orderId)}/awb`, body, user, "Could not save the AWB.");
+}
+
+export async function updateLineShipping(orderId, lineId, body, user) {
+  return putOrder(`admin/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(lineId)}/shipping`, body, user, "Could not update shipping.");
+}
+
+export async function updateLineBox(orderId, lineId, body, user) {
+  return putOrder(`admin/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(lineId)}/box`, body, user, "Could not update the box.");
 }
 
 export async function changeLineStatus({ orderId, lineId, status, reason }, user) {

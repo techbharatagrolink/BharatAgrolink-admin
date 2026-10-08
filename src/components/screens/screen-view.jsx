@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useApi } from "@/components/auth-provider";
 import { errorMessage } from "@/lib/format";
 
@@ -42,7 +41,6 @@ function columnsOf(rows) {
       const value = row[key];
       if (value && typeof value === "object") continue;
       keys.push(key);
-      if (keys.length === 8) return keys;
     }
   }
   return keys.length ? keys : ["value"];
@@ -97,27 +95,29 @@ function RecordTable({ rows }) {
   if (!rows.length) return <p className="text-sm text-muted-foreground">No records.</p>;
   const columns = columnsOf(rows);
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
+    <div className="max-h-[70vh] overflow-auto rounded-xl border border-line">
+      <table className="w-max min-w-full border-collapse text-left text-sm">
+        <thead>
+          <tr>
             {columns.map((column) => (
-              <TableHead key={column}>{labelOf(column)}</TableHead>
+              <th key={column} className="sticky top-0 z-10 whitespace-nowrap border-b bg-surface px-3 py-2 text-left text-xs font-semibold text-ink-muted">
+                {labelOf(column)}
+              </th>
             ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+          </tr>
+        </thead>
+        <tbody>
           {rows.map((row, index) => (
-            <TableRow key={row.id ?? row.review_id ?? row.session_id ?? index}>
+            <tr key={row.id ?? row.review_id ?? row.session_id ?? index} className="border-b last:border-0 hover:bg-surface-muted">
               {columns.map((column) => (
-                <TableCell key={column} className="max-w-[220px] truncate">
+                <td key={column} className="max-w-64 truncate whitespace-nowrap px-3 py-2" title={cell(row?.[column])}>
                   {cell(row?.[column])}
-                </TableCell>
+                </td>
               ))}
-            </TableRow>
+            </tr>
           ))}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -158,7 +158,6 @@ export function ScreenView({ screen }) {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold">{screen.title}</h1>
-          <p className="text-xs text-muted-foreground">{screen.php}</p>
         </div>
         {screen.kind === "list" ? (
           <form

@@ -234,16 +234,16 @@ export function DataTable({
             </span>
           </div>
         )}
-        <div className={cn("hidden overflow-x-auto scrollbar-thin md:block", pending && "opacity-55")}>
-          <table className="w-full min-w-max border-collapse text-left text-[13px]">
+        <div className={cn("hidden max-h-[70vh] overflow-auto scrollbar-thin md:block", pending && "opacity-55")}>
+          <table className="w-full min-w-max border-separate border-spacing-0 text-left text-[13px]">
             <thead>
-              <tr className="border-b border-line bg-surface-muted">
+              <tr>
                 {showSelection && (
-                  <th scope="col" className="w-10 px-3 py-2.5">
+                  <th scope="col" className="sticky top-0 z-10 w-10 border-b border-line bg-surface-muted px-3 py-2.5">
                     <Checkbox aria-label="Select all rows on this page" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? [...new Set([...selected, ...pageIds])] : selected.filter((sid) => !pageIds.includes(sid)))} />
                   </th>
                 )}
-                {visible.map((column) => {
+                {visible.map((column, index) => {
                   const active = sortField === column.key;
                   const SortIcon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
                   return (
@@ -251,7 +251,7 @@ export function DataTable({
                       key={column.key}
                       scope="col"
                       aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                      className={cn("px-3 py-2.5 text-xs font-semibold whitespace-nowrap text-ink-muted", ["currency", "number", "percent"].includes(column.type) && "text-right", column.align === "right" && "text-right")}
+                      className={cn("sticky top-0 z-10 border-b border-line bg-surface-muted px-3 py-2.5 text-xs font-semibold whitespace-nowrap text-ink-muted", index === 0 && "left-0 z-20", ["currency", "number", "percent"].includes(column.type) && "text-right", column.align === "right" && "text-right")}
                       style={column.width ? { width: column.width, maxWidth: column.width } : undefined}
                     >
                       {column.sortable ? (
@@ -266,7 +266,7 @@ export function DataTable({
                   );
                 })}
                 {hasRowActions && (
-                  <th scope="col" className="w-12 px-3 py-2.5">
+                  <th scope="col" className="sticky top-0 z-10 w-12 border-b border-line bg-surface-muted px-3 py-2.5">
                     <span className="sr-only">Actions</span>
                   </th>
                 )}
@@ -280,14 +280,14 @@ export function DataTable({
                 return (
                   <tr key={key} className={cn("border-b border-line last:border-0 hover:bg-surface-muted", selected.includes(key) && "bg-brand-50/60")}>
                     {showSelection && (
-                      <td className="px-3 py-2">
+                      <td className="border-b border-line px-3 py-2">
                         <Checkbox aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                       </td>
                     )}
                     {visible.map((column, ci) => (
                       <td
                         key={column.key}
-                        className={cn("px-3 align-middle text-ink-soft", dense ? "py-2" : "py-3", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
+                        className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
                         style={{ maxWidth: column.width || 320 }}
                       >
                         {ci === 0 && href && !column.href ? (
@@ -300,7 +300,7 @@ export function DataTable({
                         )}
                       </td>
                     ))}
-                    {hasRowActions && <td className="px-3 py-2 text-right">{actionsMenu(key, actions)}</td>}
+                    {hasRowActions && <td className="border-b border-line px-3 py-2 text-right">{actionsMenu(key, actions)}</td>}
                   </tr>
                 );
               })}
