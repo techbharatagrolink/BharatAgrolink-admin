@@ -10,6 +10,7 @@ export const reportGroups = [
     reports: [
       { key: "orders", title: "Order report", description: "Orders with customer, payment mode, channel and status.", href: "/admin/orders", permission: "orders" },
       { key: "transactions", title: "Date-wise transactions", description: "Line-level taxable value, GST split, TCS and commission by date.", href: "/admin/orders/transactions", permission: "orders.transactions" },
+      { key: "order-report", title: "Delivered order report", description: "Every delivered line with tax, commission, NRV, BSA, service charge and manual overrides.", href: "/admin/orders/report", permission: "orders.transactions" },
       { key: "invoices", title: "Invoice register", description: "Seller and platform invoices for GST filing.", href: "/admin/orders/invoices", permission: "orders.invoices" },
       { key: "returns", title: "Returns report", description: "Return requests with reason, refund amount and status.", href: "/admin/returns", permission: "returns" },
       { key: "rto", title: "RTO report", description: "RTO shipments with forward and reverse cost.", href: "/admin/rto", permission: "rto" },

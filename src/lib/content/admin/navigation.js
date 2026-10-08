@@ -196,6 +196,7 @@ export const navigation = [
           { key: "orders-new", label: "Create Order", href: "/admin/orders/new", page: "create_order.php", permission: "orders", action: "add" },
           { key: "orders-invoices", label: "Invoices", href: "/admin/orders/invoices", permission: "orders.invoices" },
           { key: "orders-transactions", label: "Date-wise Transactions", href: "/admin/orders/transactions", permission: "orders.transactions" },
+          { key: "orders-report", label: "Order Reports", href: "/admin/orders/report", page: "orders_report.php", permission: "orders.transactions" },
           { key: "orders-sr-checkout", label: "Shiprocket Checkout", href: "/admin/orders/sr-checkout", permission: "orders.srCheckout" },
         ],
       },

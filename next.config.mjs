@@ -2,6 +2,8 @@ const apiUrl = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http:
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-contained server bundle for the Docker image (see Dockerfile).
+  output: "standalone",
   reactCompiler: true,
   experimental: {
     serverComponentsHmrCache: false,
