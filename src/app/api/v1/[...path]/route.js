@@ -32,8 +32,13 @@ async function proxy(request, { params }) {
       cache: "no-store",
     });
   } catch (error) {
-    console.error(`[api proxy] ${request.method} ${url} failed:`, error?.cause?.code || error?.message);
-    return Response.json({ success: false, code: "API_UNREACHABLE", message: "The admin API is not reachable. Please try again shortly." }, { status: 502 });
+    const reason = error?.cause?.code || error?.cause?.message || error?.message || "unknown";
+    console.error(`[api proxy] ${request.method} ${url} failed:`, reason);
+    // 503, not 502: Cloudflare replaces origin 502 responses with its own page and hides this message.
+    return Response.json(
+      { success: false, code: "API_UNREACHABLE", message: "The admin API is not reachable. Please try again shortly.", detail: { target: new URL(url).origin, reason } },
+      { status: 503 }
+    );
   }
 
   const out = new Headers(upstream.headers);

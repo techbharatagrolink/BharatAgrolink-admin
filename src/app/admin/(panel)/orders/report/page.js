@@ -9,8 +9,8 @@ import { OrderReportTable } from "@/components/admin/orders/order-report-table";
 
 export const metadata = { title: "Order Reports" };
 
-const TITLE = "Order Reports";
-const DESCRIPTION = "Delivered B2C and B2B lines with tax, commission, NRV, BSA and service charge. Blank override fields clear a manual value.";
+const TITLE = "Finance Report — Delivered Orders";
+const DESCRIPTION = "Financial analysis based on delivered items only. Blank override fields clear a manual value.";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const SIZES = new Set(["25", "50", "100", "200"]);
@@ -36,12 +36,12 @@ export default async function OrderReportPage({ searchParams }) {
   if (result.error) return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={result.error} what="the order report" /></>);
   const { summary } = result.report;
   const fields = [
-    { name: "orderId", label: "Order ID", type: "search", placeholder: "Order ID" },
-    { name: "vendorId", label: "Vendor", type: "select", placeholder: "All vendors", options: result.vendors },
+    { name: "orderId", label: "Order ID", type: "search", placeholder: "Search Order ID" },
     { name: "from", label: "From", type: "date" },
     { name: "to", label: "To", type: "date" },
+    { name: "cycle", label: "Cycle", type: "select", placeholder: "All cycles", options: [{ value: "first", label: "First cycle (1–15)" }, { value: "second", label: "Second cycle (16–31)" }] },
     { name: "month", label: "Month", type: "month" },
-    { name: "cycle", label: "Cycle", type: "select", placeholder: "Full month", options: [{ value: "first", label: "1–15" }, { value: "second", label: "16–end" }] },
+    { name: "vendorId", label: "Vendor", type: "select", placeholder: "All vendors", options: result.vendors },
     { name: "pageSize", label: "Per page", type: "select", options: ["25", "50", "100", "200"].map((value) => ({ value, label: value })), defaultValue: "50" },
   ];
 
@@ -49,19 +49,22 @@ export default async function OrderReportPage({ searchParams }) {
     <>
       <PageHeader title={TITLE} description={DESCRIPTION} />
       <div className="space-y-4">
-        <StatGrid className="xl:grid-cols-6">
-          <StatCard label="Orders" value={formatNumber(summary.orders)} />
-          <StatCard label="Quantity" value={formatNumber(summary.qty)} />
-          <StatCard label="Vendors" value={formatNumber(summary.vendors)} />
-          <StatCard label="Gross" value={formatINR(summary.gross)} />
-          <StatCard label="Taxable" value={formatINR(summary.taxable)} />
-          <StatCard label="GST" value={formatINR(summary.gst)} hint={`CGST ${formatINR(summary.cgst)} · SGST ${formatINR(summary.sgst)} · IGST ${formatINR(summary.igst)}`} />
-          <StatCard label="TCS" value={formatINR(summary.tcs)} />
-          <StatCard label="Shipping" value={formatINR(summary.shipping)} />
-          <StatCard label="BSA" value={formatINR(summary.bsa)} />
-          <StatCard label="Service excl. GST" value={formatINR(summary.serviceExcl)} />
-          <StatCard label="Service GST" value={formatINR(summary.serviceGst)} />
-          <StatCard label="Service incl. GST" value={formatINR(summary.serviceIncl)} />
+        <StatGrid className="xl:grid-cols-5">
+          <StatCard label="Total Delivered Orders" value={formatNumber(summary.orders)} tone="info" />
+          <StatCard label="Total Revenue" value={formatINR(summary.gross)} />
+          <StatCard label="Total Products Sold" value={formatNumber(summary.qty)} tone="info" />
+          <StatCard label="Total Vendors" value={formatNumber(summary.vendors)} tone="warning" />
+          <StatCard label="Total Exclusive GST Amount" value={formatINR(summary.taxable)} />
+          <StatCard label="Total GST" value={formatINR(summary.gst)} hint="CGST + SGST + IGST" />
+          <StatCard label="CGST" value={formatINR(summary.cgst)} hint="Central GST" />
+          <StatCard label="SGST" value={formatINR(summary.sgst)} hint="State GST" />
+          <StatCard label="IGST" value={formatINR(summary.igst)} tone="info" hint="Integrated GST" />
+          <StatCard label="TCS" value={formatINR(summary.tcs)} tone="warning" hint="Tax collected" />
+          <StatCard label="Total BSA" value={formatINR(summary.bsa)} hint="Vendor settlement base" />
+          <StatCard label="Service Charge (Excl. GST)" value={formatINR(summary.serviceExcl)} hint="(Order − BSA − TCS) ÷ 1.18" />
+          <StatCard label="Service GST (18%)" value={formatINR(summary.serviceGst)} tone="info" hint="GST on service charge" />
+          <StatCard label="Service Charge (Incl. GST)" value={formatINR(summary.serviceIncl)} hint="Excl. GST + service GST" />
+          <StatCard label="Total Shipping" value={formatINR(summary.shipping)} tone="info" hint="Shipping charges (Shiprocket)" />
         </StatGrid>
         <QueryFilters fields={fields} />
         <OrderReportTable report={result.report} filters={filters} canEdit={can(user, "orders.transactions", "edit")} />

@@ -14,22 +14,29 @@ const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "
 const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct"]);
 
 const COLUMNS = [
-  ["sr", "Sr"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer"], ["customerState", "Customer State"],
-  ["invoice", "Invoice"], ["awb", "AWB"], ["productId", "Product ID"], ["product", "Product"], ["sku", "SKU"],
-  ["paymentGateway", "Payment Gateway"], ["vendor", "Vendor"], ["vendorState", "Vendor State"], ["vendorGst", "GSTIN"],
-  ["vendorGstState", "GST State"], ["courier", "Courier"], ["deliveryCharge", "Delivery Charge"], ["qty", "Qty"],
-  ["price", "Display Price"], ["taxable", "Taxable"], ["discount", "Discount"], ["advance", "Advance"], ["codShipping", "COD Shipping"],
-  ["commissionPct", "Commission %"], ["commission", "Commission"], ["gstOnCommission", "GST on Commission"],
-  ["adPct", "Ad %"], ["adAmount", "Ad Expense"], ["officePct", "Office %"], ["officeAmount", "Office Expense"],
-  ["profitPct", "Profit %"], ["profitAmount", "Profit"], ["otherCharges", "Other Charges"], ["gstOther", "GST on Other"],
-  ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross"], ["unitNrv", "Unit NRV"], ["totalNrv", "Total NRV"],
-  ["bsa", "BSA"], ["serviceExcl", "Service excl. GST"], ["serviceGst", "Service GST"], ["serviceIncl", "Service incl. GST"],
-  ["status", "Status"], ["paymentStatus", "Payment"], ["paymentMode", "Mode"], ["createdAt", "Created"], ["deliveredAt", "Delivered"],
+  ["sr", "Sr No"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer Name"], ["customerState", "Customer State"],
+  ["invoice", "Invoice ID"], ["awb", "AWB No"], ["productId", "Product ID"], ["product", "Product Name"], ["sku", "SKU"],
+  ["paymentGateway", "Payment Gateway"], ["manageHref", "Order Manage"], ["customerInvoiceHref", "Customer Invoice"], ["vendorInvoiceHref", "Vendor Invoice"],
+  ["vendor", "Vendor Name"], ["vendorState", "Vendor State"], ["vendorGst", "Vendor GST Number"], ["vendorGstState", "Vendor GST State Code"],
+  ["courier", "Delivery Service"], ["deliveryCharge", "Delivery Service Charges"], ["qty", "Quantity (QTY)"], ["price", "Product Price (Display Price)"],
+  ["taxable", "Taxable Amount (S.P.)"], ["discount", "Discount"], ["advance", "Advance Payment"], ["codShipping", "COD Shipping Charges"],
+  ["commissionPct", "Commission %"], ["commission", "Commission Amount"], ["gstOnCommission", "GST on Commission"],
+  ["adPct", "Ad Expense %"], ["adAmount", "Ad Expense Amount"], ["officePct", "Office Expense %"], ["officeAmount", "Office Expense Amount"],
+  ["profitPct", "Profit %"], ["profitAmount", "Profit Amount"], ["otherCharges", "Other Charges"], ["gstOther", "GST on Other Charges"],
+  ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross Amount"], ["unitNrv", "Single Qty NRV"], ["totalNrv", "Total NRV"],
+  ["bsa", "BSA"], ["serviceExcl", "Service Charge (Excl. GST)"], ["serviceGst", "Service GST (18%)"], ["serviceIncl", "Service Charge (Incl. GST)"],
+  ["status", "Status"], ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
 ];
 
 function cell(row, key) {
   const value = row[key];
-  if (key === "orderId") return <a href={`/admin/orders/${row.orderId}`} className="font-medium text-brand-700 hover:underline">{value}</a>;
+  if (key === "manageHref" || key === "customerInvoiceHref" || key === "vendorInvoiceHref") {
+    if (!value) return "—";
+    const label = key === "manageHref" ? "Open" : "Invoice";
+    return <a href={value} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">{label}</a>;
+  }
+  if (key === "orderId") return <a href={row.manageHref || `/admin/orders/${row.orderId}`} className="font-medium text-brand-700 hover:underline">{value}</a>;
+  if (key === "product") return <span className="block max-w-64 truncate" title={value}>{value || "—"}</span>;
   if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
   if (key === "status" || key === "paymentStatus") return <Badge tone={value === "Paid" || value === "Delivered" ? "success" : "warning"}>{value}</Badge>;
   if (MONEY.has(key)) return value == null ? "—" : formatINR(value);
@@ -96,29 +103,39 @@ export function OrderReportTable({ report, filters, canEdit }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <p className="text-sm text-ink-muted">{formatNumber(total)} delivered lines</p>
-        <Button size="sm" onClick={exportCsv} loading={exporting}>Export CSV</Button>
+      <div className="border-b border-danger-ink/20 bg-danger-bg px-4 py-2.5 text-sm font-medium text-danger-ink">
+        Please note that the Order Report data should be considered accurate only for orders created from 12/05/2026 onwards.
       </div>
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-max min-w-full text-left text-[12.5px]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Order Details (Delivered Items Only)</h2>
+          <p className="text-xs text-ink-muted">{formatNumber(total)} delivered lines</p>
+        </div>
+        <Button size="sm" variant="primary" onClick={exportCsv} loading={exporting}>Export CSV</Button>
+      </div>
+      <div className="max-h-[70vh] overflow-auto scrollbar-thin">
+        <table className="w-max min-w-full border-separate border-spacing-0 text-left text-[12.5px]">
           <thead>
-            <tr className="border-b border-line">
-              {canEdit && <th className="sticky left-0 bg-surface px-3 py-2 text-xs font-semibold text-ink-muted">Edit</th>}
-              {COLUMNS.map(([key, label]) => <th key={key} className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-ink-muted">{label}</th>)}
+            <tr>
+              {COLUMNS.map(([key, label]) => (
+                <th key={key} className={`sticky top-0 z-10 whitespace-nowrap border-b border-line bg-surface-muted px-3 py-2 text-xs font-semibold text-ink-muted ${MONEY.has(key) || PERCENT.has(key) ? "text-right" : ""}`}>{label}</th>
+              ))}
+              {canEdit && <th className="sticky top-0 z-10 whitespace-nowrap border-b border-line bg-surface-muted px-3 py-2 text-xs font-semibold text-ink-muted">Edit</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr><td colSpan={COLUMNS.length + 1} className="px-4 py-8 text-center text-sm text-ink-muted">No delivered lines match these filters.</td></tr>
             ) : rows.map((row) => (
-              <tr key={`${row.id}-${row.sku}`} className="border-b border-line last:border-0">
+              <tr key={`${row.id}-${row.sku}`} className="hover:bg-surface-muted">
+                {COLUMNS.map(([key]) => (
+                  <td key={key} className={`whitespace-nowrap border-b border-line px-3 py-1.5 text-ink-soft ${MONEY.has(key) || PERCENT.has(key) ? "text-right tabular" : ""}`}>{cell(row, key)}</td>
+                ))}
                 {canEdit && (
-                  <td className="sticky left-0 bg-surface px-3 py-1.5">
-                    {row.b2b ? <span className="text-xs text-ink-muted">B2B</span> : <Button size="xs" onClick={() => open(row)}>Edit</Button>}
+                  <td className="whitespace-nowrap border-b border-line px-3 py-1.5">
+                    {row.b2b ? <span className="text-xs text-ink-muted">—</span> : <Button size="xs" onClick={() => open(row)}>Edit</Button>}
                   </td>
                 )}
-                {COLUMNS.map(([key]) => <td key={key} className="whitespace-nowrap px-3 py-1.5 text-ink-soft">{cell(row, key)}</td>)}
               </tr>
             ))}
           </tbody>
