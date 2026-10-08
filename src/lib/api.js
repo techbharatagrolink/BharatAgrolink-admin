@@ -8,7 +8,9 @@ const DEFAULT_API_URL = "http://localhost:5000/api/v1";
 export function apiBase() {
   const configured = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || DEFAULT_API_URL).replace(/\/$/, "");
   if (typeof window === "undefined") {
-    return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
+    // Computed keys so the runtime value is used, not one inlined at build time.
+    const env = (name) => process.env[name];
+    return (env("API_URL") || env("NEXT_PUBLIC_API_URL") || DEFAULT_API_URL).replace(/\/$/, "");
   }
   try {
     if (new URL(configured).origin === window.location.origin) return configured;

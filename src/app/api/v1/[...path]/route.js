@@ -8,8 +8,12 @@ export const dynamic = "force-dynamic";
 
 const HOP_BY_HOP = ["connection", "keep-alive", "transfer-encoding", "upgrade", "host", "content-length", "accept-encoding"];
 
+// Read with a computed key: Next.js inlines `process.env.NEXT_PUBLIC_*` at build
+// time, and the deployment sets the API address only at runtime.
+const runtimeEnv = (name) => process.env[name];
+
 function target() {
-  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1").replace(/\/$/, "");
+  return (runtimeEnv("API_URL") || runtimeEnv("NEXT_PUBLIC_API_URL") || "http://localhost:5000/api/v1").replace(/\/$/, "");
 }
 
 async function proxy(request, { params }) {
