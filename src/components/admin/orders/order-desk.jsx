@@ -6,7 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatDateTime, formatINR } from "@/lib/format";
 import { changeLineStatusAction, updateLineBoxAction } from "@/lib/actions/admin/orders";
-import { cancelShipmentsAction, regenerateLabelAction, shiprocketDocumentAction } from "@/lib/actions/admin/shipping";
+import { cancelShipmentsAction, openLabelAction, regenerateLabelAction } from "@/lib/actions/admin/shipping";
 import { OrderEditor } from "@/components/admin/orders/order-editor";
 
 const STATUSES = ["Placed", "Accepted", "Rejected", "Packed", "Ready To Ship", "Pending Pickup", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Undelivered", "RTO", "RTO Delivered", "Cancelled", "Return Accepted", "Return Completed"];
@@ -28,6 +28,11 @@ function grandTotal(order, shipping) {
   if (Number(order.advance) > 0) grand -= Number(order.advance);
   if (Number(order.walletUsed) > 0) grand -= Number(order.walletUsed);
   return Math.max(0, Math.round(grand * 100) / 100);
+}
+
+function shortVendor(name) {
+  const text = String(name || "Vendor");
+  return text.length > 20 ? `${text.slice(0, 17)}...` : text;
 }
 
 function prepaidDiscount(order) {
@@ -54,7 +59,13 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
   const gross = Math.round((selling + tax("cgst") + tax("sgst") + tax("igst")) * 100) / 100;
   const mode = String(editor?.payment?.mode || order.paymentMode || "").toLowerCase();
   const firstTracked = lines.find((line) => line.awb || line.trackingUrl) || lines[0];
-  const label = lines.find((line) => line.printLabel);
+  const labelVendors = groups
+    .map((group) => {
+      const stored = group.lines.find((line) => line.printLabel);
+      const tracked = group.lines.find((line) => line.awb);
+      return { vendorId: group.vendorId, name: group.vendor, printLabel: stored?.printLabel || "", awb: tracked?.awb || "" };
+    })
+    .filter((vendor) => vendor.vendorId && (vendor.printLabel || vendor.awb));
 
   const run = async (work) => {
     setPending(true);
@@ -159,15 +170,26 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
           </div>
           <div className="mt-3 flex flex-col gap-2">
             <ButtonLink href={`/admin/shipping?q=${encodeURIComponent(order.id)}`} variant="primary" size="sm">Process Order</ButtonLink>
-            {label?.printLabel ? <ButtonLink href={label.printLabel} target="_blank" rel="noreferrer" variant="secondary" size="sm">Print Label</ButtonLink> : firstTracked?.awb && (
-              <Button variant="secondary" size="sm" loading={pending} onClick={() => run(() => regenerateLabelAction(order.id, firstTracked.awb, firstTracked.sellerId))}>Print Label</Button>
-            )}
-            <Button variant="danger" size="sm" loading={pending} onClick={() => run(async () => {
-              const generated = firstTracked?.sellerId ? await shiprocketDocumentAction(order.id, firstTracked.sellerId, "invoice") : { ok: false };
-              if (generated?.ok && generated.data?.url) window.open(generated.data.url, "_blank", "noopener");
-              return generated?.ok ? generated : { ok: true, message: "Open the invoice list for this order." };
-            })}>Generate Invoice</Button>
-            <ButtonLink href={`/admin/orders/invoices?q=${encodeURIComponent(order.id)}`} variant="secondary" size="sm">Invoice list</ButtonLink>
+            {labelVendors.map((vendor) => vendor.printLabel ? (
+              <Button key={`print-${vendor.vendorId}`} variant="secondary" size="sm" loading={pending} onClick={() => run(async () => {
+                const opened = await openLabelAction(order.id, vendor.vendorId);
+                if (opened?.ok && opened.data?.url) {
+                  window.open(opened.data.url, "_blank", "noopener");
+                  return { ok: true, message: "Label opened." };
+                }
+                return opened?.ok === false ? opened : { ok: false, message: opened?.message || "Could not open the label. The shipment may need to be created first." };
+              })}>Print Label - {shortVendor(vendor.name)}</Button>
+            ) : (
+              <Button key={`make-${vendor.vendorId}`} variant="secondary" size="sm" loading={pending} onClick={() => run(async () => {
+                const generated = await regenerateLabelAction(order.id, vendor.awb, vendor.vendorId);
+                if (generated?.ok && generated.data?.url) {
+                  window.open(generated.data.url, "_blank", "noopener");
+                  return { ok: true, message: "Label generated." };
+                }
+                return generated?.ok === false ? generated : { ok: false, message: generated?.message || "Label will not generate if the shipment is not created." };
+              })}>Generate Label - {shortVendor(vendor.name)}</Button>
+            ))}
+            <ButtonLink href={`/admin/orders/${encodeURIComponent(order.id)}/invoice`} target="_blank" rel="noreferrer" variant="danger" size="sm">Generate Invoice</ButtonLink>
             {canEdit && <Button variant="danger" size="sm" loading={pending} onClick={() => run(async () => {
               let last = { ok: true, message: "Order rejected." };
               for (const line of lines) last = await changeLineStatusAction(order.id, line.id, "Rejected", "Rejected from the order page");

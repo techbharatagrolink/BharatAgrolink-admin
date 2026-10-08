@@ -1,8 +1,16 @@
 import "server-only";
-import { api, ApiError } from "@/lib/api";
+import { api, apiForm, ApiError } from "@/lib/api";
 import { getResource } from "@/lib/content/admin/resources";
 import { can } from "@/lib/auth/permissions";
-import { validateForm, validateReason } from "@/lib/validation/admin/forms";
+import { formFieldsFor, optionValues, validateForm, validateReason } from "@/lib/validation/admin/forms";
+
+/** Whether a MIME type matches an `accept` list such as "image/*,.pdf". */
+function accepts(accept, type) {
+  return String(accept)
+    .split(",")
+    .map((a) => a.trim())
+    .some((a) => !a || a.startsWith(".") || (a.endsWith("/*") ? String(type).startsWith(a.slice(0, -1)) : a === type));
+}
 import { parseListParams } from "./_query";
 import { LIVE_RESOURCES } from "./live-catalog";
 import { resources as cmsLive } from "./live-fragments/cms-settings";
@@ -105,6 +113,10 @@ const NOT_CONNECTED = "This screen is not connected to the admin API yet.";
 export async function resolveFormOptions(resource, user) {
   const sets = {};
   for (const field of resource.form?.fields ?? []) {
+    if (typeof field.optionsFrom === "string" && field.optionsFrom.startsWith("lookup:") && user?.token) {
+      sets[field.name] = [...(field.options ?? []), ...(await lookupOptions(field.optionsFrom, user))];
+      continue;
+    }
     if (field.optionsFrom === "roles" && user?.token) {
       try {
         const { data } = await api("admin/auth/roles", { token: user.token });
@@ -115,6 +127,36 @@ export async function resolveFormOptions(resource, user) {
     }
   }
   return sets;
+}
+
+/**
+ * Options from the API lookups (GET /admin/port/lookups/<name>), for specs like
+ * "lookup:categories" or "lookup:categories?all=1". Returns [{ value, label }].
+ */
+export async function lookupOptions(spec, user) {
+  const [name, qs = ""] = String(spec).replace(/^lookup:/, "").split("?");
+  if (!/^[a-z-]+$/.test(name)) return [];
+  try {
+    const { data } = await api(`admin/port/lookups/${name}`, { token: user.token, query: Object.fromEntries(new URLSearchParams(qs)) });
+    return (data || []).map((o) => ({ value: String(o.value), label: o.label }));
+  } catch {
+    return [];
+  }
+}
+
+/** Predefined reject reasons (seller_flag_reason) of a type, for actions with `confirm.reasonType`. */
+export const rejectReasonOptions = (type, user) => lookupOptions(`lookup:reject-reasons?type=${encodeURIComponent(String(type ?? ""))}`, user);
+
+/** Fills `confirm.reasonOptions` (reject reasons) and `assign.options` (assign.optionsFrom) on actions. */
+export async function withReasonOptions(actions = [], user) {
+  return Promise.all(
+    actions.map(async (a) => {
+      let next = a;
+      if (a.confirm?.reasonType != null) next = { ...next, confirm: { ...next.confirm, reasonOptions: await rejectReasonOptions(a.confirm.reasonType, user) } };
+      if (a.assign?.optionsFrom) next = { ...next, assign: { ...next.assign, options: await lookupOptions(a.assign.optionsFrom, user) } };
+      return next;
+    }),
+  );
 }
 
 export async function listResource(key, searchParams, user) {
@@ -159,8 +201,10 @@ export async function runResourceAction(key, actionId, ids, user, rawReason, raw
   if (!found) return { ok: false, message: "This action is not available." };
   let action = found;
   if (found.assign) {
-    if (!found.assign.options.includes(rawValue)) return { ok: false, message: `Choose a valid option for “${found.assign.label}”.` };
-    action = { ...found, label: `${found.assign.label}: ${rawValue}`, effect: { set: { [found.assign.field]: rawValue } } };
+    const options = found.assign.optionsFrom ? await lookupOptions(found.assign.optionsFrom, user) : found.assign.options;
+    if (!optionValues(options).includes(String(rawValue))) return { ok: false, message: `Choose a valid option for “${found.assign.label}”.` };
+    // assign.run: the API action takes the picked value; otherwise the value is written to assign.field.
+    action = found.assign.run ? found : { ...found, label: `${found.assign.label}: ${rawValue}`, effect: { set: { [found.assign.field]: rawValue } } };
   }
   if (!can(user, resource.permission, action.permission ?? "edit")) return { ok: false, message: "You do not have permission to perform this action." };
 
@@ -168,7 +212,7 @@ export async function runResourceAction(key, actionId, ids, user, rawReason, raw
   if (!idList.length) return { ok: false, message: "Select at least one row." };
 
   const needsReason = Boolean(action.confirm?.requireReason);
-  const reasonCheck = validateReason(rawReason, needsReason);
+  const reasonCheck = validateReason(rawReason, needsReason, action.confirm?.reasonType != null ? 1 : 5);
   if (!reasonCheck.ok) return { ok: false, message: reasonCheck.error };
 
   const spec = liveSpec(key);
@@ -203,11 +247,29 @@ export async function saveResourceRecord(key, id, input, user, rawReason) {
   if (!spec) return { ok: false, message: NOT_CONNECTED };
 
   const optionSets = await resolveFormOptions(resource, user);
-  const fields = resource.form.fields;
-  const { ok, values, errors } = validateForm(fields, input, optionSets);
+  const fields = formFieldsFor(resource.form.fields, isNew);
+  // Forms with file fields arrive as FormData: values as JSON in __values, files by field name.
+  const files = [];
+  let raw = input;
+  if (typeof FormData !== "undefined" && input instanceof FormData) {
+    try {
+      raw = JSON.parse(String(input.get("__values") || "{}"));
+    } catch {
+      return { ok: false, message: "The form could not be read." };
+    }
+    for (const field of fields.filter((f) => f.type === "file")) {
+      const file = input.get(field.name);
+      if (!file || typeof file !== "object" || !file.size) continue;
+      if (field.maxBytes && file.size > field.maxBytes) return { ok: false, message: `${field.label} is too large.`, fieldErrors: { [field.name]: `${field.label} is too large.` } };
+      if (field.accept && !accepts(field.accept, file.type)) return { ok: false, message: `${field.label}: this file type is not allowed.`, fieldErrors: { [field.name]: "This file type is not allowed." } };
+      files.push([field.name, file]);
+    }
+  }
+  const { ok, values, errors } = validateForm(fields, raw, optionSets);
   if (!ok) return { ok: false, message: "Please fix the highlighted fields.", fieldErrors: errors };
 
   const payload = { ...values };
+  for (const field of fields) if (field.type === "file") delete payload[field.name];
   if (isNew && payload.password === "") delete payload.password;
 
   if (key === "cms.pages") {
@@ -221,11 +283,21 @@ export async function saveResourceRecord(key, id, input, user, rawReason) {
   }
 
   try {
-    const { data } = await api(isNew ? `admin${spec.path}` : `admin${spec.path}/${encodeURIComponent(id)}`, {
-      method: isNew ? "POST" : "PUT",
-      token: user.token,
-      body: { values: payload, reason: reasonCheck.reason || undefined },
-    });
+    const path = isNew ? `admin${spec.path}` : `admin${spec.path}/${encodeURIComponent(id)}`;
+    let data;
+    if (files.length) {
+      const form = new FormData();
+      form.set("values", JSON.stringify(payload));
+      if (reasonCheck.reason) form.set("reason", reasonCheck.reason);
+      for (const [name, file] of files) form.set(name, file, file.name || name);
+      ({ data } = await apiForm(path, { token: user.token, method: isNew ? "POST" : "PUT", formData: form }));
+    } else {
+      ({ data } = await api(path, {
+        method: isNew ? "POST" : "PUT",
+        token: user.token,
+        body: { values: payload, reason: reasonCheck.reason || undefined },
+      }));
+    }
     return { ok: true, message: isNew ? `${resource.title}: record created.` : `${resource.title}: changes saved.`, id: data?.id ?? id };
   } catch (error) {
     return fail(error);

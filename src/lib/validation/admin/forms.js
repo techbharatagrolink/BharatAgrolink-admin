@@ -12,7 +12,19 @@ export function optionValues(options = []) {
 }
 
 export function validateField(field, raw, { options } = {}) {
-  const value = typeof raw === "string" ? raw.trim() : raw;
+  if (field.type === "checkbox") {
+    const on = raw === true || raw === "1" || raw === "true" || raw === "on";
+    return { value: on, error: field.required && !on ? `${field.label} is required.` : null };
+  }
+  if (field.type === "multiselect") {
+    const list = (Array.isArray(raw) ? raw : typeof raw === "string" && raw ? raw.split(",") : []).map((v) => String(v).trim()).filter(Boolean);
+    const allowed = optionValues(options ?? field.options);
+    if (field.required && !list.length) return { value: list, error: `${field.label} is required.` };
+    const bad = allowed.length ? list.find((v) => !allowed.includes(v)) : null;
+    return { value: list, error: bad ? `Choose valid ${field.label.toLowerCase()}.` : null };
+  }
+  if (field.type === "file") return { value: null, error: null };
+  const value = typeof raw === "string" ? (field.type === "html" ? raw : raw.trim()) : raw;
   const empty = value == null || value === "";
   if (empty) return { value: field.type === "number" ? null : "", error: field.required ? `${field.label} is required.` : null };
 
@@ -32,14 +44,21 @@ export function validateField(field, raw, { options } = {}) {
       const allowed = optionValues(options ?? field.options);
       return { value: String(value), error: allowed.includes(String(value)) ? null : `Choose a valid ${field.label.toLowerCase()}.` };
     }
+    case "color":
+      return { value: String(value), error: /^#[0-9a-fA-F]{6}$/.test(String(value)) ? null : `${field.label} must be a colour like #1a2b3c.` };
     default: {
       const text = String(value);
-      const max = field.maxLength ?? (field.type === "textarea" ? 4000 : 200);
+      const max = field.maxLength ?? (field.type === "html" ? 200000 : field.type === "textarea" ? 4000 : 200);
       if (text.length > max) return { value: text, error: `${field.label} must be ${max} characters or fewer.` };
       if (field.pattern && !new RegExp(field.pattern).test(text)) return { value: text, error: field.patternMessage || `${field.label} is not in the right format.` };
       return { value: text, error: null };
     }
   }
+}
+
+/** Fields shown on a new record vs an edit (`only: "new" | "edit"`). */
+export function formFieldsFor(fields = [], isNew) {
+  return fields.filter((f) => !f.only || (f.only === "new" ? isNew : !isNew));
 }
 
 /**
@@ -58,8 +77,9 @@ export function validateForm(fields, input = {}, optionSets = {}) {
   return { ok: Object.keys(errors).length === 0, values, errors };
 }
 
-export function validateReason(reason, required) {
+/** `min` is 1 for reasons picked from a predefined list (reject reasons), 5 for free text. */
+export function validateReason(reason, required, min = 5) {
   const text = typeof reason === "string" ? reason.trim() : "";
-  if (required && text.length < 5) return { ok: false, reason: text, error: "Please give a reason (at least 5 characters)." };
+  if (required && text.length < min) return { ok: false, reason: text, error: min > 1 ? "Please give a reason (at least 5 characters)." : "Please select a reason." };
   return { ok: true, reason: text.slice(0, 500), error: null };
 }

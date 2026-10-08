@@ -52,6 +52,15 @@ export function filterNavigation(tree, user) {
     .filter((section) => section.items.length > 0);
 }
 
+/** Whether a list column is shown: `requires: "b2b.margin"` / `"b2b.cost"` follow the role's B2B visibility. */
+export function columnVisible(user, column) {
+  if (!column.requires) return true;
+  if (user?.role?.superAdmin) return true;
+  if (column.requires === "b2b.margin") return Boolean(user?.b2b?.canViewMargin);
+  if (column.requires === "b2b.cost") return Boolean(user?.b2b?.canViewCost);
+  return can(user, column.requires, "view");
+}
+
 /** Serializable snapshot of a user's grants, safe to send to client components. */
 export function toClientUser(user) {
   if (!user) return null;
@@ -60,6 +69,7 @@ export function toClientUser(user) {
     name: user.name,
     email: user.email,
     designation: user.designation,
+    b2b: user.b2b ? { canViewMargin: Boolean(user.b2b.canViewMargin), canViewCost: Boolean(user.b2b.canViewCost), maxDiscountPct: Number(user.b2b.maxDiscountPct) || 0 } : null,
     role: {
       id: user.role.id,
       name: user.role.name,

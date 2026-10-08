@@ -97,12 +97,15 @@ export async function getB2BOrder(id, user) {
   try {
     const { data } = await api(`admin/b2b/orders/${encodeURIComponent(id)}`, { token: user.token });
     if (!data?.order || (ownOnly(user) && data.order.owner && data.order.owner !== user.name)) return null;
-    const showFinance = can(user, "b2b.finance");
+    // Margin follows the role's B2B margin rights (the API also withholds it); settlements need B2B finance.
+    const showFinance = Boolean(user.b2b?.canViewMargin);
+    const showSettlements = can(user, "b2b.finance");
     return {
       ...data,
       showFinance,
       order: showFinance ? data.order : { ...data.order, sellerCost: null, platformRevenue: null, contribution: null },
-      settlements: showFinance ? data.settlements : [],
+      quotation: data.quotation && !showFinance ? { ...data.quotation, takeRate: null, cmPercent: null } : data.quotation,
+      settlements: showSettlements ? data.settlements : [],
     };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;

@@ -46,8 +46,8 @@ function flattenRoutes(navigation) {
   const routes = [];
   for (const section of navigation) {
     for (const item of section.items) {
-      if (item.href) routes.push({ key: item.key, label: item.label, href: item.href, trail: section.section, icon: item.icon });
-      for (const child of item.children || []) routes.push({ key: child.key, label: child.label, href: child.href, trail: item.label, icon: item.icon });
+      if (item.href) routes.push({ key: item.key, label: item.label, href: item.href, trail: section.section || "", icon: item.icon });
+      for (const child of item.children || []) routes.push({ key: child.key, label: child.label, href: child.href, trail: item.label || "", icon: item.icon });
     }
   }
   return routes;

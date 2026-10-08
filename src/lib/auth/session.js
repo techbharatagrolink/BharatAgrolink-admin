@@ -40,6 +40,8 @@ function toUser(data, token) {
     email: data.admin.email,
     designation: data.role?.title || data.admin.company || "",
     token,
+    // B2B cost / margin / discount visibility from the staff role (no separate B2B roles).
+    b2b: data.b2b ?? { canViewMargin: Boolean(data.superAdmin), canViewCost: Boolean(data.superAdmin), maxDiscountPct: data.superAdmin ? 100 : 0, capabilities: [] },
     role: {
       id: data.role?.id ?? data.admin.roleId,
       name: data.superAdmin ? "Super Admin" : data.role?.title || "Staff",

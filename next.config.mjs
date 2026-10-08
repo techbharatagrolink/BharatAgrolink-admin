@@ -6,6 +6,8 @@ const nextConfig = {
   experimental: {
     serverComponentsHmrCache: false,
     staleTimes: { dynamic: 0 },
+    // Admin forms upload images and documents through server actions (PHP allowed large files).
+    serverActions: { bodySizeLimit: "16mb" },
   },
   // Browser calls to /api/v1/* are proxied at runtime by src/app/api/v1/[...path]/route.js.
 };

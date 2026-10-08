@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
-import { Field, Textarea } from "./form";
+import { Field, Select, Textarea } from "./form";
 
 function useModalBehaviour(open, onClose, panelRef) {
   useEffect(() => {
@@ -123,10 +123,12 @@ export function Drawer({ open, onClose, title, description, children, footer, wi
  * Confirmation for destructive or sensitive actions. `requireReason` forces an
  * audit reason (payouts, refunds, price and permission changes).
  */
-export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = "Confirm", tone = "danger", requireReason = false, loading = false }) {
+/** `reasonOptions` (non-empty) turns the reason box into a pick list of predefined reasons, as the PHP reject dropdowns. */
+export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = "Confirm", tone = "danger", requireReason = false, reasonOptions, loading = false }) {
   const [reason, setReason] = useState("");
   const [touched, setTouched] = useState(false);
-  const invalid = requireReason && reason.trim().length < 5;
+  const pick = Array.isArray(reasonOptions) && reasonOptions.length > 0;
+  const invalid = requireReason && (pick ? !reason.trim() : reason.trim().length < 5);
   const close = () => {
     setReason("");
     setTouched(false);
@@ -163,7 +165,14 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, description, co
         </span>
         <div className="min-w-0 flex-1 space-y-3">
           {description && <p className="text-sm text-ink-soft">{description}</p>}
-          {requireReason && (
+          {requireReason && pick && (
+            <Field label="Reject reason" required error={touched && invalid ? "Please select a reason." : null}>
+              {({ id, invalid: bad, describedBy }) => (
+                <Select id={id} value={reason} onChange={(e) => setReason(e.target.value)} aria-invalid={bad || undefined} aria-describedby={describedBy} options={reasonOptions} placeholder="Select Reject Reason" />
+              )}
+            </Field>
+          )}
+          {requireReason && !pick && (
             <Field label="Reason (saved in the audit log)" required error={touched && invalid ? "Please enter a reason of at least 5 characters." : null}>
               {({ id, invalid: bad, describedBy }) => (
                 <Textarea id={id} value={reason} onChange={(e) => setReason(e.target.value)} aria-invalid={bad || undefined} aria-describedby={describedBy} rows={3} placeholder="Why is this change being made?" />

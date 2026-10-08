@@ -6,6 +6,7 @@ import { crmResources } from "./crm";
 import { b2bOpsResources } from "./b2b-ops";
 import { adminResources } from "./admin";
 import { parityResources, parityRoutes } from "./parity";
+import { portResources, portRoutes } from "./port";
 
 /**
  * Declarative list screens. A resource describes columns, filters, actions and
@@ -21,6 +22,7 @@ export const resources = {
   ...b2bOpsResources,
   ...adminResources,
   ...parityResources,
+  ...portResources,
 };
 
 /** Admin route → resource key, for routes rendered by the generic page. */
@@ -131,6 +133,7 @@ export const resourceRoutes = {
   "/admin/settings/email-templates": "settings.emailTemplates",
   "/admin/settings/languages": "settings.languages",
   ...parityRoutes,
+  ...portRoutes,
 };
 
 export function getResource(key) {

@@ -310,6 +310,76 @@ export async function changeLineStatus({ orderId, lineId, status, reason }, user
 
 /* ------------------------------------------------------------ Manual order */
 
+function manualFail(error, fallback) {
+  if (!(error instanceof ApiError)) return { ok: false, message: fallback };
+  const fieldErrors = {};
+  if (Array.isArray(error.details)) for (const issue of error.details) if (issue.field || issue.path) fieldErrors[issue.field || issue.path] = issue.message;
+  if (error.details?.field) fieldErrors[error.details.field] = error.message;
+  return { ok: false, message: error.message, ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}) };
+}
+
+export async function searchManualCustomers(q, user) {
+  if (!user?.token) return [];
+  const { data } = await api("admin/orders/manual/customers", { token: user.token, query: { q } });
+  return data ?? [];
+}
+
+export async function searchManualProducts(q, user) {
+  if (!user?.token) return [];
+  const { data } = await api("admin/orders/manual/products", { token: user.token, query: { q } });
+  return data ?? [];
+}
+
+export async function lookupManualLead(code, user) {
+  if (!user?.token) return { found: false, message: "Not connected." };
+  try {
+    const { data } = await api("admin/orders/manual/lead", { token: user.token, query: { code } });
+    return data;
+  } catch (error) {
+    return manualFail(error, "Could not load the lead.");
+  }
+}
+
+export async function lookupManualPincode(pin, user) {
+  if (!user?.token) return { postOffices: [] };
+  try {
+    const { data } = await api(`admin/orders/manual/pincode/${pin}`, { token: user.token });
+    return data;
+  } catch (error) {
+    return manualFail(error, "Could not look up this pincode.");
+  }
+}
+
+export async function quoteManualOrder(input, user) {
+  if (!user?.token) return { ok: false, message: "Connect to the API to price this order." };
+  try {
+    const { data } = await api("admin/orders/manual/quote", { method: "POST", token: user.token, body: input });
+    return data;
+  } catch (error) {
+    return manualFail(error, "Could not calculate the order.");
+  }
+}
+
+export async function startManualPayment(input, user) {
+  if (!user?.token) return { ok: false, message: "Connect to the API to take payment." };
+  try {
+    const { data } = await api("admin/orders/manual/payment", { method: "POST", token: user.token, body: input });
+    return data;
+  } catch (error) {
+    return manualFail(error, "Could not start the payment.");
+  }
+}
+
+export async function createManualCustomer(input, user) {
+  if (!user?.token) return { ok: false, message: "Connect to the API to add a customer." };
+  try {
+    const { data } = await api("admin/orders/manual/customers", { method: "POST", token: user.token, body: input });
+    return data;
+  } catch (error) {
+    return manualFail(error, "Could not save the customer.");
+  }
+}
+
 export async function manualOrderOptions(user) {
   if (user?.token) {
     const { data } = await api("admin/orders/manual-options", { token: user.token });

@@ -1,4 +1,5 @@
 import { parityLive, parityLivePaths, parityPages } from "@/lib/content/admin/resources/parity";
+import { portLive, portLivePaths, portPages } from "@/lib/content/admin/resources/port";
 
 /**
  * Admin list screens the Node API already serves (resource engine).
@@ -100,6 +101,7 @@ export const LIVE_RESOURCES = {
   "cms.pages": { path: "/custom-pages", page: "pages_custom.php", permission: "cms.pages" },
   "cms.notifications": { path: "/cms/notifications", page: "notification.php", permission: "cms.notifications" },
   ...parityLive,
+  ...portLive,
 };
 
 /** PHP pages for sidebar items that are not a resource list yet. */
@@ -145,6 +147,7 @@ export function permissionPages() {
   for (const spec of Object.values(LIVE_RESOURCES)) add(spec.permission, spec.page);
   for (const [permission, pages] of Object.entries(EXTRA_PAGES)) for (const page of pages) add(permission, page);
   for (const [permission, pages] of Object.entries(parityPages)) for (const page of pages) add(permission, page);
+  for (const [permission, pages] of Object.entries(portPages)) for (const page of pages) add(permission, page);
   return Object.fromEntries(Object.entries(map).map(([key, pages]) => [key, [...pages]]));
 }
 
@@ -268,6 +271,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/finance/expense-limits",
   "/admin/pricing",
   ...parityLivePaths,
+  ...portLivePaths,
 ]);
 
 export function isLiveAdminPath(pathname) {

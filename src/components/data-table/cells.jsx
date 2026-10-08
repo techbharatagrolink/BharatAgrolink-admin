@@ -33,6 +33,8 @@ export function formatCellValue(column, row) {
       return maskMobile(value);
     case "status":
       return value == null || value === "" ? "—" : (column.labels?.[value] ?? String(value).replace(/_/g, " "));
+    case "image":
+      return value ? String(value) : "";
     default:
       return value == null || value === "" ? "—" : String(value);
   }
@@ -42,7 +44,22 @@ export function Cell({ column, row }) {
   const value = row[column.key];
   const sub = column.sub ? row[column.sub] : null;
   let content;
-  if (column.type === "status") content = <StatusBadge status={value} label={column.labels?.[value]} />;
+  if (column.type === "image")
+    content = value ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={value} alt="" loading="lazy" className="h-12 w-auto max-w-[96px] rounded border border-line object-contain" />
+    ) : (
+      <span className="text-ink-muted">—</span>
+    );
+  else if (column.type === "link")
+    content = value ? (
+      <a href={value} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+        {column.linkLabel || "Open"}
+      </a>
+    ) : (
+      <span className="text-ink-muted">—</span>
+    );
+  else if (column.type === "status") content = <StatusBadge status={value} label={column.labels?.[value]} />;
   else if (column.type === "boolean") content = <StatusBadge status={Boolean(value)} label={value ? column.trueLabel || "Yes" : column.falseLabel || "No"} />;
   else {
     const text = formatCellValue(column, row);

@@ -1,7 +1,7 @@
 import { getResource } from "@/lib/content/admin/resources";
 import { checkPermission } from "@/lib/auth/session";
-import { can } from "@/lib/auth/permissions";
-import { listResource, resolveFormOptions } from "@/lib/services/admin/resources";
+import { can, columnVisible } from "@/lib/auth/permissions";
+import { listResource, resolveFormOptions, withReasonOptions } from "@/lib/services/admin/resources";
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
@@ -32,7 +32,9 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
   }
 
   const data = await listResource(resourceKey, searchParams, user);
-  const permitted = (list = []) => list.filter((a) => can(user, resource.permission, a.permission ?? "edit"));
+  // `capability` = a B2B capability the API also checks (derived from the role's menu grants).
+  const permitted = (list = []) =>
+    list.filter((a) => can(user, resource.permission, a.permission ?? "edit") && (!a.capability || user.role.superAdmin || user.b2b?.capabilities?.includes(a.capability)));
   const tabField = resource.tabs?.field;
   const activeTab = tabField ? (Array.isArray(searchParams[tabField]) ? searchParams[tabField][0] : searchParams[tabField]) || "" : "";
   const tabs = tabField
@@ -71,7 +73,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
         resourceKey={resourceKey}
         resource={{
           title: resource.title,
-          columns: resource.columns,
+          columns: resource.columns.filter((column) => columnVisible(user, column)),
           filters: resource.filters,
           search: resource.search,
           searchFields: resource.searchFields,
@@ -82,8 +84,8 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
         }}
         data={tableData}
         canAdd={Boolean(resource.form) && can(user, resource.permission, "add") && !resource.noAdd}
-        rowActions={permitted(resource.rowActions)}
-        bulkActions={permitted(resource.bulkActions)}
+        rowActions={await withReasonOptions(permitted(resource.rowActions), user)}
+        bulkActions={await withReasonOptions(permitted(resource.bulkActions), user)}
         optionSets={await resolveFormOptions(resource, user)}
       />
     </>

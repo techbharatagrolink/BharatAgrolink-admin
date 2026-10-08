@@ -56,8 +56,12 @@ export default async function B2BOrderPage({ params }) {
                   columns={3}
                   items={[
                     { label: "Quoted value", value: formatINR(q.value) },
-                    { label: "Take rate", value: formatPercent(q.takeRate) },
-                    { label: "Contribution margin", value: <span className={q.cmPercent < 5 ? "font-medium text-danger-ink" : ""}>{formatPercent(q.cmPercent)}</span> },
+                    ...(data.showFinance
+                      ? [
+                          { label: "Take rate", value: formatPercent(q.takeRate) },
+                          { label: "Contribution margin", value: <span className={q.cmPercent < 5 ? "font-medium text-danger-ink" : ""}>{formatPercent(q.cmPercent)}</span> },
+                        ]
+                      : []),
                     { label: "Net shipping", value: <span className={q.netShippingPercent > 5 ? "font-medium text-danger-ink" : ""}>{formatPercent(q.netShippingPercent)}</span> },
                     { label: "Approval", value: <StatusBadge status={q.approval} /> },
                     { label: "Valid till", value: formatDate(q.validTill) },

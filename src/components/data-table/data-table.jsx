@@ -403,6 +403,7 @@ export function DataTable({
         confirmLabel={confirm?.action.confirm?.confirmLabel || confirm?.action.label}
         tone={confirm?.action.tone === "danger" ? "danger" : "warning"}
         requireReason={confirm?.action.confirm?.requireReason}
+        reasonOptions={confirm?.action.confirm?.reasonOptions}
         loading={running}
       />
     </div>

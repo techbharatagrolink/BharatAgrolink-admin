@@ -256,7 +256,7 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
         </div>
       </div>
 
-      <WhatsAppDialog kind={kind} row={messageRow} canSend={canSend} onClose={() => setMessageRow(null)} />
+      {messageRow ? <WhatsAppDialog kind={kind} row={messageRow} canSend={canSend} onClose={() => setMessageRow(null)} /> : null}
     </Card>
   );
 }

@@ -21,11 +21,12 @@ export function WhatsAppDialog({ kind, row, canSend, onClose }) {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
+  const rowId = row?.id ?? null;
 
   useEffect(() => {
-    if (!row) return undefined;
+    if (rowId == null) return undefined;
     let live = true;
-    previewWhatsAppAction(kind, row.id, language).then((result) => {
+    previewWhatsAppAction(kind, rowId, language).then((result) => {
       if (!live) return;
       setPreview(result.ok ? result.data : null);
       setError(result.ok ? "" : result.message);
@@ -33,7 +34,7 @@ export function WhatsAppDialog({ kind, row, canSend, onClose }) {
     return () => {
       live = false;
     };
-  }, [kind, row, language]);
+  }, [kind, rowId, language]);
 
   function close() {
     setPreview(null);
@@ -43,8 +44,9 @@ export function WhatsAppDialog({ kind, row, canSend, onClose }) {
   }
 
   async function send() {
+    if (rowId == null) return;
     setSending(true);
-    const result = await sendWhatsAppAction(kind, row.id, language);
+    const result = await sendWhatsAppAction(kind, rowId, language);
     setSending(false);
     if (!result.ok) return notify({ title: "Message not sent", message: result.message, tone: "error" });
     notify({ title: "Message sent", message: result.data?.message ?? "WhatsApp message sent.", tone: "success" });

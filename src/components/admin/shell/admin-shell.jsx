@@ -45,7 +45,7 @@ function saveRail(value) {
 
 export function AdminShell({ user, navigation, badges, notifications, children }) {
   const pathname = usePathname();
-  const showGap = !isLiveAdminPath(pathname);
+  const showGap = !isLiveAdminPath(pathname) && pathname !== "/admin/not-ported";
   const isTablet = useSyncExternalStore(subscribe, () => window.matchMedia(TABLET_QUERY).matches, () => false);
   const desktopRail = useSyncExternalStore(subscribeRail, readRail, () => false);
   const [tabletRail, setTabletRail] = useState(true);
