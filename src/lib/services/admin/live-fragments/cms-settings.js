@@ -4,8 +4,10 @@
  * cms.pages is not a second writer: the list service adapts /admin/custom-pages.
  */
 export const resources = {
-  "cms.banners": { path: "/cms/banners", page: "banners.php", permission: "cms" },
+  "cms.banners": { path: "/cms/banners", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeSections": { path: "/cms/home-sections", page: "newhomepage_website.php", permission: "cms" },
+  "cms.homeBanners": { path: "/cms/home-sections/banners", page: "newhomepage_website.php", permission: "cms" },
+  "cms.homeSectionItems": { path: "/cms/home-sections/items", page: "newhomepage_website.php", permission: "cms" },
   "cms.pages": { path: "/custom-pages", page: "pages_custom.php", permission: "cms.pages" },
   "cms.notifications": { path: "/cms/notifications", page: "notification.php", permission: "cms.notifications" },
 };

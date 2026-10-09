@@ -8,6 +8,7 @@ import { formatDateTime, formatINR } from "@/lib/format";
 import { changeLineStatusAction, updateLineBoxAction } from "@/lib/actions/admin/orders";
 import { cancelShipmentsAction, openLabelAction, regenerateLabelAction } from "@/lib/actions/admin/shipping";
 import { OrderEditor } from "@/components/admin/orders/order-editor";
+import { CreateShipmentDialog } from "@/components/admin/shipping/create-shipment-dialog";
 
 const STATUSES = ["Placed", "Accepted", "Rejected", "Packed", "Ready To Ship", "Pending Pickup", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Undelivered", "RTO", "RTO Delivered", "Cancelled", "Return Accepted", "Return Completed"];
 
@@ -49,6 +50,7 @@ function prepaidDiscount(order) {
 export function OrderDesk({ order, groups, totals, editor, canEdit }) {
   const lines = groups.flatMap((group) => group.lines.map((line) => ({ ...line, vendor: group.vendor })));
   const [panel, setPanel] = useState("");
+  const [shipmentOpen, setShipmentOpen] = useState(false);
   const [status, setStatus] = useState(order.status || "Placed");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -80,9 +82,12 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
       <section className="rounded-xl border border-line bg-surface px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="text-sm">
+            {editor?.address?.name && <p className="font-medium text-ink">{editor.address.name}</p>}
+            {editor?.address?.address && <p className="mt-1 text-ink">{editor.address.address}</p>}
+            {editor?.address?.area && <p className="text-ink-soft">{editor.address.area}</p>}
             <p className="font-medium text-ink">{[order.city, order.state].filter(Boolean).join(", ")}{order.pincode ? ` – ${order.pincode}` : ""}{editor?.address?.type ? ` (${editor.address.type})` : ""}</p>
-            <p className="mt-1 text-ink-soft">Primary: {order.mobile || "—"}</p>
-            <p className="text-ink-soft">Secondary: {editor?.address?.alternateMobile || "—"}</p>
+            <p className="mt-1 text-ink">Primary: {order.mobile || "—"}</p>
+            <p className="text-ink">Secondary: {editor?.address?.alternateMobile || "—"}</p>
           </div>
           {canEdit && <Button size="sm" variant="secondary" onClick={() => setPanel(panel === "address" ? "" : "address")}>Edit Address</Button>}
         </div>
@@ -169,7 +174,7 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
             <span>Grand total</span><span className="tabular">{money(grandTotal(order, shipping))}</span>
           </div>
           <div className="mt-3 flex flex-col gap-2">
-            <ButtonLink href={`/admin/shipping?q=${encodeURIComponent(order.id)}`} variant="primary" size="sm">Process Order</ButtonLink>
+            <Button variant="primary" size="sm" onClick={() => setShipmentOpen(true)}>Process Order</Button>
             {labelVendors.map((vendor) => vendor.printLabel ? (
               <Button key={`print-${vendor.vendorId}`} variant="secondary" size="sm" loading={pending} onClick={() => run(async () => {
                 const opened = await openLabelAction(order.id, vendor.vendorId);

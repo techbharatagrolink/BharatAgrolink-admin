@@ -62,6 +62,7 @@ export function DataTable({
   bulkActions = [],
   onAction,
   onCustomAction,
+  onLineStatus,
   onExport,
   exportName,
   emptyTitle = "No records found",
@@ -297,7 +298,7 @@ export function DataTable({
                             {column.sub && row[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{row[column.sub]}</span>}
                           </Link>
                         ) : (
-                          <Cell column={column} row={row} />
+                          <Cell column={column} row={row} onLineStatus={onLineStatus} />
                         )}
                       </td>
                     ))}
@@ -348,7 +349,7 @@ export function DataTable({
                           </Link>
                         ) : (
                           <div className="font-medium text-ink">
-                            <Cell column={lead} row={row} />
+                            <Cell column={lead} row={row} onLineStatus={onLineStatus} />
                           </div>
                         ))}
                     </div>
@@ -360,7 +361,7 @@ export function DataTable({
                         <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
                           <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
                           <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">
-                            <Cell column={column} row={row} />
+                            <Cell column={column} row={row} onLineStatus={onLineStatus} />
                           </dd>
                         </div>
                       ))}

@@ -34,7 +34,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
   const data = await listResource(resourceKey, searchParams, user);
   // `capability` = a B2B capability the API also checks (derived from the role's menu grants).
   const permitted = (list = []) =>
-    list.filter((a) => can(user, resource.permission, a.permission ?? "edit") && (!a.capability || user.role.superAdmin || user.b2b?.capabilities?.includes(a.capability)));
+    list.filter((a) => can(user, resource.permission, a.permission ?? "edit") && (!a.adminOnly || user.role?.superAdmin) && (!a.capability || user.role.superAdmin || user.b2b?.capabilities?.includes(a.capability)));
   const tabField = resource.tabs?.field;
   const activeTab = tabField ? (Array.isArray(searchParams[tabField]) ? searchParams[tabField][0] : searchParams[tabField]) || "" : "";
   const tabs = tabField

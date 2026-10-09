@@ -92,6 +92,18 @@ export function ResourceTable({ resourceKey, resource, data, canAdd, rowActions,
         bulkActions={bulkActions}
         onAction={onAction}
         onCustomAction={onCustomAction}
+        onLineStatus={
+          rowActions.some((action) => action.id === "status")
+            ? async (orderId, invoiceNumber, status) => {
+                const result = await resourceActionAction(resourceKey, "status", [orderId], "", `${status}\u001e${invoiceNumber}`);
+                if (result?.ok) {
+                  notify({ message: result.message, tone: "success" });
+                  router.refresh();
+                } else notify({ message: result?.message || "Could not update the line status.", tone: "error" });
+                return result;
+              }
+            : undefined
+        }
         onExport={resource.exportable ? (params) => resourceExportAction(resourceKey, params) : undefined}
         exportName={resourceKey.replace(/\./g, "-")}
         toolbar={

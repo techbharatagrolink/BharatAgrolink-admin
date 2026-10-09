@@ -1,6 +1,36 @@
 import { NOW } from "@/lib/mock/admin/seed";
 
-const orderStatuses = ["Placed", "Accepted", "Packed", "Pending Pickup", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Undelivered", "RTO", "RTO Delivered", "Return Requested", "Return Completed", "Cancelled", "Rejected"];
+/** manage_orders.php status tabs. "Pickup" is every pickup or manifested line; the rest match a line status that contains the word. */
+const orderStatuses = [
+  "Placed",
+  "Accepted",
+  { value: "Pickup", label: "Pending pickup" },
+  "Rejected",
+  "Packed",
+  "Shipped",
+  "In Transit",
+  "Out for Delivery",
+  "Delivered",
+  "Undelivered",
+  "RTO",
+  "RTO Delivered",
+  { value: "Return", label: "Return" },
+  "Return Completed",
+  "Cancelled",
+];
+const manualStatuses = [
+  "Placed", "Accepted", "Rejected", "Packed", "Ready To Ship", "Manifested",
+  "Pending Pickup", "Pickup Scheduled", "Pickup Generated", "Pickup Exception",
+  "Picked Up", "Shipped", "In Transit", "Dispatched", "Out for Delivery",
+  "Delivered", "Undelivered", "RTO", "Cancelled",
+  "Return Accepted", "Return Cancelled", "Return Completed",
+];
+const responsibleParties = [
+  { value: "user", label: "User / Customer" },
+  { value: "vendor", label: "Vendor / Seller" },
+  { value: "operation", label: "Operation / Admin" },
+  { value: "courier", label: "Courier" },
+];
 const couriers = ["NimbusPost", "Shiprocket", "Delhivery"];
 const categories = ["Seeds", "Fertilizers", "Crop Protection", "Irrigation", "Farm Equipment", "Garden"];
 const verdictLabels = { ok: "Healthy", below_target: "Below target CM", below_floor: "Below floor CM", loss: "Loss-making" };
@@ -8,20 +38,21 @@ const verdictLabels = { ok: "Healthy", below_target: "Below target CM", below_fl
 export const coreResources = {
   orders: {
     title: "All Orders",
-    description: "Parent orders. Each order can contain lines from several vendors; line status drives the order status (highest-priority line wins).",
+    description: "One row per order. The status is the furthest line along delivery. Line status is each seller invoice, and remarks lists every note. The status filter matches a product line the same way the PHP tabs do.",
     permission: "orders",
     collection: "orders",
     api: "GET /api/admin/orders",
-    search: "Search order ID, customer or mobile",
-    searchFields: ["id", "customer", "mobile", "platformInvoice", "paymentId"],
-    filterFields: ["status", "paymentMode", "channel"],
+    search: "Search order, customer, product, invoice or AWB",
+    searchFields: ["id", "customer", "mobile", "email", "platformInvoice", "invoiceNumber", "paymentId", "productName", "trackingId"],
+    filterFields: ["status", "paymentMode", "channel", "dateOn"],
     filters: [
       { key: "status", label: "Status", options: orderStatuses },
       { key: "paymentMode", label: "Payment", options: ["COD", "Prepaid", "Partial"] },
       { key: "channel", label: "Channel", options: ["Website", "Website Guest", "WhatsApp", "Manual (Admin)"] },
+      { key: "dateOn", label: "Date field", options: [{ value: "created", label: "Order date" }, { value: "delivered", label: "Delivery date" }, { value: "rto", label: "RTO date" }] },
     ],
     dateField: "createdAt",
-    dateRange: "Placed",
+    dateRange: "Date",
     defaultSort: "createdAt:desc",
     rowHref: "/admin/orders/{id}",
     exportable: true,
@@ -29,7 +60,8 @@ export const coreResources = {
     columns: [
       { key: "id", label: "Order", type: "mono" },
       { key: "customer", label: "Customer", sub: "city" },
-      { key: "mobile", label: "Mobile", type: "mobile", hidden: true },
+      { key: "mobile", label: "Mobile", type: "mono", hidden: true },
+      { key: "email", label: "Email", hidden: true },
       { key: "channel", label: "Channel" },
       { key: "paymentMode", label: "Payment", sub: "paymentId" },
       { key: "platformInvoice", label: "Invoice" },
@@ -38,6 +70,38 @@ export const coreResources = {
       { key: "total", label: "Total", type: "currency", sortable: true },
       { key: "status", label: "Status", type: "status" },
       { key: "createdAt", label: "Placed", type: "datetime", sortable: true },
+      { key: "image", label: "Product", type: "image" },
+      { key: "productName", label: "Product name", width: 220, sortable: true },
+      { key: "invoiceNumber", label: "Seller invoice", type: "mono", sortable: true },
+      { key: "salesAgent", label: "Sales agent", width: 180, sortable: true },
+      { key: "trackingId", label: "AWB", type: "mono", href: "{trackingUrl}", sortable: true },
+      { key: "deliveryDate", label: "Delivered", type: "datetime", sortable: true },
+      { key: "rtoDate", label: "RTO date", type: "datetime", sortable: true },
+      { key: "prepaidDiscount", label: "Prepaid discount", type: "currency", sortable: true },
+      { key: "advanceAmount", label: "Advance", type: "currency", sortable: true },
+      { key: "splitSummary", label: "Line status", type: "lineStatus", width: 280, wrap: true, options: manualStatuses },
+      { key: "weightIssue", label: "Warning", type: "status" },
+      { key: "remarks", label: "Remarks", type: "remarks", width: 280, wrap: true },
+      { key: "verification", label: "Verification", type: "status" },
+      { key: "state", label: "State" },
+      { key: "pincode", label: "Pincode", type: "mono" },
+      { key: "district", label: "District", hidden: true },
+      { key: "landHolding", label: "Land holding", hidden: true },
+      { key: "season", label: "Season", hidden: true },
+      { key: "crop", label: "Crop", hidden: true },
+      { key: "soil", label: "Soil", hidden: true },
+      { key: "water", label: "Water", hidden: true },
+      { key: "callMain", label: "Call status", hidden: true },
+      { key: "callAlt", label: "Alt. call", hidden: true },
+      { key: "whatsappSent", label: "WhatsApp sent", hidden: true },
+      { key: "smsSent", label: "SMS sent", hidden: true },
+      { key: "processNote", label: "Process note", width: 220, wrap: true, hidden: true },
+    ],
+    rowActions: [
+      { id: "status", label: "Set status", permission: "edit", assign: { label: "Status", options: manualStatuses, run: true }, confirm: { title: "Update line status?", description: "Sets this status on every product that shares the seller invoice shown on the row." }, when: { field: "invoiceNumber", notIn: ["", null] } },
+      { id: "remark", label: "Add remark", permission: "edit", effect: { append: true }, confirm: { title: "Add a remark?", description: "Saved on the order with your name and the time.", requireReason: true } },
+      { id: "responsible", label: "Set responsible", permission: "edit", assign: { label: "Responsible party", options: responsibleParties, run: true }, confirm: { title: "Who is responsible?", description: "Used for cancellation, RTO and rejection scoring." } },
+      { id: "salesAgent", label: "Set sales agent", permission: "edit", adminOnly: true, assign: { label: "Sales agent", optionsFrom: "lookup:sales-agents", run: true }, confirm: { title: "Credit this order to a sales agent?", description: "Only a super admin can change the sales agent." } },
     ],
   },
   products: {
@@ -63,7 +127,8 @@ export const coreResources = {
       { label: "Add product", href: "/admin/products/new", action: "add", primary: true },
     ],
     columns: [
-      { key: "name", label: "Product", width: 300, sub: "sku" },
+      { key: "image", label: "Image", type: "image" },
+      { key: "name", label: "Product", width: 300, sub: "sku", href: "/admin/products/{id}" },
       { key: "vendor", label: "Vendor", width: 180 },
       { key: "category", label: "Category", sub: "parentCategory" },
       { key: "mrp", label: "MRP", type: "currency", sortable: true },
