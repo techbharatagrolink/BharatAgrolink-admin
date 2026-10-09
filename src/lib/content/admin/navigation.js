@@ -567,6 +567,7 @@ export const navigation = [
 export const hiddenRoutes = [
   { pattern: /^\/admin\/orders\/[^/]+$/, label: "Order Details", parent: "/admin/orders" },
   { pattern: /^\/admin\/products\/[^/]+$/, label: "Product Details", parent: "/admin/products" },
+  { pattern: /^\/admin\/vendors\/[^/]+\/bank$/, label: "Bank Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/vendors\/[^/]+$/, label: "Vendor Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/customers\/[^/]+$/, label: "Customer Details", parent: "/admin/customers" },
   { pattern: /^\/admin\/returns\/[^/]+$/, label: "Return Details", parent: "/admin/returns" },

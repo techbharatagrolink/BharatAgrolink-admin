@@ -3,13 +3,21 @@ import { StatusBadge } from "@/components/ui/badge";
 import { formatDate, formatDateTime, formatINR, formatNumber, formatPercent, maskMobile } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+function hrefToken(value) {
+  const text = String(value ?? "");
+  // A stored path or absolute URL is already an address. Encoding it turns
+  // "/admin/orders/BAO 1" into a relative slug and the card route swallows it.
+  if (text.startsWith("/") || /^https?:\/\//i.test(text)) return text;
+  return encodeURIComponent(text);
+}
+
 export function resolveHref(pattern, row) {
   if (!pattern) return null;
   let missing = false;
   const href = pattern.replace(/\{(\w+)\}/g, (_, key) => {
     const value = row[key];
     if (value == null || value === "") missing = true;
-    return encodeURIComponent(value ?? "");
+    return hrefToken(value);
   });
   return missing ? null : href;
 }

@@ -230,7 +230,7 @@ export const financeResources = {
     search: "Search coupon code",
     searchFields: ["code"],
     filterFields: ["status", "userType"],
-    filters: [{ key: "userType", label: "User type", options: ["new", "old", "all"] }],
+    filters: [{ key: "userType", label: "User type", options: ["New", "Existing", "All"] }],
     tabs: { field: "status", values: ["Active", "Inactive"] },
     columns: [
       { key: "code", label: "Code", type: "mono", emphasis: true },
@@ -252,9 +252,9 @@ export const financeResources = {
     form: {
       fields: [
         { name: "code", label: "Coupon code", type: "text", required: true, pattern: "^[A-Z0-9]{4,15}$", patternMessage: "4–15 uppercase letters or numbers." },
-        { name: "type", label: "Discount type", type: "select", options: ["Percentage", "Flat"], required: true },
+        { name: "type", label: "Discount type", type: "select", options: ["Percent", "Flat"], required: true },
         { name: "value", label: "Value", type: "number", required: true, min: 1 },
-        { name: "userType", label: "User type", type: "select", options: ["all", "new", "old"], required: true },
+        { name: "userType", label: "User type", type: "select", options: ["All", "New", "Existing"], required: true },
         { name: "minPrice", label: "Minimum cart (₹)", type: "number", min: 0, required: true },
         { name: "expiresAt", label: "Expires on", type: "date", required: true },
       ],

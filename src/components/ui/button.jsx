@@ -33,18 +33,19 @@ export function buttonClasses({ variant = "secondary", size = "md", className } 
 }
 
 export function Button({ asChild = false, variant, size, className, loading = false, disabled, children, type = "button", ...props }) {
-  const Comp = asChild ? Slot : "button";
+  const classNameValue = buttonClasses({ variant, size, className });
+  if (asChild) {
+    return (
+      <Slot className={classNameValue} aria-busy={loading || undefined} {...props}>
+        {children}
+      </Slot>
+    );
+  }
   return (
-    <Comp
-      type={asChild ? undefined : type}
-      className={buttonClasses({ variant, size, className })}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      {...props}
-    >
+    <button type={type} className={classNameValue} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
       {children}
-    </Comp>
+    </button>
   );
 }
 

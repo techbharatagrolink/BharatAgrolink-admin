@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { getMainDashboard } from "@/lib/services/admin/main-dashboard";
+import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -76,6 +76,7 @@ export default async function MainDashboardPage({ searchParams }) {
   const showFinance = can(user, "finance") || can(user, "payouts");
   const showOrders = can(user, "orders");
   const vs = d.filters.compare ? "vs previous period" : undefined;
+  const card = (slug) => dashboardFilterHref(`/admin/dashboard/cards/${slug}`, params);
   const sectionIds = ["sales", "orders", "shipping", "marketplace", "customers", ...(showFinance ? ["finance"] : []), "payments", "charts"];
 
   return (
@@ -86,46 +87,46 @@ export default async function MainDashboardPage({ searchParams }) {
       <DashboardAccordion sections={sectionIds} defaultOpen={["sales"]}>
       <DashboardSection id="sales" index={1} title="Sales overview" summary={`${inr(sales.totalRevenue)} total revenue · ${inr(sales.salesB2C)} B2C · ${inr(sales.salesB2B)} B2B`}>
         <Grid>
-          <StatCard label="Total sales (B2C)" value={inr(sales.salesB2C)} delta={deltas.salesB2C} hint={vs ?? `${formatNumber(sales.liveLines)} live sub-orders`} icon={ShoppingCart} href={showOrders ? "/admin/orders" : undefined} />
-          <StatCard label="Total sales (B2B)" value={inr(sales.salesB2B)} delta={deltas.salesB2B} hint={`${formatNumber(sales.b2bCount)} B2B orders`} icon={Building2} tone="info" href="/admin/b2b/orders" />
-          <StatCard label="Total revenue" value={inr(sales.totalRevenue)} delta={deltas.totalRevenue} hint="B2C + B2B order value" icon={TrendingUp} />
-          {showFinance && <StatCard label="Seller payout" value={inr(sales.sellerPayout)} hint="BSA on delivered orders" icon={Wallet} tone="neutral" href="/admin/payouts" />}
-          {showFinance && <StatCard label="Platform revenue" value={inr(sales.platformRevenue)} hint="Commission, ex-GST" icon={Landmark} tone="brand" />}
-          <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Shipping + COD handling collected" icon={Truck} tone="info" />
-          {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="Gateway fee, est. 2% + GST" icon={CreditCard} tone="warning" />}
-          <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint={`${sales.prepaidPct}% prepaid · ${sales.partialPct}% partial`} icon={HandCoins} tone="info" />
-          {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href="/admin/finance/tax" />}
+          <StatCard label="Total sales (B2C)" value={inr(sales.salesB2C)} delta={deltas.salesB2C} hint={vs ?? "Live sales value"} icon={ShoppingCart} href={card("total-sales-b2c")} />
+          <StatCard label="Total sales (B2B)" value={inr(sales.salesB2B)} delta={deltas.salesB2B} hint={`${formatNumber(sales.b2bCount)} B2B orders`} icon={Building2} tone="info" href={card("total-sales-b2b")} />
+          <StatCard label="Total revenue" value={inr(sales.totalRevenue)} delta={deltas.totalRevenue} hint="Delivered B2C and B2B" icon={TrendingUp} href={card("total-revenue")} />
+          {showFinance && <StatCard label="Seller payout" value={inr(sales.sellerPayout)} hint="BSA on delivered orders" icon={Wallet} tone="neutral" href={card("seller-payout")} />}
+          {showFinance && <StatCard label="Platform revenue" value={inr(sales.platformRevenue)} hint="Commission, ex-GST" icon={Landmark} tone="brand" href={card("platform-revenue")} />}
+          <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Shipping + COD handling collected" icon={Truck} tone="info" href={card("shipping-charges")} />
+          {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="1% of gateway value, plus 18% GST" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
+          <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint="3% prepaid / 1% partial" icon={HandCoins} tone="info" href={card("prepaid-partial")} />
+          {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
         </Grid>
       </DashboardSection>
 
       <DashboardSection id="orders" index={2} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
         <Grid>
-          <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={showOrders ? "/admin/orders" : undefined} />
-          <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint="Accepted by vendors" icon={CheckCircle2} />
-          <StatCard label="Rejected" value={formatNumber(orders.rejected)} hint="Rejected by vendors" icon={XCircle} tone="danger" />
-          <StatCard label="Sub-orders" value={formatNumber(orders.subOrders)} hint="One per vendor line" icon={Layers} tone="neutral" />
-          <StatCard label="Processing" value={formatNumber(orders.processing)} hint="Accepted, packed, awaiting pickup" icon={Package} tone="warning" href="/admin/shipping" />
-          <StatCard label="Shipped" value={formatNumber(orders.shipped)} hint="Shipped / in transit" icon={Truck} tone="info" />
-          <StatCard label="Delivered" value={formatNumber(orders.delivered)} hint="Delivered sub-orders" icon={PackageCheck} />
-          <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} />
+          <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={card("total-orders")} />
+          <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint="Accepted by vendors" icon={CheckCircle2} href={card("accepted-orders")} />
+          <StatCard label="Rejected" value={formatNumber(orders.rejected)} hint="Rejected by vendors" icon={XCircle} tone="danger" href={card("rejected-orders")} />
+          <StatCard label="Sub-orders" value={formatNumber(orders.subOrders)} hint="One per vendor line" icon={Layers} tone="neutral" href={card("sub-orders")} />
+          <StatCard label="Processing" value={formatNumber(orders.processing)} hint="Open deliveries" icon={Package} tone="warning" href={showOrders ? "/admin/orders" : undefined} />
+          <StatCard label="Shipped" value={formatNumber(orders.shipped)} hint="Shipped / in transit" icon={Truck} tone="info" href={card("shipped")} />
+          <StatCard label="Delivered" value={formatNumber(orders.delivered)} hint="Delivered orders" icon={PackageCheck} href={card("delivered-orders")} />
+          <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />
           <StatCard label="AOV (delivered)" value={formatINR(orders.aovDelivered)} hint="Average delivered order value" icon={PieChart} tone="info" />
-          <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint="Cancelled sub-orders" icon={Ban} tone="danger" />
-          <StatCard label="Cancellation rate" value={`${orders.cancellationRate}%`} hint="Of all sub-orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
-          <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint="Returned to origin" icon={RotateCcw} tone="danger" href="/admin/rto" />
-          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of delivered orders plus RTO, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} />
+          <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint="Cancelled sub-orders" icon={Ban} tone="danger" href={card("cancelled-orders")} />
+          <StatCard label="Cancellation rate" value={`${orders.cancellationRate}%`} hint="Of all orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
+          <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint="Returned to origin" icon={RotateCcw} tone="danger" href={card("rto-orders")} />
+          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of delivered orders plus RTO, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
           <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
-          <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" />
-          <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} />
-          <StatCard label="Repeat customer %" value={`${orders.repeatCustomerPct}%`} hint="Customers who ordered again" icon={Users} tone="info" />
+          <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" href={card("new-orders")} />
+          <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} href={card("repeat-orders")} />
+          <StatCard label="Repeat customer %" value={`${orders.repeatCustomerPct}%`} hint="Customers who ordered again" icon={Users} tone="info" href={card("repeat-customers")} />
         </Grid>
       </DashboardSection>
 
       <DashboardSection id="shipping" index={3} title="Shipping & courier analytics" summary={`${formatNumber(shipping.couriers.reduce((a, c) => a + c.shipments, 0))} shipments · ${shipping.avgDays} days average delivery`}>
         <Grid className="lg:grid-cols-5 2xl:grid-cols-5">
           {shipping.couriers.map((c) => (
-            <StatCard key={c.name} label={`${c.name} shipments`} value={formatNumber(c.shipments)} hint={`${formatNumber(c.delivered)} delivered`} icon={Truck} tone="info" href="/admin/shipping" />
+            <StatCard key={c.name} label={`${c.name} shipments`} value={formatNumber(c.shipments)} hint="Courier count" icon={Truck} tone="info" href={c.name === "Delhivery" ? card("delhivery") : c.name === "Shiprocket" ? card("shiprocket") : "/admin/shipping"} />
           ))}
-          <StatCard label="Average delivery time" value={`${shipping.avgDays} days`} hint="Order to delivery" icon={CalendarClock} tone="warning" />
+          <StatCard label="Average delivery time" value={`${shipping.avgDays} days`} hint="Order to delivery" icon={CalendarClock} tone="warning" href={card("average-shipping")} />
           <StatCard label="Average shipping fee" value={formatINR(shipping.avgAmount)} hint={`${formatNumber(shipping.feeOrders)} orders paid a fee`} icon={IndianRupee} tone="neutral" />
         </Grid>
       </DashboardSection>
@@ -134,17 +135,17 @@ export default async function MainDashboardPage({ searchParams }) {
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
           <StatCard label="Sellers" value={formatNumber(marketplace.sellers)} hint={`${formatNumber(marketplace.pendingSellers)} pending verification`} icon={Store} href="/admin/vendors" />
           <StatCard label="Total SKUs" value={formatNumber(marketplace.totalSku)} hint={`${formatNumber(marketplace.liveSku)} live, incl. variations`} icon={Boxes} tone="info" href="/admin/products" />
-          <StatCard label="Top product (units)" value={formatNumber(marketplace.topProduct?.units ?? 0)} hint={marketplace.topProduct?.name ?? "No sales in this period"} icon={ShoppingBag} tone="brand" />
-          <StatCard label="Top location (orders)" value={formatNumber(marketplace.topLocation?.orders ?? 0)} hint={marketplace.topLocation ? `${marketplace.topLocation.city}, ${marketplace.topLocation.state}` : "No orders in this period"} icon={MapPin} tone="danger" />
+          <StatCard label="Top product (units)" value={formatNumber(marketplace.topProduct?.units ?? 0)} hint={marketplace.topProduct?.name ?? "No sales in this period"} icon={ShoppingBag} tone="brand" href={card("top-products")} />
+          <StatCard label="Top location (orders)" value={formatNumber(marketplace.topLocation?.orders ?? 0)} hint={marketplace.topLocation ? `${marketplace.topLocation.city}, ${marketplace.topLocation.state}${marketplace.topLocation.pincode ? ` · ${marketplace.topLocation.pincode}` : ""}` : "No orders in this period"} icon={MapPin} tone="danger" href={card("top-locations")} />
         </Grid>
       </DashboardSection>
 
       <DashboardSection id="customers" index={5} title="Customer & visitor analytics" summary={`${formatNumber(customers.ordering)} ordering customers · ${formatNumber(customers.registrations)} new registrations`}>
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
-          <StatCard label="Unique visitors" value="—" hint="Connect web analytics to show visitors" icon={Eye} tone="neutral" />
-          <StatCard label="New registrations" value={formatNumber(customers.registrations)} hint="Signed up in this period" icon={UserPlus} tone="info" href="/admin/customers" />
+          <StatCard label="Unique visitors" value={formatNumber(customers.uniqueVisitors)} delta={customers.uniqueVisitorsPct} hint={customers.visitorsCompareLabel || "Buyers and new accounts"} icon={Eye} tone="neutral" href={card("unique-visitors")} />
+          <StatCard label="New registrations" value={formatNumber(customers.registrations)} delta={customers.registrationsPct} hint="Signed up in this period" icon={UserPlus} tone="info" href="/admin/customers" />
           <StatCard label="Total registered users" value={formatNumber(customers.totalRegistered)} hint="All customer accounts" icon={Users} href="/admin/customers" />
-          <StatCard label="Ordering customers" value={formatNumber(customers.ordering)} hint="Placed at least one order" icon={ShoppingCart} tone="brand" />
+          <StatCard label="Ordering customers" value={formatNumber(customers.ordering)} hint="Placed at least one order" icon={ShoppingCart} tone="brand" href={card("ordering-customers")} />
         </Grid>
       </DashboardSection>
 
@@ -152,7 +153,7 @@ export default async function MainDashboardPage({ searchParams }) {
         <DashboardSection id="finance" index={6} title="Finance & report" summary={`${finance.contributionPct}% contribution margin · net ${inr(finance.netProfit)}`} action={<Link href="/admin/dashboards/finance" className="text-[13px] font-medium text-brand-700 hover:underline">Open finance dashboard</Link>}>
           <Grid className="lg:grid-cols-5 2xl:grid-cols-5">
             <StatCard label="Contribution margin" value={`${finance.contributionPct}%`} hint={`${inr(finance.contribution)} on delivered revenue`} icon={TrendingUp} tone={finance.contribution >= 0 ? "brand" : "danger"} />
-            <StatCard label="GMV (order value)" value={inr(finance.gmv)} delta={deltas.gmv} hint={vs ?? "Customer-paid order value"} icon={CircleDollarSign} tone="info" />
+            <StatCard label="GMV (order value)" value={inr(finance.gmv)} delta={deltas.gmv} hint={vs ?? "Delivered customer-paid value"} icon={CircleDollarSign} tone="info" />
             <StatCard label="Variable cost" value={inr(finance.variableCost)} hint="Payout + PG + courier + discounts" icon={Layers} tone="warning" />
             <StatCard label="Fixed expenses" value={inr(finance.fixedExpenses)} hint={`${inr(finance.fixedMonthly)} a month, pro-rated`} icon={Building2} tone="neutral" href="/admin/finance/expenses" />
             <StatCard label="Net profit" value={inr(finance.netProfit)} hint="Contribution − fixed expenses" icon={finance.netProfit == null || finance.netProfit >= 0 ? TrendingUp : TrendingDown} tone={finance.netProfit == null ? "neutral" : finance.netProfit >= 0 ? "brand" : "danger"} />
@@ -171,6 +172,7 @@ export default async function MainDashboardPage({ searchParams }) {
               icon={m.mode === "COD" ? PackageX : m.mode === "Prepaid" ? CheckCircle2 : HandCoins}
               tone={m.mode === "COD" ? "warning" : m.mode === "Prepaid" ? "brand" : "info"}
               className={m.mode === "COD" ? "col-span-2 sm:col-span-1" : undefined}
+              href={card(m.mode === "Partial" ? "partial-orders" : m.mode === "Prepaid" ? "prepaid-orders" : "cod-orders")}
             />
           ))}
         </Grid>

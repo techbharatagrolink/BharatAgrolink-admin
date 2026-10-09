@@ -7,6 +7,7 @@ export const livePaths = ['/admin/products/new', '/admin/products/import', '/adm
 export const livePatterns = [
   '^/admin/products/(?!new$|import$|pending$)[^/]+$',
   '^/admin/vendors/(?!verification$|scores$|reports$)[^/]+$',
+  '^/admin/vendors/(?!verification$|scores$|reports$)[^/]+/bank$',
   '^/admin/customers/(?!coupons$|reviews$)[^/]+$',
   '^/admin/returns/(?!reasons$)[^/]+$',
   '^/admin/payouts/(?!items$|access$|legacy$)[^/]+$',

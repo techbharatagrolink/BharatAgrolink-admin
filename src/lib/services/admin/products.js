@@ -230,6 +230,16 @@ export async function saveProductVariation(id, body, user) {
   }
 }
 
+export async function saveProductAttributes(id, groups, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await api(`admin/products/${encodeURIComponent(id)}/configuration`, { method: "POST", token: user.token, body: { groups } });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not save the configurations.");
+  }
+}
+
 export async function deleteProductVariation(id, variationId, user) {
   if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
   try {
@@ -375,6 +385,32 @@ function priceVariations(rows, values) {
     return { row, pricing };
   });
   return { errors, priced };
+}
+
+/** Creates a catalog product with the same columns the editor saves, without the short form's take-rate check. */
+export async function createCatalogProduct(input, user) {
+  if (!can(user, "products", "add")) return { ok: false, message: "You do not have permission to add products." };
+  if (!user?.token) return { ok: false, message: "Sign in to add a product." };
+  const body = {
+    name: String(input.name || "").trim(),
+    vendorId: String(input.vendorId || "").trim(),
+    categoryId: Number(input.categoryId),
+    brandId: Number(input.brandId),
+    hsn: String(input.hsn || ""),
+    stock: Math.round(Number(input.stock) || 0),
+    returnPolicy: String(input.returnPolicy || ""),
+    mrp: Number(input.mrp),
+  };
+  if (input.weightKg !== "" && input.weightKg != null && Number(input.weightKg) > 0) body.weightKg = Number(input.weightKg);
+  if (input.salePrice !== "" && input.salePrice != null && Number(input.salePrice) > 0) body.salePrice = Number(input.salePrice);
+  if (input.nrv !== "" && input.nrv != null) body.nrv = Number(input.nrv);
+  if (input.gstPercent !== "" && input.gstPercent != null) body.gstPercent = Number(input.gstPercent);
+  try {
+    const { data } = await api("admin/products", { method: "POST", token: user.token, body });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not create the product.");
+  }
 }
 
 export async function createProduct(input, user) {

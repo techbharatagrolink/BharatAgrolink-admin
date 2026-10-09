@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { adjustStock, calculatePricingLive, createProduct, deleteProductVariation, removeProductImage, saveProduct, saveProductVariation, setProductStatus, updateProductPricing, uploadProductImages, validateImport } from "@/lib/services/admin/products";
+import { adjustStock, calculatePricingLive, createCatalogProduct, createProduct, deleteProductVariation, removeProductImage, saveProduct, saveProductAttributes, saveProductVariation, setProductStatus, updateProductPricing, uploadProductImages, validateImport } from "@/lib/services/admin/products";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
 const plain = (input, keys) => Object.fromEntries(keys.map((k) => [k, input && typeof input[k] !== "object" ? String(input[k] ?? "") : ""]));
@@ -37,6 +37,14 @@ export async function setProductStatusAction(id, action, reason) {
   if (!user) return expired;
   const result = await setProductStatus(String(id), String(action), String(reason ?? ""), user);
   if (result.ok) revalidatePath(`/admin/products/${id}`);
+  return result;
+}
+
+export async function createCatalogProductAction(input) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const result = await createCatalogProduct(input, user);
+  if (result.ok) revalidatePath("/admin/products");
   return result;
 }
 
@@ -79,7 +87,7 @@ export async function saveProductAction(id, input) {
     offerTitle: String(input.offerTitle ?? ""),
     offerShort: String(input.offerShort ?? ""),
     videoUrl: String(input.videoUrl ?? ""),
-    webUrl: String(input.webUrl ?? ""),
+    ...(String(input.webUrl ?? "").trim() ? { webUrl: String(input.webUrl).trim() } : {}),
     hsn: String(input.hsn ?? ""),
     brandId: amount(input.brandId) || undefined,
     categoryId: amount(input.categoryId) || undefined,
@@ -108,6 +116,7 @@ export async function saveProductAction(id, input) {
     otherExpenses: amount(input.otherExpenses),
     gstOther: amount(input.gstOther),
     productType: String(input.productType ?? "simple"),
+    size: String(input.size ?? ""),
     countryOfOrigin: String(input.countryOfOrigin ?? ""),
     mrp: amount(input.mrp) || undefined,
     salePrice: amount(input.salePrice),
@@ -137,9 +146,13 @@ export async function removeProductImageAction(id, url) {
 export async function saveVariationAction(id, input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
+  const values = Array.isArray(input.values) ? input.values.map((value) => String(value ?? "").trim()).filter(Boolean).slice(0, 8) : [];
   const result = await saveProductVariation(String(id), {
     id: input.id || undefined,
     label: String(input.label ?? "").trim(),
+    ...(values.length ? { values } : {}),
+    ...(String(input.variantName ?? "").trim() ? { variantName: String(input.variantName).trim() } : {}),
+    ...(String(input.stockStatus ?? "").trim() ? { stockStatus: String(input.stockStatus).trim() } : {}),
     mrp: amount(input.mrp),
     display: amount(input.display),
     stock: amount(input.stock) == null ? 0 : Math.round(amount(input.stock)),
@@ -148,11 +161,19 @@ export async function saveVariationAction(id, input) {
     widthCm: amount(input.widthCm),
     heightCm: amount(input.heightCm),
     nrv: amount(input.nrv),
-    gstPercent: amount(input.gstPercent),
+    ...(amount(input.gstPercent) == null ? {} : { gstPercent: amount(input.gstPercent) }),
     saleExGst: amount(input.saleExGst),
     commission: amount(input.commission),
     courier: String(input.courier ?? ""),
   }, user);
+  if (result.ok) revalidatePath(`/admin/products/${id}`);
+  return result;
+}
+
+export async function saveProductAttributesAction(id, groups) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const result = await saveProductAttributes(String(id), Array.isArray(groups) ? groups : [], user);
   if (result.ok) revalidatePath(`/admin/products/${id}`);
   return result;
 }

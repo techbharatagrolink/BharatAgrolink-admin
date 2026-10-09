@@ -51,7 +51,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
   const titleId = useId();
   useModalBehaviour(open, onClose, panelRef);
   if (!open) return null;
-  const widths = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
+  const widths = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", wide: "max-w-[92vw]" };
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4">

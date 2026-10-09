@@ -46,12 +46,14 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
     <>
       <ul className="divide-y divide-line md:hidden">
         {rows.map((row, i) => (
-          <li key={row.id ?? i} className="px-4 py-3">
-            <div className="text-sm font-medium break-words text-ink">{lead.render ? lead.render(row) : row[lead.key]}</div>
+          <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3">
+            <div className="min-w-0 text-sm">
+              <div className="font-medium break-words text-ink">{lead.render ? lead.render(row) : row[lead.key]}</div>
+            </div>
             {rest.length > 0 && (
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px]">
                 {rest.map((c) => (
-                  <div key={c.key} className="min-w-0">
+                  <div key={c.key} className={cn("min-w-0", c.wrap && "col-span-2")}>
                     <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
                     <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">{c.render ? c.render(row) : row[c.key]}</dd>
                   </div>
@@ -74,7 +76,7 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={row.id ?? i} className="border-b border-line last:border-0">
+              <tr key={`${row.id ?? "row"}-${i}`} className="border-b border-line last:border-0">
                 {columns.map((c) => (
                   <td key={c.key} className={cn("px-4 py-2 text-ink-soft", c.align === "right" && "text-right tabular")}>
                     {c.render ? c.render(row) : row[c.key]}
