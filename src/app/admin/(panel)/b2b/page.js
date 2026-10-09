@@ -5,7 +5,7 @@ import { formatDate, formatDateTime, formatINR } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
-import { PermissionDenied } from "@/components/ui/states";
+import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { DonutChart, HBarList } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
@@ -16,8 +16,16 @@ const more = (href, label) => <Link href={href} className="text-[13px] font-medi
 export default async function B2BDashboardPage() {
   const { user, allowed } = await checkPermission("b2b");
   if (!allowed) return (<><PageHeader title="B2B Dashboard" /><PermissionDenied module="B2B" /></>);
-  const d = await getB2BDashboard(user);
-  const s = d.stats;
+  const result = await getB2BDashboard(user).then((data) => ({ data }), (error) => ({ error }));
+  if (result.error) return (<><PageHeader title="B2B Dashboard" description="RFQ pipeline, quotation approvals, order value, contribution and buyer credit." /><ApiUnavailable error={result.error} what="the B2B dashboard" /></>);
+  const d = result.data || {};
+  d.rfqStatus = d.rfqStatus || [];
+  d.funnel = d.funnel || [];
+  d.lostReasons = d.lostReasons || [];
+  d.segments = d.segments || [];
+  d.alerts = d.alerts || [];
+  d.recentOrders = d.recentOrders || [];
+  const s = d.stats || {};
 
   return (
     <>
@@ -25,7 +33,7 @@ export default async function B2BDashboardPage() {
       <StatGrid>
         <StatCard label="Open RFQs" value={s.openRfqs} hint={s.slaBreached ? `${s.slaBreached} past 30-min SLA` : "All within SLA"} tone={s.slaBreached ? "danger" : "brand"} href="/admin/b2b/rfqs" />
         <StatCard label="Quotes awaiting approval" value={s.approvalPending} hint="CM < 5% or shipping > 5%" tone="warning" href="/admin/b2b/quotations" />
-        <StatCard label="Order value" value={formatINR(s.orderValue, { compact: true })} hint={`Contribution ${s.contributionPct}%`} href="/admin/b2b/orders" />
+        <StatCard label="Order value" value={formatINR(s.orderValue, { compact: true })} hint={s.contributionPct == null ? "Live orders" : `Contribution ${s.contributionPct}%`} href="/admin/b2b/orders" />
         <StatCard label="Win rate" value={`${s.winRate}%`} hint="Converted / decided RFQs" tone="info" />
         <StatCard label="Buyers" value={s.buyers} tone="neutral" href="/admin/b2b/buyers" />
         <StatCard label="Credit outstanding" value={formatINR(s.outstanding, { compact: true })} tone="warning" href="/admin/b2b/payments" />

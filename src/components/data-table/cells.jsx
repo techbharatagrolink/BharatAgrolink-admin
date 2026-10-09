@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
-import { ConfirmDialog } from "@/components/ui/dialog";
-import { Select } from "@/components/ui/form";
+import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
+import { StatusDot, StatusDotSelect } from "./status-dot-select";
 import { formatDate, formatDateTime, formatINR, formatNumber, formatPercent, maskMobile } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -85,18 +86,43 @@ function RemarkNote({ item }) {
   );
 }
 
-function RemarksCell({ remarks }) {
+function RemarksCell({ remarks, orderId }) {
+  const [open, setOpen] = useState(false);
   const list = Array.isArray(remarks) ? remarks : [];
   if (!list.length) return <span className="text-ink-muted">—</span>;
-  const [latest, ...older] = [...list].reverse();
+  const newestFirst = [...list].reverse();
+  const latest = newestFirst[0];
+  const count = list.length;
   return (
-    <div className="space-y-2 whitespace-normal">
-      <RemarkNote item={latest} />
-      {older.length > 0 && <p className="text-[11px] font-semibold text-brand-700">+{older.length}</p>}
-      {older.map((item) => (
-        <RemarkNote key={item.id} item={item} />
-      ))}
-    </div>
+    <>
+      <div className="flex w-full min-w-0 items-center gap-1.5">
+        <span className="min-w-0 flex-1 truncate" title={latest.text}>
+          {latest.text}
+        </span>
+        <button
+          type="button"
+          className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-1.5 text-ink-soft hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/30"
+          aria-label={count > 1 ? `Show all ${count} remarks` : "Show remark"}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          <MessageSquare className="size-3.5" aria-hidden />
+          {count > 1 ? <span className="text-[11px] font-semibold tabular text-brand-700">{count}</span> : null}
+        </button>
+      </div>
+      <Dialog open={open} onClose={() => setOpen(false)} title="Remarks" description={orderId ? `Order ${orderId}` : "Every note on this order"} size="md">
+        <ul className="divide-y divide-line">
+          {newestFirst.map((item, index) => (
+            <li key={item.id || `${item.at}-${index}`} className="py-3 first:pt-0 last:pb-0">
+              <RemarkNote item={item} />
+            </li>
+          ))}
+        </ul>
+      </Dialog>
+    </>
   );
 }
 
@@ -114,24 +140,31 @@ function LineStatusCell({ row, options, onLineStatus }) {
     });
   };
 
-  if (!lines.length) return <span>{row.splitSummary || "—"}</span>;
+  if (!lines.length) {
+    const status = row.status;
+    if (!status) return <span className="text-ink-muted">—</span>;
+    return (
+      <span className="inline-flex size-6 items-center justify-center" title={String(status)}>
+        <StatusDot status={status} />
+      </span>
+    );
+  }
 
   return (
-    <div className="space-y-2 whitespace-normal">
-      {row.splitSummary ? <p className="text-xs text-ink-muted">{row.splitSummary}</p> : null}
-      {lines.map((line) => {
-        const current = line.status || "Placed";
-        const choices = canonical.includes(current) ? canonical : [current, ...canonical];
-        const label = line.productName || "Item";
-        return (
-          <div key={line.id} className="space-y-1">
-            <p className="break-words text-xs text-ink-soft" title={line.invoiceNumber || undefined}>
-              {label}
-              {line.invoiceNumber ? <span className="text-ink-muted"> · {line.invoiceNumber}</span> : null}
-            </p>
-            {onLineStatus && line.invoiceNumber ? (
-              <Select
-                aria-label={`Line status for ${label}`}
+    <>
+      <div className="flex flex-wrap items-center gap-1">
+        {lines.map((line) => {
+          const current = line.status || "Placed";
+          const choices = canonical.includes(current) ? canonical : [current, ...canonical];
+          const label = line.productName || "Item";
+          const title = [label, line.invoiceNumber, current].filter(Boolean).join(" · ");
+          if (onLineStatus && line.invoiceNumber) {
+            return (
+              <StatusDotSelect
+                key={line.id}
+                iconOnly
+                title={title}
+                aria-label={`Line status for ${label}, ${current}`}
                 value={current}
                 options={choices}
                 onChange={(event) => {
@@ -141,12 +174,15 @@ function LineStatusCell({ row, options, onLineStatus }) {
                   }
                 }}
               />
-            ) : (
-              <p className="text-sm text-ink">{current}</p>
-            )}
-          </div>
-        );
-      })}
+            );
+          }
+          return (
+            <span key={line.id} className="inline-flex size-6 items-center justify-center" title={title}>
+              <StatusDot status={current} />
+            </span>
+          );
+        })}
+      </div>
       <ConfirmDialog
         open={Boolean(draft)}
         onClose={() => (running ? undefined : setDraft(null))}
@@ -157,7 +193,7 @@ function LineStatusCell({ row, options, onLineStatus }) {
         confirmLabel={draft ? `Set ${draft.status}` : "Update"}
         tone="warning"
       />
-    </div>
+    </>
   );
 }
 
@@ -166,7 +202,7 @@ export function Cell({ column, row, onLineStatus }) {
   const sub = column.sub ? row[column.sub] : null;
   let content;
   if (column.type === "lineStatus") content = <LineStatusCell row={row} options={column.options} onLineStatus={onLineStatus} />;
-  else if (column.type === "remarks") content = <RemarksCell remarks={value} />;
+  else if (column.type === "remarks") content = <RemarksCell remarks={value} orderId={row.id} />;
   else if (column.type === "image")
     content = value ? (
       // eslint-disable-next-line @next/next/no-img-element

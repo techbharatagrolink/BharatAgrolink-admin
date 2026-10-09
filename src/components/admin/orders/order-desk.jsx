@@ -237,6 +237,25 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
         </section>
       )}
 
+      <CreateShipmentDialog
+        orderId={order.id}
+        open={shipmentOpen}
+        onClose={() => setShipmentOpen(false)}
+        fallbackVendors={groups.map((group) => {
+          const weight = group.lines.reduce((sum, line) => sum + Number(line.box?.weight || 0) * Math.max(1, Number(line.qty) || 1), 0);
+          const box = group.lines.find((line) => Number(line.box?.length) > 0) || group.lines[0];
+          const amount = group.lines.reduce((sum, line) => sum + Number(line.unitPrice || 0) * Number(line.qty || 0), 0);
+          return {
+            vendorId: String(group.vendorId),
+            vendorName: group.vendor,
+            paymentType: String(order.paymentMode || "").toLowerCase(),
+            orderAmount: Math.round(amount * 100) / 100,
+            package: { weightGm: weight, length: box?.box?.length || 0, breadth: box?.box?.width || 0, height: box?.box?.height || 0 },
+            couriers: [],
+          };
+        })}
+      />
+
       {canEdit && editor && (panel === "address" || panel === "payment") && (
         <section className="rounded-xl border border-line bg-surface p-4">
           <OrderEditor orderId={order.id} editor={editor} lines={lines} focus={panel} />
