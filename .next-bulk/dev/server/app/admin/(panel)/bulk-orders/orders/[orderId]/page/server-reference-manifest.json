@@ -1,0 +1,95 @@
+{
+  "node": {
+    "002d2150522fbc8f145093f8f71c54ff678fb5f4ca": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutAction",
+          "filename": "src/lib/actions/admin/auth.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "logoutAction",
+      "filename": "src/lib/actions/admin/auth.js"
+    },
+    "60bfee930bafc0ee866d98126c35b1d9234959911c": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "addBulkOrderRemarkAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "addBulkOrderRemarkAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "40a831a744d7b9d1b9b543f8e3b7136d4d98416286": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "bulkOrderLabelAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "bulkOrderLabelAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "40cca4c30135a34fc732777437751e43f58f9f9fdb": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "bulkOrderTrackingAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "bulkOrderTrackingAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "604410326d5958bbd3e31239adfd8b082feacf67d2": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateBulkOrderAgentAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "updateBulkOrderAgentAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "6083f783b39758819649578482d4ee0ef391fe6e43": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/[orderId]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateBulkOrderStatusAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/[orderId]/page": "action-browser"
+      },
+      "exportedName": "updateBulkOrderStatusAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    }
+  },
+  "edge": {}
+}

@@ -1,21 +1,23 @@
 import { requireAdmin } from "@/lib/auth/session";
-import { getMyAccount } from "@/lib/services/admin/account";
+import { getMyAccount, getMySessions } from "@/lib/services/admin/account";
 import { formatDateTime, maskMobile } from "@/lib/format";
-import { DescriptionList, Notice, PageHeader, Timeline } from "@/components/ui/page";
+import { DescriptionList, PageHeader, Timeline } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ApiUnavailable } from "@/components/ui/states";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
+import { ChangePasswordForm, LogoutOtherSessionsButton } from "@/components/admin/account/account-security";
 
 export const metadata = { title: "My Account" };
 
 export default async function AccountPage() {
   const user = await requireAdmin();
-  const d = await getMyAccount(user);
+  const [d, sessions] = await Promise.all([getMyAccount(user), getMySessions(user).then((data) => ({ data }), (error) => ({ error }))]);
   const p = d.profile;
 
   return (
     <>
-      <PageHeader title="My Account" description="Your profile, role and recent activity." meta={<><Badge tone={d.role.superAdmin ? "danger" : "info"}>{d.role.name}</Badge>{d.role.scope === "own" && <Badge tone="warning">Own records only</Badge>}</>} />
+      <PageHeader title="My Account" description="Your profile, role, password, sessions and recent activity." meta={<><Badge tone={d.role.superAdmin ? "danger" : "info"}>{d.role.name}</Badge>{d.role.scope === "own" && <Badge tone="warning">Own records only</Badge>}</>} />
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4">
           <Card>
@@ -35,7 +37,12 @@ export default async function AccountPage() {
               />
             </CardBody>
           </Card>
-          <Notice>Password, 2FA and profile changes are handled by the admin authentication service. Ask a full admin to update your role or details.</Notice>
+          <Card id="password" className="scroll-mt-20">
+            <CardHeader title="Change password" description="Applies to this panel and the PHP admin. Every other login is signed out." />
+            <CardBody>
+              <ChangePasswordForm />
+            </CardBody>
+          </Card>
         </div>
         <Card className="min-w-0 xl:col-span-2">
           <CardHeader title="What you can access" description={`${d.grants.length} modules`} />
@@ -49,6 +56,31 @@ export default async function AccountPage() {
           />
         </Card>
       </div>
+      <Card id="sessions" className="mt-4 scroll-mt-20">
+        <CardHeader title="Active sessions" description="Devices signed in to your account on this panel and the PHP admin." />
+        {sessions.error ? (
+          <CardBody>
+            <ApiUnavailable error={sessions.error} what="your sessions" />
+          </CardBody>
+        ) : (
+          <>
+            <MiniTable
+              columns={[
+                { key: "device", label: "Device", render: (r) => <span className="text-ink">{r.current ? <Badge tone="success">This device</Badge> : "Other device"}<span className="block max-w-80 truncate text-xs text-ink-muted" title={r.userAgent}>{r.userAgent || "—"}</span></span> },
+                { key: "ipAddress", label: "IP address", render: (r) => <span className="font-mono text-xs">{r.ipAddress || "—"}</span> },
+                { key: "createdAt", label: "Signed in", render: (r) => formatDateTime(r.createdAt) },
+                { key: "lastUsedAt", label: "Last used", render: (r) => formatDateTime(r.lastUsedAt || r.createdAt) },
+                { key: "expiresAt", label: "Expires", render: (r) => formatDateTime(r.expiresAt) },
+              ]}
+              rows={sessions.data}
+              empty="No active sessions."
+            />
+            <CardBody className="border-t border-line">
+              <LogoutOtherSessionsButton disabled={!sessions.data.some((s) => !s.current)} />
+            </CardBody>
+          </>
+        )}
+      </Card>
       <Card className="mt-4">
         <CardHeader title="Your recent activity" />
         <CardBody>

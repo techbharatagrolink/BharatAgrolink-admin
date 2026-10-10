@@ -1,0 +1,80 @@
+{
+  "node": {
+    "002d2150522fbc8f145093f8f71c54ff678fb5f4ca": {
+      "workers": {
+        "app/admin/(panel)/[...slug]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/[...slug]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/resources.js [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/lib/actions/admin/shipping.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutAction",
+          "filename": "src/lib/actions/admin/auth.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/[...slug]/page": "action-browser"
+      },
+      "exportedName": "logoutAction",
+      "filename": "src/lib/actions/admin/auth.js"
+    },
+    "7cad3989db32f5192c1e8820c765efb8e468c33851": {
+      "workers": {
+        "app/admin/(panel)/[...slug]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/[...slug]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/resources.js [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/lib/actions/admin/shipping.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "resourceActionAction",
+          "filename": "src/lib/actions/admin/resources.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/[...slug]/page": "action-browser"
+      },
+      "exportedName": "resourceActionAction",
+      "filename": "src/lib/actions/admin/resources.js"
+    },
+    "60a4533fe49135e174d981ba6cedbc7f8cfe11a44d": {
+      "workers": {
+        "app/admin/(panel)/[...slug]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/[...slug]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/resources.js [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/lib/actions/admin/shipping.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "resourceExportAction",
+          "filename": "src/lib/actions/admin/resources.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/[...slug]/page": "action-browser"
+      },
+      "exportedName": "resourceExportAction",
+      "filename": "src/lib/actions/admin/resources.js"
+    },
+    "78e08031f1f9ecdc54b14c9e27902fa61444ff4069": {
+      "workers": {
+        "app/admin/(panel)/[...slug]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/[...slug]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/resources.js [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/lib/actions/admin/shipping.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "resourceSaveAction",
+          "filename": "src/lib/actions/admin/resources.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/[...slug]/page": "action-browser"
+      },
+      "exportedName": "resourceSaveAction",
+      "filename": "src/lib/actions/admin/resources.js"
+    },
+    "40cf0200efaf3e9e090c0b87a402115b45d86827ee": {
+      "workers": {
+        "app/admin/(panel)/[...slug]/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/[...slug]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/resources.js [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/lib/actions/admin/shipping.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "syncVisibleOrdersAction",
+          "filename": "src/lib/actions/admin/shipping.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/[...slug]/page": "action-browser"
+      },
+      "exportedName": "syncVisibleOrdersAction",
+      "filename": "src/lib/actions/admin/shipping.js"
+    }
+  },
+  "edge": {}
+}

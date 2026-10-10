@@ -1,0 +1,10 @@
+{
+  "/admin/(panel)/[...slug]/page": "app/admin/(panel)/[...slug]/page.js",
+  "/admin/(panel)/bulk-orders/dashboard/page": "app/admin/(panel)/bulk-orders/dashboard/page.js",
+  "/admin/(panel)/bulk-orders/orders/[orderId]/page": "app/admin/(panel)/bulk-orders/orders/[orderId]/page.js",
+  "/admin/(panel)/bulk-orders/orders/page": "app/admin/(panel)/bulk-orders/orders/page.js",
+  "/admin/(panel)/bulk-orders/quotations/[id]/page": "app/admin/(panel)/bulk-orders/quotations/[id]/page.js",
+  "/admin/(panel)/bulk-orders/quotations/page": "app/admin/(panel)/bulk-orders/quotations/page.js",
+  "/admin/(panel)/bulk-orders/shipments/page": "app/admin/(panel)/bulk-orders/shipments/page.js",
+  "/admin/(panel)/dashboard/page": "app/admin/(panel)/dashboard/page.js"
+}

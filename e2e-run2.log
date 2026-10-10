@@ -1,0 +1,314 @@
+﻿
+Running 207 tests using 2 workers
+
+node.exe : (node:19984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:19984) Wa... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1816) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   1 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/audit (37.3s)
+  ok   2 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/account (37.8s)
+  ok   4 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/alerts (6.9s)
+  ok   3 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b (8.8s)
+  ok   6 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/buyers (7.5s)
+  x    5 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/approvals (11.6s)
+(node:31360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok   7 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/catalog (8.6s)
+  ok   9 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/claims (6.5s)
+  ok  10 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/logistics (7.5s)
+  ok   8 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/catalog/generate (17.3s)
+  ok  11 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/ops-queue (6.8s)
+  ok  12 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/orders (6.8s)
+  ok  13 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/payments (6.6s)
+  ok  14 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/quotations (6.4s)
+  ok  15 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/quotations/new (19.4s)
+  ok  16 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/reports (16.1s)
+  ok  18 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/settlements (6.2s)
+  ok  17 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/b2b/rfqs (6.8s)
+  ok  20 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/dashboard (6.7s)
+  ok  19 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders (7.0s)
+  x   21 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/new (12.9s)
+(node:20308) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   23 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/products (7.4s)
+(node:27720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   24 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/quotations (7.7s)
+(node:32224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   25 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/shipments (12.4s)
+(node:4740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   26 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/warehouses (4.7s)
+(node:21052) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   27 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/attribute-sets/pending (4.6s)
+(node:32636) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   28 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/attribute-values (5.1s)
+(node:13984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   29 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/attributes (4.7s)
+(node:29876) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   30 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/attributes/pending (4.3s)
+(node:4116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   31 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/brands (3.9s)
+(node:32632) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   32 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/brands/pending (4.8s)
+(node:9112) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   22 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/bulk-orders/orders (1.7m)
+  x   33 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/categories (9.1s)
+(node:32708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   35 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/categories/pending (4.6s)
+  x   34 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/categories/timeline (5.2s)
+(node:5060) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11952) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   36 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/category-commission (14.4s)
+(node:33768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   37 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/crop-menu (19.0s)
+(node:34468) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   39 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/hsn-codes (5.0s)
+  x   38 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/feature-categories (10.5s)
+(node:32716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   41 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/return-policies/pending (4.8s)
+  x   40 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/return-policies (5.5s)
+(node:34148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   42 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/tax-classes (4.9s)
+  x   43 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/catalog/tax-classes/pending (4.6s)
+(node:34696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34240) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   45 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/banners (7.8s)
+(node:34792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   44 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/ceo-matrix (10.6s)
+(node:31340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   46 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/blogs (4.8s)
+(node:34144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   47 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/events (5.1s)
+(node:34604) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   48 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/faqs (5.0s)
+(node:34472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   49 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/footer (5.2s)
+(node:33864) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   50 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/home-sections (10.7s)
+  x   51 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/notifications (7.6s)
+(node:34728) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:21596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   52 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/pages (4.9s)
+(node:13956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   53 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/cms/seo (19.5s)
+(node:38684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   54 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm (16.6s)
+(node:17556) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   55 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/add-lead (9.9s)
+(node:34292) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   56 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/agent-leads (10.5s)
+(node:39088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   57 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/ai-calls (4.7s)
+(node:39168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   59 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/circles (4.2s)
+  x   58 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/call-audit (5.0s)
+(node:7900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3756) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   60 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/convert (10.1s)
+(node:39672) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   61 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/customer-tracking (12.0s)
+(node:39740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   63 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/follow-ups (5.5s)
+(node:13448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   62 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/dead (11.1s)
+(node:39568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   65 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/legacy-leads (6.2s)
+(node:39388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   64 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/leads (16.6s)
+(node:34628) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   66 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/requested (14.4s)
+(node:20628) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   67 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/unassigned (9.9s)
+(node:31412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   68 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/crm/whatsapp (4.8s)
+(node:39792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   69 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/customers (4.5s)
+(node:13792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   71 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/customers/reviews (21.4s)
+  x   70 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/customers/coupons (25.9s)
+(node:10640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39884) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   73 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboard (40.3s)
+  x   72 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/customers/reviews/pending (39.7s)
+(node:42428) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:42420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   75 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/finance (23.1s)
+  x   74 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/business (24.1s)
+(node:39912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   76 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/logistics (10.2s)
+  x   77 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/orders (10.2s)
+(node:42916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   79 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/products (12.4s)
+(node:42528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   78 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/product-overview (16.5s)
+(node:42616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   80 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/dashboards/sellers (13.0s)
+  x   81 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance (10.1s)
+(node:39376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   82 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/cod (5.9s)
+(node:43236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   83 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/expense-limits (17.4s)
+(node:42852) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   84 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/fixed-expenses (9.6s)
+(node:39856) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   86 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/gst (12.8s)
+(node:43748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   85 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/fraud (25.3s)
+(node:29004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   87 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/hold-ledger (11.5s)
+(node:10128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   88 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/ledger (13.4s)
+  x   89 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/finance/wallet-withdrawals (11.6s)
+(node:44520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44576) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   91 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/hiring/applications (18.4s)
+  x   90 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/help (19.5s)
+(node:38996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:5868) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   93 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/hiring/vacancies (9.2s)
+(node:43736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   92 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/inventory (14.7s)
+(node:27876) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   94 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/inventory/history (4.3s)
+(node:15688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   96 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/marketing/engagement (27.0s)
+  x   95 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/marketing (31.7s)
+(node:39880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   98 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/masters/currency (6.4s)
+(node:26128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   99 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/masters/geography (5.4s)
+(node:47460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x   97 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/marketing/expenses (20.2s)
+(node:5216) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  100 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/masters/reject-reasons (8.2s)
+(node:46136) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  102 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations (13.4s)
+(node:6352) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  101 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/not-ported?link=x.php&name=X (19.5s)
+(node:45012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  103 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/escalations (4.3s)
+(node:6460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  104 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/ndr (6.8s)
+(node:42608) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  105 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/recordings (5.4s)
+(node:26688) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  106 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/rules (8.0s)
+  x  107 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/sla (5.8s)
+(node:22176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  108 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team (31.7s)
+  x  109 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team/agents (5.3s)
+(node:45300) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18372) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  110 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team/assignments (8.3s)
+(node:47900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  112 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team/setup (20.5s)
+(node:9200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  113 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/orders (7.7s)
+(node:49596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  111 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team/overall (2.2m)
+(node:43916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

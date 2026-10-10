@@ -1,0 +1,2545 @@
+{
+ "generatedAt": "2026-10-10T07:41:44.971Z",
+ "counts": {
+  "live": 117,
+  "partial": 6,
+  "not connected": 0,
+  "missing": 6
+ },
+ "rows": [
+  {
+   "id": 10058,
+   "group": "",
+   "name": "Job Applications",
+   "link": "vacancy_applications.php",
+   "phpExists": true,
+   "route": "/admin/hiring/applications",
+   "screen": "page",
+   "apiResources": [
+    "/admin/hiring/applications"
+   ],
+   "apiFiles": [
+    "parity/support-admin.routes.js",
+    "resources/defs/parity-support-admin.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 10057,
+   "group": "",
+   "name": "Hiring Vacancies",
+   "link": "vacancies.php",
+   "phpExists": true,
+   "route": "/admin/hiring/vacancies",
+   "screen": "page",
+   "apiResources": [
+    "/admin/hiring/vacancies"
+   ],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/support-admin.routes.js",
+    "resources/defs/parity-support-admin.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 1,
+   "group": "Overview › Founder Dashboard",
+   "name": "Overview",
+   "link": "dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboard",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/marketing.routes.js",
+    "screens/admin-panel-dashboards.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "partial",
+   "reason": "php-port audit: 4k-line landing page with dashboard_modals.php and ~50 data endpoints. Verify every card, the #dashboard_*_overview sections, each drill-down modal and filter."
+  },
+  {
+   "id": 65,
+   "group": "Overview › Founder Dashboard",
+   "name": "Business Dashboard",
+   "link": "main_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/business",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/marketing.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 84,
+   "group": "Overview › Founder Dashboard",
+   "name": "CEO Decision Matrix",
+   "link": "ceo_decision_matrix.php",
+   "phpExists": true,
+   "route": "/admin/ceo-matrix",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/marketing.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 129,
+   "group": "Overview › Business Performance",
+   "name": "Sales Overview",
+   "link": "#dashboard_sales_overview",
+   "phpExists": true,
+   "route": "/admin/dashboard#dashboard_sales_overview",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "partial",
+   "reason": "No API route checks this PHP page directly (screen uses another page's permission)."
+  },
+  {
+   "id": 130,
+   "group": "Overview › Business Performance",
+   "name": "Orders Overview",
+   "link": "#dashboard_orders_overview",
+   "phpExists": true,
+   "route": "/admin/dashboard#dashboard_orders_overview",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "partial",
+   "reason": "No API route checks this PHP page directly (screen uses another page's permission)."
+  },
+  {
+   "id": 131,
+   "group": "Overview › Business Performance",
+   "name": "Shipping Overview",
+   "link": "#dashboard_logistics_overview",
+   "phpExists": true,
+   "route": "/admin/dashboard#dashboard_logistics_overview",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "partial",
+   "reason": "No API route checks this PHP page directly (screen uses another page's permission)."
+  },
+  {
+   "id": 132,
+   "group": "Overview › Business Performance",
+   "name": "Product & Location Overview",
+   "link": "#dashboard_products_overview",
+   "phpExists": true,
+   "route": "/admin/dashboard#dashboard_products_overview",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "partial",
+   "reason": "No API route checks this PHP page directly (screen uses another page's permission)."
+  },
+  {
+   "id": 127,
+   "group": "Overview › Decision & Control",
+   "name": "Score Management",
+   "link": "score_management.php",
+   "phpExists": true,
+   "route": "/admin/vendors/scores",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/vendors/scores"
+   ],
+   "apiFiles": [
+    "resources/defs/orders-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 15 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 137,
+   "group": "Seller › Seller Dashboard",
+   "name": "Seller Overview",
+   "link": "seller_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/sellers",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 20,
+   "group": "Seller › Seller Management",
+   "name": "All Sellers",
+   "link": "seller.php",
+   "phpExists": true,
+   "route": "/admin/vendors",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/vendors/verification",
+    "/admin/reports/vendors",
+    "/admin/vendors"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "people/admin-people-detail.routes.js",
+    "resources/defs/orders-catalog.js",
+    "resources/defs/people.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 6 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 21,
+   "group": "Seller › Seller Management",
+   "name": "Add Seller",
+   "link": "add_seller.php",
+   "phpExists": true,
+   "route": "/admin/vendors/new",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 11 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 722,
+   "group": "Seller › Seller Management",
+   "name": "Seller Approval",
+   "link": "seller.php?status=pending",
+   "phpExists": true,
+   "route": "/admin/vendors/verification",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/vendors/verification",
+    "/admin/reports/vendors",
+    "/admin/vendors"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "people/admin-people-detail.routes.js",
+    "resources/defs/orders-catalog.js",
+    "resources/defs/people.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 6 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 13,
+   "group": "Seller › Seller Catalog",
+   "name": "Add Product",
+   "link": "add_product.php",
+   "phpExists": true,
+   "route": "/admin/products/new",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "catalog/admin-product-detail.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 14,
+   "group": "Seller › Seller Catalog",
+   "name": "Manage Product",
+   "link": "manage_product.php",
+   "phpExists": true,
+   "route": "/admin/products",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/inventory/movements",
+    "/admin/lists/products",
+    "/admin/inventory",
+    "/admin/cms/faqs"
+   ],
+   "apiFiles": [
+    "catalog/admin-product-detail.routes.js",
+    "extras/admin-extras.service.js",
+    "resources/defs/cms-masters.js",
+    "resources/defs/orders-catalog.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 10055,
+   "group": "Seller › Seller Catalog",
+   "name": "Cost & Margin Management",
+   "link": "product_cost_management.php",
+   "phpExists": true,
+   "route": "/admin/pricing/cost-config",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/pricing/commission-rules",
+    "/admin/pricing/cost-config"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 27 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 10056,
+   "group": "Seller › Seller Catalog",
+   "name": "Cost & Margin Management",
+   "link": "product_cost_management.php",
+   "phpExists": true,
+   "route": "/admin/pricing/cost-config",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/pricing/commission-rules",
+    "/admin/pricing/cost-config"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 27 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 15,
+   "group": "Seller › Seller Catalog",
+   "name": "Pending Products",
+   "link": "pending_products.php",
+   "phpExists": true,
+   "route": "/admin/products/pending",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/products/pending"
+   ],
+   "apiFiles": [
+    "catalog/admin-product-detail.routes.js",
+    "resources/defs/orders-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 13 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 3,
+   "group": "Seller › Catalog Master",
+   "name": "Category",
+   "link": "category.php",
+   "phpExists": true,
+   "route": "/admin/catalog/categories",
+   "screen": "page",
+   "apiResources": [
+    "/admin/catalog/category-commission",
+    "/admin/catalog/pending-categories",
+    "/admin/catalog/category-timeline",
+    "/admin/catalog/categories"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js",
+    "resources/defs/port-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 11 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 4,
+   "group": "Seller › Catalog Master",
+   "name": "Brand",
+   "link": "brand.php",
+   "phpExists": true,
+   "route": "/admin/catalog/brands",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/catalog/pending-brands",
+    "/admin/catalog/brands"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js",
+    "resources/defs/port-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 3 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 45,
+   "group": "Seller › Catalog Master",
+   "name": "Feature Category",
+   "link": "feature_category.php",
+   "phpExists": true,
+   "route": "/admin/catalog/feature-categories",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 125,
+   "group": "Seller › Catalog Master",
+   "name": "Crop Menu",
+   "link": "shop_topics.php",
+   "phpExists": true,
+   "route": "/admin/catalog/crop-menu",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 9,
+   "group": "Seller › Catalog Master",
+   "name": "Configuration Attributes",
+   "link": "manage_conf_attributes.php",
+   "phpExists": true,
+   "route": "/admin/catalog/attributes",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/catalog/pending-attribute-sets",
+    "/admin/catalog/pending-attributes",
+    "/admin/catalog/attribute-values",
+    "/admin/catalog/attributes"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js",
+    "resources/defs/port-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 8,
+   "group": "Seller › Product Compliance",
+   "name": "HSN Code",
+   "link": "manage_hsncode.php",
+   "phpExists": true,
+   "route": "/admin/catalog/hsn-codes",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/catalog/hsn-codes"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 10,
+   "group": "Seller › Product Compliance",
+   "name": "Tax Class",
+   "link": "manage_tax_class.php",
+   "phpExists": true,
+   "route": "/admin/catalog/tax-classes",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/catalog/tax-classes",
+    "/admin/catalog/pending-tax"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js",
+    "resources/defs/port-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 11,
+   "group": "Seller › Product Compliance",
+   "name": "Return Policy",
+   "link": "manage_return_policy.php",
+   "phpExists": true,
+   "route": "/admin/catalog/return-policies",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/catalog/pending-return-policies",
+    "/admin/catalog/return-policies"
+   ],
+   "apiFiles": [
+    "resources/defs/catalog.js",
+    "resources/defs/port-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 3 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 124,
+   "group": "Seller › Pricing & Margin",
+   "name": "Master NRV",
+   "link": "add_master_nrv.php",
+   "phpExists": true,
+   "route": "/admin/pricing/master-nrv",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/pricing/master-nrv"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 19 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 121,
+   "group": "Seller › Packaging",
+   "name": "Vendor Package Boxes",
+   "link": "vendor_package_boxes.php",
+   "phpExists": true,
+   "route": "/admin/shipping/package-boxes",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/package-boxes"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 135,
+   "group": "Seller › Seller Reports",
+   "name": "Product Dashboard",
+   "link": "product_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/product-overview",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/seller.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 44 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 59,
+   "group": "Seller › Seller Reports",
+   "name": "Product Management Dashboard",
+   "link": "product_management_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/products",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 79,
+   "group": "Marketing › Marketing Dashboard",
+   "name": "Marketing Management",
+   "link": "social_media_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/marketing",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/marketing.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 16 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 738,
+   "group": "Marketing › Spend & Budget",
+   "name": "Marketing Expenses",
+   "link": "marketing_expenses.php",
+   "phpExists": true,
+   "route": "/admin/marketing/expenses",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/marketing.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 82,
+   "group": "Marketing › Engagement",
+   "name": "Engagement Panel",
+   "link": "engagement_panel.php",
+   "phpExists": true,
+   "route": "/admin/marketing/engagement",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/marketing.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 18 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 44,
+   "group": "Marketing › Offers & Promotions",
+   "name": "Offer & Coupon",
+   "link": "coupon.php",
+   "phpExists": true,
+   "route": "/admin/customers/coupons",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/coupons"
+   ],
+   "apiFiles": [
+    "resources/defs/people.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 3 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 28,
+   "group": "Marketing › Website Content",
+   "name": "Home Banner",
+   "link": "newhomepage_website.php",
+   "phpExists": true,
+   "route": "/admin/cms/home-sections",
+   "screen": "page",
+   "apiResources": [
+    "/admin/cms/home-sections/banners",
+    "/admin/cms/home-sections/items",
+    "/admin/cms/home-sections",
+    "/admin/cms/banners"
+   ],
+   "apiFiles": [
+    "cms/home-editor.routes.js",
+    "resources/defs/cms-extra.js",
+    "resources/defs/operations-cms.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 19 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 119,
+   "group": "Marketing › Website Content",
+   "name": "Blogs",
+   "link": "blogs.php",
+   "phpExists": true,
+   "route": "/admin/cms/blogs",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/cms/events",
+    "/admin/cms/blogs"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 5,
+   "group": "Marketing › Website Content",
+   "name": "Custom Page",
+   "link": "meta.php",
+   "phpExists": true,
+   "route": "/admin/cms/seo",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "pages/admin-pages.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 6,
+   "group": "Marketing › Website Content",
+   "name": "Custom Add Pages",
+   "link": "pages_custom.php",
+   "phpExists": true,
+   "route": "/admin/cms/pages",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/cms/pages"
+   ],
+   "apiFiles": [
+    "pages/admin-custom-pages.routes.js",
+    "resources/defs/operations-cms.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 58,
+   "group": "Sales › Sales Overview",
+   "name": "Sales Dashboard",
+   "link": "order_management_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/orders",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 92,
+   "group": "Sales › B2C Sales",
+   "name": "B2C Orders",
+   "link": "manage_orders.php",
+   "phpExists": true,
+   "route": "/admin/orders",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/lists/orders",
+    "/admin/sr-checkout",
+    "/admin/invoices",
+    "/admin/rto"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "orders/admin-orders.routes.js",
+    "resources/defs/orders-catalog.js",
+    "shipping/admin-shipping.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 35 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 88,
+   "group": "Sales › B2C Sales",
+   "name": "WhatsApp Orders",
+   "link": "whatsapp_orders.php",
+   "phpExists": true,
+   "route": "/admin/orders/whatsapp",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/orders-whatsapp"
+   ],
+   "apiFiles": [
+    "resources/defs/orders-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 152,
+   "group": "Sales › B2C Sales",
+   "name": "Create Order",
+   "link": "create_order.php",
+   "phpExists": true,
+   "route": "/admin/orders/new",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "orders/admin-orders.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 139,
+   "group": "Sales › B2B Sales",
+   "name": "B2B Dashboard",
+   "link": "b2b_orders/index.php",
+   "phpExists": true,
+   "route": "/admin/b2b",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "b2b/admin-b2b.routes.js",
+    "b2b/b2b-access.js",
+    "resources/defs/b2b-bulk.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 144,
+   "group": "Sales › B2B Sales",
+   "name": "Buyers",
+   "link": "b2b_orders/buyers.php",
+   "phpExists": true,
+   "route": "/admin/b2b/buyers",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/b2b/buyers"
+   ],
+   "apiFiles": [
+    "b2b/admin-b2b.routes.js",
+    "b2b/b2b-access.js",
+    "b2b/catalog/catalog-generator.routes.js",
+    "extras/admin-extras.service.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 14 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 142,
+   "group": "Sales › B2B Sales",
+   "name": "RFQs",
+   "link": "b2b_orders/rfqs.php",
+   "phpExists": true,
+   "route": "/admin/b2b/rfqs",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/b2b/rfqs"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 141,
+   "group": "Sales › B2B Sales",
+   "name": "B2B Quotations",
+   "link": "b2b_orders/b2b_quotations.php",
+   "phpExists": true,
+   "route": "/admin/b2b/quotations/new",
+   "screen": "page",
+   "apiResources": [
+    "/admin/b2b/quotations"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "b2b/catalog/catalog-generator.routes.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 143,
+   "group": "Sales › B2B Sales",
+   "name": "Catalog / Products",
+   "link": "b2b_orders/catalog.php",
+   "phpExists": true,
+   "route": "/admin/b2b/catalog/generate",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "menu-reads/menu-reads.routes.js",
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 9 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 140,
+   "group": "Sales › B2B Sales",
+   "name": "B2B Orders List",
+   "link": "b2b_orders/b2b_order_list.php",
+   "phpExists": true,
+   "route": "/admin/b2b/orders",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/b2b/orders"
+   ],
+   "apiFiles": [
+    "b2b/admin-b2b.routes.js",
+    "b2b/b2b-access.js",
+    "b2b/catalog/catalog-generator.routes.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 147,
+   "group": "Sales › B2B Sales",
+   "name": "Approvals",
+   "link": "b2b_orders/approvals.php",
+   "phpExists": true,
+   "route": "/admin/b2b/approvals",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 149,
+   "group": "Sales › B2B Sales",
+   "name": "B2B Reports",
+   "link": "b2b_orders/reports.php",
+   "phpExists": true,
+   "route": "/admin/b2b/reports",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "menu-reads/menu-reads.routes.js",
+    "parity/seller.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 14 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 99,
+   "group": "Sales › Bulk Sales",
+   "name": "Bulk Order Dashboard",
+   "link": "bulk_orders/index.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/dashboard",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [
+    "b2b/b2b-access.js"
+   ],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 98,
+   "group": "Sales › Bulk Sales",
+   "name": "Bulk Inquiry",
+   "link": "bulk_orders/bulk_inquiry.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/bulk-orders/inquiries"
+   ],
+   "apiFiles": [
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 96,
+   "group": "Sales › Bulk Sales",
+   "name": "Quotations",
+   "link": "bulk_orders/quotations.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/quotations",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 95,
+   "group": "Sales › Bulk Sales",
+   "name": "Create Order",
+   "link": "bulk_orders/create_order.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/new",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [
+    "orders/admin-orders.routes.js"
+   ],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 118,
+   "group": "Sales › Bulk Sales",
+   "name": "All Orders",
+   "link": "bulk_orders/orders.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/orders",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 101,
+   "group": "Sales › Bulk Sales",
+   "name": "Products",
+   "link": "bulk_orders/products.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/products",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 47,
+   "group": "Sales › CRM & Leads",
+   "name": "Lead Dashboard",
+   "link": "lead_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/crm",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "partial",
+   "reason": "No API route checks this PHP page directly (screen uses another page's permission)."
+  },
+  {
+   "id": 51,
+   "group": "Sales › CRM & Leads",
+   "name": "Add Lead",
+   "link": "add_lead.php",
+   "phpExists": true,
+   "route": "/admin/crm/add-lead",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 85,
+   "group": "Sales › CRM & Leads",
+   "name": "Convert to Leads",
+   "link": "manage_engagement_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/convert",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 8 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 48,
+   "group": "Sales › CRM & Leads",
+   "name": "Sales Agent Leads",
+   "link": "sales_agent_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/agent-leads",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 14 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 53,
+   "group": "Sales › CRM & Leads",
+   "name": "Manage All Leads",
+   "link": "manager_all_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/legacy-leads",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/crm/legacy-leads"
+   ],
+   "apiFiles": [
+    "resources/defs/crm-sales.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 8 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 49,
+   "group": "Sales › CRM & Leads",
+   "name": "Unassigned Leads",
+   "link": "pending_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/unassigned",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 13 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 50,
+   "group": "Sales › CRM & Leads",
+   "name": "Dead Leads",
+   "link": "dead_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/dead",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 13 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 122,
+   "group": "Sales › CRM & Leads",
+   "name": "CRM Lead Sheet",
+   "link": "crm_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/leads",
+   "screen": "page",
+   "apiResources": [
+    "/admin/crm/follow-ups",
+    "/admin/crm/circles",
+    "/admin/crm/leads"
+   ],
+   "apiFiles": [
+    "crm/admin-crm.routes.js",
+    "extras/admin-extras.service.js",
+    "resources/defs/cms-masters.js",
+    "resources/defs/crm-sales.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 56 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 151,
+   "group": "Sales › CRM & Leads",
+   "name": "Customer Tracking",
+   "link": "customer_search_tracking.php",
+   "phpExists": true,
+   "route": "/admin/crm/customer-tracking",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 33 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 52,
+   "group": "Sales › CRM & Leads",
+   "name": "Requested Leads",
+   "link": "report_requested_leads.php",
+   "phpExists": true,
+   "route": "/admin/crm/requested",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 12 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 126,
+   "group": "Sales › Telesales",
+   "name": "AI Calling Agent",
+   "link": "vapi_calls.php",
+   "phpExists": true,
+   "route": "/admin/crm/ai-calls",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/crm/ai-calls"
+   ],
+   "apiFiles": [
+    "resources/defs/crm-sales.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 16 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 113,
+   "group": "Sales › Target & Performance",
+   "name": "Sales Target Management",
+   "link": "sales_target_management.php",
+   "phpExists": true,
+   "route": "/admin/sales",
+   "screen": "page",
+   "apiResources": [
+    "/admin/sales/salary-structures",
+    "/admin/sales/achievements",
+    "/admin/sales/targets",
+    "/admin/sales/payouts",
+    "/admin/sales/team"
+   ],
+   "apiFiles": [
+    "crm/admin-crm.routes.js",
+    "resources/defs/crm-sales.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 24 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 116,
+   "group": "Sales › Target & Performance",
+   "name": "My Sales Performance",
+   "link": "my_sales_performance.php",
+   "phpExists": true,
+   "route": "/admin/sales/my-performance",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 16 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 54,
+   "group": "Sales › Target & Performance",
+   "name": "Team Performance",
+   "link": "sales_performance_report.php",
+   "phpExists": true,
+   "route": "/admin/sales/team-performance",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/crm.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 9 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 104,
+   "group": "Operation › Operations Control",
+   "name": "Operations Dashboard",
+   "link": "operations_team/dashboard.php",
+   "phpExists": true,
+   "route": "/admin/operations/team",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "operations/admin-operations.routes.js",
+    "parity/marketing.routes.js",
+    "screens/admin-panel-dashboards.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 128,
+   "group": "Operation › Operations Control",
+   "name": "Operations Center",
+   "link": "operations_center/index.php",
+   "phpExists": true,
+   "route": "/admin/operations",
+   "screen": "page",
+   "apiResources": [
+    "/admin/operations/recordings"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "operations/admin-operations.routes.js",
+    "resources/defs/b2b-ops.js",
+    "resources/defs/operations-cms.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 26 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 103,
+   "group": "Operation › Operations Control",
+   "name": "Setup",
+   "link": "operations_team/setup.php",
+   "phpExists": true,
+   "route": "/admin/operations/team/setup",
+   "screen": "page",
+   "apiResources": [
+    "/admin/operations/agent-master",
+    "/admin/operations/kpi-targets"
+   ],
+   "apiFiles": [
+    "port/lookups.routes.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 107,
+   "group": "Operation › Operations Control",
+   "name": "My Orders",
+   "link": "operations_team/agent_orders.php",
+   "phpExists": true,
+   "route": "/admin/operations/team/assignments",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/operations/assignments"
+   ],
+   "apiFiles": [
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 6 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 18,
+   "group": "Operation › Order Fulfilment",
+   "name": "Manage Orders",
+   "link": "manage_orders.php",
+   "phpExists": true,
+   "route": "/admin/orders",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/lists/orders",
+    "/admin/sr-checkout",
+    "/admin/invoices",
+    "/admin/rto"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "orders/admin-orders.routes.js",
+    "resources/defs/orders-catalog.js",
+    "shipping/admin-shipping.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 35 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 69,
+   "group": "Operation › Shipments",
+   "name": "Shiprocket Orders",
+   "link": "shiprocket_orders_report.php",
+   "phpExists": true,
+   "route": "/admin/shipping",
+   "screen": "page",
+   "apiResources": [
+    "/admin/shipments"
+   ],
+   "apiFiles": [
+    "resources/defs/orders-catalog.js",
+    "shipping/admin-shipping.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 9 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 80,
+   "group": "Operation › Shipments",
+   "name": "Delhivery Orders",
+   "link": "shipment_order_delhivery.php",
+   "phpExists": true,
+   "route": "/admin/shipping/delhivery",
+   "screen": "page",
+   "apiResources": [
+    "/admin/shipping/delhivery-orders"
+   ],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/ops.routes.js",
+    "resources/defs/parity-ops.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 117,
+   "group": "Operation › Shipments",
+   "name": "Weight Discrepancy",
+   "link": "weight_discrapancy.php",
+   "phpExists": true,
+   "route": "/admin/shipping/weight-discrepancy",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/weight-discrepancies"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 72,
+   "group": "Operation › Shipments",
+   "name": "Return Shipments",
+   "link": "manage_returns.php",
+   "phpExists": true,
+   "route": "/admin/returns",
+   "screen": "page",
+   "apiResources": [
+    "/admin/returns"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "resources/defs/orders-catalog.js",
+    "returns/admin-return-detail.routes.js",
+    "returns/admin-return-detail.service.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 8 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 134,
+   "group": "Operation › Shipments",
+   "name": "Master Delivered Orders",
+   "link": "master_delivered_orders.php",
+   "phpExists": true,
+   "route": "/admin/orders/delivered",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/ops.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 71,
+   "group": "Operation › Courier & Serviceability",
+   "name": "Shiprocket Serviceability",
+   "link": "courier_serviceability.php",
+   "phpExists": true,
+   "route": "/admin/shipping/pincodes",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/pincodes"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 9 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 81,
+   "group": "Operation › Courier & Serviceability",
+   "name": "Delhivery Serviceability",
+   "link": "servicebilty_delhivery.php",
+   "phpExists": true,
+   "route": "/admin/shipping/delhivery-serviceability",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/ops.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 8 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 109,
+   "group": "Operation › Courier & Serviceability",
+   "name": "Courier Cost Slab",
+   "link": "courier_cost_slab_master.php",
+   "phpExists": true,
+   "route": "/admin/shipping/courier-slabs",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/courier-slabs",
+    "/admin/shipping/other-charges"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 73,
+   "group": "Operation › Pickup",
+   "name": "Pickup Addresses",
+   "link": "pickup_addresses.php",
+   "phpExists": true,
+   "route": "/admin/shipping/pickup-addresses",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/ops.routes.js",
+    "resources/defs/b2b-bulk.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 25 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 75,
+   "group": "Operation › Pickup",
+   "name": "Pickup Update",
+   "link": "manage_pickup_requests.php",
+   "phpExists": true,
+   "route": "/admin/shipping/pickup-requests",
+   "screen": "page",
+   "apiResources": [
+    "/admin/shipping/pickup-requests"
+   ],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/ops.routes.js",
+    "resources/defs/parity-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 146,
+   "group": "Operation › B2B Operations",
+   "name": "Operations Queue",
+   "link": "b2b_orders/ops_queue.php",
+   "phpExists": true,
+   "route": "/admin/b2b/ops-queue",
+   "screen": "page",
+   "apiResources": [
+    "/admin/b2b/ops-queue"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "menu-reads/menu-reads.routes.js",
+    "parity/ops.routes.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/parity-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 6 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 145,
+   "group": "Operation › B2B Operations",
+   "name": "B2B Logistics",
+   "link": "b2b_orders/logistics.php",
+   "phpExists": true,
+   "route": "/admin/b2b/logistics",
+   "screen": "page",
+   "apiResources": [
+    "/admin/b2b/logistics"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "menu-reads/menu-reads.routes.js",
+    "parity/ops.routes.js",
+    "resources/defs/parity-ops.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 97,
+   "group": "Operation › Bulk Operations",
+   "name": "Bulk Shipments",
+   "link": "bulk_orders/shipments.php",
+   "phpExists": true,
+   "route": "/admin/bulk-orders/shipments",
+   "screen": null,
+   "apiResources": [],
+   "apiFiles": [],
+   "status": "missing",
+   "reason": "Route listed as pending in sidebar.js; sidebar opens /admin/not-ported."
+  },
+  {
+   "id": 105,
+   "group": "Operation › Operations Reports",
+   "name": "Overall Report",
+   "link": "operations_team/overall_report.php",
+   "phpExists": true,
+   "route": "/admin/operations/team/overall",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/ops.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 15 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 106,
+   "group": "Operation › Operations Reports",
+   "name": "Agent Report",
+   "link": "operations_team/agent_report.php",
+   "phpExists": true,
+   "route": "/admin/operations/team/agents",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/operations/agents"
+   ],
+   "apiFiles": [
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 24 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 60,
+   "group": "Operation › Operations Reports",
+   "name": "Logistics Operations Dashboard",
+   "link": "logistics_operations_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/logistics",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 34,
+   "group": "Tech › Technical Settings",
+   "name": "Script Settings",
+   "link": "script_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings/scripts",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/support-admin.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 3 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 35,
+   "group": "Tech › Technical Settings",
+   "name": "SMTP Settings",
+   "link": "smtp_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings/smtp",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "settings/admin-settings.service.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 32,
+   "group": "Tech › Technical Settings",
+   "name": "SMS Settings",
+   "link": "sms_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings/sms",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "settings/admin-settings.service.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 136,
+   "group": "Finance › Finance Dashboard",
+   "name": "Finance Dashboard",
+   "link": "finance.php",
+   "phpExists": true,
+   "route": "/admin/finance",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 794,
+   "group": "Finance › Revenue & Profitability",
+   "name": "Booked GMV",
+   "link": "finance.php#gmv_booked",
+   "phpExists": true,
+   "route": "/admin/finance#gmv_booked",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 795,
+   "group": "Finance › Revenue & Profitability",
+   "name": "Delivered GMV",
+   "link": "finance.php#gmv_delivered",
+   "phpExists": true,
+   "route": "/admin/finance#gmv_delivered",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 796,
+   "group": "Finance › Revenue & Profitability",
+   "name": "Platform Revenue / Take Rate",
+   "link": "finance.php#platform_revenue",
+   "phpExists": true,
+   "route": "/admin/finance#platform_revenue",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 797,
+   "group": "Finance › Revenue & Profitability",
+   "name": "Contribution Margin / CM %",
+   "link": "finance.php#cm_margin",
+   "phpExists": true,
+   "route": "/admin/finance#cm_margin",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 798,
+   "group": "Finance › Revenue & Profitability",
+   "name": "Fixed Cost / Net Profit",
+   "link": "finance.php#net_profit",
+   "phpExists": true,
+   "route": "/admin/finance#net_profit",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "screens/admin-panel-dashboards.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 150,
+   "group": "Finance › Expenses",
+   "name": "Fixed Expenses",
+   "link": "fixed_expenses.php",
+   "phpExists": true,
+   "route": "/admin/finance/fixed-expenses",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/finance/fixed-expenses"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 799,
+   "group": "Finance › Expenses",
+   "name": "Expense Limit Dashboard",
+   "link": "expense_limit_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/finance/expense-limits",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "settings/admin-settings.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 62,
+   "group": "Finance › Seller Settlement",
+   "name": "Payout Vendor",
+   "link": "payout_new.php",
+   "phpExists": true,
+   "route": "/admin/payouts",
+   "screen": "page",
+   "apiResources": [
+    "/admin/payouts/legacy",
+    "/admin/payouts/items",
+    "/admin/payouts"
+   ],
+   "apiFiles": [
+    "payouts/admin-payout-detail.routes.js",
+    "payouts/admin-payout-summary.routes.js",
+    "resources/defs/finance.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 120,
+   "group": "Finance › Seller Settlement",
+   "name": "Hold Ledger",
+   "link": "hold_ledger.php",
+   "phpExists": true,
+   "route": "/admin/finance/hold-ledger",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/finance/hold-ledger"
+   ],
+   "apiFiles": [
+    "resources/defs/finance.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 31 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 148,
+   "group": "Finance › Seller Settlement",
+   "name": "B2B Settlements",
+   "link": "b2b_orders/settlements.php",
+   "phpExists": true,
+   "route": "/admin/b2b/settlements",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/b2b/settlements"
+   ],
+   "apiFiles": [
+    "b2b/b2b-access.js",
+    "resources/defs/b2b-bulk.js",
+    "resources/defs/b2b-ops.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 24,
+   "group": "Finance › Payment & Refund",
+   "name": "Refund Return Report",
+   "link": "returns_refunds_report.php",
+   "phpExists": true,
+   "route": "/admin/refunds",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/refunds"
+   ],
+   "apiFiles": [
+    "resources/defs/orders-catalog.js",
+    "returns/admin-return-detail.service.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 3 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 61,
+   "group": "Finance › Accounts & Reports",
+   "name": "Finance Payout Dashboard",
+   "link": "finance_payout_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/dashboards/finance",
+   "screen": "page",
+   "apiResources": [
+    "/admin/finance/wallet-withdrawals"
+   ],
+   "apiFiles": [
+    "resources/defs/people.js",
+    "screens/admin-panel-dashboards.routes.js",
+    "screens/admin-screens.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 20 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 78,
+   "group": "Finance › Risk",
+   "name": "Fraud Analysis Dashboard",
+   "link": "fraud_analysis_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/finance/fraud",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/marketing.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 17 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 55,
+   "group": "Support › Support Dashboard",
+   "name": "Helpdesk / Support",
+   "link": "support/admin_dashboard.php",
+   "phpExists": true,
+   "route": "/admin/support",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/support/tickets",
+    "/admin/support/sla"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "resources/defs/operations-cms.js",
+    "resources/defs/people.js",
+    "support/admin-support-detail.routes.js",
+    "support/admin-support-sla.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 86,
+   "group": "Support › Communication",
+   "name": "Chatbot Logs",
+   "link": "chat_logs.php",
+   "phpExists": true,
+   "route": "/admin/support/chat-logs",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "parity/support-admin.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 87,
+   "group": "Support › Requests",
+   "name": "Requirement Requests",
+   "link": "requirement_requests.php",
+   "phpExists": true,
+   "route": "/admin/support/requirements",
+   "screen": "page",
+   "apiResources": [
+    "/admin/support-desk/requirements"
+   ],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "resources/defs/parity-support-admin.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 16,
+   "group": "Support › Reviews",
+   "name": "Pending Reviews",
+   "link": "product_review.php",
+   "phpExists": true,
+   "route": "/admin/customers/reviews/pending",
+   "screen": "page",
+   "apiResources": [
+    "/admin/reviews/pending"
+   ],
+   "apiFiles": [
+    "menu-reads/menu-reads.routes.js",
+    "resources/defs/parity-support-admin.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 17,
+   "group": "Support › Reviews",
+   "name": "Manage Reviews",
+   "link": "manage_review.php",
+   "phpExists": true,
+   "route": "/admin/customers/reviews",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/reviews"
+   ],
+   "apiFiles": [
+    "resources/defs/people.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 7 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 38,
+   "group": "Admin › User & Staff",
+   "name": "Manage All User",
+   "link": "app-user.php",
+   "phpExists": true,
+   "route": "/admin/customers",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/customers"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "people/admin-people-detail.routes.js",
+    "resources/defs/people.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 10 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 40,
+   "group": "Admin › User & Staff",
+   "name": "Add Staff",
+   "link": "add-staff.php",
+   "phpExists": true,
+   "route": "/admin/users/new",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/support-admin.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 6 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 41,
+   "group": "Admin › User & Staff",
+   "name": "Staff User",
+   "link": "manage-staff.php",
+   "phpExists": true,
+   "route": "/admin/users",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/users"
+   ],
+   "apiFiles": [
+    "auth/admin-auth.routes.js",
+    "resources/defs/people.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 42,
+   "group": "Admin › Roles & Permissions",
+   "name": "Manage Role",
+   "link": "manage-role.php",
+   "phpExists": true,
+   "route": "/admin/roles",
+   "screen": "page",
+   "apiResources": [
+    "/admin/audit-log"
+   ],
+   "apiFiles": [
+    "access/admin-access.routes.js",
+    "access/role-menu.service.js",
+    "b2b/b2b-access.js",
+    "resources/defs/people.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 43,
+   "group": "Admin › Roles & Permissions",
+   "name": "Menu Master",
+   "link": "menu-master.php",
+   "phpExists": true,
+   "route": "/admin/roles/menus",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "access/admin-access.routes.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 30,
+   "group": "Admin › Business Rules",
+   "name": "Manage Reject Reason",
+   "link": "reject-reason.php",
+   "phpExists": true,
+   "route": "/admin/masters/reject-reasons",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/masters/reject-reasons",
+    "/admin/returns/reasons"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js",
+    "resources/defs/orders-catalog.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 100,
+   "group": "Admin › Business Rules",
+   "name": "Manage Shipping Slabs",
+   "link": "manage_shipping_slabs.php",
+   "phpExists": true,
+   "route": "/admin/shipping/slabs",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/slabs"
+   ],
+   "apiFiles": [
+    "resources/defs/pricing-shipping.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 4 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 111,
+   "group": "Admin › Business Rules",
+   "name": "Manage Minimum Order",
+   "link": "manage_minimum_order.php",
+   "phpExists": true,
+   "route": "/admin/shipping/minimums#minimum-order",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "settings/admin-settings.routes.js",
+    "settings/admin-settings.service.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 112,
+   "group": "Admin › Business Rules",
+   "name": "Manage Minimum COD",
+   "link": "manage_minimum_cod.php",
+   "phpExists": true,
+   "route": "/admin/shipping/minimums#minimum-cod",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "settings/admin-settings.routes.js",
+    "settings/admin-settings.service.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 123,
+   "group": "Admin › Business Rules",
+   "name": "Manage COD State Rule",
+   "link": "manage_cod_state_rule.php",
+   "phpExists": true,
+   "route": "/admin/shipping/cod-rules",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/shipping/cod-rules"
+   ],
+   "apiFiles": [
+    "resources/defs/orders-catalog.js"
+   ],
+   "status": "live",
+   "reason": ""
+  },
+  {
+   "id": 31,
+   "group": "Admin › General Settings",
+   "name": "General Settings",
+   "link": "system_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings",
+   "screen": "page",
+   "apiResources": [
+    "/admin/masters/geography",
+    "/admin/cms/footer"
+   ],
+   "apiFiles": [
+    "extras/admin-extras.service.js",
+    "resources/defs/cms-masters.js",
+    "settings/admin-settings.routes.js",
+    "settings/admin-settings.service.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 9 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 33,
+   "group": "Admin › General Settings",
+   "name": "Language Settings",
+   "link": "language_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings/languages",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/settings/languages"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 1 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 36,
+   "group": "Admin › General Settings",
+   "name": "Currency Settings",
+   "link": "currency_settings.php",
+   "phpExists": true,
+   "route": "/admin/masters/currency",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/masters/currency"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 37,
+   "group": "Admin › Templates",
+   "name": "Email Template",
+   "link": "email_template.php",
+   "phpExists": true,
+   "route": "/admin/settings/email-templates",
+   "screen": "resource",
+   "apiResources": [
+    "/admin/settings/email-templates"
+   ],
+   "apiFiles": [
+    "resources/defs/cms-masters.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 2 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  },
+  {
+   "id": 83,
+   "group": "Admin › UI / Website Settings",
+   "name": "Login Modal",
+   "link": "signup_modal_settings.php",
+   "phpExists": true,
+   "route": "/admin/settings/login-modal",
+   "screen": "page",
+   "apiResources": [],
+   "apiFiles": [
+    "parity/support-admin.routes.js"
+   ],
+   "status": "live",
+   "reason": "Verify: 5 PHP column/field names not matched by name in the Next resource (heuristic, php-port audit)."
+  }
+ ],
+ "nextOnly": [
+  {
+   "label": "Reports",
+   "route": "/admin/reports",
+   "exists": true,
+   "kind": "page",
+   "live": false
+  },
+  {
+   "label": "Vendor Reports",
+   "route": "/admin/vendors/reports",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Bulk Import / Update",
+   "route": "/admin/products/import",
+   "exists": true,
+   "kind": "page",
+   "live": true
+  },
+  {
+   "label": "Inventory",
+   "route": "/admin/inventory",
+   "exists": true,
+   "kind": "page",
+   "live": true
+  },
+  {
+   "label": "Stock History",
+   "route": "/admin/inventory/history",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "NRV Price Calculator",
+   "route": "/admin/pricing",
+   "exists": true,
+   "kind": "page",
+   "live": true
+  },
+  {
+   "label": "Seller Commission",
+   "route": "/admin/pricing/commission",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Banners",
+   "route": "/admin/cms/banners",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Events",
+   "route": "/admin/cms/events",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "FAQs",
+   "route": "/admin/cms/faqs",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Footer Links",
+   "route": "/admin/cms/footer",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Push Notifications",
+   "route": "/admin/cms/notifications",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Invoices",
+   "route": "/admin/orders/invoices",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Date-wise Transactions",
+   "route": "/admin/orders/transactions",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Shiprocket Checkout",
+   "route": "/admin/orders/sr-checkout",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Payments & Credit",
+   "route": "/admin/b2b/payments",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Returns / Claims",
+   "route": "/admin/b2b/claims",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Alerts",
+   "route": "/admin/b2b/alerts",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Warehouses",
+   "route": "/admin/bulk-orders/warehouses",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Follow-ups",
+   "route": "/admin/crm/follow-ups",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "WhatsApp Leads",
+   "route": "/admin/crm/whatsapp",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Circle Assignment",
+   "route": "/admin/crm/circles",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "AI Call Audit",
+   "route": "/admin/crm/call-audit",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Targets",
+   "route": "/admin/sales/targets",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Salary Structure",
+   "route": "/admin/sales/salary",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Achievements",
+   "route": "/admin/sales/achievements",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Sales Payouts",
+   "route": "/admin/sales/payouts",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Prepaid Incentive Setup",
+   "route": "/admin/sales/prepaid-incentive",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "NDR & Escalations",
+   "route": "/admin/operations/ndr",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Call Recordings",
+   "route": "/admin/operations/recordings",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Rules & SLA",
+   "route": "/admin/operations/rules",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "RTO Ledger",
+   "route": "/admin/rto",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Return Reasons",
+   "route": "/admin/returns/reasons",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Other Charges",
+   "route": "/admin/shipping/other-charges",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Integrations",
+   "route": "/admin/settings/integrations",
+   "exists": true,
+   "kind": "page",
+   "live": true
+  },
+  {
+   "label": "Payout Items",
+   "route": "/admin/payouts/items",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Payout Access Settings",
+   "route": "/admin/payouts/access",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Legacy Payments",
+   "route": "/admin/payouts/legacy",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Ledger Management",
+   "route": "/admin/finance/ledger",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "COD Reconciliation",
+   "route": "/admin/finance/cod",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "GST & TCS",
+   "route": "/admin/finance/gst",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Wallet Withdrawals",
+   "route": "/admin/finance/wallet-withdrawals",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Departments & SLA",
+   "route": "/admin/support/sla",
+   "exists": true,
+   "kind": "page",
+   "live": true
+  },
+  {
+   "label": "Audit Log",
+   "route": "/admin/audit",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Country / State / City",
+   "route": "/admin/masters/geography",
+   "exists": true,
+   "kind": "resource",
+   "live": true
+  },
+  {
+   "label": "Help & Guide",
+   "route": "/admin/help",
+   "exists": true,
+   "kind": "page",
+   "live": false
+  }
+ ]
+}

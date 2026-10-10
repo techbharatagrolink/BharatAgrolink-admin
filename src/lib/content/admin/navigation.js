@@ -198,6 +198,7 @@ export const navigation = [
           { key: "orders-transactions", label: "Date-wise Transactions", href: "/admin/orders/transactions", permission: "orders.transactions" },
           { key: "orders-report", label: "Order Reports", href: "/admin/orders/report", page: "orders_report.php", permission: "orders.transactions" },
           { key: "orders-sr-checkout", label: "Shiprocket Checkout", href: "/admin/orders/sr-checkout", permission: "orders.srCheckout" },
+          { key: "orders-insights", label: "Order Insights", href: "/admin/orders/insights", permission: "orders" },
         ],
       },
       {
@@ -314,6 +315,7 @@ export const navigation = [
           { key: "returns-all", label: "Return Shipments", href: "/admin/returns", page: "manage_returns.php", permission: "returns", badge: "pendingReturns" },
           { key: "orders-delivered", label: "Master Delivered Orders", href: "/admin/orders/delivered", page: "master_delivered_orders.php", permission: "orders.delivered" },
           { key: "returns-rto", label: "RTO Ledger", href: "/admin/rto", permission: "rto" },
+          { key: "orders-rto-analysis", label: "RTO Analysis", href: "/admin/orders/insights#rto-analysis", permission: "orders" },
           { key: "returns-reasons", label: "Return Reasons", href: "/admin/returns/reasons", permission: "returns" },
         ],
       },

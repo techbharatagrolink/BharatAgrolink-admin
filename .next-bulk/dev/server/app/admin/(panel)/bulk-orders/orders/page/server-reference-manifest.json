@@ -1,0 +1,50 @@
+{
+  "node": {
+    "002d2150522fbc8f145093f8f71c54ff678fb5f4ca": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutAction",
+          "filename": "src/lib/actions/admin/auth.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/page": "action-browser"
+      },
+      "exportedName": "logoutAction",
+      "filename": "src/lib/actions/admin/auth.js"
+    },
+    "40aad625e1d644a81cb54928b93163cbcbf213a6ba": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteBulkOrderAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/page": "action-browser"
+      },
+      "exportedName": "deleteBulkOrderAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "4098284c6eaef2d5848ce0b4171609280552320d50": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/orders/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/orders/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "exportBulkOrdersAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/orders/page": "action-browser"
+      },
+      "exportedName": "exportBulkOrdersAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    }
+  },
+  "edge": {}
+}

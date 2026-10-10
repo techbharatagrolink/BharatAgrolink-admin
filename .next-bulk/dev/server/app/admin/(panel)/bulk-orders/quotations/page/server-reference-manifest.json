@@ -1,0 +1,50 @@
+{
+  "node": {
+    "002d2150522fbc8f145093f8f71c54ff678fb5f4ca": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/quotations/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/quotations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutAction",
+          "filename": "src/lib/actions/admin/auth.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/quotations/page": "action-browser"
+      },
+      "exportedName": "logoutAction",
+      "filename": "src/lib/actions/admin/auth.js"
+    },
+    "40180c25f4ad9d763ab21f0063257be7c91510e12c": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/quotations/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/quotations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "convertBulkQuotationAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/quotations/page": "action-browser"
+      },
+      "exportedName": "convertBulkQuotationAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    },
+    "40a6da0a542a5a94d5b2c4d758bbce6db049793f42": {
+      "workers": {
+        "app/admin/(panel)/bulk-orders/quotations/page": {
+          "moduleId": "[project]/.next-internal/server/app/admin/(panel)/bulk-orders/quotations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/actions/admin/auth.js [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/actions/admin/parity/bulk.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteBulkQuotationAction",
+          "filename": "src/lib/actions/admin/parity/bulk.js"
+        }
+      },
+      "layer": {
+        "app/admin/(panel)/bulk-orders/quotations/page": "action-browser"
+      },
+      "exportedName": "deleteBulkQuotationAction",
+      "filename": "src/lib/actions/admin/parity/bulk.js"
+    }
+  },
+  "edge": {}
+}

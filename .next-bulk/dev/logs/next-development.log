@@ -1,0 +1,4 @@
+[00:00:07.329] Server  LOG      ✓ Ready in 5.5s
+[00:00:13.051] Server  LOG      ○ Compiling /admin/dashboard ...
+[00:00:20.518] Server  ERROR    ⨯ TypeError: fetch failed
+[00:00:20.518] Server  ERROR    ⨯ TypeError: fetch failed

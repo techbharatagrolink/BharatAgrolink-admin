@@ -20,14 +20,7 @@ const norm = (link) => String(link ?? "").trim().replace(/^\/+/, "");
 const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 
 /** Sidebar routes whose screen is not built yet (bulk orders, plan phase 10). Remove a route when its page lands. */
-const PENDING_ROUTES = new Set([
-  "/admin/bulk-orders/dashboard",
-  "/admin/bulk-orders/quotations",
-  "/admin/bulk-orders/new",
-  "/admin/bulk-orders/orders",
-  "/admin/bulk-orders/products",
-  "/admin/bulk-orders/shipments",
-]);
+const PENDING_ROUTES = new Set(["/admin/bulk-orders/new"]);
 
 const leafByLink = new Map();
 const groups = new Map();

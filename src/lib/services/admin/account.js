@@ -1,4 +1,5 @@
 import "server-only";
+import { api } from "@/lib/api";
 import { getStore } from "@/lib/mock/admin/store";
 import { getPermissionCatalog } from "@/lib/content/admin/navigation";
 import { mockLatency } from "./_query";
@@ -21,4 +22,10 @@ export async function getMyAccount(user) {
     grants,
     activity: s.auditLog.filter((a) => a.actorId === user.id).slice(0, 12),
   };
+}
+
+/** Active logins of the signed-in admin (this panel and the PHP panel). Live API: GET /admin/auth/sessions */
+export async function getMySessions(user) {
+  const { data } = await api("admin/auth/sessions", { token: user.token });
+  return Array.isArray(data) ? data : [];
 }
