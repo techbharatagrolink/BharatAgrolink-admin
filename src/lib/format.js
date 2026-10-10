@@ -57,6 +57,26 @@ export function formatDateTime(value) {
   return Number.isNaN(date.getTime()) ? "—" : dateTimeFormatter.format(date);
 }
 
+const phpDateParts = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "Asia/Kolkata",
+});
+
+/** PHP date() for the tokens d M Y H i a (IST), so ported screens print dates as the PHP page did. */
+export function formatPhpDate(value, pattern) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const p = Object.fromEntries(phpDateParts.formatToParts(date).map(({ type, value: v }) => [type, v]));
+  const tokens = { d: p.day, M: p.month, Y: p.year, H: p.hour, i: p.minute, a: Number(p.hour) < 12 ? "am" : "pm" };
+  return pattern.replace(/[dMYHia]/g, (c) => tokens[c]);
+}
+
 export function formatRelative(value, now = Date.now()) {
   if (!value) return "—";
   const diff = Math.round((new Date(value).getTime() - now) / 60000);

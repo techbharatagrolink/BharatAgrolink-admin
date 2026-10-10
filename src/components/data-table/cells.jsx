@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+
+import { Clock } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
@@ -223,7 +225,12 @@ export function Cell({ column, row, onLineStatus }) {
   else {
     const text = formatCellValue(column, row);
     const href = resolveHref(column.href, row);
+
+    // dangerKey: another field of the row that, when truthy, flags this value (e.g. an overdue SLA).
+    
+    const danger = column.dangerKey && Boolean(Number(row[column.dangerKey]) || row[column.dangerKey] === true);
     const external = href && /^https?:\/\//i.test(href);
+
     content = href ? (
       external ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
@@ -235,7 +242,10 @@ export function Cell({ column, row, onLineStatus }) {
         </Link>
       )
     ) : (
-      <span className={cn(column.type === "mono" && "font-mono text-[12.5px]", column.emphasis && "font-medium text-ink")}>{text}</span>
+      <span className={cn(column.type === "mono" && "font-mono text-[12.5px]", column.emphasis && "font-medium text-ink", danger && "inline-flex items-center gap-1 font-bold text-danger-ink")}>
+        {text}
+        {danger && <Clock className="size-3.5" aria-label="Overdue" />}
+      </span>
     );
   }
   return (

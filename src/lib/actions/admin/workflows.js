@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { previewRefund, processReturn } from "@/lib/services/admin/returns";
+import { createReturnRequest, createReturnShipment, getReturnShipmentForm, previewRefund, processReturn, returnCustomerOrders, searchReturnCustomers } from "@/lib/services/admin/returns";
 import { payoutAction } from "@/lib/services/admin/payouts";
 import { addTicketMessage, updateTicket } from "@/lib/services/admin/support";
 import { logLeadActivity } from "@/lib/services/admin/pipeline";
@@ -22,8 +22,73 @@ export async function previewRefundAction(id, flags) {
 export async function processReturnAction(id, action, input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
-  const result = await processReturn(str(id), str(action), { pickupService: str(input?.pickupService), refundShipping: Boolean(input?.refundShipping), deductPlatformFee: Boolean(input?.deductPlatformFee), reason: str(input?.reason) }, user);
+  const result = await processReturn(
+    str(id),
+    str(action),
+    {
+      pickupService: str(input?.pickupService),
+      refundShipping: Boolean(input?.refundShipping),
+      deductPlatformFee: Boolean(input?.deductPlatformFee),
+      reason: str(input?.reason),
+      // manage_returns.php "Save" (update_return) and the refund's bank transfer transaction id.
+      pickupAddress: str(input?.pickupAddress),
+      expectedPickupDate: str(input?.expectedPickupDate),
+      courierTrackingId: str(input?.courierTrackingId),
+      internalNotes: str(input?.internalNotes),
+      transactionId: str(input?.transactionId),
+    },
+    user,
+  );
   if (result.ok) revalidatePath(`/admin/returns/${id}`);
+  return result;
+}
+
+/* manage_returns.php "Add Return Request" and "Create Return Shipment". */
+
+export async function searchReturnCustomersAction(search) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const q = str(search).trim().slice(0, 100);
+  if (q.length < 3) return { ok: true, data: [] };
+  return searchReturnCustomers(q, user);
+}
+
+export async function returnCustomerOrdersAction(userId) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!str(userId).trim()) return { ok: false, message: "Select a customer." };
+  return returnCustomerOrders(str(userId).trim().slice(0, 100), user);
+}
+
+export async function createReturnRequestAction(formData) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!(formData instanceof FormData)) return { ok: false, message: "Invalid request." };
+  const form = new FormData();
+  for (const key of ["userId", "items", "reason", "detail"]) form.set(key, str(formData.get(key)));
+  const files = formData.getAll("attachments").filter((f) => f && typeof f === "object" && f.size > 0);
+  if (files.length > 5) return { ok: false, message: "Maximum 5 images allowed" };
+  for (const file of files) form.append("attachments", file, file.name || "attachment");
+  const result = await createReturnRequest(form, user);
+  if (result.ok) revalidatePath("/admin/returns");
+  return result;
+}
+
+export async function returnShipmentFormAction(id) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  return getReturnShipmentForm(str(id), user);
+}
+
+export async function createReturnShipmentAction(id, payload) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!payload || typeof payload !== "object") return { ok: false, message: "Invalid request." };
+  const result = await createReturnShipment(str(id), payload, user);
+  if (result.ok) {
+    revalidatePath("/admin/returns");
+    revalidatePath(`/admin/returns/${id}`);
+  }
   return result;
 }
 
@@ -35,12 +100,20 @@ export async function payoutActionAction(id, action, input) {
   return result;
 }
 
-export async function ticketMessageAction(id, message, internal) {
+/** FormData fields as the PHP chat form: message, is_internal (checkbox), image (optional file). */
+export async function ticketMessageAction(id, formData) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
-  const result = await addTicketMessage(str(id), str(message), Boolean(internal), user);
-  if (result.ok) revalidatePath(`/admin/support/${id}`);
-  return result;
+  const image = formData?.get("image");
+  return addTicketMessage(
+    str(id),
+    {
+      message: str(formData?.get("message")),
+      internal: ["1", "on", "true"].includes(str(formData?.get("is_internal"))),
+      image: image && typeof image === "object" && image.size > 0 ? image : null,
+    },
+    user,
+  );
 }
 
 export async function logLeadActivityAction(id, input) {
