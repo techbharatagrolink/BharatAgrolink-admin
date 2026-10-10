@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatCard, StatGrid } from "@/components/ui/page";
 import { BarChart, DonutChart, LineChart } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
+import { cn } from "@/lib/utils";
 import { formatINR, formatNumber, formatPercent } from "@/lib/format";
 import { ProductActivity, ProductInspect } from "./product-inspect";
 
@@ -20,9 +21,9 @@ function shortDay(day) {
   return Number.isNaN(date.getTime()) ? String(day) : date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-function Drill({ children, onClick, label }) {
+function Drill({ children, onClick, label, className }) {
   return (
-    <button type="button" onClick={onClick} className="block h-full w-full min-w-0 text-left" aria-label={label}>
+    <button type="button" onClick={onClick} className={cn("block h-full min-w-0 text-left", className || "w-full")} aria-label={label}>
       {children}
     </button>
   );
@@ -120,29 +121,31 @@ export function ProductDashboard({ data, filters, feed, feedError }) {
   return (
     <>
       <Card>
-        <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Drill onClick={() => setCard("health_score")} label="Open products behind the health score">
-            <ScoreRing score={health.score} color={health.color} />
-          </Drill>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-semibold text-ink">Catalog health</h2>
-              <Badge tone={HEALTH_TONE[health.status] ?? "neutral"} dot>{health.status}</Badge>
+        <CardBody>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <Drill onClick={() => setCard("health_score")} label="Open products behind the health score" className="w-fit shrink-0">
+              <ScoreRing score={health.score} color={health.color} />
+            </Drill>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold text-ink">Catalog health</h2>
+                <Badge tone={HEALTH_TONE[health.status] ?? "neutral"} dot>{health.status}</Badge>
+              </div>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-muted">Stock, returns, sales velocity and margin, 25 points each. Click the score to see the products behind it.</p>
+              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  ["Stock", health.components.stock],
+                  ["RTO", health.components.rto],
+                  ["Velocity", health.components.velocity],
+                  ["Margin", health.components.margin],
+                ].map(([label, value]) => (
+                  <div key={label} className="min-w-0 rounded-lg bg-surface-muted px-3 py-2">
+                    <dt className="text-xs text-ink-muted">{label}</dt>
+                    <dd className="font-medium tabular text-ink">{formatNumber(value)}<span className="font-normal text-ink-muted"> / 25</span></dd>
+                  </div>
+                ))}
+              </dl>
             </div>
-            <p className="mt-1 text-sm text-ink-muted">Stock, returns, sales velocity and margin, 25 points each. Click the score to see the products behind it.</p>
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-              {[
-                ["Stock", health.components.stock],
-                ["RTO", health.components.rto],
-                ["Velocity", health.components.velocity],
-                ["Margin", health.components.margin],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-xs text-ink-muted">{label}</dt>
-                  <dd className="font-medium tabular text-ink">{formatNumber(value)} / 25</dd>
-                </div>
-              ))}
-            </dl>
           </div>
         </CardBody>
       </Card>

@@ -37,12 +37,36 @@ function one(value) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export async function getMainDashboard(params = {}, user) {
+function dashboardQuery(params = {}) {
   const query = {};
   for (const key of FILTER_KEYS) {
     const value = one(params?.[key])?.trim();
     if (value && VALID[key](value)) query[key] = value;
   }
-  const { data } = await api("admin/panel-dashboards/main", { token: user.token, query });
+  const page = one(params?.page)?.trim();
+  if (page && /^\d+$/.test(page)) query.page = page;
+  const pageSize = one(params?.pageSize)?.trim();
+  if (pageSize && ["10", "20", "25", "50", "100"].includes(pageSize)) query.pageSize = pageSize;
+  return query;
+}
+
+export function dashboardFilterHref(pathname, params = {}) {
+  const query = dashboardQuery(params);
+  delete query.page;
+  delete query.pageSize;
+  delete query.range;
+  if (query.type === "all") delete query.type;
+  const qs = new URLSearchParams(query).toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
+export async function getMainDashboard(params = {}, user) {
+  const { data } = await api("admin/panel-dashboards/main", { token: user.token, query: dashboardQuery(params) });
+  return data;
+}
+
+/** Row list for one dashboard card. Same filters as the main dashboard, 20 rows a page. */
+export async function getDashboardCard(slug, params = {}, user) {
+  const { data } = await api(`admin/panel-dashboards/cards/${encodeURIComponent(slug)}`, { token: user.token, query: dashboardQuery(params) });
   return data;
 }

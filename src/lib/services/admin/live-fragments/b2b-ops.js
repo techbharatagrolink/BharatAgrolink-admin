@@ -31,6 +31,8 @@ export const resources = {
 
 export const livePaths = [
   "/admin/b2b",
+  "/admin/b2b/quotations/new",
+  "/admin/b2b/catalog/generate",
   "/admin/b2b/buyers",
   "/admin/b2b/rfqs",
   "/admin/b2b/quotations",

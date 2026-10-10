@@ -1,8 +1,23 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import Link from "next/link";
+
 import { Clock } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
+import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
+import { StatusDot, StatusDotSelect } from "./status-dot-select";
 import { formatDate, formatDateTime, formatINR, formatNumber, formatPercent, maskMobile } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+function hrefToken(value) {
+  const text = String(value ?? "");
+  // A stored path or absolute URL is already an address. Encoding it turns
+  // "/admin/orders/BAO 1" into a relative slug and the card route swallows it.
+  if (text.startsWith("/") || /^https?:\/\//i.test(text)) return text;
+  return encodeURIComponent(text);
+}
 
 export function resolveHref(pattern, row) {
   if (!pattern) return null;
@@ -10,7 +25,7 @@ export function resolveHref(pattern, row) {
   const href = pattern.replace(/\{(\w+)\}/g, (_, key) => {
     const value = row[key];
     if (value == null || value === "") missing = true;
-    return encodeURIComponent(value ?? "");
+    return hrefToken(value);
   });
   return missing ? null : href;
 }
@@ -36,16 +51,161 @@ export function formatCellValue(column, row) {
       return value == null || value === "" ? "—" : (column.labels?.[value] ?? String(value).replace(/_/g, " "));
     case "image":
       return value ? String(value) : "";
+    case "lineStatus": {
+      const lines = Array.isArray(row.lines) ? row.lines : [];
+      const summary = value == null || value === "" ? "" : String(value);
+      const detail = lines.map((line) => `${line.productName || "Item"} (${line.invoiceNumber || "no invoice"}): ${line.status}`).join("; ");
+      return [summary, detail].filter(Boolean).join(" — ") || "—";
+    }
+    case "remarks": {
+      const list = Array.isArray(value) ? value : [];
+      if (!list.length) return "—";
+      const body = [...list].reverse().map((item) => `${item.text} (${[item.by || "Unknown", item.at].filter(Boolean).join(", ")})`).join(" | ");
+      return list.length > 1 ? `${body} +${list.length - 1}` : body;
+    }
     default:
       return value == null || value === "" ? "—" : String(value);
   }
 }
 
-export function Cell({ column, row }) {
+function remarkWhen(value) {
+  if (!value) return "";
+  const normalized = String(value).includes("T") ? String(value) : String(value).replace(" ", "T");
+  const formatted = formatDateTime(normalized);
+  return formatted === "—" ? String(value) : formatted;
+}
+
+function RemarkNote({ item }) {
+  const when = remarkWhen(item.at);
+  return (
+    <div>
+      <p className="break-words whitespace-pre-wrap text-ink">{item.text}</p>
+      <p className="text-[11px] text-ink-muted">
+        {item.by || "Unknown"}
+        {when ? ` · ${when}` : ""}
+      </p>
+    </div>
+  );
+}
+
+function RemarksCell({ remarks, orderId }) {
+  const [open, setOpen] = useState(false);
+  const list = Array.isArray(remarks) ? remarks : [];
+  if (!list.length) return <span className="text-ink-muted">—</span>;
+  const newestFirst = [...list].reverse();
+  const latest = newestFirst[0];
+  const count = list.length;
+  return (
+    <>
+      <div className="flex w-full min-w-0 items-center gap-1.5">
+        <span className="min-w-0 flex-1 truncate" title={latest.text}>
+          {latest.text}
+        </span>
+        <button
+          type="button"
+          className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-1.5 text-ink-soft hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/30"
+          aria-label={count > 1 ? `Show all ${count} remarks` : "Show remark"}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          <MessageSquare className="size-3.5" aria-hidden />
+          {count > 1 ? <span className="text-[11px] font-semibold tabular text-brand-700">{count}</span> : null}
+        </button>
+      </div>
+      <Dialog open={open} onClose={() => setOpen(false)} title="Remarks" description={orderId ? `Order ${orderId}` : "Every note on this order"} size="md">
+        <ul className="divide-y divide-line">
+          {newestFirst.map((item, index) => (
+            <li key={item.id || `${item.at}-${index}`} className="py-3 first:pt-0 last:pb-0">
+              <RemarkNote item={item} />
+            </li>
+          ))}
+        </ul>
+      </Dialog>
+    </>
+  );
+}
+
+function LineStatusCell({ row, options, onLineStatus }) {
+  const [draft, setDraft] = useState(null);
+  const [running, startRunning] = useTransition();
+  const lines = Array.isArray(row.lines) ? row.lines : [];
+  const canonical = Array.isArray(options) ? options : [];
+
+  const save = () => {
+    if (!draft || !onLineStatus) return;
+    startRunning(async () => {
+      await onLineStatus(row.id, draft.invoiceNumber, draft.status);
+      setDraft(null);
+    });
+  };
+
+  if (!lines.length) {
+    const status = row.status;
+    if (!status) return <span className="text-ink-muted">—</span>;
+    return (
+      <span className="inline-flex size-6 items-center justify-center" title={String(status)}>
+        <StatusDot status={status} />
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-1">
+        {lines.map((line) => {
+          const current = line.status || "Placed";
+          const choices = canonical.includes(current) ? canonical : [current, ...canonical];
+          const label = line.productName || "Item";
+          const title = [label, line.invoiceNumber, current].filter(Boolean).join(" · ");
+          if (onLineStatus && line.invoiceNumber) {
+            return (
+              <StatusDotSelect
+                key={line.id}
+                iconOnly
+                title={title}
+                aria-label={`Line status for ${label}, ${current}`}
+                value={current}
+                options={choices}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (next && next !== current && canonical.includes(next)) {
+                    setDraft({ invoiceNumber: line.invoiceNumber, status: next, productName: label });
+                  }
+                }}
+              />
+            );
+          }
+          return (
+            <span key={line.id} className="inline-flex size-6 items-center justify-center" title={title}>
+              <StatusDot status={current} />
+            </span>
+          );
+        })}
+      </div>
+      <ConfirmDialog
+        open={Boolean(draft)}
+        onClose={() => (running ? undefined : setDraft(null))}
+        onConfirm={save}
+        loading={running}
+        title="Update line status?"
+        description={draft ? `Change ${draft.productName} (${draft.invoiceNumber}) on order ${row.id} to “${draft.status}”? This sets the status on every product that shares this seller invoice.` : ""}
+        confirmLabel={draft ? `Set ${draft.status}` : "Update"}
+        tone="warning"
+      />
+    </>
+  );
+}
+
+export function Cell({ column, row, onLineStatus }) {
   const value = row[column.key];
   const sub = column.sub ? row[column.sub] : null;
   let content;
-  if (column.type === "image")
+  if (column.type === "lineStatus") content = <LineStatusCell row={row} options={column.options} onLineStatus={onLineStatus} />;
+  else if (column.type === "remarks") content = <RemarksCell remarks={value} orderId={row.id} />;
+  else if (column.type === "image")
     content = value ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={value} alt="" loading="lazy" className="h-12 w-auto max-w-[96px] rounded border border-line object-contain" />
@@ -65,12 +225,22 @@ export function Cell({ column, row }) {
   else {
     const text = formatCellValue(column, row);
     const href = resolveHref(column.href, row);
+
     // dangerKey: another field of the row that, when truthy, flags this value (e.g. an overdue SLA).
+    
     const danger = column.dangerKey && Boolean(Number(row[column.dangerKey]) || row[column.dangerKey] === true);
+    const external = href && /^https?:\/\//i.test(href);
+
     content = href ? (
-      <Link href={href} className="font-medium text-brand-700 hover:underline">
-        {text}
-      </Link>
+      external ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+          {text}
+        </a>
+      ) : (
+        <Link href={href} className="font-medium text-brand-700 hover:underline">
+          {text}
+        </Link>
+      )
     ) : (
       <span className={cn(column.type === "mono" && "font-mono text-[12.5px]", column.emphasis && "font-medium text-ink", danger && "inline-flex items-center gap-1 font-bold text-danger-ink")}>
         {text}

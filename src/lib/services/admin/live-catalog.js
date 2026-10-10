@@ -97,8 +97,10 @@ export const LIVE_RESOURCES = {
   "operations.agents": { path: "/operations/agents", page: "operations_team/agent_report.php", permission: "operations.team" },
   "operations.agentMaster": { path: "/operations/agent-master", page: "operations_team/setup.php", permission: "operations.setup" },
   "operations.setup": { path: "/operations/kpi-targets", page: "operations_team/setup.php", permission: "operations.setup" },
-  "cms.banners": { path: "/cms/banners", page: "banners.php", permission: "cms" },
+  "cms.banners": { path: "/cms/banners", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeSections": { path: "/cms/home-sections", page: "newhomepage_website.php", permission: "cms" },
+  "cms.homeBanners": { path: "/cms/home-sections/banners", page: "newhomepage_website.php", permission: "cms" },
+  "cms.homeSectionItems": { path: "/cms/home-sections/items", page: "newhomepage_website.php", permission: "cms" },
   "cms.pages": { path: "/custom-pages", page: "pages_custom.php", permission: "cms.pages" },
   "cms.notifications": { path: "/cms/notifications", page: "notification.php", permission: "cms.notifications" },
   ...parityLive,
@@ -238,6 +240,9 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/settings/email-templates",
   "/admin/settings/languages",
   "/admin/support",
+  "/admin/b2b",
+  "/admin/b2b/quotations/new",
+  "/admin/b2b/catalog/generate",
   "/admin/b2b/buyers",
   "/admin/b2b/rfqs",
   "/admin/b2b/quotations",
@@ -278,10 +283,12 @@ export const LIVE_ADMIN_PATHS = new Set([
 export function isLiveAdminPath(pathname) {
   if (LIVE_ADMIN_PATHS.has(pathname)) return true;
   const path = pathname || "";
+  if (path.startsWith("/admin/dashboard/cards/")) return true;
   if (/^\/admin\/orders\/(?!new$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/crm\/leads\/\d+$/.test(path)) return true;
   if (/^\/admin\/products\/(?!new$|import$|pending$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/vendors\/(?!verification$|scores$|reports$)[^/]+$/.test(path)) return true;
+  if (/^\/admin\/vendors\/(?!verification$|scores$|reports$)[^/]+\/bank$/.test(path)) return true;
   if (/^\/admin\/customers\/(?!coupons$|reviews$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/returns\/(?!reasons$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/payouts\/(?!items$|access$|legacy$)[^/]+$/.test(path)) return true;

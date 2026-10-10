@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { getOrder } from "@/lib/services/admin/orders";
-import { formatDateTime, formatINR, maskMobile } from "@/lib/format";
+import { formatDateTime, formatINR } from "@/lib/format";
 import { DescriptionList, PageHeader, Timeline } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -31,6 +31,8 @@ export default async function OrderDetailPage({ params, searchParams }) {
   if (!data) notFound();
   const shipments = canShip(user) && user?.token ? await orderShipments(id, user) : null;
   const { order, customer, groups, totals } = data;
+  const address = data.editor?.address;
+  const delivery = [address?.address, address?.area, order.city, order.state, order.pincode].filter(Boolean).join(", ");
 
   return (
     <>
@@ -65,8 +67,9 @@ export default async function OrderDetailPage({ params, searchParams }) {
                 columns={1}
                 items={[
                   { label: "Name", value: order.customer },
-                  { label: "Mobile", value: maskMobile(order.mobile) },
-                  { label: "Delivery", value: `${order.city}, ${order.state} – ${order.pincode}` },
+                  { label: "Mobile", value: order.mobile || "—" },
+                  address?.alternateMobile && { label: "Alternate mobile", value: address.alternateMobile },
+                  { label: "Address", value: delivery || "—" },
                   customer && { label: "Orders so far", value: customer.orders },
                 ]}
               />

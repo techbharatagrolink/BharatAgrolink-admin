@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
+import { can } from "@/lib/auth/permissions";
 import { getVendor } from "@/lib/services/admin/people";
 import { formatDate, formatDateTime, formatINR, formatNumber, maskMobile } from "@/lib/format";
 import { DescriptionList, PageHeader, ProgressBar, StatCard, StatGrid } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
+import { ButtonLink } from "@/components/ui/button";
+import { VendorKyc } from "@/components/admin/vendors/vendor-kyc";
 import { HBarList } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
@@ -46,7 +49,9 @@ export default async function VendorDetailPage({ params, searchParams }) {
             <Badge tone={v.payoutAccess ? "success" : "neutral"}>Payout page {v.payoutAccess ? "enabled" : "disabled"}</Badge>
           </>
         }
+        actions={<ButtonLink href={`/admin/vendors/${v.id}/bank`} variant="secondary" size="sm">Bank details</ButtonLink>}
       />
+      <VendorKyc vendorId={v.id} documents={data.documents || []} canEdit={can(user, "vendors", "edit")} />
       <StatGrid>
         <StatCard label="Score" value={v.score ?? "—"} hint="out of 100" tone="info" href="/admin/vendors/scores" />
         <StatCard label="Products" value={formatNumber(data.productCount)} href={`/admin/products?vendorId=${v.id}`} />

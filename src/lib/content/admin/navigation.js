@@ -209,7 +209,9 @@ export const navigation = [
           { key: "b2b-buyers", label: "Buyers", href: "/admin/b2b/buyers", page: "b2b_orders/buyers.php", permission: "b2b.buyers" },
           { key: "b2b-rfqs", label: "RFQs", href: "/admin/b2b/rfqs", page: "b2b_orders/rfqs.php", permission: "b2b.rfqs", badge: "openRfqs" },
           { key: "b2b-quotations", label: "B2B Quotations", href: "/admin/b2b/quotations", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations" },
+          { key: "b2b-quote-new", label: "Create Quotation", href: "/admin/b2b/quotations/new", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations", action: "add" },
           { key: "b2b-catalog", label: "Catalog / Products", href: "/admin/b2b/catalog", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
+          { key: "b2b-catalog-generate", label: "Generate Catalogue", href: "/admin/b2b/catalog/generate", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
           { key: "b2b-orders", label: "B2B Orders List", href: "/admin/b2b/orders", page: "b2b_orders/b2b_order_list.php", permission: "b2b.orders" },
           { key: "b2b-approvals", label: "Approvals", href: "/admin/b2b/approvals", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
           { key: "b2b-reports", label: "B2B Reports", href: "/admin/b2b/reports", page: "b2b_orders/reports.php", permission: "b2b.reports" },
@@ -567,6 +569,7 @@ export const navigation = [
 export const hiddenRoutes = [
   { pattern: /^\/admin\/orders\/[^/]+$/, label: "Order Details", parent: "/admin/orders" },
   { pattern: /^\/admin\/products\/[^/]+$/, label: "Product Details", parent: "/admin/products" },
+  { pattern: /^\/admin\/vendors\/[^/]+\/bank$/, label: "Bank Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/vendors\/[^/]+$/, label: "Vendor Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/customers\/[^/]+$/, label: "Customer Details", parent: "/admin/customers" },
   { pattern: /^\/admin\/returns\/[^/]+$/, label: "Return Details", parent: "/admin/returns" },

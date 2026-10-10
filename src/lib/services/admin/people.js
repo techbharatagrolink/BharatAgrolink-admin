@@ -2,7 +2,7 @@ import "server-only";
 import { getStore } from "@/lib/mock/admin/store";
 import { can } from "@/lib/auth/permissions";
 import { maskAccount, maskEmail } from "@/lib/format";
-import { api, ApiError } from "@/lib/api";
+import { api, apiForm, ApiError } from "@/lib/api";
 import { mockLatency, countBy, sum } from "./_query";
 
 /**
@@ -45,6 +45,31 @@ export async function getVendor(id, user) {
     tickets: s.tickets.filter((t) => t.userType === "vendor" && t.user === v.name).slice(0, 5),
     showFinance: finance,
   };
+}
+
+export async function getVendorBank(id, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/bank`, { token: user.token });
+  return data;
+}
+
+export async function saveVendorBank(id, body, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/bank`, { method: "PUT", token: user.token, body });
+  return data;
+}
+
+export async function verifyVendorBank(id, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/bank/verify`, { method: "POST", token: user.token, body: {} });
+  return data;
+}
+
+export async function lookupVendorIfsc(code, user) {
+  const { data } = await api(`admin/vendors/ifsc/${encodeURIComponent(code)}`, { token: user.token });
+  return data;
+}
+
+export async function saveVendorKycFiles(id, formData, user) {
+  const { data } = await apiForm(`admin/vendors/${encodeURIComponent(id)}/kyc-files`, { token: user.token, formData });
+  return data;
 }
 
 export async function getCustomer(id, user) {

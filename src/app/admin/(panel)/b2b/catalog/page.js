@@ -3,6 +3,7 @@ import { can } from "@/lib/auth/permissions";
 import { getB2bCatalog, getB2bCatalogOptions } from "@/lib/services/admin/parity/seller";
 import { formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
+import { ButtonLink } from "@/components/ui/button";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { B2bCatalogTable } from "@/components/admin/parity/seller/b2b-catalog-table";
 
@@ -30,7 +31,7 @@ export default async function B2bCatalogPage({ searchParams }) {
   const { kpis } = data;
   return (
     <>
-      <PageHeader title={TITLE} description={DESCRIPTION} />
+      <PageHeader title={TITLE} description={DESCRIPTION} actions={<ButtonLink href="/admin/b2b/catalog/generate" size="sm" variant="primary">Generate catalogue</ButtonLink>} />
       <div className="space-y-4">
         <StatGrid className="xl:grid-cols-5">
           <StatCard label="Total SKUs" value={formatNumber(kpis.total)} hint="Products in B2B catalog" />

@@ -6,8 +6,9 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
-import { deleteVariationAction, removeProductImageAction, saveProductAction, saveVariationAction, setProductStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
+import { createCatalogProductAction, deleteVariationAction, removeProductImageAction, saveProductAction, saveProductAttributesAction, saveVariationAction, setProductStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
 import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
+import { toVariantGrams, VariantConfigurations } from "@/components/admin/products/variant-configurations";
 
 const STEPS = [
   ["basic", "Basic Info", "Product details"],
@@ -28,20 +29,30 @@ const TOXICITY = [
   { value: "danger", label: "Danger" },
 ];
 
-const blankVariation = { label: "", mrp: "", display: "", saleExGst: "", nrv: "", gstPercent: "", stock: "", weightKg: "", lengthCm: "", widthCm: "", heightCm: "", commission: "", courier: "" };
+const emptyForm = {
+  name: "", productType: "simple", brandId: "", categoryId: "", categoryIds: [], chemicalName: "", toxicity: "",
+  countryOfOrigin: "India", webUrl: "", stock: "", mrp: "", nrv: "", gstPercent: "", hsn: "", salePrice: "",
+  videoUrl: "", weightKg: "", lengthCm: "", widthCm: "", heightCm: "", shipping: "", heavy: false, description: "",
+  details: "", usage: "", offerTitle: "", offerShort: "", returnPolicyId: "", purchaseLimit: "", relatedProducts: "",
+  upsellProducts: "", commission: "", adExpense: "", officeExpense: "", profit: "", selfShip: false, chemicalFormula: "",
+  courierZone: "", size: "", specifications: [], faqs: [], vendorId: "",
+};
 
 function imagesOf(product) {
   return [...new Set([product.featured, ...(product.images || [])].filter(Boolean))];
 }
 
-/** The PHP edit_product.php wizard: eight sections, preview, draft and publish. */
-export function ProductEditor({ product, options, vendorName }) {
+/** The PHP edit_product.php wizard: eight sections, preview, draft and publish. Create uses the same columns. */
+export function ProductEditor({ product: source, options, vendorName, mode = "edit" }) {
+  const creating = mode === "create";
+  const product = source || { id: "", sku: "", status: "New", statusCode: 0, variations: [], images: [], featured: "", vendor: "", name: "" };
   const router = useRouter();
   const { notify } = useToast();
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState("basic");
   const [query, setQuery] = useState("");
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => (creating ? emptyForm : {
+    ...emptyForm,
     name: product.name || "",
     productType: product.productType === "configure" ? "configure" : "simple",
     brandId: product.brandId ? String(product.brandId) : "",
@@ -80,10 +91,13 @@ export function ProductEditor({ product, options, vendorName }) {
     selfShip: Boolean(product.selfShip),
     chemicalFormula: typeof product.chemicalFormula === "string" ? product.chemicalFormula : "",
     courierZone: product.courierZone || "",
+    size: product.size || "",
     specifications: Array.isArray(product.specifications) ? product.specifications.map((row) => ({ name: row.name || "", value: row.value || "" })) : [],
     faqs: Array.isArray(product.faqs) ? product.faqs.map((row) => ({ id: row.id, question: row.question || "", answer: row.answer || "" })) : [],
-  });
-  const [variation, setVariation] = useState(blankVariation);
+  }));
+  const [draftVariations, setDraftVariations] = useState([]);
+  const [attributeGroups, setAttributeGroups] = useState([]);
+  const [draftImages, setDraftImages] = useState([]);
   const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.type === "checkbox" ? event.target.checked : event.target.value }));
 
   const categories = useMemo(() => {
@@ -91,9 +105,9 @@ export function ProductEditor({ product, options, vendorName }) {
     return (options.categories || []).filter((item) => !needle || item.label.toLowerCase().includes(needle));
   }, [options.categories, query]);
   const selectedCategory = (options.categories || []).filter((item) => form.categoryIds.includes(item.value));
-  const photos = imagesOf(product);
+  const photos = creating ? draftImages.map((item) => item.url) : imagesOf(product);
   const readiness = [
-    form.name, form.brandId, form.categoryIds.length, product.sku, form.mrp, form.nrv, form.stock, photos.length,
+    form.name, form.brandId, form.categoryIds.length, creating ? form.vendorId : product.sku, form.mrp, form.nrv, form.stock, photos.length,
   ].filter((value) => value !== "" && value != null && value !== 0).length;
   const readyPct = Math.round((readiness / 8) * 100);
 
@@ -105,12 +119,87 @@ export function ProductEditor({ product, options, vendorName }) {
     });
   };
 
+  const persistVariations = async (id) => {
+    for (const row of draftVariations) {
+      const values = row.values?.length ? row.values : [row.label];
+      const added = await saveVariationAction(id, {
+        label: values.join(" / ").slice(0, 240),
+        values,
+        variantName: (row.variantName || `${form.name.trim()}-${values.join("-")}`).slice(0, 300),
+        stockStatus: row.stockStatus || "In Stock",
+        mrp: row.mrp,
+        nrv: row.nrv,
+        display: row.display,
+        gstPercent: row.gstPercent,
+        stock: row.stock,
+        weightKg: toVariantGrams(row.weightValue, row.weightUnit),
+        lengthCm: row.lengthCm,
+        widthCm: row.widthCm,
+        heightCm: row.heightCm,
+      });
+      if (!added.ok) return added;
+    }
+    if (attributeGroups.length) {
+      const linked = await saveProductAttributesAction(id, attributeGroups);
+      if (!linked.ok) return linked;
+    }
+    setDraftVariations([]);
+    setAttributeGroups([]);
+    return { ok: true };
+  };
+
   const save = (publish) => {
     run(async () => {
-      const saved = await saveProductAction(product.id, form);
-      if (!saved.ok || !publish) return saved;
-      if (product.statusCode === 1) return saved;
-      return setProductStatusAction(product.id, "approve", "Published from the product editor");
+      if (!creating) {
+        const saved = await saveProductAction(product.id, form);
+        if (!saved.ok) return saved;
+        const variants = await persistVariations(product.id);
+        if (!variants.ok) return variants;
+        if (!publish) return saved;
+        if (product.statusCode === 1) return saved;
+        return setProductStatusAction(product.id, "approve", "Published from the product editor");
+      }
+      if (!form.name.trim()) return { ok: false, message: "Product name is required." };
+      if (!form.vendorId) return { ok: false, message: "Choose a seller." };
+      if (!form.categoryIds.length) return { ok: false, message: "Choose a category." };
+      if (!form.brandId) return { ok: false, message: "Choose a brand." };
+      if (!(Number(form.mrp) > 0)) return { ok: false, message: "Enter the MRP." };
+      if (form.stock === "") return { ok: false, message: "Enter the available quantity." };
+      const policy = (options.returnPolicyOptions || []).find((item) => item.value === form.returnPolicyId);
+      const created = await createCatalogProductAction({
+        name: form.name,
+        vendorId: form.vendorId,
+        categoryId: form.categoryIds[0],
+        brandId: form.brandId,
+        hsn: form.hsn,
+        stock: form.stock,
+        weightKg: form.weightKg,
+        returnPolicy: policy?.label || "",
+        mrp: form.mrp,
+        salePrice: form.salePrice,
+        nrv: form.nrv,
+        gstPercent: form.gstPercent,
+      });
+      if (!created.ok) return created;
+      const saved = await saveProductAction(created.id, form);
+      if (!saved.ok) return saved;
+      const variants = await persistVariations(created.id);
+      if (!variants.ok) return variants;
+      if (draftImages.length) {
+        const data = new FormData();
+        const featured = draftImages.find((item) => item.featured);
+        if (featured) data.append("featured", featured.file);
+        for (const item of draftImages.filter((item) => !item.featured)) data.append("images", item.file);
+        const uploaded = await uploadProductImagesAction(created.id, data);
+        if (!uploaded.ok) return uploaded;
+      }
+      if (publish) {
+        const published = await setProductStatusAction(created.id, "approve", "Published from the product editor");
+        router.push(`/admin/products/${created.id}`);
+        return published.ok ? published : { ok: true, message: "Product created. It stays pending until it is approved." };
+      }
+      router.push(`/admin/products/${created.id}`);
+      return created;
     });
   };
 
@@ -118,9 +207,9 @@ export function ProductEditor({ product, options, vendorName }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs text-ink-muted">Catalog / Products / Edit Product</p>
-          <h1 className="text-xl font-semibold text-ink">Edit Product <span className="ml-2 align-middle text-xs font-medium text-success-ink">{product.status}</span></h1>
-          <p className="text-sm text-ink-muted">{product.name}{product.sku ? ` · SKU ${product.sku}` : ""}</p>
+          <p className="text-xs text-ink-muted">Catalog / Products / {creating ? "Add Product" : "Edit Product"}</p>
+          <h1 className="text-xl font-semibold text-ink">{creating ? "Add Product" : "Edit Product"} {!creating && <span className="ml-2 align-middle text-xs font-medium text-success-ink">{product.status}</span>}</h1>
+          <p className="text-sm text-ink-muted">{creating ? "Same fields as the product editor. SKU and URL are assigned when you save." : `${product.name}${product.sku ? ` · SKU ${product.sku}` : ""}`}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ButtonLink href="/admin/products" variant="secondary" size="sm">Back</ButtonLink>
@@ -175,8 +264,8 @@ export function ProductEditor({ product, options, vendorName }) {
               <Field label="Technical / Chemical Name">{({ id }) => <Input id={id} value={form.chemicalName} onChange={set("chemicalName")} placeholder="Chemical Name" />}</Field>
               <Field label="Toxicity Level">{({ id }) => <Select id={id} value={form.toxicity} onChange={set("toxicity")} options={TOXICITY} />}</Field>
               <Field label="Country of Origin">{({ id }) => <Input id={id} value={form.countryOfOrigin} onChange={set("countryOfOrigin")} />}</Field>
-              <Field label="Product SKU" hint="The SKU can't be changed after the product is created.">{({ id }) => <Input id={id} value={product.sku || ""} readOnly />}</Field>
-              <Field label="URL Key">{({ id }) => <Input id={id} value={form.webUrl} onChange={set("webUrl")} readOnly />}</Field>
+              <Field label="Product SKU" hint={creating ? "Assigned when the product is saved." : "The SKU can't be changed after the product is created."}>{({ id }) => <Input id={id} value={creating ? "" : (product.sku || "")} placeholder={creating ? "Assigned on save" : undefined} readOnly />}</Field>
+              <Field label="URL Key">{({ id }) => <Input id={id} value={form.webUrl} onChange={set("webUrl")} placeholder={creating ? "Assigned on save" : undefined} readOnly />}</Field>
             </div>
           )}
 
@@ -184,7 +273,7 @@ export function ProductEditor({ product, options, vendorName }) {
             <div className="space-y-4">
               <h2 className="text-sm font-semibold text-ink">2. Seller & Variants</h2>
               <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Seller">{({ id }) => <Input id={id} value={vendorName || product.vendor || ""} readOnly />}</Field>
+                <Field label="Seller" required={creating}>{({ id }) => creating ? <Select id={id} value={form.vendorId} onChange={set("vendorId")} placeholder="Select seller" options={options.vendors || []} /> : <Input id={id} value={vendorName || product.vendor || ""} readOnly />}</Field>
                 <Field label="Available Quantity" required>{({ id }) => <Input id={id} type="number" min="0" value={form.stock} onChange={set("stock")} />}</Field>
                 <Field label="Stock Status">{() => <Input value={Number(form.stock) > 0 ? "In Stock" : "Out of Stock"} readOnly />}</Field>
                 <Field label="Purchase limit">{({ id }) => <Input id={id} type="number" min="0" value={form.purchaseLimit} onChange={set("purchaseLimit")} />}</Field>
@@ -197,36 +286,26 @@ export function ProductEditor({ product, options, vendorName }) {
                 <Field label="Courier zone">{({ id }) => <Input id={id} value={form.courierZone} onChange={set("courierZone")} />}</Field>
                 <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" checked={form.selfShip} onChange={set("selfShip")} /> Self ship</label>
               </div>
-              {form.productType === "simple" ? (
-                <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-soft">This is a simple product with one SKU. Choose Configurable Product under Basic Information to sell variants such as pack sizes.</p>
-              ) : (
-                <div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead><tr className="border-b text-xs text-ink-muted"><th className="py-2">Name</th><th>SKU</th><th>MRP</th><th>NRV</th><th>Display</th><th>GST</th><th>L/W/H</th><th>Stock</th><th></th></tr></thead>
-                      <tbody>
-                        {(product.variations || []).map((row) => (
-                          <tr key={row.id} className="border-b">
-                            <td className="py-2">{row.label}</td><td>{row.sku}</td><td>{row.mrp ?? "—"}</td><td>{row.nrv ?? "—"}</td><td>{row.display ?? "—"}</td><td>{row.gstPercent ?? "—"}</td><td>{[row.lengthCm, row.widthCm, row.heightCm].filter((v) => v != null).join("×") || "—"}</td><td>{row.stock}</td>
-                            <td><button type="button" className="text-xs text-danger-ink" disabled={pending} onClick={() => run(() => deleteVariationAction(product.id, row.id))}>Delete</button></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
-                    {[
-                      ["label", "Variant name"], ["mrp", "MRP"], ["nrv", "NRV"], ["display", "Display"],
-                      ["saleExGst", "Sale excl GST"], ["gstPercent", "GST %"], ["stock", "Stock"], ["weightKg", "Weight"],
-                      ["lengthCm", "Length"], ["widthCm", "Width"], ["heightCm", "Height"], ["commission", "Commission"],
-                      ["courier", "Courier zone"],
-                    ].map(([key, placeholder]) => (
-                      <Input key={key} value={variation[key]} onChange={(event) => setVariation((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} />
-                    ))}
-                    <Button type="button" loading={pending} onClick={() => run(async () => { const result = await saveVariationAction(product.id, variation); if (result.ok) setVariation(blankVariation); return result; })}>Add variant</Button>
-                  </div>
-                </div>
-              )}
+              <VariantConfigurations
+                productName={form.name}
+                productType={form.productType}
+                attributes={options.attributes || []}
+                rows={draftVariations}
+                savedRows={creating ? [] : (product.variations || [])}
+                onRows={setDraftVariations}
+                onDeleteSaved={(variationId) => run(() => deleteVariationAction(product.id, variationId))}
+                onGroups={(groups) => setAttributeGroups((current) => {
+                  const map = new Map(current.map((group) => [group.attributeId, new Set(group.values)]));
+                  for (const group of groups) {
+                    if (!map.has(group.attributeId)) map.set(group.attributeId, new Set());
+                    for (const value of group.values) map.get(group.attributeId).add(value);
+                  }
+                  return [...map.entries()].map(([id, values]) => ({ attributeId: id, values: [...values] }));
+                })}
+                pending={pending}
+                size={form.size}
+                onSize={set("size")}
+              />
             </div>
           )}
 
@@ -245,26 +324,42 @@ export function ProductEditor({ product, options, vendorName }) {
             <div>
               <h2 className="text-sm font-semibold text-ink">4. Media</h2>
               <div className="mt-3 flex flex-wrap gap-2">
-                {photos.map((url) => (
-                  <div key={url} className="w-28">
-                    <img src={url} alt="" className="h-28 w-28 rounded-lg border object-cover" />
-                    <button type="button" className="mt-1 text-xs text-danger-ink" disabled={pending} onClick={() => run(() => removeProductImageAction(product.id, url))}>Remove</button>
+                {(creating ? draftImages : photos.map((url) => ({ url }))).map((item) => (
+                  <div key={item.url} className="w-28">
+                    <img src={item.url} alt="" className="h-28 w-28 rounded-lg border object-cover" />
+                    <button type="button" className="mt-1 text-xs text-danger-ink" disabled={pending} onClick={() => {
+                      if (creating) {
+                        URL.revokeObjectURL(item.url);
+                        setDraftImages((rows) => rows.filter((row) => row.url !== item.url));
+                        return;
+                      }
+                      run(() => removeProductImageAction(product.id, item.url));
+                    }}>Remove</button>
                   </div>
                 ))}
               </div>
               <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(event) => {
                 event.preventDefault();
-                const data = new FormData();
                 const featured = event.target.featured.files?.[0];
+                const gallery = [...(event.target.images.files ?? [])];
+                if (creating) {
+                  const next = [];
+                  if (featured) next.push({ file: featured, url: URL.createObjectURL(featured), featured: true });
+                  for (const file of gallery) next.push({ file, url: URL.createObjectURL(file), featured: false });
+                  if (next.length) setDraftImages((rows) => [...rows.filter((row) => !(featured && row.featured)), ...next]);
+                  event.target.reset();
+                  return;
+                }
+                const data = new FormData();
                 if (featured) data.append("featured", featured);
-                for (const file of event.target.images.files ?? []) data.append("images", file);
+                for (const file of gallery) data.append("images", file);
                 if ([...data.keys()].length) run(() => uploadProductImagesAction(product.id, data));
                 event.target.reset();
               }}>
                 <Field label="Featured image">{({ id }) => <Input id={id} name="featured" type="file" accept="image/jpeg,image/png,image/webp" />}</Field>
                 <Field label="Gallery">{({ id }) => <Input id={id} name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />}</Field>
                 <Field label="Video URL" className="sm:col-span-2">{({ id }) => <Input id={id} value={form.videoUrl} onChange={set("videoUrl")} />}</Field>
-                <Button type="submit" loading={pending}>Upload to Cloudflare R2</Button>
+                <Button type="submit" loading={pending}>{creating ? "Add images" : "Upload to Cloudflare R2"}</Button>
               </form>
             </div>
           )}
@@ -360,7 +455,7 @@ export function ProductEditor({ product, options, vendorName }) {
             <p className="text-xs font-semibold text-ink-muted">Product Preview</p>
             {photos[0] ? <img src={photos[0]} alt="" className="mt-2 h-40 w-full rounded-lg object-contain" /> : <div className="mt-2 flex h-40 items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted">No image</div>}
             <p className="mt-2 text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
-            <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {product.sku || "—"}</p>
+            <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {creating ? "assigned on save" : (product.sku || "—")}</p>
             <p className="mt-2 text-lg font-semibold text-ink">{form.salePrice ? formatINR(form.salePrice) : form.mrp ? formatINR(form.mrp) : "—"}</p>
             <p className="text-xs text-ink-muted">{Number(form.stock) > 0 ? `In stock · Qty ${form.stock}` : "Out of stock"}</p>
           </div>

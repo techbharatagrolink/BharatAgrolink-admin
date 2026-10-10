@@ -202,7 +202,14 @@ export async function runResourceAction(key, actionId, ids, user, rawReason, raw
   let action = found;
   if (found.assign) {
     const options = found.assign.optionsFrom ? await lookupOptions(found.assign.optionsFrom, user) : found.assign.options;
-    if (!optionValues(options).includes(String(rawValue))) return { ok: false, message: `Choose a valid option for “${found.assign.label}”.` };
+    const raw = String(rawValue ?? "");
+    const sep = raw.indexOf("\u001e");
+    const token = sep === -1 ? raw : raw.slice(0, sep).trim();
+    const invoice = sep === -1 ? "" : raw.slice(sep + 1).trim();
+    if (!optionValues(options).includes(token) || (sep !== -1 && actionId !== "status")) {
+      return { ok: false, message: `Choose a valid option for “${found.assign.label}”.` };
+    }
+    if (sep !== -1 && !invoice) return { ok: false, message: "This line has no seller invoice, so its status cannot be set." };
     // assign.run: the API action takes the picked value; otherwise the value is written to assign.field.
     action = found.assign.run ? found : { ...found, label: `${found.assign.label}: ${rawValue}`, effect: { set: { [found.assign.field]: rawValue } } };
   }

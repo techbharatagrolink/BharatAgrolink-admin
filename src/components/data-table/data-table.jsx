@@ -62,6 +62,7 @@ export function DataTable({
   bulkActions = [],
   onAction,
   onCustomAction,
+  onLineStatus,
   onExport,
   exportName,
   emptyTitle = "No records found",
@@ -69,6 +70,7 @@ export function DataTable({
   toolbar,
   summary,
   dense = true,
+  pageSizes = PAGE_SIZES,
 }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -290,13 +292,13 @@ export function DataTable({
                         className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
                         style={{ maxWidth: column.width || 320 }}
                       >
-                        {ci === 0 && href && !column.href ? (
+                        {ci === 0 && href && !column.href && column.type !== "image" ? (
                           <Link href={href} className="block truncate font-medium text-brand-700 hover:underline">
                             {formatCellValue(column, row)}
                             {column.sub && row[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{row[column.sub]}</span>}
                           </Link>
                         ) : (
-                          <Cell column={column} row={row} />
+                          <Cell column={column} row={row} onLineStatus={onLineStatus} />
                         )}
                       </td>
                     ))}
@@ -340,14 +342,14 @@ export function DataTable({
                     )}
                     <div className="min-w-0 flex-1 text-sm">
                       {lead &&
-                        (href && !lead.href ? (
+                        (href && !lead.href && lead.type !== "image" ? (
                           <Link href={href} className="block font-medium break-words text-brand-700 hover:underline">
                             {formatCellValue(lead, row)}
                             {lead.sub && row[lead.sub] && <span className="block text-xs font-normal text-ink-muted">{row[lead.sub]}</span>}
                           </Link>
                         ) : (
                           <div className="font-medium text-ink">
-                            <Cell column={lead} row={row} />
+                            <Cell column={lead} row={row} onLineStatus={onLineStatus} />
                           </div>
                         ))}
                     </div>
@@ -359,7 +361,7 @@ export function DataTable({
                         <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
                           <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
                           <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">
-                            <Cell column={column} row={row} />
+                            <Cell column={column} row={row} onLineStatus={onLineStatus} />
                           </dd>
                         </div>
                       ))}
@@ -380,7 +382,7 @@ export function DataTable({
         <div className="flex items-center gap-2">
           <label className="hidden items-center gap-2 sm:flex">
             <span>Rows</span>
-            <Select aria-label="Rows per page" className="w-20" value={String(data.pageSize)} options={PAGE_SIZES.map(String)} onChange={(e) => setParams({ pageSize: e.target.value })} />
+            <Select aria-label="Rows per page" className="w-20" value={String(data.pageSize)} options={pageSizes.map(String)} onChange={(e) => setParams({ pageSize: e.target.value })} />
           </label>
           <Button size="icon-sm" onClick={() => setParams({ page: data.page - 1 }, { resetPage: false })} disabled={data.page <= 1 || pending} aria-label="Previous page">
             <ChevronLeft className="size-4" />

@@ -76,6 +76,7 @@ export const b2bOpsResources = {
     title: "Quotations",
     description: "Commercial values come from the server engine. Quotes with expected CM below 5% or net shipping above 5% need manager approval.",
     permission: "b2b.quotations",
+    headerActions: [{ label: "Create quotation", href: "/admin/b2b/quotations/new", permission: "b2b.quotations", action: "add", primary: true }],
     collection: "quotations",
     ownerField: "owner",
     api: "POST /api/b2b/quotations/{id}/recalculate|request-approval|send|convert",
