@@ -46,7 +46,15 @@ export async function getSalesDashboard(user) {
 /* ------------------------------------------------------------ Operations */
 
 const EMPTY_CENTER = { scoped: false, kpis: [], stages: [], kpiTargets: [], escalations: [], breached: [] };
-const EMPTY_TEAM = { stats: { agents: 0, open: 0, breached: 0, unassigned: 0, avgConfirmed: 0, calls: 0 }, agents: [], kpiTargets: [] };
+const EMPTY_TEAM = {
+  stats: { agents: 0, open: 0, breached: 0, unassigned: 0, avgConfirmed: 0, calls: 0 },
+  agents: [],
+  kpiTargets: [],
+  summary: { totalAssigned: 0, kpiAchievement: { pct: 0, label: "Below Target" }, revenue: 0, delivered: 0, deliveryRate: 0, slaBreached: 0 },
+  funnel: [],
+  kpiHealth: [],
+  trend: [],
+};
 
 export async function getOperationsCenter(user) {
   if (!user?.token) return EMPTY_CENTER;
@@ -54,8 +62,9 @@ export async function getOperationsCenter(user) {
   return data ?? EMPTY_CENTER;
 }
 
-export async function getOperationsTeam(user) {
+/** filters: { from, to, days } as on operations_team/dashboard.php. */
+export async function getOperationsTeam(user, filters) {
   if (!user?.token) return EMPTY_TEAM;
-  const { data } = await api("admin/operations/team", { token: user.token });
+  const { data } = await api("admin/operations/team", { token: user.token, query: filters });
   return data ?? EMPTY_TEAM;
 }

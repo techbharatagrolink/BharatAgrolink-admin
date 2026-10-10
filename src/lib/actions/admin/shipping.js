@@ -14,6 +14,12 @@ import {
   shiprocketDocument,
   syncStatus,
   updateShiprocketOrder,
+  cancelShiprocketOrders,
+  cancelShiprocketShipments,
+  shiprocketOrderDetails,
+  shiprocketReportDocument,
+  trackShiprocketAwbs,
+  trackShiprocketShipment,
 } from "@/lib/services/admin/shipping";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
@@ -119,6 +125,65 @@ export async function markCancelledAction(awbs, orderIds) {
   if (!list.length) return { ok: false, message: "Select at least one shipment with an AWB." };
   const result = await markCancelled(list, user);
   if (result.ok) refresh(ids(orderIds, 200));
+  return result;
+}
+
+/* Shiprocket orders report (shiprocket_orders_report.php). Ids are Shiprocket's own order / shipment ids. */
+
+const SR_DOCS = new Set(["label", "manifest", "invoice"]);
+const srIds = (list, max) => ids(list, max).filter((v) => /^\d{1,20}$/.test(v));
+
+export async function shiprocketOrderAction(srOrderId) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const [id] = srIds([srOrderId], 1);
+  if (!id) return invalid;
+  return shiprocketOrderDetails(id, user);
+}
+
+export async function trackShiprocketAction(shipmentId) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const [id] = srIds([shipmentId], 1);
+  if (!id) return invalid;
+  return trackShiprocketShipment(id, user);
+}
+
+export async function trackShiprocketAwbsAction(awbs) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const list = ids(awbs, 51);
+  if (!list.length) return { ok: false, message: "No shipments with AWB codes selected. Please select shipments that have AWB codes." };
+  if (list.length > 50) return { ok: false, message: "Maximum 50 shipments with AWB codes can be tracked at once. Please select 50 or fewer shipments." };
+  return trackShiprocketAwbs(list, user);
+}
+
+export async function shiprocketReportDocumentAction(doc, idList) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const list = srIds(idList, 200);
+  if (!SR_DOCS.has(doc) || !list.length) return invalid;
+  return shiprocketReportDocument(doc, list, user);
+}
+
+export async function cancelShiprocketOrdersAction(orderIds) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const list = srIds(orderIds, 200);
+  if (!list.length) return { ok: false, message: "No valid order IDs found in selected shipments." };
+  const result = await cancelShiprocketOrders(list, user);
+  if (result.ok) refresh();
+  return result;
+}
+
+export async function cancelShiprocketShipmentsAction(awbs) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const list = ids(awbs, 2001);
+  if (!list.length) return { ok: false, message: "No valid AWB codes found in selected shipments." };
+  if (list.length > 2000) return { ok: false, message: "Maximum 2000 shipments can be cancelled at once. Please select 2000 or fewer shipments." };
+  const result = await cancelShiprocketShipments(list, user);
+  if (result.ok) refresh();
   return result;
 }
 

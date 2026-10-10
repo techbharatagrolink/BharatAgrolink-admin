@@ -95,6 +95,7 @@ export const LIVE_RESOURCES = {
   "operations.sla": { path: "/operations/sla", page: "operations_center/settings.php", permission: "operations.rules" },
   "operations.assignments": { path: "/operations/assignments", page: "operations_team/agent_orders.php", permission: "operations.team" },
   "operations.agents": { path: "/operations/agents", page: "operations_team/agent_report.php", permission: "operations.team" },
+  "operations.agentMaster": { path: "/operations/agent-master", page: "operations_team/setup.php", permission: "operations.setup" },
   "operations.setup": { path: "/operations/kpi-targets", page: "operations_team/setup.php", permission: "operations.setup" },
   "cms.banners": { path: "/cms/banners", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeSections": { path: "/cms/home-sections", page: "newhomepage_website.php", permission: "cms" },
