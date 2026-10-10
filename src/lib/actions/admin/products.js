@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
+import { STOCK_STATUSES } from "@/lib/content/admin/stock";
 import { adjustStock, calculatePricingLive, createCatalogProduct, createProduct, deleteProductVariation, removeProductImage, saveProduct, saveProductAttributes, saveProductVariation, setProductStatus, updateProductPricing, uploadProductImages, validateImport } from "@/lib/services/admin/products";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
@@ -121,6 +122,7 @@ export async function saveProductAction(id, input) {
     mrp: amount(input.mrp) || undefined,
     salePrice: amount(input.salePrice),
     stock: amount(input.stock) == null ? undefined : Math.round(amount(input.stock)),
+    ...(STOCK_STATUSES.includes(input.stockStatus) ? { stockStatus: input.stockStatus } : {}),
     gstPercent: amount(input.gstPercent) == null ? undefined : amount(input.gstPercent),
   }, user);
   if (result.ok) revalidatePath(`/admin/products/${id}`);

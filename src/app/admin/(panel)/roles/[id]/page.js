@@ -24,9 +24,10 @@ export default async function RoleDetailPage({ params }) {
 
   let lockedReason = null;
   if (role.superAdmin) lockedReason = "The Super Admin role always has full access and cannot be changed.";
-  else if (Number(role.id) === Number(user.role?.id ?? user.roleId)) lockedReason = "You cannot change your own role. Ask another administrator.";
+  else if (Number(role.id) === Number(user.role?.id ?? user.roleId) && !data.manager) lockedReason = "You cannot change your own role. Ask another administrator.";
   else if (!can(user, "roles", "edit")) lockedReason = "You have view access to roles. Editing needs roles: edit.";
   const editable = !lockedReason;
+  const own = Number(role.id) === Number(user.role?.id ?? user.roleId);
   const grantable = data.grantable ?? (user.role.superAdmin ? true : user.role.permissions);
   const permissions = role.superAdmin ? Object.fromEntries(data.catalog.map((p) => [p.key, ["view", "add", "edit", "delete"]])) : role.permissions;
 
@@ -38,13 +39,14 @@ export default async function RoleDetailPage({ params }) {
         meta={
           <>
             <Badge tone="neutral">role_id {role.id}</Badge>
+            {role.manager && !role.superAdmin && <Badge tone="brand">Can grant any page</Badge>}
             {role.superAdmin ? <Badge tone="danger">Super admin</Badge> : role.scope === "own" ? <Badge tone="warning">Own records only</Badge> : <Badge tone="neutral">All records</Badge>}
           </>
         }
       />
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="min-w-0 xl:col-span-2">
-          <CardHeader title="Permissions" description="Granting add, edit or delete also grants view." />
+          <CardHeader title="Permissions" description={own && editable ? "This is your own role. Granting add, edit or delete also grants view. Keep view and edit on Manage Role, or you lose access to this screen." : "Granting add, edit or delete also grants view."} />
           <RoleMatrix roleId={role.id} catalog={data.catalog} permissions={permissions} editable={editable} grantable={grantable} lockedReason={lockedReason} />
         </Card>
         <div className="min-w-0 space-y-4">

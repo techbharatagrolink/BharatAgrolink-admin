@@ -13,9 +13,37 @@ import { logoutAction } from "@/lib/actions/admin/auth";
 import { RouteProgress, startRouteProgress } from "./route-progress";
 import { NavIcon } from "./icons";
 
-function Breadcrumbs({ wide = false }) {
-  const pathname = usePathname();
+const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
+
+/**
+ * Breadcrumbs named the way the sidebar names them (admin_menus via Menu Master).
+ * navigation.js still decides the trail; live names replace its labels where the
+ * screen, or the list screen above it, is in the role's sidebar.
+ */
+function liveBreadcrumbs(navigation, pathname) {
   const crumbs = getBreadcrumbs(pathname);
+  const leaves = [];
+  for (const section of navigation) {
+    for (const item of section.items) {
+      if (item.href) leaves.push({ href: pathOf(item.href), label: item.label, group: null });
+      for (const child of item.children || []) leaves.push({ href: pathOf(child.href), label: child.label, group: item.label });
+    }
+  }
+  const live = (href) => leaves.find((leaf) => leaf.href === pathOf(href) && leaf.href !== "/admin/not-ported");
+  const exact = live(pathname);
+  if (exact) return [crumbs[0], ...(exact.group ? [{ label: exact.group }] : []), { label: exact.label, href: exact.href }];
+  const at = crumbs.findLastIndex((crumb, i) => i > 0 && crumb.href && live(crumb.href));
+  if (at < 0) return crumbs;
+  const match = live(crumbs[at].href);
+  const next = [...crumbs];
+  next[at] = { ...next[at], label: match.label };
+  if (match.group && at > 1 && !next[at - 1].href) next[at - 1] = { ...next[at - 1], label: match.group };
+  return next;
+}
+
+function Breadcrumbs({ wide = false, navigation = [] }) {
+  const pathname = usePathname();
+  const crumbs = liveBreadcrumbs(navigation, pathname);
   const isAncestor = (i) => i < crumbs.length - 2;
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
@@ -355,7 +383,7 @@ export function Header({ user, navigation = [], notifications, rail, onToggleRai
             {rail ? <PanelLeftOpen className="size-[18px]" aria-hidden /> : <PanelLeftClose className="size-[18px]" aria-hidden />}
           </button>
           <div className="hidden min-w-0 lg:block">
-            <Breadcrumbs wide />
+            <Breadcrumbs wide navigation={navigation} />
           </div>
         </div>
         <div className="flex min-w-0 flex-1 justify-center lg:w-[min(36rem,32vw)] lg:flex-none">
@@ -369,7 +397,7 @@ export function Header({ user, navigation = [], notifications, rail, onToggleRai
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-line px-3 py-2 sm:px-5 lg:hidden">
-        <Breadcrumbs />
+        <Breadcrumbs navigation={navigation} />
       </div>
       <RouteProgress />
     </header>

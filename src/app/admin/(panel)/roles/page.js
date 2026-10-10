@@ -21,7 +21,10 @@ export default async function RolesPage() {
         <MiniTable
           columns={[
             { key: "name", label: "Role", render: (r) => (
-              <Link href={`/admin/roles/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link>
+              <span className="flex flex-wrap items-center gap-2">
+                <Link href={`/admin/roles/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link>
+                {r.manager && !r.superAdmin && <Badge tone="brand">Can grant any page</Badge>}
+              </span>
             ) },
             { key: "id", label: "role_id", render: (r) => <span className="font-mono text-xs">{r.id}</span> },
             { key: "description", label: "Description", render: (r) => <span className="block max-w-80 truncate">{r.description}</span> },

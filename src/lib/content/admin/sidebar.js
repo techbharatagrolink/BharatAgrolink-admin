@@ -1,5 +1,4 @@
 import { navigation } from "./navigation";
-import { can } from "@/lib/auth/permissions";
 
 /**
  * Builds the sidebar from the role's admin_menus tree (GET /admin/auth/menu),
@@ -7,10 +6,14 @@ import { can } from "@/lib/auth/permissions";
  * takes: sections (top-level menus) -> items (groups or links) -> children.
  *
  * navigation.js is the route map: a menu row's `menu_link` finds the Next
- * route of the leaf whose `page` is that link. Group icons come from the
- * navigation group with the same key as the row's "#hash" link. Next-only
- * screens (leaves without `page`) are added to the group they sit in there,
- * when the role has their permission.
+ * route of the leaf whose `page` is that link. A link that starts with
+ * "/admin/" is a route of this admin and opens as it is (the PHP admin cannot
+ * open those). Group icons come from the navigation group with the same key
+ * as the row's "#hash" link.
+ *
+ * The sidebar shows admin_menus rows only. Next-only screens (navigation
+ * leaves without `page`) have no row, so they are not in it; Menu Master
+ * lists them (nextOnlyScreens) and they open by URL.
  *
  * A menu link with no Next route yet opens /admin/not-ported, so nothing the
  * PHP sidebar shows goes missing.
@@ -22,24 +25,51 @@ const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 /** Sidebar routes whose screen is not built yet (bulk orders, plan phase 10). Remove a route when its page lands. */
 const PENDING_ROUTES = new Set(["/admin/bulk-orders/new"]);
 
+const isRouteLink = (link) => String(link ?? "").trim().startsWith("/admin/");
+
 const leafByLink = new Map();
+const leafByRoute = new Map();
 const groups = new Map();
-const topLevelExtras = [];
+const nextOnly = [];
+const addRoute = (leaf) => {
+  if (!leaf.href) return;
+  if (!leafByRoute.has(leaf.href)) leafByRoute.set(leaf.href, leaf);
+  if (!leafByRoute.has(pathOf(leaf.href))) leafByRoute.set(pathOf(leaf.href), leaf);
+};
 for (const section of navigation) {
   for (const item of section.items) {
     if (item.children) {
-      const extras = [];
       for (const child of item.children) {
+        addRoute(child);
         if (child.page) leafByLink.set(norm(child.page), child);
-        else extras.push(child);
+        else nextOnly.push({ ...child, section: section.section, group: item.label });
       }
-      groups.set(`#${item.key}`, { key: item.key, label: item.label, section: section.section, icon: item.icon, sensitive: Boolean(item.sensitive), extras });
+      groups.set(`#${item.key}`, { key: item.key, icon: item.icon, sensitive: Boolean(item.sensitive) });
     } else if (item.page) {
+      addRoute(item);
       leafByLink.set(norm(item.page), item);
     } else {
-      topLevelExtras.push({ section: section.section, item });
+      addRoute(item);
+      nextOnly.push({ ...item, section: section.section, group: null });
     }
   }
+}
+
+/** Screens of this admin with no admin_menus row (so not in the sidebar): [{ key, label, href, permission, section, group }]. */
+export function nextOnlyScreens() {
+  return nextOnly.map(({ key, label, href, permission, section, group }) => ({ key, label, href, permission: permission ?? null, section: section ?? null, group }));
+}
+
+/** navigation.js without the Next-only screens: the static sidebar used when the menu API is down. */
+export function menuOnlyNavigation() {
+  return navigation.map((section) => ({
+    ...section,
+    items: section.items.flatMap((item) => {
+      if (!item.children) return item.page ? [item] : [];
+      const children = item.children.filter((child) => child.page);
+      return children.length ? [{ ...item, children }] : [];
+    }),
+  }));
 }
 
 /** Font Awesome classes used in admin_menus -> lucide icon names (NavIcon). */
@@ -76,14 +106,40 @@ const FA_ICONS = [
   [/undo/, "Undo2"],
 ];
 
-function faIcon(className) {
+export function faIcon(className) {
   const value = String(className ?? "");
   return FA_ICONS.find(([re]) => re.test(value))?.[1] ?? "Circle";
 }
 
 function routeFor(link) {
+  if (isRouteLink(link)) {
+    const value = String(link).trim();
+    return leafByRoute.get(value) ?? leafByRoute.get(pathOf(value)) ?? null;
+  }
   const value = norm(link);
   return leafByLink.get(value) ?? leafByLink.get(value.split(/[?#]/)[0]) ?? null;
+}
+
+/**
+ * Where a menu link opens in this admin: { href, ported, known, route }.
+ * Unported links open /admin/not-ported. `route` links ("/admin/...") open as
+ * written; `known` says whether navigation.js has a screen at that path.
+ */
+export function menuTarget(link) {
+  if (isRouteLink(link)) {
+    const href = String(link).trim();
+    return { href, ported: !PENDING_ROUTES.has(pathOf(href)), known: Boolean(routeFor(href)), route: true };
+  }
+  const leaf = routeFor(link);
+  const ported = Boolean(leaf) && !PENDING_ROUTES.has(pathOf(leaf.href));
+  return { href: ported ? leaf.href : null, ported, known: ported, route: false };
+}
+
+/** Links Menu Master offers: legacy pages with a screen here, then this admin's screens that have no PHP page (as /admin/ routes). */
+export function knownPages() {
+  const legacy = [...leafByLink.entries()].filter(([, leaf]) => !PENDING_ROUTES.has(pathOf(leaf.href))).map(([page, leaf]) => ({ page, label: leaf.label, href: leaf.href }));
+  const routes = nextOnly.filter((leaf) => leaf.href && !PENDING_ROUTES.has(pathOf(leaf.href))).map((leaf) => ({ page: leaf.href, label: `${leaf.label} (new admin screen)`, href: leaf.href }));
+  return [...legacy, ...routes];
 }
 
 export function notPortedHref(link, name) {
@@ -93,11 +149,11 @@ export function notPortedHref(link, name) {
 
 function toLeaf(node, label = node.name) {
   const route = routeFor(node.link);
-  const ported = route && !PENDING_ROUTES.has(pathOf(route.href));
+  const { href, ported } = menuTarget(node.link);
   return {
     key: `menu-${node.id}`,
     label,
-    href: ported ? route.href : notPortedHref(node.link, node.name),
+    href: ported ? href : notPortedHref(node.link, node.name),
     page: node.link,
     icon: route?.icon ?? faIcon(node.icon),
     badge: route?.badge,
@@ -117,8 +173,6 @@ function leavesOf(nodes, prefix = "") {
   return out;
 }
 
-const visibleExtra = (user, leaf) => can(user, leaf.permission, "view") && (!leaf.action || can(user, leaf.permission, leaf.action));
-
 function uniqueByHref(leaves) {
   const seen = new Set();
   return leaves.filter((leaf) => {
@@ -130,13 +184,9 @@ function uniqueByHref(leaves) {
 
 const FALLBACK = [{ section: null, items: [{ key: "menu-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }] }];
 
-/**
- * `items` is the API tree: [{ id, name, link, icon, actions, children }].
- * `user` is the session user (for Next-only screens' permissions).
- */
-export function buildSidebar(items, user) {
+/** `items` is the API tree: [{ id, name, link, icon, actions, children }]. */
+export function buildSidebar(items) {
   const sections = [];
-  const usedGroups = new Set();
 
   for (const top of items ?? []) {
     if (!top.children?.length) {
@@ -150,27 +200,11 @@ export function buildSidebar(items, user) {
         continue;
       }
       const meta = groups.get(norm(node.link));
-      if (meta) usedGroups.add(meta.key);
-      const extras = (meta?.extras ?? []).filter((leaf) => visibleExtra(user, leaf));
-      const children = uniqueByHref([...leavesOf(node.children), ...extras]);
+      const children = uniqueByHref(leavesOf(node.children));
       if (children.length) sectionItems.push({ key: `menu-${node.id}`, label: node.name, icon: meta?.icon ?? faIcon(node.icon), sensitive: meta?.sensitive || undefined, children });
     }
     if (sectionItems.length) sections.push({ section: top.name, items: sectionItems });
   }
 
-  // Next-only screens whose navigation group is not in this role's menu: keep them reachable.
-  for (const meta of groups.values()) {
-    if (usedGroups.has(meta.key)) continue;
-    const extras = meta.extras.filter((leaf) => visibleExtra(user, leaf));
-    if (!extras.length) continue;
-    const group = { key: `nav-${meta.key}`, label: meta.label, icon: meta.icon, sensitive: meta.sensitive || undefined, children: extras };
-    const section = sections.find((s) => s.section === meta.section);
-    if (section) section.items.push(group);
-    else sections.push({ section: meta.section, items: [group] });
-  }
-
-  if (!sections.length) return FALLBACK;
-
-  for (const { section, item } of topLevelExtras) if (visibleExtra(user, item)) sections.push({ section, items: [item] });
-  return sections;
+  return sections.length ? sections : FALLBACK;
 }

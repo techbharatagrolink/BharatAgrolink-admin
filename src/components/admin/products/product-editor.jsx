@@ -6,6 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
+import { effectiveStockStatus, STOCK_STATUSES, toStockStatus } from "@/lib/content/admin/stock";
 import { createCatalogProductAction, deleteVariationAction, removeProductImageAction, saveProductAction, saveProductAttributesAction, saveVariationAction, setProductStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
 import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
 import { toVariantGrams, VariantConfigurations } from "@/components/admin/products/variant-configurations";
@@ -31,7 +32,7 @@ const TOXICITY = [
 
 const emptyForm = {
   name: "", productType: "simple", brandId: "", categoryId: "", categoryIds: [], chemicalName: "", toxicity: "",
-  countryOfOrigin: "India", webUrl: "", stock: "", mrp: "", nrv: "", gstPercent: "", hsn: "", salePrice: "",
+  countryOfOrigin: "India", webUrl: "", stock: "", stockStatus: "In Stock", mrp: "", nrv: "", gstPercent: "", hsn: "", salePrice: "",
   videoUrl: "", weightKg: "", lengthCm: "", widthCm: "", heightCm: "", shipping: "", heavy: false, description: "",
   details: "", usage: "", offerTitle: "", offerShort: "", returnPolicyId: "", purchaseLimit: "", relatedProducts: "",
   upsellProducts: "", commission: "", adExpense: "", officeExpense: "", profit: "", selfShip: false, chemicalFormula: "",
@@ -63,6 +64,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     countryOfOrigin: product.countryOfOrigin || "India",
     webUrl: product.webUrl || "",
     stock: product.stock ?? "",
+    stockStatus: toStockStatus(product.stockStatus),
     mrp: product.mrp ?? "",
     nrv: product.nrv ?? "",
     gstPercent: product.gstPercent ?? "",
@@ -99,6 +101,13 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
   const [attributeGroups, setAttributeGroups] = useState([]);
   const [draftImages, setDraftImages] = useState([]);
   const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.type === "checkbox" ? event.target.checked : event.target.value }));
+  // Stocking up from 0 starts as In Stock; the admin can still mark it Out of Stock.
+  const setStock = (event) => {
+    const stock = event.target.value;
+    setForm((current) => ({ ...current, stock, stockStatus: Number(current.stock) > 0 ? current.stockStatus : "In Stock" }));
+  };
+  const hasStock = Number(form.stock) > 0;
+  const stockStatus = effectiveStockStatus(form.stock, form.stockStatus);
 
   const categories = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -173,6 +182,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
         brandId: form.brandId,
         hsn: form.hsn,
         stock: form.stock,
+        stockStatus,
         weightKg: form.weightKg,
         returnPolicy: policy?.label || "",
         mrp: form.mrp,
@@ -274,8 +284,10 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <h2 className="text-sm font-semibold text-ink">2. Seller & Variants</h2>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Seller" required={creating}>{({ id }) => creating ? <Select id={id} value={form.vendorId} onChange={set("vendorId")} placeholder="Select seller" options={options.vendors || []} /> : <Input id={id} value={vendorName || product.vendor || ""} readOnly />}</Field>
-                <Field label="Available Quantity" required>{({ id }) => <Input id={id} type="number" min="0" value={form.stock} onChange={set("stock")} />}</Field>
-                <Field label="Stock Status">{() => <Input value={Number(form.stock) > 0 ? "In Stock" : "Out of Stock"} readOnly />}</Field>
+                <Field label="Available Quantity" required>{({ id }) => <Input id={id} type="number" min="0" value={form.stock} onChange={setStock} />}</Field>
+                <Field label="Stock Status" hint={!hasStock ? "Quantity is 0, so the product is out of stock." : stockStatus === "Out of Stock" ? "Customers cannot buy it while it is out of stock." : undefined}>
+                  {({ id, describedBy }) => <Select id={id} value={stockStatus} onChange={set("stockStatus")} disabled={!hasStock} options={STOCK_STATUSES} aria-describedby={describedBy} />}
+                </Field>
                 <Field label="Purchase limit">{({ id }) => <Input id={id} type="number" min="0" value={form.purchaseLimit} onChange={set("purchaseLimit")} />}</Field>
                 <Field label="Commission %">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.commission} onChange={set("commission")} />}</Field>
                 <Field label="Ad expense">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.adExpense} onChange={set("adExpense")} />}</Field>
@@ -442,7 +454,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               {[
                 ["Name", form.name], ["Brand", (options.brands || []).find((item) => item.value === form.brandId)?.label],
                 ["Category", selectedCategory.map((item) => item.label).join(", ")], ["Type", form.productType], ["MRP", form.mrp], ["NRV", form.nrv],
-                ["Stock", form.stock], ["Images", photos.length],
+                ["Stock", form.stock], ["Stock Status", stockStatus], ["Images", photos.length],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4 border-b border-line py-1.5"><span className="text-ink-muted">{label}</span><span className="font-medium text-ink">{value || "—"}</span></div>
               ))}
@@ -457,7 +469,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
             <p className="mt-2 text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
             <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {creating ? "assigned on save" : (product.sku || "—")}</p>
             <p className="mt-2 text-lg font-semibold text-ink">{form.salePrice ? formatINR(form.salePrice) : form.mrp ? formatINR(form.mrp) : "—"}</p>
-            <p className="text-xs text-ink-muted">{Number(form.stock) > 0 ? `In stock · Qty ${form.stock}` : "Out of stock"}</p>
+            <p className="text-xs text-ink-muted">{hasStock ? `${stockStatus} · Qty ${form.stock}` : "Out of Stock"}</p>
           </div>
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Listing Readiness</p>

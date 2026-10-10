@@ -20,6 +20,7 @@ export async function listRoles(user) {
     name: role.name,
     description: "",
     superAdmin: Boolean(role.superAdmin),
+    manager: Boolean(role.manager),
     users: role.users,
     modules: role.modules,
     writes: role.writes,
@@ -52,8 +53,35 @@ export async function updateRolePermissions(id, input, rawReason, user) {
   }
 }
 
+/** The whole admin_menus tree, hidden rows included: [{ id, parentId, name, link, icon, order, status, roles, children }]. */
 export async function getMenuTree(user) {
   if (!user?.token) return [];
   const { data } = await api("admin/access/menus", { token: user.token });
   return Array.isArray(data) ? data : [];
+}
+
+async function menuCall(path, method, body, user, fallback) {
+  if (!user?.token) return { ok: false, message: "Your session has expired. Please log in again." };
+  try {
+    const { data } = await api(path, { method, token: user.token, body });
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, message: error instanceof ApiError ? error.message : fallback };
+  }
+}
+
+export function createMenu(input, user) {
+  return menuCall("admin/access/menus", "POST", input, user, "The admin API could not add that menu.");
+}
+
+export function updateMenu(id, input, user) {
+  return menuCall(`admin/access/menus/${encodeURIComponent(id)}`, "PUT", input, user, "The admin API could not update that menu.");
+}
+
+export function moveMenu(id, direction, visibleOnly, user) {
+  return menuCall(`admin/access/menus/${encodeURIComponent(id)}/move`, "POST", { direction, visibleOnly: Boolean(visibleOnly) }, user, "The admin API could not move that menu.");
+}
+
+export function deleteMenu(id, reason, user) {
+  return menuCall(`admin/access/menus/${encodeURIComponent(id)}`, "DELETE", { reason }, user, "The admin API could not delete that menu.");
 }

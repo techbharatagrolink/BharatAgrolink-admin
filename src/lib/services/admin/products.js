@@ -6,6 +6,7 @@ import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
 import { api, apiForm, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
+import { STOCK_STATUSES } from "@/lib/content/admin/stock";
 
 function liveError(error, fallback) {
   if (!(error instanceof ApiError)) return { ok: false, message: fallback };
@@ -405,6 +406,7 @@ export async function createCatalogProduct(input, user) {
   if (input.salePrice !== "" && input.salePrice != null && Number(input.salePrice) > 0) body.salePrice = Number(input.salePrice);
   if (input.nrv !== "" && input.nrv != null) body.nrv = Number(input.nrv);
   if (input.gstPercent !== "" && input.gstPercent != null) body.gstPercent = Number(input.gstPercent);
+  if (STOCK_STATUSES.includes(input.stockStatus)) body.stockStatus = input.stockStatus;
   try {
     const { data } = await api("admin/products", { method: "POST", token: user.token, body });
     return data;

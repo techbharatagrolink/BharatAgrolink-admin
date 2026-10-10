@@ -70,6 +70,7 @@ export function DataTable({
   summary,
   dense = true,
   pageSizes = PAGE_SIZES,
+  serial = true,
 }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -77,6 +78,7 @@ export function DataTable({
   const [selected, setSelected] = useState([]);
   const [picks, setPicks] = useState({});
   const [hidden, setHidden] = useState(() => columns.filter((c) => c.hidden).map((c) => c.key));
+  const [showSerial, setShowSerial] = useState(serial);
   const [confirm, setConfirm] = useState(null);
   const [running, startRunning] = useTransition();
   const [exporting, setExporting] = useState(false);
@@ -188,6 +190,8 @@ export function DataTable({
 
   const from = data.total === 0 ? 0 : (data.page - 1) * data.pageSize + 1;
   const to = Math.min(data.total, data.page * data.pageSize);
+  // Serial numbers continue across pages: row 1 of page 2 at 25/page is 26.
+  const serialOf = (index) => (Math.max(0, (data.page - 1) * data.pageSize) || 0) + index + 1;
 
   return (
     <div className="min-w-0 rounded-xl border border-line bg-surface shadow-sm">
@@ -206,6 +210,7 @@ export function DataTable({
               )}
             >
               <div className="max-h-72 space-y-1.5 overflow-y-auto p-3">
+                {serial && <Checkbox label="S.No." checked={showSerial} onChange={(e) => setShowSerial(e.target.checked)} className="flex" />}
                 {columns.map((c) => (
                   <Checkbox
                     key={c.key}
@@ -259,6 +264,11 @@ export function DataTable({
                     <Checkbox aria-label="Select all rows on this page" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? [...new Set([...selected, ...pageIds])] : selected.filter((sid) => !pageIds.includes(sid)))} />
                   </th>
                 )}
+                {showSerial && (
+                  <th scope="col" className="sticky top-0 z-10 w-14 border-b border-line bg-surface-muted px-3 py-2.5 text-right text-xs font-semibold whitespace-nowrap text-ink-muted">
+                    S.No.
+                  </th>
+                )}
                 {visible.map((column, index) => {
                   const active = sortField === column.key;
                   const SortIcon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
@@ -289,7 +299,7 @@ export function DataTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {rows.map((row, index) => {
                 const key = row[rowKey];
                 const view = viewOf(row);
                 const href = resolveHref(rowHref, row);
@@ -301,6 +311,7 @@ export function DataTable({
                         <Checkbox aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                       </td>
                     )}
+                    {showSerial && <td className={cn("border-b border-line bg-surface px-3 text-right align-middle text-ink-muted tabular", dense ? "py-2" : "py-3")}>{serialOf(index)}</td>}
                     {visible.map((column, ci) => (
                       <td
                         key={column.key}
@@ -344,7 +355,7 @@ export function DataTable({
             </div>
           )}
           <ul className="divide-y divide-line">
-            {rows.map((row) => {
+            {rows.map((row, index) => {
               const key = row[rowKey];
               const view = viewOf(row);
               const href = resolveHref(rowHref, row);
@@ -356,6 +367,7 @@ export function DataTable({
                     {showSelection && (
                       <Checkbox className="mt-0.5" aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                     )}
+                    {showSerial && <span className="shrink-0 pt-px text-xs text-ink-muted tabular">{serialOf(index)}.</span>}
                     <div className="min-w-0 flex-1 text-sm">
                       {lead &&
                         (href && !lead.href && lead.type !== "image" ? (

@@ -312,3 +312,6 @@ At line:1 char:1
   x  111 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/operations/team/overall (2.2m)
 (node:43916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
+  x  114 [chromium] ΓÇ║ e2e\responsive.spec.mjs:19:5 ΓÇ║ admin routes x viewports ΓÇ║ /admin/orders/delivered (2.5m)
+(node:49752) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
