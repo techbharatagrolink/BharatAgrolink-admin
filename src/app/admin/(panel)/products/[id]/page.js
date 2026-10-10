@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
-import { can } from "@/lib/auth/permissions";
+import { can, canPage } from "@/lib/auth/permissions";
 import { getProduct, getProductOptions } from "@/lib/services/admin/products";
+import { pricingFactorsEnabled } from "@/lib/services/admin/pricing-factors";
+import { PricingFactorsStep } from "@/components/admin/products/pricing-factors-step";
 import { ProductEditor } from "@/components/admin/products/product-editor";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { DescriptionList, Notice, PageHeader, StatCard, StatGrid, Timeline } from "@/components/ui/page";
@@ -110,8 +112,10 @@ export default async function ProductDetailPage({ params, searchParams }) {
     ...(canEdit && p.statusCode === 1 ? ["deactivate"] : []),
   ];
 
+  const pricingFactors = await pricingFactorsEnabled(user);
+
   if (canEdit && options) {
-    return <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} />;
+    return <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} pricingFactors={pricingFactors} canEditPricing={canPage(user, "manage_product.php", "edit")} />;
   }
 
   return (
@@ -146,7 +150,9 @@ export default async function ProductDetailPage({ params, searchParams }) {
           <Card>
             <CardHeader title="NRV pricing" description="Prices are calculated from the seller's NRV and take rate. Changes are confirmed and audited." />
             <CardBody>
-              {canEdit ? (
+              {pricingFactors ? (
+                <PricingFactorsStep productId={p.id} canEdit={false} />
+              ) : canEdit ? (
                 <PricingPanel mode="edit" productId={p.id} initial={{ mrp: p.mrp, nrv: p.nrv, takeRate: p.takeRate, gstPercent: p.gstPercent }} initialResult={pricing} />
               ) : (
                 <PricingBreakdown result={pricing} />

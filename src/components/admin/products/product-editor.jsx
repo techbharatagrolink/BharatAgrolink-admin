@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -10,6 +10,7 @@ import { effectiveStockStatus, STOCK_STATUSES, toStockStatus } from "@/lib/conte
 import { createCatalogProductAction, deleteVariationAction, removeProductImageAction, saveProductAction, saveProductAttributesAction, saveVariationAction, setProductStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
 import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
 import { toVariantGrams, VariantConfigurations } from "@/components/admin/products/variant-configurations";
+import { PricingFactorsStep } from "@/components/admin/products/pricing-factors-step";
 
 const STEPS = [
   ["basic", "Basic Info", "Product details"],
@@ -44,7 +45,7 @@ function imagesOf(product) {
 }
 
 /** The PHP edit_product.php wizard: eight sections, preview, draft and publish. Create uses the same columns. */
-export function ProductEditor({ product: source, options, vendorName, mode = "edit" }) {
+export function ProductEditor({ product: source, options, vendorName, mode = "edit", pricingFactors = false, canEditPricing = true }) {
   const creating = mode === "create";
   const product = source || { id: "", sku: "", status: "New", statusCode: 0, variations: [], images: [], featured: "", vendor: "", name: "" };
   const router = useRouter();
@@ -106,6 +107,14 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     const stock = event.target.value;
     setForm((current) => ({ ...current, stock, stockStatus: Number(current.stock) > 0 ? current.stockStatus : "In Stock" }));
   };
+  const onPriced = useCallback((priced) => setForm((current) => ({
+    ...current,
+    salePrice: priced.displayPrice ?? current.salePrice,
+    mrp: priced.mrp ?? current.mrp,
+    nrv: priced.nrv ?? current.nrv,
+    gstPercent: priced.gstPercent == null ? current.gstPercent : String(priced.gstPercent),
+    hsn: priced.hsn || current.hsn,
+  })), []);
   const hasStock = Number(form.stock) > 0;
   const stockStatus = effectiveStockStatus(form.stock, form.stockStatus);
 
@@ -186,7 +195,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
         weightKg: form.weightKg,
         returnPolicy: policy?.label || "",
         mrp: form.mrp,
-        salePrice: form.salePrice,
+        ...(pricingFactors ? {} : { salePrice: form.salePrice }),
         nrv: form.nrv,
         gstPercent: form.gstPercent,
       });
@@ -321,7 +330,22 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
             </div>
           )}
 
-          {step === "pricing" && (
+          {step === "pricing" && pricingFactors && !creating && (
+            <PricingFactorsStep productId={product.id} canEdit={canEditPricing} onPriced={onPriced} />
+          )}
+
+          {step === "pricing" && pricingFactors && creating && (
+            <div className="grid gap-3 sm:grid-cols-4">
+              <h2 className="sm:col-span-4 text-sm font-semibold text-ink">3. Pricing & Tax</h2>
+              <Field label="MRP (₹)" required>{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.mrp} onChange={set("mrp")} />}</Field>
+              <Field label="NRV (₹)" required hint="What the seller receives. Whole rupees.">{({ id }) => <Input id={id} type="number" min="0" step="1" value={form.nrv} onChange={set("nrv")} />}</Field>
+              <Field label="GST %" required>{({ id }) => <Select id={id} value={String(form.gstPercent)} onChange={set("gstPercent")} placeholder="Select" options={[0, 5, 12, 18, 28].map((value) => ({ value: String(value), label: `${value}%` }))} />}</Field>
+              <Field label="HSN Code" required>{({ id }) => <Input id={id} value={form.hsn} onChange={set("hsn")} />}</Field>
+              <p className="sm:col-span-4 rounded-lg bg-info-bg p-3 text-xs text-info-ink">The display price is calculated from the NRV at the default take rate when the product is created. Tune the take rate and cost factors in this step after saving.</p>
+            </div>
+          )}
+
+          {step === "pricing" && !pricingFactors && (
             <div className="grid gap-3 sm:grid-cols-3">
               <h2 className="sm:col-span-3 text-sm font-semibold text-ink">3. Pricing & Tax</h2>
               <Field label="MRP (₹)" hint="Maximum Retail Price.">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.mrp} onChange={set("mrp")} />}</Field>
@@ -453,7 +477,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <h2 className="text-sm font-semibold text-ink">8. Review</h2>
               {[
                 ["Name", form.name], ["Brand", (options.brands || []).find((item) => item.value === form.brandId)?.label],
-                ["Category", selectedCategory.map((item) => item.label).join(", ")], ["Type", form.productType], ["MRP", form.mrp], ["NRV", form.nrv],
+                ["Category", selectedCategory.map((item) => item.label).join(", ")], ["Type", form.productType], ["MRP", form.mrp], ["NRV", form.nrv], ["Display price", pricingFactors && creating ? "Calculated on save" : form.salePrice ? formatINR(form.salePrice) : ""],
                 ["Stock", form.stock], ["Stock Status", stockStatus], ["Images", photos.length],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4 border-b border-line py-1.5"><span className="text-ink-muted">{label}</span><span className="font-medium text-ink">{value || "—"}</span></div>

@@ -77,6 +77,7 @@ export const navigation = [
           { key: "products-new", label: "Add Product", href: "/admin/products/new", page: "add_product.php", permission: "products", action: "add" },
           { key: "products-all", label: "Manage Product", href: "/admin/products", page: "manage_product.php", permission: "products" },
           { key: "pricing-cost-config", label: "Cost & Margin Management", href: "/admin/pricing/cost-config", page: "product_cost_management.php", permission: "pricing.costConfig" },
+          { key: "pricing-cost-management", label: "Cost Management", href: "/admin/pricing/cost-management", page: "manage_product.php", permission: "products" },
           { key: "products-pending", label: "Pending Products", href: "/admin/products/pending", page: "pending_products.php", permission: "products.approval", badge: "pendingProducts" },
           { key: "products-import", label: "Bulk Import / Update", href: "/admin/products/import", permission: "products.import" },
           { key: "products-inventory", label: "Inventory", href: "/admin/inventory", permission: "products", badge: "outOfStock" },
