@@ -10,8 +10,6 @@ import { cancelShipmentsAction, openLabelAction, regenerateLabelAction } from "@
 import { OrderEditor } from "@/components/admin/orders/order-editor";
 import { CreateShipmentDialog } from "@/components/admin/shipping/create-shipment-dialog";
 
-const STATUSES = ["Placed", "Accepted", "Rejected", "Packed", "Ready To Ship", "Pending Pickup", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Undelivered", "RTO", "RTO Delivered", "Cancelled", "Return Accepted", "Return Completed"];
-
 function money(value) {
   return formatINR(Number(value) || 0);
 }
@@ -51,7 +49,6 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
   const lines = groups.flatMap((group) => group.lines.map((line) => ({ ...line, vendor: group.vendor })));
   const [panel, setPanel] = useState("");
   const [shipmentOpen, setShipmentOpen] = useState(false);
-  const [status, setStatus] = useState(order.status || "Placed");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const shipping = shippingCharge(order);
@@ -200,35 +197,11 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
               for (const line of lines) last = await changeLineStatusAction(order.id, line.id, "Rejected", "Rejected from the order page");
               return last;
             })}>Reject Order</Button>}
-            {canEdit && <Button variant="secondary" size="sm" onClick={() => setPanel(panel === "status" ? "" : "status")}>Update Status</Button>}
             {canEdit && <Button variant="secondary" size="sm" onClick={() => setPanel(panel === "box" ? "" : "box")}>Packed box</Button>}
           </div>
           {message && <p className="mt-2 text-xs text-ink-muted">{message}</p>}
         </section>
       </div>
-
-      {panel === "status" && canEdit && (
-        <section className="rounded-xl border border-line bg-surface p-4">
-          <h2 className="text-sm font-semibold text-ink">Update status</h2>
-          <div className="mt-3 flex flex-wrap items-end gap-2">
-            <label className="text-sm">
-              <span className="mb-1 block text-xs text-ink-muted">Status for every line</span>
-              <select className="h-9 rounded-lg border border-line bg-surface px-2 text-sm" value={status} onChange={(event) => setStatus(event.target.value)}>
-                {STATUSES.map((item) => <option key={item}>{item}</option>)}
-              </select>
-            </label>
-            <Button size="sm" variant="primary" loading={pending} onClick={() => run(async () => {
-              let last = { ok: true, message: "Status updated." };
-              for (const line of lines) {
-                if (line.transitions?.some((item) => item.status === status) || line.status !== status) {
-                  last = await changeLineStatusAction(order.id, line.id, status, "Updated from the order page");
-                }
-              }
-              return last;
-            })}>Save status</Button>
-          </div>
-        </section>
-      )}
 
       {canEdit && panel === "box" && (
         <section className="space-y-3 rounded-xl border border-line bg-surface p-4">

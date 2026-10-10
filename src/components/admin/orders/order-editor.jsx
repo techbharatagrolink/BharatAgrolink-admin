@@ -7,8 +7,6 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { updateLineBoxAction, updateLineShippingAction, updateOrderAddressAction, updateOrderAwbAction, updateOrderPaymentAction } from "@/lib/actions/admin/orders";
 
-const STATUSES = ["Placed", "Accepted", "Rejected", "Packed", "Ready To Ship", "Pending Pickup", "Shipped", "In Transit", "Out for Delivery", "Delivered", "Undelivered", "RTO", "RTO Delivered", "Cancelled", "Return Accepted", "Return Completed"];
-
 function useSave() {
   const router = useRouter();
   const { notify } = useToast();
@@ -104,7 +102,7 @@ function LineShipping({ orderId, line, pending, save }) {
     <div className="rounded-lg border border-line p-3">
       <p className="text-sm font-medium text-ink">{line.productName}</p>
       <form className="mt-3 grid gap-3 sm:grid-cols-4" onSubmit={(event) => { event.preventDefault(); save(() => updateLineShippingAction(orderId, line.id, shipping)); }}>
-        <Field label="Status">{({ id }) => <Select id={id} value={shipping.status} onChange={(event) => setShipping((current) => ({ ...current, status: event.target.value }))} options={STATUSES} />}</Field>
+        <p className="text-sm"><span className="mb-1 block text-xs text-ink-muted">Status</span><span className="font-medium text-ink">{shipping.status}</span></p>
         <Field label="Pickup">{({ id }) => <Input id={id} value={shipping.pickupType} onChange={(event) => setShipping((current) => ({ ...current, pickupType: event.target.value }))} placeholder="self" />}</Field>
         <Field label="AWB">{({ id }) => <Input id={id} value={shipping.trackingId} onChange={(event) => setShipping((current) => ({ ...current, trackingId: event.target.value }))} />}</Field>
         <Field label="Tracking URL">{({ id }) => <Input id={id} value={shipping.trackingUrl} onChange={(event) => setShipping((current) => ({ ...current, trackingUrl: event.target.value }))} />}</Field>

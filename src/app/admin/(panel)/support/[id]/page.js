@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { ASSIGNEES, DEPARTMENTS, getTicket, PRIORITIES, TICKET_STATUSES } from "@/lib/services/admin/support";
+import { getTicketAssignees } from "@/lib/services/admin/support-sla";
 import { formatDateTime, formatINR } from "@/lib/format";
 import { DescriptionList, Notice, PageHeader } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -27,6 +28,8 @@ export default async function TicketDetailPage({ params, searchParams }) {
   if (!data) notFound();
   const t = data.ticket;
   const canEdit = can(user, "support", "edit");
+  const live = user?.token ? await getTicketAssignees(user) : null;
+  const assignees = user?.token ? (live?.enabled ? live.options : []) : ASSIGNEES;
 
   return (
     <>
@@ -56,7 +59,7 @@ export default async function TicketDetailPage({ params, searchParams }) {
             <Card>
               <CardHeader title="Manage" />
               <CardBody>
-                <TicketControls id={t.id} ticket={t} options={{ statuses: TICKET_STATUSES, departments: DEPARTMENTS, priorities: PRIORITIES, assignees: ASSIGNEES }} />
+                <TicketControls id={t.id} ticket={t} options={{ statuses: TICKET_STATUSES, departments: DEPARTMENTS, priorities: PRIORITIES, assignees }} />
               </CardBody>
             </Card>
           )}
@@ -67,9 +70,19 @@ export default async function TicketDetailPage({ params, searchParams }) {
                 columns={1}
                 items={[
                   { label: "Requester", value: `${t.user} (${t.userType})` },
-                  { label: "Assignee", value: t.assignee ?? "Unassigned" },
+                  { label: "Assignee", value: t.assigneeLabel ?? (t.assignee || "Unassigned") },
                   { label: "Created", value: formatDateTime(t.createdAt) },
                   { label: "SLA due", value: formatDateTime(t.slaDeadline) },
+                  t.slaState && {
+                    label: "SLA",
+                    value: (
+                      <Link href={`/admin/support/sla?state=all&q=${t.id}`} className="text-brand-700 hover:underline">
+                        {{ met: "Closed in SLA", missed: "Closed late", no_sla: "No deadline" }[t.slaState] ?? t.slaState.replace(/_/g, " ")}
+                        {t.slaRuleHours ? ` · ${t.slaRuleHours} h rule` : ""}
+                        {t.escalationLevel ? ` · escalated L${t.escalationLevel}` : ""}
+                      </Link>
+                    ),
+                  },
                   data.order && { label: "Order", value: <Link href={`/admin/orders/${data.order.id}`} className="font-mono text-xs text-brand-700 hover:underline">{data.order.id}</Link> },
                   data.order && { label: "Order status", value: `${data.order.status} · ${formatINR(data.order.total)}` },
                 ]}

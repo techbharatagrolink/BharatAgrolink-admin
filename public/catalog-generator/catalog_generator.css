@@ -1,0 +1,1944 @@
+/* =====================================================
+   BHARAT AGROLINK — B2B CATALOGUE GENERATOR
+   Design tokens
+   ===================================================== */
+:root {
+  --brand-dark: #16342A;      /* deep agricultural green */
+  --brand-primary: #2F6E4E;   /* rich natural green */
+  --brand-primary-soft: #DCEADF;
+  --brand-light: #F6F2E7;     /* cream */
+  --brand-accent: #B98B2E;    /* wheat / harvest gold */
+
+  --text-primary: #1B241E;
+  --text-secondary: #5E6B60;
+  --text-inverse: #F6F2E7;
+
+  --app-bg: #EEF0EA;          /* neutral gray-green backdrop */
+  --panel-bg: #FFFFFF;
+  --page-bg: #FFFFFF;
+  --border: #DEE3D7;
+  --border-strong: #C6CFC1;
+
+  --shadow-page: 0 1px 2px rgba(22, 52, 42, 0.06), 0 18px 40px rgba(22, 52, 42, 0.12);
+
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --page-w: 210mm;
+  --page-h: 297mm;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--app-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+img { max-width: 100%; display: block; }
+
+/* =====================================================
+   APP SHELL
+   ===================================================== */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--brand-dark);
+  color: var(--text-inverse);
+  flex-shrink: 0;
+}
+
+.app-topbar__brand { display: flex; align-items: center; gap: 12px; }
+
+.app-topbar__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-accent);
+  color: var(--brand-dark);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
+
+.app-topbar__title { display: flex; flex-direction: column; line-height: 1.25; }
+.app-topbar__title strong { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+.app-topbar__title span { font-size: 12px; color: rgba(246, 242, 231, 0.68); }
+
+.app-topbar__meta {
+  font-size: 13px;
+  color: rgba(246, 242, 231, 0.85);
+  background: rgba(246, 242, 231, 0.1);
+  border: 1px solid rgba(246, 242, 231, 0.18);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.app-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-select-wrap { display: flex; align-items: center; }
+.lang-select {
+  background: rgba(246, 242, 231, 0.08);
+  border: 1px solid rgba(246, 242, 231, 0.22);
+  color: var(--text-inverse);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+.lang-select:focus { border-color: var(--brand-accent); }
+.lang-select option { color: #1B241E; }
+
+.btn--topbar-print {
+  width: auto;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--brand-accent);
+  background: var(--brand-accent);
+  color: var(--brand-dark);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn--topbar-print:hover { background: #cf9c36; }
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* =====================================================
+   CONTROL PANEL
+   ===================================================== */
+.control-panel {
+  width: 380px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-section--grow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-section--footer {
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+  background: #FBFAF6;
+}
+
+.panel-section__title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 14px;
+}
+
+.panel-section__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.panel-section__header-row .panel-section__title { margin: 0; }
+
+.selected-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.field { display: block; margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+.field__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+.field__label--sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.field__input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field__input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px var(--brand-primary-soft);
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.field--compact { margin-bottom: 12px; }
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-box__icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+.search-box__input {
+  width: 100%;
+  padding: 9px 10px 9px 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.search-box__input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px var(--brand-primary-soft);
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 12px;
+}
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* ---------- product list ---------- */
+.product-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+  margin-right: -2px;
+}
+
+.product-row {
+  display: grid;
+  grid-template-columns: 46px 1fr 20px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.12s, background 0.12s;
+}
+.product-row:hover { border-color: var(--border-strong); background: #FBFBF9; }
+.product-row.is-selected {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+}
+
+.product-row__thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #F1F3EE;
+  flex-shrink: 0;
+}
+.product-row__thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+.product-row__body { min-width: 0; }
+.product-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-row__vendor {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-row__vendor img {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.product-row__meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.product-row__check {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.product-row.is-selected .product-row__check {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+.product-row__check svg { display: none; width: 12px; height: 12px; }
+.product-row.is-selected .product-row__check svg { display: block; }
+
+.list-empty {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ---------- footer / actions ---------- */
+.products-per-page-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.products-per-page-row input {
+  width: 56px;
+  padding: 5px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn--block { margin-bottom: 8px; }
+.btn--block:last-child { margin-bottom: 0; }
+.btn--primary {
+  background: var(--brand-primary);
+  color: #fff;
+}
+.btn--primary:hover { background: var(--brand-dark); }
+.btn--ghost {
+  background: #fff;
+  color: var(--brand-dark);
+  border-color: var(--border-strong);
+}
+.btn--ghost:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+/* =====================================================
+   PREVIEW PANE
+   ===================================================== */
+.preview-pane {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--app-bg);
+  padding: 40px 0 80px;
+}
+.preview-pane__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.empty-state {
+  margin-top: 12vh;
+  text-align: center;
+  color: var(--text-secondary);
+  max-width: 320px;
+}
+.empty-state svg { color: var(--border-strong); margin-bottom: 14px; }
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+.empty-state p { margin: 0; font-size: 13px; }
+
+/* =====================================================
+   CATALOGUE PAGE — shared A4 shell
+   ===================================================== */
+.catalog-page {
+  width: var(--page-w);
+  height: var(--page-h);
+  background: var(--page-bg);
+  box-shadow: var(--shadow-page);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ---------- product page chrome ---------- */
+.page--product {
+  display: flex;
+  flex-direction: column;
+  padding: 14mm 14mm 12mm;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6mm;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8mm;
+  flex-shrink: 0;
+}
+.page-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-header__mark {
+  width: 34px; height: 34px;
+  border-radius: 7px;
+  background: var(--brand-dark);
+  color: var(--brand-accent);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+}
+img.page-header__mark {
+  background: #fff;
+  border: 1px solid var(--border);
+  object-fit: contain;
+  padding: 3px;
+}
+.page-header__brand span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--brand-dark);
+  letter-spacing: 0.2px;
+}
+.page-header__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.product-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 6mm;
+  min-height: 0;
+}
+
+.product-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8mm;
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  background: #fff;
+  min-height: 0;
+}
+.product-card__image {
+  flex: 1;
+  min-height: 0;
+  background: #F5F6F1;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 5mm;
+}
+.product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.product-card__name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0 0 3.5mm;
+  overflow-wrap: break-word;
+}
+.product-card__vendor {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 2.5mm;
+}
+.product-card__vendor img {
+  width: 19px; height: 19px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.product-card__vendor span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  overflow-wrap: break-word;
+}
+.product-card__meta {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 5mm;
+  margin-top: 6mm;
+  border-top: 1px solid var(--border);
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.page-footer strong { color: var(--text-primary); }
+
+/* ---------- our sellers page ---------- */
+.page--sellers { justify-content: flex-start; }
+
+.sellers-intro {
+  text-align: center;
+  margin-bottom: 12mm;
+  flex-shrink: 0;
+}
+.sellers-kicker {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--brand-primary);
+}
+.sellers-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 3mm 0 0;
+}
+.sellers-subtitle {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 3mm 0 0;
+}
+
+.sellers-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8mm;
+  min-height: 0;
+}
+
+.seller-card {
+  width: 62mm;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10mm 8mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4mm;
+  background: #fff;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.seller-card__logo {
+  width: 22mm; height: 22mm;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #F5F6F1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.seller-card__logo img { width: 100%; height: 100%; object-fit: cover; }
+.seller-card__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.seller-card__tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+}
+
+/* =====================================================
+   COVER PAGE
+   ===================================================== */
+.page--cover {
+  background: var(--brand-dark);
+  background-image:
+    radial-gradient(circle at 88% 8%, rgba(185,139,46,0.16), transparent 45%),
+    radial-gradient(circle at 6% 96%, rgba(47,110,78,0.5), transparent 50%);
+  color: var(--text-inverse);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26mm 20mm;
+  text-align: center;
+}
+.cover-leaf-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.cover-top { display: flex; flex-direction: column; align-items: center; gap: 6mm; }
+.cover-mark {
+  width: 46mm; height: 46mm;
+  border-radius: 14px;
+  background: var(--brand-accent);
+  color: var(--brand-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 36px;
+  letter-spacing: 0.5px;
+}
+img.cover-mark {
+  background: rgba(246, 242, 231, 0.94);
+  object-fit: contain;
+  padding: 4mm;
+}
+
+.final-mark {
+  width: 30mm; height: 30mm;
+  border-radius: 12px;
+  background: var(--brand-accent);
+  color: var(--brand-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: 0.5px;
+}
+img.final-mark {
+  background: rgba(246, 242, 231, 0.94);
+  object-fit: contain;
+  padding: 3mm;
+}
+.cover-brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  color: rgba(246,242,231,0.86);
+}
+
+.cover-middle { display: flex; flex-direction: column; align-items: center; gap: 7mm; max-width: 130mm; }
+.cover-kicker {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--brand-accent);
+}
+.cover-title {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0;
+}
+.cover-subtitle {
+  font-size: 14px;
+  color: rgba(246,242,231,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+.cover-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(246,242,231,0.62);
+  padding-top: 2mm;
+}
+
+.cover-bottom { display: flex; flex-direction: column; align-items: center; gap: 3mm; }
+.cover-rule { width: 26mm; height: 1px; background: rgba(246,242,231,0.28); }
+.cover-website {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-inverse);
+}
+
+/* =====================================================
+   FINAL / SALES PAGE
+   ===================================================== */
+.page--final {
+  background: var(--brand-dark);
+  background-image:
+    radial-gradient(circle at 12% 6%, rgba(47,110,78,0.55), transparent 46%),
+    radial-gradient(circle at 92% 92%, rgba(185,139,46,0.14), transparent 45%);
+  color: var(--text-inverse);
+  display: flex;
+  flex-direction: column;
+  padding: 22mm 20mm;
+}
+
+.final-header { display: flex; flex-direction: column; align-items: center; gap: 5mm; text-align: center; }
+.final-tagline {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  max-width: 120mm;
+  margin: 0;
+}
+.final-strapline {
+  font-size: 12.5px;
+  color: var(--brand-accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.final-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9mm;
+  margin-top: 8mm;
+}
+
+.final-divider {
+  width: 18mm;
+  height: 1px;
+  background: rgba(246, 242, 231, 0.18);
+}
+
+.final-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(246,242,231,0.55);
+  text-align: center;
+  margin-bottom: 4mm;
+}
+
+.contact-card {
+  background: rgba(246,242,231,0.06);
+  border: 1px solid rgba(246,242,231,0.18);
+  border-radius: 10px;
+  padding: 8mm 10mm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8mm;
+  width: 100%;
+  max-width: 150mm;
+  margin: 0 auto;
+}
+.contact-card__agent { display: flex; flex-direction: column; gap: 1mm; }
+.contact-card__agent-role { font-size: 10px; color: rgba(246,242,231,0.6); font-weight: 600; letter-spacing: 0.04em; }
+.contact-card__agent-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.contact-card__details { display: flex; flex-direction: column; gap: 2mm; align-items: flex-end; text-align: right; }
+.contact-card__details a, .contact-card__details span {
+  color: var(--text-inverse);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.contact-card__details .muted { color: rgba(246,242,231,0.6); font-weight: 500; font-size: 10.5px; }
+
+.partner-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4mm;
+  width: 100%;
+}
+.partner-strip__logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3mm;
+  max-width: 150mm;
+}
+.partner-strip__logo {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  background: rgba(246,242,231,0.06);
+  border: 1px solid rgba(246,242,231,0.16);
+  border-radius: 999px;
+  padding: 1.8mm 4mm 1.8mm 1.8mm;
+}
+.partner-strip__logo img {
+  width: 5.5mm; height: 5.5mm;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.partner-strip__logo span { font-size: 8.5px; font-weight: 600; color: rgba(246,242,231,0.85); }
+
+.final-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4mm;
+  text-align: center;
+  width: 100%;
+  max-width: 120mm;
+  margin: 0 auto;
+}
+.final-cta__copy { font-size: 11.5px; color: rgba(246,242,231,0.7); max-width: 100mm; margin: 0; }
+.final-cta__website {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--brand-accent);
+}
+
+.final-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4mm;
+  padding-top: 4mm;
+}
+
+.qr-placeholder {
+  width: 38mm; height: 38mm;
+  background: #fff;
+  border-radius: 10px;
+  padding: 3mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2mm;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+.qr-placeholder__img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.qr-placeholder__img--fallback {
+  width: 14mm; height: 14mm;
+  color: var(--brand-dark);
+  display: flex;
+}
+.qr-placeholder-caption {
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  color: rgba(246,242,231,0.7);
+}
+
+.page-footer--dark {
+  color: rgba(246,242,231,0.55);
+  border-top-color: rgba(246,242,231,0.16);
+}
+.page-footer--dark strong { color: var(--text-inverse); }
+
+/* =====================================================
+   TOAST
+   ===================================================== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  background: var(--brand-dark);
+  color: var(--text-inverse);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100;
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 1080px) {
+  .control-panel { width: 320px; }
+}
+
+@media (max-width: 860px) {
+  .app-body { flex-direction: column; }
+  .control-panel {
+    width: 100%;
+    max-height: 62vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .preview-pane { padding: 24px 12px 60px; }
+}
+
+/* =====================================================
+   PRINT
+   ===================================================== */
+@media print {
+  .app-topbar, .control-panel, .toast, .empty-state { display: none !important; }
+  html, body { background: #fff; }
+  .app-body { display: block; }
+  .preview-pane { overflow: visible; padding: 0; background: #fff; }
+  .preview-pane__inner { gap: 0; }
+  .catalog-page {
+    box-shadow: none;
+    margin: 0;
+    page-break-after: always;
+    break-after: page;
+  }
+  .catalog-page:last-child { page-break-after: auto; break-after: auto; }
+  @page { size: A4 portrait; margin: 0; }
+}
+
+/* =====================================================
+   PANEL INTEGRATION ADDITIONS
+   -----------------------------------------------------
+   Everything above this line is the approved catalogue
+   design, unchanged. Below: only what the panel build
+   adds on top - Indic script support, the generation
+   mode bar, and the bilingual product-name treatment.
+   ===================================================== */
+
+/* --- Indic script support -----------------------------
+   The design ships Manrope + Inter, neither of which has
+   Devanagari, Bengali, Tamil, Telugu, Kannada, Malayalam,
+   Gujarati, Gurmukhi or Odia glyphs. Without a real face
+   for the selected script the catalogue prints tofu, so
+   the matching Noto family is loaded at runtime and
+   pushed to the FRONT of both stacks. Latin characters
+   still fall through to Manrope/Inter, because the Noto
+   script faces carry no Latin of their own worth using. */
+:root { --font-indic: ''; }
+
+.catalog-page,
+.catalog-page .cover-title,
+.catalog-page .cover-subtitle,
+.catalog-page .sellers-title,
+.catalog-page .sellers-subtitle,
+.catalog-page .product-card__name,
+.catalog-page .final-tagline,
+.catalog-page .final-strapline,
+.catalog-page .final-cta__copy,
+.catalog-page .final-section-label,
+.catalog-page .page-header__label,
+.catalog-page .page-number {
+  font-family: var(--font-indic), var(--font-display), 'Noto Sans', sans-serif;
+}
+.catalog-page .cover-kicker,
+.catalog-page .sellers-kicker,
+.catalog-page .seller-card__tag,
+.catalog-page .contact-card__agent-role,
+.catalog-page .qr-placeholder-caption {
+  font-family: var(--font-indic), var(--font-body), 'Noto Sans', sans-serif;
+}
+
+/* Indic scripts stack taller than Latin: give the lines room so
+   Devanagari matras and Tamil/Malayalam loops are not clipped by the
+   tight leading the Latin design uses. */
+html[data-script="indic"] .catalog-page .product-card__name { line-height: 1.45; }
+html[data-script="indic"] .catalog-page .cover-title        { line-height: 1.25; }
+html[data-script="indic"] .catalog-page .sellers-subtitle,
+html[data-script="indic"] .catalog-page .final-cta__copy    { line-height: 1.7; }
+
+/* --- Generation mode bar ------------------------------ */
+.mode-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.mode-bar__btn {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 7px 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.mode-bar__btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.mode-bar__btn.is-active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #fff;
+}
+.mode-bar__btn:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 1px;
+}
+
+.mode-hint {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+
+/* --- Bilingual product name ---------------------------
+   A machine-translated agro-chemical name is the one thing
+   in this document a reader may need to verify, so the
+   English original stays on the card underneath it rather
+   than being replaced. */
+.product-card__name-original {
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  display: block;
+}
+
+/* --- Translation progress ----------------------------- */
+.translate-status {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  min-height: 15px;
+}
+.translate-status[data-state="working"] { color: var(--brand-accent); }
+.translate-status[data-state="error"]   { color: #B3261E; }
+.translate-status[data-state="done"]    { color: var(--brand-primary); }
+
+/* --- Machine-translation disclosure -------------------
+   Printed on the final page whenever the catalogue is not
+   in English, so nobody downstream mistakes machine output
+   for checked copy. */
+.mt-notice {
+  font-family: var(--font-body);
+  font-size: 7.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 0 14mm;
+  margin-top: 6px;
+}
+
+@media print {
+  .mode-bar, .mode-hint, .translate-status { display: none !important; }
+}
+
+/* --- Control panel must survive the added section -----
+   Every .panel-section is flex-shrink:0 inside a fixed-height
+   overflow:hidden column, so adding the "Catalogue type" section
+   squeezed .panel-section--grow - and with it the bulk actions and
+   the entire product list - down to zero height. Let the panel
+   scroll when it runs out of room, and give the list a floor it
+   can never be pushed below.
+
+   One scrollbar, not two: the panel itself scrolls and the product list
+   flows naturally inside it. Leaving the list with its own inner scroll
+   meant a nested scroll area that was easy to miss entirely once the
+   sections above had pushed it out of view. */
+.control-panel { overflow-y: auto; }
+.panel-section--grow {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: block;
+}
+.product-list {
+  flex: none;
+  overflow-y: visible;
+  max-height: none;
+}
+
+/* The [hidden] attribute loses to .field's display:block, so the
+   seller picker stayed on screen in Product and Batch mode. */
+.field[hidden] { display: none !important; }
+
+/* =====================================================
+   COMMERCIAL CARD TEMPLATE
+   -----------------------------------------------------
+   Matches Bharat_Agrolink_Catalog_Template_Designs.pdf:
+   category badge, cream image panel, seller line, pack
+   spec, B2B box rate against MRP, margin and stock pills,
+   and the quick order summary beneath each product page.
+   ===================================================== */
+:root {
+  --tpl-orange:      #C2551F;
+  --tpl-orange-deep: #A84414;
+  --tpl-peach:       #FBEEE4;
+  --tpl-cream:       #F7F0E8;
+  --tpl-pill-bg:     #DCEFE1;
+  --tpl-pill-ink:    #24704A;
+  --tpl-pill-out-bg: #F6E2E0;
+  --tpl-pill-out-ink:#9A3226;
+  --tpl-hair:        #E8E1D8;
+}
+
+/* Strapline under the running header */
+.page-strapline {
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  color: var(--text-secondary);
+  padding: 0 0 3mm;
+  letter-spacing: 0.01em;
+}
+
+/* --- Card shell --------------------------------------
+   The badge is absolutely placed, so the card becomes the
+   positioning context. Padding-top leaves room for it. */
+.product-card {
+  position: relative;
+  border: 1px solid var(--tpl-hair);
+  border-radius: 10px;
+  padding: 6mm 5mm 5mm;
+}
+
+.product-card__badge {
+  position: absolute;
+  top: 4mm;
+  left: 4mm;
+  z-index: 2;
+  font-family: var(--font-body);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--tpl-orange);
+  border-radius: 999px;
+  padding: 2px 9px;
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The image panel no longer takes all the slack - the commercial block
+   below it needs a predictable share of the card. */
+.product-card__image {
+  flex: 0 0 auto;
+  height: 34mm;
+  background: var(--tpl-cream);
+  border-radius: 8px;
+  margin-top: 3mm;
+  margin-bottom: 3.5mm;
+  padding: 3mm;
+}
+
+.product-card__brand {
+  font-family: var(--font-body);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tpl-orange);
+  margin-bottom: 1.5mm;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-card__name {
+  font-size: 13.5px;
+  line-height: 1.32;
+  margin: 0 0 1.5mm;
+}
+
+.product-card__pack {
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  color: var(--text-secondary);
+  margin-bottom: 3mm;
+}
+
+/* margin-top:auto sits on the rule, not the price head, so the divider and
+   the block it introduces travel down together. On the price head it would
+   leave the rule marooned against the pack line. */
+.product-card__rule {
+  height: 1px;
+  background: var(--tpl-hair);
+  margin: auto 0 3mm;
+}
+
+.product-card__price-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4mm;
+  margin-bottom: 1mm;
+}
+.product-card__rate-label {
+  font-family: var(--font-body);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.product-card__mrp {
+  font-family: var(--font-body);
+  font-size: 8.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.product-card__price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3mm;
+  flex-wrap: wrap;
+}
+.product-card__rate {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.product-card__pills {
+  display: flex;
+  gap: 2mm;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pill {
+  font-family: var(--font-body);
+  font-size: 8px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2.5px 8px;
+  white-space: nowrap;
+}
+.pill--margin { background: var(--tpl-pill-bg); color: var(--tpl-pill-ink); }
+.pill--stock  { background: var(--tpl-pill-bg); color: var(--tpl-pill-ink); }
+.pill--out    { background: var(--tpl-pill-out-bg); color: var(--tpl-pill-out-ink); }
+
+/* --- Quick order summary ----------------------------- */
+.order-summary {
+  background: var(--tpl-peach);
+  border-radius: 10px;
+  padding: 4.5mm 5mm;
+  margin-top: 5mm;
+  flex-shrink: 0;
+}
+.order-summary__title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  margin-bottom: 2.5mm;
+}
+.order-summary__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 8.5px;
+}
+.order-summary__table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid rgba(168, 68, 20, 0.18);
+  white-space: nowrap;
+}
+.order-summary__table td {
+  padding: 1.8mm 0;
+  border-bottom: 1px solid rgba(168, 68, 20, 0.12);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+.order-summary__table tr:last-child td { border-bottom: none; }
+.order-summary__name { font-weight: 700; padding-right: 4mm; }
+.order-summary__amt  { font-weight: 700; }
+.order-summary__note {
+  font-size: 8px;
+  color: var(--text-secondary);
+  margin: 2.5mm 0 0;
+}
+
+/* Indic scripts need the extra leading here too */
+html[data-script="indic"] .order-summary__table td,
+html[data-script="indic"] .product-card__pack { line-height: 1.55; }
+
+/* --- Cards keep their size regardless of how many are on the page ---
+   The original grid was flex:1 with grid-auto-rows:1fr, so it stretched
+   its rows to fill A4. That was right for a 6-up page of small cards; with
+   the commercial card and an order summary below it, a single selected
+   product inflated to a full page of white space. Fixed row height instead,
+   packed from the top. */
+.product-grid {
+  flex: 0 0 auto;
+  grid-auto-rows: 92mm;
+  align-content: start;
+  gap: 5mm;
+}
+.product-card { height: 100%; }
+
+/* Placeholder art is square; let it sit at a sensible size inside the
+   wider panel rather than being stretched across it. */
+.product-card__image img { max-height: 100%; width: auto; max-width: 100%; }
+
+/* --- Action footer stays put -------------------------
+   Now that the whole control panel scrolls, "Generate catalogue" and
+   "Print / Save as PDF" scrolled away with it. Pin them to the bottom of
+   the panel so the two actions are reachable from anywhere in the list.
+   Sticky rather than fixed: it stays inside the panel column and needs no
+   markup change, since the footer is already the last child. */
+.panel-section--footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: #FBFAF6;
+  box-shadow: 0 -6px 14px -8px rgba(22, 52, 42, 0.28);
+}
+
+/* =====================================================
+   SPECIFICATION CATALOGUE
+   -----------------------------------------------------
+   The approved artwork: photographic cover, green category
+   band, and pack shots beside rounded spec cards that
+   alternate sides down the page.
+
+   This supersedes the pricing-led card above. Those rules
+   are left in place but no longer emitted - the generator
+   renders .spec-row, not .product-card.
+   ===================================================== */
+:root {
+  --spec-green:      #5C9235;   /* category band + card border */
+  --spec-green-deep: #2E6B1F;   /* card headings */
+  --spec-ink:        #23301F;
+  --spec-ink-soft:   #4A5A46;
+  --cover-wash:      #145C3A;
+  --cover-yellow:    #F5E14B;
+}
+
+/* --- Cover ------------------------------------------- */
+.page--cover {
+  background-color: var(--cover-wash);
+  background-image: linear-gradient(180deg, #1c7a4a 0%, #14603a 45%, #0f4b2d 100%);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  padding: 24mm 18mm 20mm;
+  color: #fff;
+}
+
+.cover-logo-card {
+  background: #fff;
+  border-radius: 6mm;
+  padding: 6mm 9mm;
+  margin-bottom: 16mm;
+  box-shadow: 0 4mm 12mm rgba(0, 0, 0, 0.18);
+}
+.cover-logo, img.cover-logo {
+  height: 22mm;
+  width: auto;
+  max-width: 90mm;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+/* Initials fallback when the logo URL fails */
+div.cover-logo {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--spec-green-deep);
+  line-height: 22mm;
+}
+
+.cover-headline { margin-bottom: 4mm; }
+.cover-brand {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--cover-yellow);
+  line-height: 1.1;
+  margin-bottom: 4mm;
+  text-wrap: balance;
+}
+.cover-strap {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.cover-emblem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8mm 0;
+}
+.cover-emblem svg {
+  width: 52mm;
+  height: auto;
+  opacity: 0.95;
+}
+
+.cover-foot { width: 100%; }
+.cover-market {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+  margin-bottom: 4mm;
+  text-wrap: balance;
+}
+.cover-tagline {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--cover-yellow);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+/* --- Category band ----------------------------------- */
+/* Full-bleed inside the page, as in the artwork. */
+.category-band {
+  background: var(--spec-green);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 9mm 10mm;
+  margin: 0 -14mm 8mm;
+  flex-shrink: 0;
+  text-wrap: balance;
+}
+
+/* --- Product rows ------------------------------------ */
+.spec-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 6mm;
+  min-height: 0;
+}
+
+.spec-row {
+  display: grid;
+  grid-template-columns: 62mm 1fr;
+  align-items: center;
+  gap: 6mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+/* Alternating sides: the card leads on odd rows. */
+.spec-row--flip { grid-template-columns: 1fr 62mm; }
+.spec-row--flip .spec-row__media { order: 2; }
+.spec-row--flip .spec-card       { order: 1; }
+
+.spec-row__media {
+  height: 52mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2mm;
+}
+.spec-row__media img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+}
+
+.spec-card {
+  border: 2px solid var(--spec-green);
+  background: #fff;
+  padding: 7mm 8mm;
+  /* The artwork softens the corners heavily on the outer side and squares off
+     the one nearest the pack shot. */
+  border-radius: 16mm 16mm 16mm 2mm;
+}
+.spec-row--flip .spec-card { border-radius: 16mm 16mm 2mm 16mm; }
+
+.spec-card__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--spec-green-deep);
+  line-height: 1.3;
+  margin: 0 0 4mm;
+  text-wrap: balance;
+}
+.spec-card__title-original {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--spec-ink-soft);
+  margin-top: 1mm;
+}
+
+.spec-list { margin: 0; }
+.spec-list__row {
+  display: grid;
+  grid-template-columns: 32mm 4mm 1fr;
+  align-items: start;
+  margin-bottom: 2.4mm;
+}
+.spec-list__row:last-child { margin-bottom: 0; }
+
+.spec-list__key {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--spec-ink);
+  margin: 0;
+}
+.spec-list__key::after { content: ":"; float: right; }
+
+.spec-list__val {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--spec-ink);
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+/* Indic scripts stack taller; give the spec rows room. */
+html[data-script="indic"] .spec-list__key,
+html[data-script="indic"] .spec-list__val { line-height: 1.65; }
+html[data-script="indic"] .spec-card__title { line-height: 1.45; }
+
+/* Product pages carry the brand watermark behind the content. */
+.page--product { position: relative; }
+.page--product > * { position: relative; z-index: 1; }
+
+/* =====================================================
+   SPEC CATALOGUE - CORRECTIONS AGAINST THE ARTWORK
+   (Startek_Catalogue_Bharat_Agrolink pages 2-4)
+   ===================================================== */
+
+/* --- Cover ------------------------------------------
+   The approved cover artwork renders as the base layer, with dynamic
+   title and subtitle overlays layered over the title and tagline areas
+   so user customizations reflect live on the cover. */
+.page--cover.page--cover-artwork {
+  padding: 0;
+  position: relative;
+  background: #0f4b2d;
+}
+.page--cover.page--cover-artwork > *:not(.cover-artwork):not(.cover-artwork-overlay) {
+  display: none;
+}
+.page--cover.page--cover-artwork .cover-artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.page--cover.page--cover-artwork .cover-artwork-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.cover-artwork-title-box {
+  position: absolute;
+  top: 18.2%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 3.5mm 6mm;
+  border-radius: 6mm;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+  border: 1.5px solid rgba(21, 128, 61, 0.2);
+}
+.cover-artwork-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: #15803d;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.cover-artwork-subtitle-box {
+  position: absolute;
+  top: 67.2%;
+  left: 5%;
+  max-width: 54%;
+  text-align: left;
+  background: rgba(15, 75, 45, 0.96);
+  padding: 2.5mm 5mm;
+  border-radius: 4mm;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+  border-left: 4px solid #facc15;
+}
+.cover-artwork-subtitle {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: #facc15;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+/* --- Product page ground -----------------------------
+   Off-white with the faint wheat wash the artwork uses, rather than flat
+   white. Keeps the white spec cards reading as cards. */
+.page--product {
+  background:
+    radial-gradient(120% 80% at 50% 0%, #ffffff 0%, #fbfaf7 55%, #f4f2ec 100%);
+  padding: 0 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Category band -----------------------------------
+   Sized proportionally so it leaves ample vertical space for products. */
+.category-band {
+  margin: 0 0 3.5mm;
+  padding: 5mm 10mm;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+}
+
+/* Page furniture sits inside the page margin; the band does not. */
+.page--product > .page-header,
+.page--product > .spec-stack,
+.page--product > .page-footer {
+  padding-left: 12mm;
+  padding-right: 12mm;
+}
+.page--product > .page-header { padding-top: 6mm; margin-bottom: 4mm; }
+
+/* --- Product rows ------------------------------------
+   Three to a page, nicely spaced without overlapping. */
+.spec-stack {
+  justify-content: space-evenly;
+  gap: 3mm;
+  padding-bottom: 2mm;
+  flex: 1;
+  min-height: 0;
+}
+.spec-row {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: calc((100% - 6mm) / 3);
+  overflow: hidden;
+  /* The pack shot only needs ~50mm; everything else goes to the spec card so
+     long pest / crop lists wrap less and fit the row without clipping. */
+  grid-template-columns: 54mm 1fr;
+  gap: 4mm;
+  align-items: center;
+}
+.spec-row--flip { grid-template-columns: 1fr 54mm; }
+
+/* Pack shots sit straight on the page ground - no tile behind them. */
+.spec-row__media {
+  height: 100%;
+  max-height: 62mm;
+  background: none;
+  padding: 0;
+}
+.spec-row__media img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+}
+
+.spec-card {
+  border-width: 2.5px;
+  padding: 4mm 6mm;
+  border-radius: 12mm 12mm 12mm 2.5mm;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* flex-start, not center: if a card ever overflows, it loses its last line
+     at the bottom instead of the title at the top. */
+  justify-content: flex-start;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.spec-row--flip .spec-card { border-radius: 12mm 12mm 2.5mm 12mm; }
+
+.spec-card__title {
+  font-size: 14.5px;
+  line-height: 1.25;
+  margin-bottom: 2mm;
+  /* The line clamp sets overflow:hidden, which lets flex shrink the title
+     to nothing when the card is tight - that is what cut its second line. */
+  flex-shrink: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- The spec list -----------------------------------
+   Two columns, properly proportioned to prevent row overflow. */
+.spec-list__row {
+  grid-template-columns: 26mm 1fr;
+  column-gap: 3mm;
+  margin-bottom: 1.5mm;
+  align-items: start;
+}
+.spec-list__row:last-child { margin-bottom: 0; }
+.spec-list__key,
+.spec-list__val {
+  font-size: 11px;
+  line-height: 1.35;
+}
+.spec-list__key { color: var(--spec-ink-soft); font-weight: 600; }
+.spec-list__val {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Watermark ---------------------------------------
+   The artwork carries the brand mark faintly behind the products. */
+.page--product::before {
+  content: "";
+  position: absolute;
+  inset: 22% 12% auto;
+  height: 46%;
+  background-image: var(--watermark, none);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.09;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* --- Google Translate chrome -------------------------
+   The widget injects a banner iframe and shifts the document down to make
+   room for it. On screen that is untidy; on a printed page it becomes a
+   blank strip at the top of every sheet. The element host itself is only a
+   mount point and is never meant to be seen. */
+#google_translate_element,
+.goog-te-banner-frame,
+.goog-te-gadget,
+.skiptranslate {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+  position: static !important;
+}
+/* Translate wraps replaced text in <font> tags; they must not introduce their
+   own sizing or colour inside the catalogue pages. */
+.catalog-page font {
+  font-size: inherit !important;
+  color: inherit !important;
+  background: none !important;
+  vertical-align: baseline !important;
+}
+@media print {
+  .goog-te-banner-frame, .skiptranslate { display: none !important; }
+  body { top: 0 !important; }
+}
+
+/* =====================================================
+   SEND ON WHATSAPP — buyer picker
+   -----------------------------------------------------
+   Own namespace (cs-*) rather than panel classes: this
+   page ships its own stylesheet and does not load the
+   panel chrome, so there is no modal component here to
+   reuse. Hidden from print along with the rest of the UI.
+   ===================================================== */
+#catalogSendModal { display: none; }
+#catalogSendModal.is-open { display: block; }
+#catalogSendModal .cs-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, .55); z-index: 9998;
+}
+#catalogSendModal .cs-dialog {
+  position: fixed; z-index: 9999; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 32px)); max-height: min(620px, calc(100vh - 48px));
+  display: flex; flex-direction: column;
+  background: #fff; border-radius: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+#catalogSendModal .cs-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 18px 20px 12px; border-bottom: 1px solid #e9ecef; color: #0f172a; font-size: 15px;
+}
+#catalogSendModal .cs-sub { font-size: 12px; color: #64748b; margin-top: 3px; font-weight: 400; }
+#catalogSendModal .cs-close {
+  border: 0; background: transparent; font-size: 24px; line-height: 1;
+  color: #94a3b8; cursor: pointer; padding: 0 4px;
+}
+#catalogSendModal .cs-close:hover { color: #334155; }
+#catalogSendModal .cs-body { padding: 14px 20px 18px; overflow: hidden; display: flex; flex-direction: column; }
+#catalogSendModal .cs-search {
+  width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+  font-size: 14px; font-family: inherit;
+}
+#catalogSendModal .cs-search:focus { outline: 2px solid #25d366; outline-offset: 1px; border-color: #25d366; }
+#catalogSendModal .cs-search:disabled { background: #f1f5f9; color: #94a3b8; }
+#catalogSendModal .cs-results { margin-top: 10px; overflow-y: auto; max-height: 380px; }
+#catalogSendModal .cs-row {
+  display: block; width: 100%; text-align: left; border: 0; border-radius: 8px;
+  background: transparent; padding: 9px 10px; cursor: pointer; font-family: inherit;
+}
+#catalogSendModal .cs-row:hover { background: #f1f5f9; }
+#catalogSendModal .cs-row__name { display: block; font-size: 14px; font-weight: 600; color: #0f172a; }
+#catalogSendModal .cs-row__sub { display: block; font-size: 12px; color: #64748b; margin-top: 1px; }
+#catalogSendModal .cs-empty { padding: 14px 4px; font-size: 13px; color: #94a3b8; }
+#catalogSendModal .cs-status {
+  padding: 12px 20px; border-top: 1px solid #e9ecef; font-size: 13px; color: #0f5132;
+  background: #f0fdf4; border-radius: 0 0 14px 14px;
+}
+.btn--wa { background: #25d366; border-color: #25d366; color: #fff; }
+.btn--wa:hover { background: #1da851; border-color: #1da851; color: #fff; }
+
+@media print {
+  #catalogSendModal { display: none !important; }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,10 @@ import { Field, Select } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { DataTable } from "@/components/data-table/data-table";
 import { resourceActionAction, resourceExportAction, resourceSaveAction } from "@/lib/actions/admin/resources";
+import { syncVisibleOrdersAction } from "@/lib/actions/admin/shipping";
 import { RecordFormDrawer } from "./record-form";
+
+const COURIER_FINAL = new Set(["Delivered", "Cancelled", "Rejected", "Return Accepted", "Return Cancelled", "Return Completed"]);
 
 function AssignDialog({ state, onClose, onDone }) {
   const [value, setValue] = useState("");
@@ -77,6 +80,26 @@ export function ResourceTable({ resourceKey, resource, data, canAdd, rowActions,
     } else notify({ message: result?.message || "Action failed.", tone: "error" });
   };
 
+  const synced = useRef(new Set());
+  const pageKey = resourceKey === "orders" ? (data?.rows ?? []).map((row) => row.id).join("|") : "";
+  useEffect(() => {
+    if (resourceKey !== "orders" || !pageKey) return;
+    const pending = (data?.rows ?? [])
+      .filter((row) => row?.id && !COURIER_FINAL.has(String(row.status ?? "")))
+      .map((row) => String(row.id))
+      .filter((id) => !synced.current.has(id))
+      .slice(0, 20);
+    if (!pending.length) return;
+    for (const id of pending) synced.current.add(id);
+    let cancelled = false;
+    syncVisibleOrdersAction(pending).then((result) => {
+      if (!cancelled && result?.ok && result.changed > 0) router.refresh();
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [resourceKey, pageKey, data, router]);
+
   const formConfig = resource.form;
   return (
     <>
@@ -92,18 +115,6 @@ export function ResourceTable({ resourceKey, resource, data, canAdd, rowActions,
         bulkActions={bulkActions}
         onAction={onAction}
         onCustomAction={onCustomAction}
-        onLineStatus={
-          rowActions.some((action) => action.id === "status")
-            ? async (orderId, invoiceNumber, status) => {
-                const result = await resourceActionAction(resourceKey, "status", [orderId], "", `${status}\u001e${invoiceNumber}`);
-                if (result?.ok) {
-                  notify({ message: result.message, tone: "success" });
-                  router.refresh();
-                } else notify({ message: result?.message || "Could not update the line status.", tone: "error" });
-                return result;
-              }
-            : undefined
-        }
         onExport={resource.exportable ? (params) => resourceExportAction(resourceKey, params) : undefined}
         exportName={resourceKey.replace(/\./g, "-")}
         toolbar={

@@ -62,7 +62,6 @@ export function DataTable({
   bulkActions = [],
   onAction,
   onCustomAction,
-  onLineStatus,
   onExport,
   exportName,
   emptyTitle = "No records found",
@@ -76,6 +75,7 @@ export function DataTable({
   const { notify } = useToast();
   const { get, setParams, pending } = useQueryState();
   const [selected, setSelected] = useState([]);
+  const [picks, setPicks] = useState({});
   const [hidden, setHidden] = useState(() => columns.filter((c) => c.hidden).map((c) => c.key));
   const [confirm, setConfirm] = useState(null);
   const [running, startRunning] = useTransition();
@@ -89,6 +89,20 @@ export function DataTable({
   const [sortField, sortDir] = (get("sort") || "").split(":");
   const showSelection = bulkActions.length > 0;
   const hasRowActions = rowActions.length > 0;
+
+  const pickLine = (orderId, line) => setPicks((current) => ({ ...current, [orderId]: line }));
+  const viewOf = (row) => {
+    const line = picks[row[rowKey]];
+    if (!line) return row;
+    return {
+      ...row,
+      trackingId: line.trackingId || "",
+      trackingUrl: line.trackingUrl || "",
+      productName: line.productName || row.productName,
+      invoiceNumber: line.invoiceNumber || "",
+      status: line.status || row.status,
+    };
+  };
 
   const runAction = (action, ids, reason) => {
     startRunning(async () => {
@@ -277,6 +291,7 @@ export function DataTable({
             <tbody>
               {rows.map((row) => {
                 const key = row[rowKey];
+                const view = viewOf(row);
                 const href = resolveHref(rowHref, row);
                 const actions = rowActions.filter((a) => matchesWhen(a, row));
                 return (
@@ -294,11 +309,11 @@ export function DataTable({
                       >
                         {ci === 0 && href && !column.href && column.type !== "image" ? (
                           <Link href={href} className="block truncate font-medium text-brand-700 hover:underline">
-                            {formatCellValue(column, row)}
-                            {column.sub && row[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{row[column.sub]}</span>}
+                            {formatCellValue(column, view)}
+                            {column.sub && view[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{view[column.sub]}</span>}
                           </Link>
                         ) : (
-                          <Cell column={column} row={row} onLineStatus={onLineStatus} />
+                          <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
                         )}
                       </td>
                     ))}
@@ -331,6 +346,7 @@ export function DataTable({
           <ul className="divide-y divide-line">
             {rows.map((row) => {
               const key = row[rowKey];
+              const view = viewOf(row);
               const href = resolveHref(rowHref, row);
               const actions = rowActions.filter((a) => matchesWhen(a, row));
               const [lead, ...rest] = visible;
@@ -344,12 +360,12 @@ export function DataTable({
                       {lead &&
                         (href && !lead.href && lead.type !== "image" ? (
                           <Link href={href} className="block font-medium break-words text-brand-700 hover:underline">
-                            {formatCellValue(lead, row)}
-                            {lead.sub && row[lead.sub] && <span className="block text-xs font-normal text-ink-muted">{row[lead.sub]}</span>}
+                            {formatCellValue(lead, view)}
+                            {lead.sub && view[lead.sub] && <span className="block text-xs font-normal text-ink-muted">{view[lead.sub]}</span>}
                           </Link>
                         ) : (
                           <div className="font-medium text-ink">
-                            <Cell column={lead} row={row} onLineStatus={onLineStatus} />
+                            <Cell column={lead} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
                           </div>
                         ))}
                     </div>
@@ -361,7 +377,7 @@ export function DataTable({
                         <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
                           <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
                           <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">
-                            <Cell column={column} row={row} onLineStatus={onLineStatus} />
+                            <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
                           </dd>
                         </div>
                       ))}

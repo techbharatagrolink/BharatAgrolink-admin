@@ -89,7 +89,7 @@ export function TicketControls({ id, ticket, options }) {
         ["department", "Department", options.departments],
         ["priority", "Priority", options.priorities],
         ["assignee", "Assignee", options.assignees],
-      ].map(([key, label, opts]) => (
+      ].filter(([key, , opts]) => key !== "assignee" || opts?.length).map(([key, label, opts]) => (
         <Field key={key} label={label}>
           {({ id: fid }) => <Select id={fid} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} options={opts} placeholder={key === "assignee" ? "Unassigned" : undefined} />}
         </Field>

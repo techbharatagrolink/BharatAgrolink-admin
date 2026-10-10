@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { DISPOSITIONS, getLead, LEAD_STATUSES } from "@/lib/services/admin/pipeline";
-import { formatDateTime, formatINR, maskMobile } from "@/lib/format";
+import { leadAttachments, leadChat } from "@/lib/services/admin/crm-sheet";
+import { formatDateTime, formatINR } from "@/lib/format";
 import { DescriptionList, PageHeader, Timeline } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
 import { LeadActivityForm } from "@/components/admin/workflows/lead-activity-form";
+import { LeadRecordPanels } from "@/components/admin/crm/lead-record-panels";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -24,6 +26,10 @@ export default async function LeadDetailPage({ params }) {
   if (!data) notFound();
   const { lead } = data;
   const canEdit = can(user, "crm.leads", "edit");
+  const [chat, attachments] = await Promise.all([
+    leadChat(id, user).catch(() => ({ messages: [] })),
+    leadAttachments(id, user).catch(() => []),
+  ]);
 
   return (
     <>
@@ -46,18 +52,30 @@ export default async function LeadDetailPage({ params }) {
               <DescriptionList
                 columns={3}
                 items={[
-                  { label: "Mobile", value: canEdit ? <a href={`tel:+91${lead.mobile}`} className="font-mono text-brand-700 hover:underline">+91 {lead.mobile}</a> : maskMobile(lead.mobile) },
+                  { label: "WhatsApp No.", value: lead.mobile ? <a href={`tel:+91${lead.mobile}`} className="font-mono text-brand-700 hover:underline">{lead.mobile}</a> : "—" },
+                  { label: "Customer type", value: lead.customerType || "Farmer" },
                   { label: "Source", value: lead.source },
                   { label: "Assigned to", value: lead.assignedTo },
                   { label: "Call attempts", value: lead.attempts },
                   { label: "Last call", value: formatDateTime(lead.lastCallAt) },
                   { label: "Next follow-up", value: formatDateTime(lead.nextFollowUp) },
+                  { label: "Current crop", value: lead.crop || "—" },
+                  { label: "Season", value: lead.season || "—" },
+                  { label: "Next season crop", value: lead.nextSeasonCrop || "—" },
+                  { label: "Product interest", value: lead.productInterest || "—" },
+                  { label: "Stage", value: lead.stage || "—" },
+                  { label: "Action type", value: lead.actionType || "—" },
+                  { label: "Scheduled call", value: [formatDateTime(lead.scheduledCallDate), lead.scheduledCallTime].filter(Boolean).join(" ") || "—" },
                   { label: "Order value", value: lead.orderValue ? formatINR(lead.orderValue) : "—" },
+                  { label: "System status", value: lead.systemStatus || "—" },
                   { label: "Created", value: formatDateTime(lead.createdAt) },
+                  { label: "Last discussion", value: lead.lastNote || "—" },
+                  { label: "Agent notes", value: lead.agentNotes || "—" },
                 ]}
               />
             </CardBody>
           </Card>
+          <LeadRecordPanels leadId={lead.id} mobile={lead.mobile} chat={chat} attachments={attachments} canEdit={canEdit} />
           <Card>
             <CardHeader title="Call history" description={`${data.activities.length} logged activities`} />
             <CardBody>

@@ -131,3 +131,20 @@ export async function syncStatusAction(orderIds) {
   if (result.ok) refresh(list);
   return result;
 }
+
+/** manage_orders.php syncVisibleCourierStatuses: the orders currently on screen, at most 20. */
+export async function syncVisibleOrdersAction(orderIds) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const list = ids(orderIds, 20);
+  if (!list.length) return { ok: true, changed: 0 };
+  const result = await syncStatus({ orderIds: list }, user);
+  const updates = Array.isArray(result.data?.updates) ? result.data.updates : [];
+  const nimbus = Array.isArray(result.data?.nimbus?.updated) ? result.data.nimbus.updated : [];
+  const changed = updates.length + nimbus.length;
+  if (result.ok && changed > 0) {
+    revalidatePath("/admin/orders");
+    refresh(list);
+  }
+  return { ok: result.ok, changed, message: result.message };
+}

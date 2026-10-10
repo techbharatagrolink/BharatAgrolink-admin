@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
-import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
-import { StatusDot, StatusDotSelect } from "./status-dot-select";
+import { Dialog } from "@/components/ui/dialog";
+import { StatusDot } from "./status-dot-select";
 import { formatDate, formatDateTime, formatINR, formatNumber, formatPercent, maskMobile } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -126,20 +126,8 @@ function RemarksCell({ remarks, orderId }) {
   );
 }
 
-function LineStatusCell({ row, options, onLineStatus }) {
-  const [draft, setDraft] = useState(null);
-  const [running, startRunning] = useTransition();
+function LineStatusCell({ row, activeLineId, onPickLine }) {
   const lines = Array.isArray(row.lines) ? row.lines : [];
-  const canonical = Array.isArray(options) ? options : [];
-
-  const save = () => {
-    if (!draft || !onLineStatus) return;
-    startRunning(async () => {
-      await onLineStatus(row.id, draft.invoiceNumber, draft.status);
-      setDraft(null);
-    });
-  };
-
   if (!lines.length) {
     const status = row.status;
     if (!status) return <span className="text-ink-muted">—</span>;
@@ -151,57 +139,40 @@ function LineStatusCell({ row, options, onLineStatus }) {
   }
 
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-1">
-        {lines.map((line) => {
-          const current = line.status || "Placed";
-          const choices = canonical.includes(current) ? canonical : [current, ...canonical];
-          const label = line.productName || "Item";
-          const title = [label, line.invoiceNumber, current].filter(Boolean).join(" · ");
-          if (onLineStatus && line.invoiceNumber) {
-            return (
-              <StatusDotSelect
-                key={line.id}
-                iconOnly
-                title={title}
-                aria-label={`Line status for ${label}, ${current}`}
-                value={current}
-                options={choices}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (next && next !== current && canonical.includes(next)) {
-                    setDraft({ invoiceNumber: line.invoiceNumber, status: next, productName: label });
-                  }
-                }}
-              />
-            );
-          }
-          return (
-            <span key={line.id} className="inline-flex size-6 items-center justify-center" title={title}>
-              <StatusDot status={current} />
-            </span>
-          );
-        })}
-      </div>
-      <ConfirmDialog
-        open={Boolean(draft)}
-        onClose={() => (running ? undefined : setDraft(null))}
-        onConfirm={save}
-        loading={running}
-        title="Update line status?"
-        description={draft ? `Change ${draft.productName} (${draft.invoiceNumber}) on order ${row.id} to “${draft.status}”? This sets the status on every product that shares this seller invoice.` : ""}
-        confirmLabel={draft ? `Set ${draft.status}` : "Update"}
-        tone="warning"
-      />
-    </>
+    <div className="flex flex-wrap items-center gap-1">
+      {lines.map((line) => {
+        const current = line.status || "Placed";
+        const label = line.productName || "Item";
+        const awb = line.trackingId || "none";
+        const active = String(activeLineId) === String(line.id);
+        const title = [label, line.invoiceNumber, current, `AWB ${awb}`].filter(Boolean).join(" · ");
+        return (
+          <button
+            key={line.id}
+            type="button"
+            title={title}
+            aria-pressed={active}
+            aria-label={`Show ${label}, status ${current}, AWB ${awb}`}
+            className={cn("inline-flex size-6 items-center justify-center rounded-full", active && "ring-2 ring-brand-600 ring-offset-1")}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onPickLine?.(row.id, line);
+            }}
+          >
+            <StatusDot status={current} />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
-export function Cell({ column, row, onLineStatus }) {
+export function Cell({ column, row, activeLineId, onPickLine }) {
   const value = row[column.key];
   const sub = column.sub ? row[column.sub] : null;
   let content;
-  if (column.type === "lineStatus") content = <LineStatusCell row={row} options={column.options} onLineStatus={onLineStatus} />;
+  if (column.type === "lineStatus") content = <LineStatusCell row={row} activeLineId={activeLineId} onPickLine={onPickLine} />;
   else if (column.type === "remarks") content = <RemarksCell remarks={value} orderId={row.id} />;
   else if (column.type === "image")
     content = value ? (

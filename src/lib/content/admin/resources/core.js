@@ -38,7 +38,7 @@ const verdictLabels = { ok: "Healthy", below_target: "Below target CM", below_fl
 export const coreResources = {
   orders: {
     title: "All Orders",
-    description: "One row per order. The status is the furthest line along delivery. Line status is each seller invoice, and remarks lists every note. The status filter matches a product line the same way the PHP tabs do.",
+    description: "One row per order. Click a line-status dot to show that sub-order’s product, invoice and AWB on the row. Status is updated by the courier sync, the same way manage orders does. The status filter matches a product line the same way the PHP tabs do.",
     permission: "orders",
     collection: "orders",
     api: "GET /api/admin/orders",
@@ -98,7 +98,6 @@ export const coreResources = {
       { key: "processNote", label: "Process note", width: 220, wrap: true, hidden: true },
     ],
     rowActions: [
-      { id: "status", label: "Set status", permission: "edit", assign: { label: "Status", options: manualStatuses, run: true }, confirm: { title: "Update line status?", description: "Sets this status on every product that shares the seller invoice shown on the row." }, when: { field: "invoiceNumber", notIn: ["", null] } },
       { id: "remark", label: "Add remark", permission: "edit", effect: { append: true }, confirm: { title: "Add a remark?", description: "Saved on the order with your name and the time.", requireReason: true } },
       { id: "responsible", label: "Set responsible", permission: "edit", assign: { label: "Responsible party", options: responsibleParties, run: true }, confirm: { title: "Who is responsible?", description: "Used for cancellation, RTO and rejection scoring." } },
       { id: "salesAgent", label: "Set sales agent", permission: "edit", adminOnly: true, assign: { label: "Sales agent", optionsFrom: "lookup:sales-agents", run: true }, confirm: { title: "Credit this order to a sales agent?", description: "Only a super admin can change the sales agent." } },
