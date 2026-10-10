@@ -249,9 +249,16 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
         <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
           <thead className="sticky top-0 z-10">
             <tr>
-              <th className={cn(thBase, "border-r py-1.5 text-center")} colSpan={COLUMNS.filter((c) => c.group === "basic").length + 1}>{GROUPS[0].label}</th>
-              <th className={cn(thBase, "border-r py-1.5 text-center")} colSpan={COLUMNS.filter((c) => c.group === "financial").length}>{GROUPS[1].label}</th>
-              <th className={cn(thBase, "py-1.5 text-center")} colSpan={COLUMNS.filter((c) => c.group === "other").length + 1}>{GROUPS[2].label}</th>
+              {GROUPS.map((g, i) => (
+                <th
+                  key={g.id}
+                  scope="colgroup"
+                  colSpan={COLUMNS.filter((c) => c.group === g.id).length + (i === 1 ? 0 : 1)}
+                  className={cn(thBase, "py-1.5 text-[13px] text-ink", i < 2 && "border-r", i === 0 ? "bg-success-bg" : i === 1 ? "bg-info-bg" : "bg-warning-bg")}
+                >
+                  {g.label}
+                </th>
+              ))}
             </tr>
             <tr>
               <th scope="col" className={cn(thBase, "w-10 py-2")}>
@@ -270,7 +277,7 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
                 const sortable = SORTABLE.has(c.key);
                 const active = sortKey === c.key;
                 return (
-                  <th key={c.key} scope="col" style={{ minWidth: c.width }} className={cn(thBase, "py-2 leading-tight", c.align === "right" && "text-right")} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}>
+                  <th key={c.key} scope="col" style={{ minWidth: c.width, width: c.width }} className={cn(thBase, "py-2 leading-tight", c.align === "right" && "text-right")} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}>
                     {sortable ? (
                       <button type="button" onClick={() => toggleSort(c.key)} className={cn("inline-flex items-center gap-1 hover:text-ink", c.align === "right" && "flex-row-reverse", active && "text-ink")}>
                         {c.label}
@@ -296,7 +303,8 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
                       type={c.filter.type === "date" ? "date" : "text"}
                       inputMode={c.filter.type === "number" ? "decimal" : undefined}
                       placeholder={c.filter.type === "number" ? (c.filter.hint ? "≥ amount" : "Equals") : c.filter.type === "date" ? undefined : "Contains"}
-                      className="h-8 text-xs"
+                      size={1}
+                      className="h-8 px-2 text-xs"
                       value={draft[`f_${c.filter.key}`]}
                       onChange={set(`f_${c.filter.key}`)}
                       onKeyDown={onEnter}
