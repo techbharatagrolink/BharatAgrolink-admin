@@ -15,7 +15,11 @@ export const SHIPMENT_TABS = [
   { value: "rto", label: "RTO" },
   { value: "cancelled", label: "Cancelled" },
   { value: "all", label: "All" },
+  { value: "shiprocket", label: "Shiprocket" },
 ];
+
+/** shiprocket_orders_report.php "entries per page". */
+export const SHIPROCKET_PAGE_SIZES = ["10", "20", "50", "100"];
 
 export const COURIER_COMPANIES = [
   { value: "nimbus", label: "NimbusPost" },
@@ -95,4 +99,34 @@ export function markCancelled(awbs, user) {
 
 export function syncStatus({ orderIds = [], awbs = [] }, user) {
   return call(user, "edit", "admin/shipping/sync", { method: "POST", body: { orderIds, awbs } });
+}
+
+/* shiprocket_orders_report.php: the Shiprocket account's orders, via the ship microservice. */
+
+export function listShiprocketOrders({ page, perPage, from, to, search, status, pickupLocation, sort }, user) {
+  return call(user, "view", "admin/shipping/shiprocket/orders", { query: { page, perPage, from, to, search, status, pickupLocation, sort } });
+}
+
+export function shiprocketOrderDetails(srOrderId, user) {
+  return call(user, "view", `admin/shipping/shiprocket/orders/${enc(srOrderId)}`);
+}
+
+export function trackShiprocketShipment(shipmentId, user) {
+  return call(user, "view", `admin/shipping/shiprocket/tracking/${enc(shipmentId)}`);
+}
+
+export function trackShiprocketAwbs(awbs, user) {
+  return call(user, "view", "admin/shipping/shiprocket/tracking", { method: "POST", body: { awbs } });
+}
+
+export function shiprocketReportDocument(doc, ids, user) {
+  return call(user, "edit", `admin/shipping/shiprocket/documents/${enc(doc)}`, { method: "POST", body: { ids } });
+}
+
+export function cancelShiprocketOrders(orderIds, user) {
+  return call(user, "edit", "admin/shipping/shiprocket/cancel/orders", { method: "POST", body: { orderIds } });
+}
+
+export function cancelShiprocketShipments(awbs, user) {
+  return call(user, "edit", "admin/shipping/shiprocket/cancel/shipments", { method: "POST", body: { awbs } });
 }

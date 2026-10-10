@@ -2,7 +2,7 @@ import "server-only";
 import { getStore, appendAudit } from "@/lib/mock/admin/store";
 import { can } from "@/lib/auth/permissions";
 import { NOW } from "@/lib/mock/admin/seed";
-import { api, ApiError } from "@/lib/api";
+import { api, apiForm, ApiError } from "@/lib/api";
 import { mockLatency } from "./_query";
 
 function liveError(error, fallback) {
@@ -11,18 +11,23 @@ function liveError(error, fallback) {
 }
 
 /**
- * Helpdesk. Planned APIs:
- *   GET   /api/admin/support/tickets/{id}
- *   POST  /api/admin/support/tickets/{id}/messages   { message, internal }
- *   PATCH /api/admin/support/tickets/{id}            { status, department, priority, assignee }
- * Internal notes are stored with internal=true and are never returned to the
- * customer/vendor apps.
+ * Helpdesk (PHP support/admin_ticket_details.php + admin_api_chat.php). APIs:
+ *   GET   /api/admin/support/{id}            ticket, requester profile, messages, realtime (Pusher) settings
+ *   POST  /api/admin/support/{id}/messages   multipart: message, internal, image (optional)
+ *   PATCH /api/admin/support/{id}            { status, department } - notifies the ticket creator
+ * Internal notes are stored with is_internal=1; the customer/vendor chat pages skip them.
  */
 
 export const TICKET_STATUSES = ["Open", "In-Progress", "Awaiting Response", "Resolved", "Closed", "Rejected"];
 export const DEPARTMENTS = ["Finance", "Logistics", "Tech", "Vendor Support", "Unassigned"];
 export const PRIORITIES = ["Normal", "Urgent"];
 export const ASSIGNEES = ["Kunal (Support)", "Ayesha (Support)", "Finance Desk", "Logistics Desk"];
+
+/** The choices of the PHP "Admin Controls" form, in its order. */
+export const CONTROL_STATUSES = ["Open", "In-Progress", "Resolved", "Closed"];
+export const CONTROL_DEPARTMENTS = ["Vendor Support", "Logistics", "Finance", "Tech"];
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export async function getTicket(id, user) {
   if (user?.token) {
@@ -40,20 +45,34 @@ export async function getTicket(id, user) {
   if (!t) return null;
   const order = t.orderId ? s.orders.find((o) => o.id === t.orderId) : null;
   return {
-    ticket: { ...t, slaBreached: !["Resolved", "Closed", "Rejected"].includes(t.status) && new Date(t.slaDeadline).getTime() < NOW },
-    messages: s.ticketMessages.filter((m) => m.ticketId === id).sort((a, b) => (a.at < b.at ? -1 : 1)),
+    ticket: { ...t, description: t.description ?? "", slaBreached: !["Resolved", "Closed", "Rejected"].includes(t.status) && new Date(t.slaDeadline).getTime() < NOW },
+    requester: { type: t.userType, name: t.user, phone: null, email: null, gstNumber: null, address: null, joinedAt: null },
+    messages: s.ticketMessages
+      .filter((m) => m.ticketId === id)
+      .sort((a, b) => (a.at < b.at ? -1 : 1))
+      .map((m) => ({ ...m, senderId: m.senderType === "admin" ? user?.id : 0, attachmentUrl: m.attachmentUrl ?? null })),
     order: order ? { id: order.id, status: order.status, total: order.total } : null,
+    viewer: { id: user?.id, type: "admin" },
+    realtime: null,
   };
 }
 
-export async function addTicketMessage(id, rawMessage, internal, user) {
+/** input: { message, internal, image (File | null) }. Returns { ok, message, item } - item is the stored message. */
+export async function addTicketMessage(id, input, user) {
   if (!can(user, "support", "edit") && !can(user, "support", "add")) return { ok: false, message: "You do not have permission to reply to tickets." };
-  const message = typeof rawMessage === "string" ? rawMessage.trim() : "";
-  if (message.length < 2) return { ok: false, message: "Write a message first." };
+  const message = typeof input?.message === "string" ? input.message.trim() : "";
+  const internal = Boolean(input?.internal);
+  const image = input?.image ?? null;
+  if (!message) return { ok: false, message: "Write a message first." };
   if (message.length > 4000) return { ok: false, message: "Message is too long (max 4000 characters)." };
+  if (image && image.size > MAX_IMAGE_BYTES) return { ok: false, message: "The image must be 5 MB or smaller." };
   if (user?.token) {
+    const formData = new FormData();
+    formData.set("message", message);
+    formData.set("internal", internal ? "1" : "0");
+    if (image) formData.set("image", image, image.name || "image");
     try {
-      const { data } = await api(`admin/support/${encodeURIComponent(id)}/messages`, { method: "POST", token: user.token, body: { message, internal: Boolean(internal) } });
+      const { data } = await apiForm(`admin/support/${encodeURIComponent(id)}/messages`, { token: user.token, formData });
       return data;
     } catch (error) {
       return liveError(error, "Could not send the message.");
@@ -62,12 +81,11 @@ export async function addTicketMessage(id, rawMessage, internal, user) {
   const s = getStore();
   const t = s.tickets.find((x) => x.id === id);
   if (!t) return { ok: false, message: "Ticket not found." };
-  if (["Closed", "Rejected"].includes(t.status) && !internal) return { ok: false, message: "Reopen the ticket before replying to the requester." };
   await mockLatency(150);
-  s.ticketMessages.push({ id: `${id}-${Date.now()}`, ticketId: id, senderType: "admin", sender: user.name, message, internal: Boolean(internal), at: new Date().toISOString() });
-  if (!internal && t.status === "Open") t.status = "In-Progress";
+  const item = { id: `${id}-${Date.now()}`, ticketId: id, senderId: user.id, senderType: "admin", sender: user.name, message, internal, attachmentUrl: null, at: new Date().toISOString() };
+  s.ticketMessages.push(item);
   appendAudit({ actorId: user.id, actor: user.name, module: "Support", action: internal ? "Added internal note" : "Replied to requester", entity: id });
-  return { ok: true, message: internal ? "Internal note added." : "Reply sent." };
+  return { ok: true, message: internal ? "Internal note added." : "Reply sent.", item };
 }
 
 export async function updateTicket(id, input, user) {

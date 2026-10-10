@@ -416,6 +416,24 @@ export const b2bOpsResources = {
     ],
     bulkActions: [{ id: "assign", label: "Assign to agent…", permission: "edit", assign: { field: "agent", label: "Assign to agent", options: agents }, confirm: { title: "Assign selected order lines?", description: "The agent sees these lines in their queue." } }],
   },
+  /** Agent Master card on the setup page (no route of its own; see operations/team/setup/page.js). */
+  "operations.agentMaster": {
+    title: "Agent Master",
+    permission: "operations.setup",
+    api: "operations_team/setup → /api/admin/operations/agent-master",
+    columns: [
+      { key: "name", label: "Agent", emphasis: true },
+      { key: "role", label: "Role" },
+      { key: "status", label: "Status", type: "status" },
+    ],
+    form: {
+      title: "Agent",
+      fields: [
+        { name: "userId", label: "Agent", type: "select", optionsFrom: "lookup:ops-agent-candidates", required: true, only: "new" },
+        { name: "status", label: "Status", type: "select", options: ["Active", "Inactive"], default: "Active", required: true },
+      ],
+    },
+  },
   "operations.setup": {
     title: "Agents & KPI Targets",
     description: "Agent master (role IDs 32, 57, 66) and KPI targets / KRI thresholds.",
