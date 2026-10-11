@@ -141,8 +141,9 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
   const warnings = result.warnings || [];
   const canSave = canEdit && !pending && !previewing && result.ok !== false && errors.length === 0;
   const anyOverridden = draft.factors.some((f) => f.overridden);
-  const minRate = config.minTakeRateBps / 100;
-  const maxRate = config.maxTakeRateBps / 100;
+  /* Any rate below 100% works: display price = NRV / (1 − take rate). */
+  const minRate = 0;
+  const maxRate = 99.99;
 
   const save = () => startTransition(async () => {
     const res = await saveProductPricingAction(productId, { ...body(draft), reason });
@@ -194,7 +195,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
         <div className="space-y-3 rounded-lg border border-line p-3">
           {draft.mode === "TAKE_RATE" ? (
             <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
-              <Field label={`Take rate (${minRate}% – ${maxRate}%)`} hint="Share of the display price kept by the platform: 1 − NRV / display price.">
+              <Field label="Take rate (0% – 100%)" hint="Share of the display price kept by the platform: 1 − NRV / display price. Must be below 100%.">
                 {({ id }) => <input id={id} type="range" className="w-full accent-brand-600" min={minRate} max={maxRate} step="0.01" value={Number(draft.takeRate) || minRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
               </Field>
               <Field label="Take rate %">{({ id }) => <Input id={id} inputMode="decimal" value={draft.takeRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}</Field>
