@@ -8,8 +8,9 @@ import { navigation } from "./navigation";
  * navigation.js is the route map: a menu row's `menu_link` finds the Next
  * route of the leaf whose `page` is that link. A link that starts with
  * "/admin/" is a route of this admin and opens as it is (the PHP admin cannot
- * open those). Group icons come from the navigation group with the same key
- * as the row's "#hash" link.
+ * open those). Icons come from the row's Menu Master icon; the navigation
+ * entry's icon (for groups, the one whose key is the row's "#hash" link) is
+ * used only when that class maps to no sidebar icon.
  *
  * The sidebar shows admin_menus rows only. Next-only screens (navigation
  * leaves without `page`) have no row, so they are not in it; Menu Master
@@ -111,6 +112,12 @@ export function faIcon(className) {
   return FA_ICONS.find(([re]) => re.test(value))?.[1] ?? "Circle";
 }
 
+/** The row's Menu Master icon wins; navigation.js's icon is used only when the class maps to nothing. */
+const rowIcon = (className, fallback) => {
+  const icon = faIcon(className);
+  return icon === "Circle" && fallback ? fallback : icon;
+};
+
 function routeFor(link) {
   if (isRouteLink(link)) {
     const value = String(link).trim();
@@ -121,11 +128,17 @@ function routeFor(link) {
 }
 
 /**
- * Where a menu link opens in this admin: { href, ported, known, route }.
+ * Where a menu link opens in this admin: { href, ported, known, route, override }.
  * Unported links open /admin/not-ported. `route` links ("/admin/...") open as
  * written; `known` says whether navigation.js has a screen at that path.
+ * `opens` is the row's Menu Master "Opens" route (admin_menus.next_route): when
+ * set it wins over the link, which stays the permission key.
  */
-export function menuTarget(link) {
+export function menuTarget(link, opens) {
+  if (isRouteLink(opens)) {
+    const href = String(opens).trim();
+    return { href, ported: !PENDING_ROUTES.has(pathOf(href)), known: Boolean(routeFor(href)), route: true, override: true };
+  }
   if (isRouteLink(link)) {
     const href = String(link).trim();
     return { href, ported: !PENDING_ROUTES.has(pathOf(href)), known: Boolean(routeFor(href)), route: true };
@@ -133,6 +146,22 @@ export function menuTarget(link) {
   const leaf = routeFor(link);
   const ported = Boolean(leaf) && !PENDING_ROUTES.has(pathOf(leaf.href));
   return { href: ported ? leaf.href : null, ported, known: ported, route: false };
+}
+
+const leavesOfSection = (section) => section.items.flatMap((item) => (item.children ? item.children.map((child) => ({ ...child, group: item.label })) : [item]));
+
+/** Every screen of this admin, for Menu Master's "Opens" picker: [{ href, label }]. */
+export function adminScreens() {
+  const seen = new Set();
+  const out = [];
+  for (const section of navigation) {
+    for (const item of leavesOfSection(section)) {
+      if (!item.href || seen.has(item.href) || PENDING_ROUTES.has(pathOf(item.href))) continue;
+      seen.add(item.href);
+      out.push({ href: item.href, label: [section.section, item.group, item.label].filter(Boolean).join(" › ") });
+    }
+  }
+  return out;
 }
 
 /** Links Menu Master offers: legacy pages with a screen here, then this admin's screens that have no PHP page (as /admin/ routes). */
@@ -148,14 +177,14 @@ export function notPortedHref(link, name) {
 }
 
 function toLeaf(node, label = node.name) {
-  const route = routeFor(node.link);
-  const { href, ported } = menuTarget(node.link);
+  const route = (isRouteLink(node.route) && routeFor(node.route)) || routeFor(node.link);
+  const { href, ported } = menuTarget(node.link, node.route);
   return {
     key: `menu-${node.id}`,
     label,
     href: ported ? href : notPortedHref(node.link, node.name),
     page: node.link,
-    icon: route?.icon ?? faIcon(node.icon),
+    icon: rowIcon(node.icon, route?.icon),
     badge: route?.badge,
     permission: route?.permission,
   };
@@ -184,7 +213,7 @@ function uniqueByHref(leaves) {
 
 const FALLBACK = [{ section: null, items: [{ key: "menu-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }] }];
 
-/** `items` is the API tree: [{ id, name, link, icon, actions, children }]. */
+/** `items` is the API tree: [{ id, name, link, route, icon, actions, children }]. */
 export function buildSidebar(items) {
   const sections = [];
 
@@ -201,7 +230,7 @@ export function buildSidebar(items) {
       }
       const meta = groups.get(norm(node.link));
       const children = uniqueByHref(leavesOf(node.children));
-      if (children.length) sectionItems.push({ key: `menu-${node.id}`, label: node.name, icon: meta?.icon ?? faIcon(node.icon), sensitive: meta?.sensitive || undefined, children });
+      if (children.length) sectionItems.push({ key: `menu-${node.id}`, label: node.name, icon: rowIcon(node.icon, meta?.icon), sensitive: meta?.sensitive || undefined, children });
     }
     if (sectionItems.length) sections.push({ section: top.name, items: sectionItems });
   }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ChevronRight, Eye, EyeOff, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { faIcon, knownPages, menuTarget, nextOnlyScreens } from "@/lib/content/admin/sidebar";
+import { adminScreens, faIcon, knownPages, menuTarget, nextOnlyScreens } from "@/lib/content/admin/sidebar";
 import { createMenuAction, deleteMenuAction, moveMenuAction, updateMenuAction } from "@/lib/actions/admin/menus";
 import { NavIcon } from "@/components/admin/shell/icons";
 import { Badge } from "@/components/ui/badge";
@@ -88,13 +88,20 @@ function RoleList({ roles }) {
 
 function Opens({ node, kind }) {
   if (kind !== "page") return <span className="text-xs text-ink-muted">{kind === "group" ? "Sub-menu" : "Section"}</span>;
-  const target = menuTarget(node.link);
+  const target = menuTarget(node.link, node.route);
   if (!target.ported) return <Badge tone="warning">Not built yet</Badge>;
   if (target.route && !target.known) return <Badge tone="warning">Unknown route</Badge>;
   return (
-    <Link href={target.href} className="block truncate font-mono text-xs text-brand-700 hover:underline" title={target.href}>
-      {target.href}
-    </Link>
+    <span className="flex min-w-0 items-center gap-1.5">
+      <Link href={target.href} className="block truncate font-mono text-xs text-brand-700 hover:underline" title={target.href}>
+        {target.href}
+      </Link>
+      {target.override && (
+        <span title="Set in Opens. The link still controls who can see it.">
+          <Badge tone="brand">Custom</Badge>
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -156,7 +163,7 @@ function RowMenu({ node, kind, ctx }) {
 function MenuRow({ node, depth, index, count, parentHidden, ctx }) {
   const kind = kindOf(node, depth);
   const hidden = !node.status || parentHidden;
-  const target = kind === "page" ? menuTarget(node.link) : null;
+  const target = kind === "page" ? menuTarget(node.link, node.route) : null;
   const pages = kind === "group" ? pageCount(ctx.full(node), true) : 0;
   const actions = (
     <div className="flex shrink-0 items-center justify-end">
@@ -265,6 +272,12 @@ function linkHint(target) {
   return "No screen in this admin uses this link yet, so the entry opens the “Not built yet” page. Use a PHP page with a screen here, or an /admin/ route of this admin.";
 }
 
+function opensHint(target, opensTarget) {
+  if (!opensTarget) return `Leave empty to open ${target?.ported ? target.href : "the screen mapped from the page link"}. Pick another screen to open it instead; access still follows the page link.`;
+  if (!opensTarget.known) return `Opens ${opensTarget.href}. That is not a known screen of this admin, so check that it opens. Access still follows the page link.`;
+  return `Opens ${opensTarget.href} from the sidebar. Access still follows the page link in Manage Role; the PHP admin keeps using the link.`;
+}
+
 /** Where an entry can live: the top level, a section, or a group. A row's own subtree is left out. */
 function parentOptions(tree, exclude) {
   const options = [{ value: "0", label: "Top level (a new sidebar section)" }];
@@ -289,6 +302,8 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
   const [link, setLink] = useState(editing ? node.link : "");
   const [linkTouched, setLinkTouched] = useState(editing);
   const [icon, setIcon] = useState(editing ? node.icon : "");
+  const [opens, setOpens] = useState(editing ? node.route ?? "" : "");
+  const screens = useMemo(() => adminScreens(), []);
   const [visible, setVisible] = useState(editing ? Boolean(node.status) : true);
   const [touched, setTouched] = useState(false);
 
@@ -303,8 +318,10 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
   const isPage = kind === "page";
   const effectiveLink = !isPage && !linkTouched ? slugLink(name) : link.trim();
   const target = isPage ? menuTarget(effectiveLink) : null;
+  const opensTarget = isPage && opens.trim() ? menuTarget(effectiveLink, opens) : null;
   const errors = {
     name: !name.trim() ? "Enter a name." : null,
+    opens: isPage && opens.trim() && !/^\/admin(\/\S*)?$/.test(opens.trim()) ? "Pick a screen, or enter a route that starts with /admin/." : null,
     link: isPage && isGroupLink(effectiveLink) ? "Enter the page link, e.g. manage_product.php." : !effectiveLink ? "Enter a link." : null,
   };
   const locked = editing && PROTECTED.has(norm(node.link));
@@ -320,8 +337,8 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
 
   const save = () => {
     setTouched(true);
-    if (errors.name || errors.link) return;
-    const input = { name: name.trim(), link: effectiveLink, icon: icon.trim(), parentId: Number(parentId) };
+    if (errors.name || errors.link || errors.opens) return;
+    const input = { name: name.trim(), link: effectiveLink, icon: icon.trim(), parentId: Number(parentId), ...(isPage ? { route: opens.trim() } : {}) };
     startSaving(async () => {
       const result = editing ? await updateMenuAction(node.id, { ...input, status: visible ? 1 : 0 }) : await createMenuAction(input);
       notify({ message: result.message || (result.ok ? "Saved." : "Could not save."), tone: result.ok ? "success" : "error" });
@@ -415,6 +432,33 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
           )}
         </Field>
 
+        {isPage && (
+          <Field label="Opens" error={touched ? errors.opens : null} hint={opensHint(target, opensTarget)}>
+            {({ id, invalid, describedBy }) => (
+              <>
+                <Input
+                  id={id}
+                  value={opens}
+                  maxLength={255}
+                  list={`${id}-screens`}
+                  onChange={(e) => setOpens(e.target.value)}
+                  placeholder={target?.ported ? `${target.href} (from the link)` : "/admin/..."}
+                  className="font-mono"
+                  aria-invalid={invalid || undefined}
+                  aria-describedby={describedBy}
+                />
+                <datalist id={`${id}-screens`}>
+                  {screens.map((screen) => (
+                    <option key={screen.href} value={screen.href}>
+                      {screen.label}
+                    </option>
+                  ))}
+                </datalist>
+              </>
+            )}
+          </Field>
+        )}
+
         <Field label="Icon" hint="A Font Awesome class from the PHP admin, e.g. fa fa-truck. The preview is the icon this sidebar shows.">
           {({ id }) => (
             <div className="flex items-center gap-2">
@@ -454,7 +498,7 @@ function NotInSidebar({ q, tree }) {
     const visit = (nodes) => {
       for (const node of nodes) {
         if (!node.status) continue;
-        const target = menuTarget(node.link);
+        const target = menuTarget(node.link, node.route);
         if (target.route) linked.add(target.href.split(/[?#]/)[0]);
         visit(node.children || []);
       }

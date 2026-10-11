@@ -18,6 +18,7 @@ function fields(input) {
   const out = {};
   if (input?.name !== undefined) out.name = str(input.name, 150);
   if (input?.link !== undefined) out.link = str(input.link, 255);
+  if (input?.route !== undefined) out.route = str(input.route, 255);
   if (input?.icon !== undefined) out.icon = str(input.icon, 80);
   if (input?.status !== undefined) out.status = Number(input.status) === 1 ? 1 : 0;
   if (input?.parentId !== undefined && id(input.parentId) !== null) out.parentId = id(input.parentId);
