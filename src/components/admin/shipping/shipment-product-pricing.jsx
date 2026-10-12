@@ -76,6 +76,20 @@ function varianceClass(amount) {
   return text.startsWith("-") ? "text-danger-ink" : "text-success-ink";
 }
 
+/** Margin variance uses the same target − actual sign, but a shortfall (positive) is the miss. */
+function marginVarianceClass(amount) {
+  const text = String(amount ?? "").trim();
+  if (!text || text === "—" || Number(text) === 0) return "text-success-ink";
+  return text.startsWith("-") ? "text-success-ink" : "text-danger-ink";
+}
+
+function achievementClass(bps, targetBps) {
+  if (bps == null) return "text-ink";
+  if (bps < 0) return "text-danger-ink";
+  if (targetBps != null && bps < targetBps) return "text-warning-ink";
+  return "text-ink";
+}
+
 function SummaryLine({ label, hint, value, strong, tone }) {
   return (
     <div className="flex min-w-0 max-w-full items-start justify-between gap-3 py-1">
@@ -105,7 +119,7 @@ function FactorValue({ label, children, className }) {
 }
 
 /** Every factor the pricing result returned, including Marketing and Sales incentive at a 0% target. */
-function FactorRows({ factors }) {
+function FactorRows({ factors, marginRows = [] }) {
   if (!factors.length) {
     return <p className="text-sm text-ink-muted">No cost factors were returned for this product.</p>;
   }
@@ -131,6 +145,28 @@ function FactorRows({ factors }) {
               <FactorValue label="Actual">{money(factor.actualAmount)}</FactorValue>
               <FactorValue label="Achv">{bpsToPct(factor.achievementBps)}</FactorValue>
               <FactorValue label="Var" className={varianceClass(factor.varianceAmount)}>{money(factor.varianceAmount)}</FactorValue>
+            </span>
+          </li>
+        ))}
+        {marginRows.map((row, index) => (
+          <li
+            key={row.code}
+            data-factor={row.code}
+            className={cn(
+              "grid min-w-0 gap-x-2 gap-y-1 py-1.5 @sm/factors:items-baseline",
+              FACTOR_COLS,
+              index === 0 && "!border-t !border-t-line-strong",
+            )}
+          >
+            <span className="min-w-0 break-words text-sm font-semibold text-ink">
+              {row.label}
+              {row.hint && <span className="mt-0.5 block text-xs font-normal leading-tight text-ink-muted">{row.hint}</span>}
+            </span>
+            <span className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1 @xs/factors:grid-cols-4 @sm/factors:contents">
+              <FactorValue label="Target">{row.target}</FactorValue>
+              <FactorValue label="Actual" className={row.actualClass}>{row.actual}</FactorValue>
+              <FactorValue label="Achv" className={row.achvClass}>{row.achv}</FactorValue>
+              <FactorValue label="Var" className={row.varClass}>{row.variance}</FactorValue>
             </span>
           </li>
         ))}
@@ -167,10 +203,37 @@ function ProductPricingBlock({ product, courierCharge, courierName, canEdit }) {
   const gap = shipping ? shippingGap(shipping.actualAmount, courierCharge) : null;
   const adjusted = gap ? adjustedContribution(result, gap.gap) : null;
   const minMarginBps = pricing?.config?.minMarginBps;
-  const nowTone = marginTone(result?.platformMarginBps, minMarginBps);
-  const adjustedTone = adjusted ? marginTone(adjusted.bps, minMarginBps) : undefined;
-  const decisionBps = adjusted ? adjusted.bps : result?.platformMarginBps;
-  const belowMin = minMarginBps != null && decisionBps != null && decisionBps < minMarginBps;
+  const marginTargetBps = result?.marginTargetBps ?? pricing?.config?.defaultTargetMarginBps;
+  const marginTargetPaise = toPaise(result?.marginTargetAmount);
+
+  const marginHint = adjusted ? `at ${courierName || "courier"} ${formatPaise(gap.charge)}` : undefined;
+  const marginBps = adjusted ? adjusted.bps : result?.platformMarginBps;
+  const marginActual = adjusted ? formatPaise(adjusted.margin) : money(result?.platformMargin);
+  const marginNegative = adjusted ? adjusted.margin < 0 : result?.platformMarginBps < 0;
+  const adjustedVariance = adjusted && marginTargetPaise != null ? marginTargetPaise - adjusted.margin : null;
+  const marginVariance = adjusted
+    ? (adjustedVariance == null ? "—" : formatPaise(adjustedVariance))
+    : money(result?.marginVarianceAmount);
+  const marginVarClass = adjusted
+    ? (adjustedVariance == null ? "text-ink" : marginVarianceClass(adjustedVariance / 100))
+    : marginVarianceClass(result?.marginVarianceAmount);
+  const marginSummaryTone = marginTone(marginBps, minMarginBps);
+  const belowMin = minMarginBps != null && marginBps != null && marginBps < minMarginBps;
+
+  const marginRows = result
+    ? [{
+      code: "CONTRIBUTION_MARGIN",
+      label: "Contribution margin",
+      hint: marginHint,
+      target: bpsToPct(marginTargetBps),
+      actual: marginActual,
+      actualClass: marginNegative ? "text-danger-ink" : "text-ink",
+      achv: bpsToPct(marginBps),
+      achvClass: achievementClass(marginBps, marginTargetBps),
+      variance: marginVariance,
+      varClass: marginVarClass,
+    }]
+    : [];
 
   return (
     <section ref={summaryRef} className="@container/pricing min-w-0 max-w-full space-y-3 overflow-x-hidden rounded-lg border border-line p-3 sm:p-4" data-testid="shipment-product-pricing">
@@ -191,7 +254,7 @@ function ProductPricingBlock({ product, courierCharge, courierName, canEdit }) {
           <div className="grid min-w-0 grid-cols-1 gap-4 @3xl/pricing:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] @3xl/pricing:gap-6">
             <div className="min-w-0 space-y-1.5">
               <p className="text-sm font-semibold text-ink">Cost factors</p>
-              <FactorRows factors={factors} />
+              <FactorRows factors={factors} marginRows={marginRows} />
             </div>
             <div className="min-w-0 space-y-2 border-t border-line pt-3 @3xl/pricing:border-t-0 @3xl/pricing:border-l @3xl/pricing:pt-0 @3xl/pricing:pl-6">
               {gap && gap.gap !== 0 && (
@@ -213,20 +276,12 @@ function ProductPricingBlock({ product, courierCharge, courierName, canEdit }) {
                 <SummaryLine label="Net service charge" value={money(result.netServiceCharge)} strong />
                 <SummaryLine label="Cost factors (actual)" value={money(result.totalFactorActual)} />
                 <SummaryLine
-                  label={adjusted ? "Contribution margin now" : "Contribution margin"}
-                  value={`${money(result.platformMargin)} · ${bpsToPct(result.platformMarginBps)}`}
+                  label="Contribution margin"
+                  hint={marginHint}
+                  value={`${marginActual} · ${bpsToPct(marginBps)}`}
                   strong
-                  tone={nowTone}
+                  tone={marginSummaryTone}
                 />
-                {adjusted && (
-                  <SummaryLine
-                    label="Contribution margin at courier charge"
-                    hint={`If shipping actual were ${courierName || "this courier"} ${formatPaise(gap.charge)}`}
-                    value={`${formatPaise(adjusted.margin)} · ${bpsToPct(adjusted.bps)}`}
-                    strong
-                    tone={adjustedTone}
-                  />
-                )}
                 <div className="mt-1 border-t border-line pt-1">
                   <SummaryLine label="TCS balance retained" hint="Memo: TCS collected, not part of margin" value={money(result.tcsBalance)} />
                   <SummaryLine label="Seller payout" hint="NRV − TCS" value={money(result.sellerPayout)} />
@@ -234,9 +289,7 @@ function ProductPricingBlock({ product, courierCharge, courierName, canEdit }) {
               </dl>
               {belowMin && (
                 <p className="break-words text-xs leading-snug text-warning-ink sm:text-sm">
-                  {adjusted
-                    ? `Contribution margin at this courier charge ${bpsToPct(adjusted.bps)} is below the ${bpsToPct(minMarginBps)} minimum.`
-                    : `Contribution margin ${bpsToPct(result.platformMarginBps)} is below the ${bpsToPct(minMarginBps)} minimum.`}
+                  {`Contribution margin ${bpsToPct(marginBps)} is below the ${bpsToPct(minMarginBps)} minimum.`}
                 </p>
               )}
               {!shipping && courierCharge != null && (
