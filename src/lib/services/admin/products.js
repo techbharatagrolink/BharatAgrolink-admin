@@ -406,6 +406,7 @@ export async function createCatalogProduct(input, user) {
   if (input.salePrice !== "" && input.salePrice != null && Number(input.salePrice) > 0) body.salePrice = Number(input.salePrice);
   if (input.nrv !== "" && input.nrv != null) body.nrv = Number(input.nrv);
   if (input.gstPercent !== "" && input.gstPercent != null) body.gstPercent = Number(input.gstPercent);
+  if (input.takeRate !== "" && input.takeRate != null && /^\d{1,3}(\.\d{1,6})?$/.test(String(input.takeRate).trim())) body.takeRate = String(input.takeRate).trim();
   if (STOCK_STATUSES.includes(input.stockStatus)) body.stockStatus = input.stockStatus;
   try {
     const { data } = await api("admin/products", { method: "POST", token: user.token, body });

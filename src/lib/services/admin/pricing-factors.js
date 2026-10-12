@@ -56,6 +56,24 @@ export async function previewProductPricingFactors(id, body, user) {
   }
 }
 
+export async function getDraftPricingFactors(user) {
+  try {
+    const { data } = await api("admin/pricing/draft", { token: user.token });
+    return { ok: true, pricing: data };
+  } catch (error) {
+    return failure(error, "Could not load pricing.");
+  }
+}
+
+export async function previewDraftPricingFactors(body, user) {
+  try {
+    const { data } = await api("admin/pricing/draft/preview", { method: "POST", token: user.token, body });
+    return { ok: true, pricing: data };
+  } catch (error) {
+    return failure(error, "Could not calculate pricing.");
+  }
+}
+
 export async function saveProductPricingFactors(id, body, user) {
   try {
     const { data } = await api(productPath(id), { method: "PUT", token: user.token, body });

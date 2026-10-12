@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -11,6 +11,7 @@ import { createCatalogProductAction, deleteVariationAction, removeProductImageAc
 import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
 import { toVariantGrams, VariantConfigurations } from "@/components/admin/products/variant-configurations";
 import { PricingFactorsStep } from "@/components/admin/products/pricing-factors-step";
+import { saveProductPricingAction } from "@/lib/actions/admin/pricing-factors";
 
 const STEPS = [
   ["basic", "Basic Info", "Product details"],
@@ -107,6 +108,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     const stock = event.target.value;
     setForm((current) => ({ ...current, stock, stockStatus: Number(current.stock) > 0 ? current.stockStatus : "In Stock" }));
   };
+  const pricingDraft = useRef(null);
+  const onPricingDraft = useCallback((next) => { pricingDraft.current = next; }, []);
   const onPriced = useCallback((priced) => setForm((current) => ({
     ...current,
     salePrice: priced.displayPrice ?? current.salePrice,
@@ -181,27 +184,36 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
       if (!form.vendorId) return { ok: false, message: "Choose a seller." };
       if (!form.categoryIds.length) return { ok: false, message: "Choose a category." };
       if (!form.brandId) return { ok: false, message: "Choose a brand." };
-      if (!(Number(form.mrp) > 0)) return { ok: false, message: "Enter the MRP." };
+      if (pricingFactors) {
+        const pendingPricing = pricingDraft.current;
+        if (!pendingPricing?.ready) return { ok: false, message: pendingPricing?.message || "Open Pricing & Tax and enter MRP, NRV, GST and HSN." };
+      } else if (!(Number(form.mrp) > 0)) return { ok: false, message: "Enter the MRP." };
       if (form.stock === "") return { ok: false, message: "Enter the available quantity." };
       const policy = (options.returnPolicyOptions || []).find((item) => item.value === form.returnPolicyId);
+      const priceInput = pricingFactors ? pricingDraft.current?.body || {} : {};
       const created = await createCatalogProductAction({
         name: form.name,
         vendorId: form.vendorId,
         categoryId: form.categoryIds[0],
         brandId: form.brandId,
-        hsn: form.hsn,
+        hsn: priceInput.hsn ?? form.hsn,
         stock: form.stock,
         stockStatus,
         weightKg: form.weightKg,
         returnPolicy: policy?.label || "",
-        mrp: form.mrp,
-        ...(pricingFactors ? {} : { salePrice: form.salePrice }),
-        nrv: form.nrv,
-        gstPercent: form.gstPercent,
+        mrp: priceInput.mrp ?? form.mrp,
+        ...(pricingFactors ? { takeRate: priceInput.takeRate } : { salePrice: form.salePrice }),
+        nrv: priceInput.nrv ?? form.nrv,
+        gstPercent: priceInput.gstPercent ?? form.gstPercent,
       });
       if (!created.ok) return created;
-      const saved = await saveProductAction(created.id, form);
+      const saved = await saveProductAction(created.id, pricingFactors ? { ...form, hsn: priceInput.hsn || form.hsn } : form);
       if (!saved.ok) return saved;
+      let pricingNote = "";
+      if (pricingFactors && pricingDraft.current?.ready) {
+        const priced = await saveProductPricingAction(created.id, pricingDraft.current.body);
+        if (!priced.ok) pricingNote = ` Pricing was not saved: ${priced.message}`;
+      }
       const variants = await persistVariations(created.id);
       if (!variants.ok) return variants;
       if (draftImages.length) {
@@ -215,10 +227,11 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
       if (publish) {
         const published = await setProductStatusAction(created.id, "approve", "Published from the product editor");
         router.push(`/admin/products/${created.id}`);
-        return published.ok ? published : { ok: true, message: "Product created. It stays pending until it is approved." };
+        if (!published.ok) return { ok: true, message: `Product created. It stays pending until it is approved.${pricingNote}` };
+        return pricingNote ? { ...published, message: `${published.message || "Product published."}${pricingNote}` } : published;
       }
       router.push(`/admin/products/${created.id}`);
-      return created;
+      return pricingNote ? { ...created, message: `${created.message || "Product created."}${pricingNote}` } : created;
     });
   };
 
@@ -330,19 +343,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
             </div>
           )}
 
-          {step === "pricing" && pricingFactors && !creating && (
-            <PricingFactorsStep productId={product.id} canEdit={canEditPricing} onPriced={onPriced} />
-          )}
-
-          {step === "pricing" && pricingFactors && creating && (
-            <div className="grid gap-3 sm:grid-cols-4">
-              <h2 className="sm:col-span-4 text-sm font-semibold text-ink">3. Pricing & Tax</h2>
-              <Field label="MRP (₹)" required>{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.mrp} onChange={set("mrp")} />}</Field>
-              <Field label="NRV (₹)" required hint="What the seller receives. Whole rupees.">{({ id }) => <Input id={id} type="number" min="0" step="1" value={form.nrv} onChange={set("nrv")} />}</Field>
-              <Field label="GST %" required>{({ id }) => <Select id={id} value={String(form.gstPercent)} onChange={set("gstPercent")} placeholder="Select" options={[0, 5, 12, 18, 28].map((value) => ({ value: String(value), label: `${value}%` }))} />}</Field>
-              <Field label="HSN Code" required>{({ id }) => <Input id={id} value={form.hsn} onChange={set("hsn")} />}</Field>
-              <p className="sm:col-span-4 rounded-lg bg-info-bg p-3 text-xs text-info-ink">The display price is calculated from the NRV at the default take rate when the product is created. Tune the take rate and cost factors in this step after saving.</p>
-            </div>
+          {step === "pricing" && pricingFactors && (
+            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} />
           )}
 
           {step === "pricing" && !pricingFactors && (
@@ -477,7 +479,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <h2 className="text-sm font-semibold text-ink">8. Review</h2>
               {[
                 ["Name", form.name], ["Brand", (options.brands || []).find((item) => item.value === form.brandId)?.label],
-                ["Category", selectedCategory.map((item) => item.label).join(", ")], ["Type", form.productType], ["MRP", form.mrp], ["NRV", form.nrv], ["Display price", pricingFactors && creating ? "Calculated on save" : form.salePrice ? formatINR(form.salePrice) : ""],
+                ["Category", selectedCategory.map((item) => item.label).join(", ")], ["Type", form.productType], ["MRP", form.mrp], ["NRV", form.nrv],
+                ["Display price", form.salePrice ? formatINR(form.salePrice) : (pricingFactors && creating ? "Set on Pricing & Tax" : "")],
                 ["Stock", form.stock], ["Stock Status", stockStatus], ["Images", photos.length],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4 border-b border-line py-1.5"><span className="text-ink-muted">{label}</span><span className="font-medium text-ink">{value || "—"}</span></div>

@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
-import { canPage } from "@/lib/auth/permissions";
+import { can, canPage } from "@/lib/auth/permissions";
 import {
+  getDraftPricingFactors,
   getProductPricingFactors,
+  previewDraftPricingFactors,
   previewProductPricingFactors,
   removeCostFactor,
   resetProductActualsFactors,
@@ -52,6 +54,24 @@ export async function previewProductPricingAction(id, input) {
   if (!user) return expired;
   if (!canPage(user, PRODUCT_PAGE, "view")) return denied;
   return previewProductPricingFactors(String(id), pricingBody(input), user);
+}
+
+function canDraftPricing(user) {
+  return canPage(user, PRODUCT_PAGE, "view") || canPage(user, "add_product.php", "add") || can(user, "products", "add");
+}
+
+export async function loadDraftPricingAction() {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!canDraftPricing(user)) return denied;
+  return getDraftPricingFactors(user);
+}
+
+export async function previewDraftPricingAction(input) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!canDraftPricing(user)) return denied;
+  return previewDraftPricingFactors(pricingBody(input), user);
 }
 
 export async function saveProductPricingAction(id, input) {

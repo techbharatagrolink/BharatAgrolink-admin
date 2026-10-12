@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
-import { loadProductPricingAction, previewProductPricingAction, resetProductActualsAction, saveProductPricingAction } from "@/lib/actions/admin/pricing-factors";
+import { loadDraftPricingAction, loadProductPricingAction, previewDraftPricingAction, previewProductPricingAction, resetProductActualsAction, saveProductPricingAction } from "@/lib/actions/admin/pricing-factors";
 
 const GST_OPTIONS = [0, 5, 12, 18, 28].map((value) => ({ value: String(value), label: `${value}%` }));
 const MODES = [
@@ -69,7 +69,7 @@ function SummaryRow({ label, value, hint, strong, tone }) {
 }
 
 /** Step 3 "Pricing & Tax" with PRICING_FACTORS_V1: take rate -> display price -> service charge -> cost factors. */
-export function PricingFactorsStep({ productId, canEdit, onPriced }) {
+export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft }) {
   const { notify } = useToast();
   const [variantId, setVariantId] = useState(0);
   const [pricing, setPricing] = useState(null);
@@ -81,27 +81,32 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
   const requestId = useRef(0);
+  const onDraftRef = useRef(onDraft);
+  const onPricedRef = useRef(onPriced);
+  onDraftRef.current = onDraft;
+  onPricedRef.current = onPriced;
 
   const apply = useCallback((next) => {
     setPricing(next);
     setDraft(draftFrom(next));
     setPreview(null);
     setDirty(false);
-    if (next.variantId === 0 && onPriced) {
-      onPriced({ displayPrice: next.result.displayPrice ?? next.currentDisplayPrice, mrp: next.input.mrp, nrv: next.input.nrv, gstPercent: next.input.gstPercent, hsn: next.input.hsn, saved: next.saved });
+    if (next.variantId === 0 && onPricedRef.current && next.result?.displayPrice) {
+      onPricedRef.current({ displayPrice: next.result.displayPrice ?? next.currentDisplayPrice, mrp: next.input.mrp, nrv: next.input.nrv, gstPercent: next.input.gstPercent, hsn: next.input.hsn, saved: next.saved });
     }
-  }, [onPriced]);
+  }, []);
 
   useEffect(() => {
     let live = true;
     setLoadError("");
-    loadProductPricingAction(productId, variantId).then((res) => {
+    const load = creating ? loadDraftPricingAction() : loadProductPricingAction(productId, variantId);
+    load.then((res) => {
       if (!live) return;
       if (res.ok) apply(res.pricing);
       else setLoadError(res.message);
     });
     return () => { live = false; };
-  }, [productId, variantId, apply]);
+  }, [productId, variantId, apply, creating]);
 
   const body = useCallback((d) => ({
     variantId,
@@ -119,14 +124,30 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
     const id = ++requestId.current;
     setPreviewing(true);
     const timer = setTimeout(async () => {
-      const res = await previewProductPricingAction(productId, body(draft));
+      const res = creating ? await previewDraftPricingAction(body(draft)) : await previewProductPricingAction(productId, body(draft));
       if (id !== requestId.current) return;
       setPreviewing(false);
       if (res.ok) setPreview(res.pricing);
       else setPreview({ result: { ok: false, errors: res.errors?.length ? res.errors : [{ code: res.code, message: res.message }], warnings: [] } });
     }, 500);
     return () => clearTimeout(timer);
-  }, [draft, dirty, productId, body]);
+  }, [draft, dirty, productId, body, creating]);
+
+  useEffect(() => {
+    if (!creating || !draft || !pricing) return;
+    const result = dirty ? preview?.result : pricing.result;
+    const errs = result?.errors || [];
+    const ready = Boolean(result && result.ok !== false && errs.length === 0 && result.displayPrice && !previewing);
+    const listingRate = draft.mode === "FROM_ACTUALS" ? result?.takeRate : draft.takeRate;
+    onDraftRef.current?.({
+      ready,
+      message: previewing ? "Pricing is still calculating. Wait a moment, then save." : (!dirty && !ready ? "Enter MRP, NRV, GST and HSN." : (errs[0]?.message || "")),
+      body: { ...body(draft), ...(listingRate != null && listingRate !== "" ? { takeRate: listingRate } : {}), ...(reason ? { reason } : {}) },
+    });
+    if (ready && onPricedRef.current) {
+      onPricedRef.current({ displayPrice: result.displayPrice, mrp: draft.mrp, nrv: draft.nrv, gstPercent: draft.gstPercent, hsn: draft.hsn, saved: false });
+    }
+  }, [creating, draft, pricing, dirty, preview, previewing, body, reason]);
 
   if (loadError) return <p className="rounded-lg bg-danger-bg p-3 text-sm text-danger-ink">{loadError}</p>;
   if (!pricing || !draft) return <p className="text-sm text-ink-muted">Loading pricing…</p>;
@@ -137,7 +158,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
   const isVariant = variantId !== 0;
   const update = (patch) => { setDraft((current) => ({ ...current, ...patch })); setDirty(true); };
   const setFactor = (code, patch) => update({ factors: draft.factors.map((f) => (f.code === code ? { ...f, ...patch } : f)) });
-  const errors = result.errors || [];
+  const errors = creating && !dirty ? [] : (result.errors || []);
   const warnings = result.warnings || [];
   const canSave = canEdit && !pending && !previewing && result.ok !== false && errors.length === 0;
   const anyOverridden = draft.factors.some((f) => f.overridden);
@@ -300,7 +321,10 @@ export function PricingFactorsStep({ productId, canEdit, onPriced }) {
             </ul>
           )}
 
-          {canEdit && (
+          {canEdit && creating && (
+            <p className="rounded-lg border border-line p-3 text-[11px] text-ink-muted">This price is stored when you save the product.</p>
+          )}
+          {canEdit && !creating && (
             <div className="space-y-2 rounded-lg border border-line p-3">
               <Field label="Reason (optional)">{({ id }) => <Input id={id} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} placeholder="Why the price changed" />}</Field>
               <Button variant="primary" className="w-full" loading={pending} disabled={!canSave} onClick={save}>Save pricing</Button>
