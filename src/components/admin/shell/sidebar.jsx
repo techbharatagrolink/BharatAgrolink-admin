@@ -38,6 +38,12 @@ function Badge({ value }) {
   );
 }
 
+// Each nesting level steps in by the parent's icon box (18px) + gap (12px) = 30px:
+// 19px to the guide line (under the icon centre) + 1px border + 10px padding.
+// Callers add the 19px margin on top of the parent row's own left offset.
+const nestedList = "border-l border-white/15 pl-[10px]";
+const guideMark = "before:absolute before:inset-y-1.5 before:-left-[11px] before:w-px before:rounded-full";
+
 function itemIsCurrent(pathname, item) {
   if (item.children) return groupContains(pathname, item);
   return isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
@@ -48,7 +54,7 @@ function badgeCount(item, badges) {
   return item.children.reduce((sum, child) => sum + (child.badge ? badges[child.badge] || 0 : 0), 0);
 }
 
-function NavParentButton({ compact, open, containsActive, label, icon, sensitive, badge, onClick, controlsId }) {
+function NavParentButton({ compact, nested, open, containsActive, label, icon, sensitive, badge, onClick, controlsId }) {
   return (
     <button
       type="button"
@@ -57,18 +63,27 @@ function NavParentButton({ compact, open, containsActive, label, icon, sensitive
       aria-expanded={open}
       aria-controls={controlsId}
       className={cn(
-        "relative flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[13.5px] font-medium transition-colors",
+        "relative flex w-full items-center gap-3 rounded-lg px-2.5 text-left transition-colors",
+        nested ? "h-8 text-[13px]" : "h-9 text-[13.5px] font-medium",
         compact
           ? containsActive
             ? "bg-nav-active text-nav-active-ink"
             : "text-nav-ink/90 hover:bg-white/8 hover:text-white"
           : open
-            ? "bg-white/10 text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent"
-            : cn("hover:bg-white/8 hover:text-white", containsActive ? "text-white" : "text-nav-ink/90"),
+            ? cn(
+                "bg-white/10 text-white",
+                nested ? cn(guideMark, "before:bg-accent") : "before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent",
+              )
+            : cn("hover:bg-white/8 hover:text-white", containsActive ? cn("text-white", nested && cn(guideMark, "before:bg-white/60")) : nested ? "text-nav-ink/80" : "text-nav-ink/90"),
         compact && "justify-center px-0",
       )}
     >
-      <NavIcon name={icon} className={cn("size-[18px] shrink-0", !compact && (open || containsActive) && "text-accent")} />
+      <span className="flex size-[18px] shrink-0 items-center justify-center">
+        <NavIcon
+          name={icon}
+          className={cn(nested ? "size-4" : "size-[18px]", !compact && (open || containsActive) ? "text-accent" : nested && "opacity-75")}
+        />
+      </span>
       {!compact && (
         <>
           <span className="truncate">{label}</span>
@@ -226,8 +241,9 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
             const sectionOpen = !collapsible || openSection === sectionKey;
             const sectionBadge = section.items.reduce((sum, item) => sum + badgeCount(item, badges), 0);
             const sectionActive = section.section ? section.items.some((item) => itemIsCurrent(pathname, item)) : false;
-            const renderItems = (iconOnly) =>
-              section.items.map((item) => {
+            const renderItems = (iconOnly) => {
+              const nested = Boolean(section.section) && !iconOnly;
+              return section.items.map((item) => {
                 if (!item.children) {
                   const active = isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
                   return (
@@ -238,12 +254,17 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                         aria-label={iconOnly ? item.label : undefined}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "flex h-9 items-center gap-3 rounded-lg px-2.5 text-[13.5px] font-medium transition-colors",
-                          active ? "bg-nav-active text-nav-active-ink" : "text-nav-ink/90 hover:bg-white/8 hover:text-white",
+                          "relative flex items-center gap-3 rounded-lg px-2.5 transition-colors",
+                          nested ? "h-8 text-[13px]" : "h-9 text-[13.5px] font-medium",
+                          active
+                            ? cn("bg-nav-active text-nav-active-ink", nested && cn("font-medium", guideMark, "before:bg-accent"))
+                            : cn(nested ? "text-nav-ink/80" : "text-nav-ink/90", "hover:bg-white/8 hover:text-white"),
                           iconOnly && "justify-center px-0",
                         )}
                       >
-                        <NavIcon name={item.icon} className="size-[18px] shrink-0" />
+                        <span className="flex size-[18px] shrink-0 items-center justify-center">
+                          <NavIcon name={item.icon} className={cn(nested ? "size-4" : "size-[18px]", nested && !active && "opacity-75")} />
+                        </span>
                         {!iconOnly && <span className="truncate">{item.label}</span>}
                       </Link>
                     </li>
@@ -257,6 +278,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                   <li key={item.key}>
                     <NavParentButton
                       compact={iconOnly}
+                      nested={nested}
                       open={open}
                       containsActive={containsActive}
                       label={item.label}
@@ -269,7 +291,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                     {!iconOnly && (
                       <div className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-out", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")} inert={!open}>
                         <div className="min-h-0 overflow-hidden">
-                          <ul id={`nav-${item.key}`} className="mt-0.5 mb-1 ml-[21px] space-y-0.5 border-l border-white/15 pl-3">
+                          <ul id={`nav-${item.key}`} className={cn("mt-0.5 mb-1 ml-[19px] space-y-0.5", nestedList)}>
                             {item.children.map((child) => {
                               const active = child.key === activeKey;
                               return (
@@ -278,8 +300,8 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                                     href={child.href}
                                     aria-current={active ? "page" : undefined}
                                     className={cn(
-                                      "flex h-8 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors",
-                                      active ? "bg-nav-active font-medium text-nav-active-ink" : "text-nav-muted hover:bg-white/8 hover:text-white",
+                                      "relative flex h-8 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors",
+                                      active ? cn("bg-nav-active font-medium text-nav-active-ink", guideMark, "before:bg-accent") : "text-nav-muted hover:bg-white/8 hover:text-white",
                                     )}
                                   >
                                     <span className="truncate">{child.label}</span>
@@ -295,6 +317,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                   </li>
                 );
               });
+            };
 
             if (compact && section.section) {
               const menuOpen = railMenu === sectionKey;
@@ -333,7 +356,7 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                           controlsId={`nav-rail-${sectionKey}`}
                         />
                       </div>
-                      <ul id={`nav-rail-${sectionKey}`} className="mt-0.5 space-y-0.5 px-1.5" onClick={(event) => event.target.closest("a") && setRailMenu(null)}>
+                      <ul id={`nav-rail-${sectionKey}`} className={cn("mt-0.5 mr-1.5 ml-[25px] space-y-0.5", nestedList)} onClick={(event) => event.target.closest("a") && setRailMenu(null)}>
                         {renderItems(false)}
                       </ul>
                     </RailFlyout>
@@ -363,7 +386,10 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                   inert={collapsible && !sectionOpen ? true : undefined}
                 >
                   <div className={cn(collapsible && "min-h-0 overflow-hidden")}>
-                    <ul id={collapsible ? `nav-section-${sectionKey}` : undefined} className={cn("space-y-0.5 px-2.5", collapsible && "mt-0.5")}>
+                    <ul
+                      id={collapsible ? `nav-section-${sectionKey}` : undefined}
+                      className={cn("space-y-0.5", collapsible ? cn("mt-0.5 mr-2.5 ml-[29px]", nestedList) : "px-2.5")}
+                    >
                       {renderItems(compact)}
                     </ul>
                   </div>
