@@ -93,7 +93,7 @@ function SummaryLine({ label, hint, value, strong, tone }) {
 }
 
 /** Wide factor list: header + aligned columns. Narrow: name on top, labelled values in a 2x2 / 4-column grid. */
-const FACTOR_COLS = "@sm/factors:grid-cols-[minmax(0,1fr)_4.25rem_4.75rem_4.25rem_4.75rem]";
+const FACTOR_COLS = "@sm/factors:grid-cols-[minmax(0,1fr)_4rem_4.5rem_4rem_4.5rem]";
 
 function FactorValue({ label, children, className }) {
   return (
@@ -188,7 +188,7 @@ function ProductPricingBlock({ product, courierCharge, courierName, canEdit }) {
       {pricing && result && (
         <>
           {!pricing.saved && <Badge tone="warning">Pricing not saved yet</Badge>}
-          <div className="grid min-w-0 grid-cols-1 gap-4 @3xl/pricing:grid-cols-2 @3xl/pricing:gap-6">
+          <div className="grid min-w-0 grid-cols-1 gap-4 @3xl/pricing:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] @3xl/pricing:gap-6">
             <div className="min-w-0 space-y-1.5">
               <p className="text-sm font-semibold text-ink">Cost factors</p>
               <FactorRows factors={factors} />
