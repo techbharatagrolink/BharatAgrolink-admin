@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, ChevronsLeft, ChevronsRight, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { site } from "@/lib/site";
@@ -37,25 +38,136 @@ function Badge({ value }) {
   );
 }
 
+function itemIsCurrent(pathname, item) {
+  if (item.children) return groupContains(pathname, item);
+  return isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
+}
+
+function badgeCount(item, badges) {
+  if (!item.children) return item.badge ? badges[item.badge] || 0 : 0;
+  return item.children.reduce((sum, child) => sum + (child.badge ? badges[child.badge] || 0 : 0), 0);
+}
+
+function NavParentButton({ compact, open, containsActive, label, icon, sensitive, badge, onClick, controlsId }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={compact ? label : undefined}
+      aria-expanded={open}
+      aria-controls={controlsId}
+      className={cn(
+        "relative flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[13.5px] font-medium transition-colors",
+        compact
+          ? containsActive
+            ? "bg-nav-active text-nav-active-ink"
+            : "text-nav-ink/90 hover:bg-white/8 hover:text-white"
+          : open
+            ? "bg-white/10 text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent"
+            : cn("hover:bg-white/8 hover:text-white", containsActive ? "text-white" : "text-nav-ink/90"),
+        compact && "justify-center px-0",
+      )}
+    >
+      <NavIcon name={icon} className={cn("size-[18px] shrink-0", !compact && (open || containsActive) && "text-accent")} />
+      {!compact && (
+        <>
+          <span className="truncate">{label}</span>
+          {sensitive && <Lock className="size-3 shrink-0 text-nav-muted" aria-label="Sensitive module" />}
+          {!open && badge > 0 ? <Badge value={badge} /> : <span className="ml-auto" />}
+          <ChevronDown className={cn("size-4 shrink-0 transition-transform duration-200", open ? "rotate-180 text-white/80" : "text-nav-muted")} aria-hidden />
+        </>
+      )}
+      {compact && badge > 0 && <span className="absolute top-1.5 right-2 size-2 rounded-full bg-accent ring-2 ring-nav" aria-hidden />}
+      {compact && <ChevronDown className={cn("absolute right-0.5 bottom-0.5 size-2.5 transition-transform duration-200", open ? "rotate-180 text-white/80" : "text-nav-muted")} aria-hidden />}
+    </button>
+  );
+}
+
+function RailFlyout({ anchor, onClose, children }) {
+  const panelRef = useRef(null);
+  const [box, setBox] = useState(null);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!anchor || !panel) return;
+    const place = () => {
+      const rect = anchor.getBoundingClientRect();
+      const maxHeight = window.innerHeight - 16;
+      const height = Math.min(panel.scrollHeight, maxHeight);
+      let top = rect.top;
+      if (top + height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - height - 8);
+      setBox({ top, left: rect.right + 8, maxHeight });
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(panel);
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [anchor]);
+
+  useEffect(() => {
+    const onPointer = (event) => {
+      if (panelRef.current?.contains(event.target) || anchor?.contains(event.target)) return;
+      onClose();
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [anchor, onClose]);
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      style={{ top: box?.top ?? -9999, left: box?.left ?? -9999, maxHeight: box?.maxHeight ?? 420 }}
+      className={cn("fixed z-[60] w-[248px] overflow-y-auto overscroll-contain rounded-lg border border-nav-line bg-nav py-1.5 text-nav-ink shadow-xl", !box && "invisible")}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+}
+
 export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpen, onCloseMobile }) {
   const pathname = usePathname();
+  const sectionKeyOf = (section) => section.key || section.section;
   const activeGroupKey = () => {
     for (const section of navigation) for (const item of section.items) if (item.children && groupContains(pathname, item)) return item.key;
     return null;
   };
+  const activeSectionKey = () => {
+    for (const section of navigation) {
+      if (section.section && section.items.some((item) => itemIsCurrent(pathname, item))) return sectionKeyOf(section);
+    }
+    return null;
+  };
   const [openKey, setOpenKey] = useState(activeGroupKey);
+  const [openSection, setOpenSection] = useState(activeSectionKey);
+  const [railMenu, setRailMenu] = useState(null);
   const [lastPath, setLastPath] = useState(pathname);
+  const railAnchors = useRef(new Map());
   if (lastPath !== pathname) {
     setLastPath(pathname);
     const key = activeGroupKey();
     if (key) setOpenKey(key);
+    const sectionKey = activeSectionKey();
+    if (sectionKey) setOpenSection(sectionKey);
+    setRailMenu(null);
   }
 
   const toggleGroup = (key) => setOpenKey((current) => (current === key ? null : key));
-  const openFromRail = (key) => {
-    setOpenKey(key);
-    onToggleRail?.();
-  };
+  const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
+  const toggleRailMenu = (key) => setRailMenu((current) => (current === key ? null : key));
   const compact = rail && !mobileOpen;
   const closeRef = useRef(null);
 
@@ -108,103 +220,157 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
         </div>
 
         <nav className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain py-3">
-          {navigation.map((section) => (
-            <div key={section.section ?? section.items[0]?.key} className="mb-3">
-              {compact ? (
-                <div className="mx-4 mb-2 border-t border-nav-line" aria-hidden />
-              ) : (
-                section.section && <p className="px-5 pb-1.5 text-[10.5px] font-semibold tracking-[0.08em] text-nav-muted/80 uppercase">{section.section}</p>
-              )}
-              <ul className="space-y-0.5 px-2.5">
-                {section.items.map((item) => {
-                  if (!item.children) {
-                    const active = isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
-                    return (
-                      <li key={item.key}>
-                        <Link
-                          href={item.href}
-                          title={compact ? item.label : undefined}
-                          aria-label={compact ? item.label : undefined}
-                          aria-current={active ? "page" : undefined}
-                          className={cn(
-                            "flex h-9 items-center gap-3 rounded-lg px-2.5 text-[13.5px] font-medium transition-colors",
-                            active ? "bg-nav-active text-nav-active-ink" : "text-nav-ink/90 hover:bg-white/8 hover:text-white",
-                            compact && "justify-center px-0",
-                          )}
-                        >
-                          <NavIcon name={item.icon} className="size-[18px] shrink-0" />
-                          {!compact && <span className="truncate">{item.label}</span>}
-                        </Link>
-                      </li>
-                    );
-                  }
-                  const containsActive = groupContains(pathname, item);
-                  const open = openKey === item.key;
-                  const activeKey = activeChildKey(pathname, item.children);
-                  const groupBadge = item.children.reduce((sum, c) => sum + (c.badge ? badges[c.badge] || 0 : 0), 0);
+          {navigation.map((section) => {
+            const sectionKey = sectionKeyOf(section);
+            const collapsible = Boolean(section.section) && !compact;
+            const sectionOpen = !collapsible || openSection === sectionKey;
+            const sectionBadge = section.items.reduce((sum, item) => sum + badgeCount(item, badges), 0);
+            const sectionActive = section.section ? section.items.some((item) => itemIsCurrent(pathname, item)) : false;
+            const renderItems = (iconOnly) =>
+              section.items.map((item) => {
+                if (!item.children) {
+                  const active = isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
                   return (
                     <li key={item.key}>
-                      <button
-                        type="button"
-                        onClick={() => (compact ? openFromRail(item.key) : toggleGroup(item.key))}
-                        title={compact ? item.label : undefined}
-                        aria-expanded={compact ? undefined : open}
-                        aria-controls={compact ? undefined : `nav-${item.key}`}
+                      <Link
+                        href={item.href}
+                        title={iconOnly ? item.label : undefined}
+                        aria-label={iconOnly ? item.label : undefined}
+                        aria-current={active ? "page" : undefined}
                         className={cn(
-                          "relative flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[13.5px] font-medium transition-colors",
-                          compact
-                            ? containsActive
-                              ? "bg-nav-active text-nav-active-ink"
-                              : "text-nav-ink/90 hover:bg-white/8 hover:text-white"
-                            : open
-                              ? "bg-white/10 text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent"
-                              : cn("hover:bg-white/8 hover:text-white", containsActive ? "text-white" : "text-nav-ink/90"),
-                          compact && "justify-center px-0",
+                          "flex h-9 items-center gap-3 rounded-lg px-2.5 text-[13.5px] font-medium transition-colors",
+                          active ? "bg-nav-active text-nav-active-ink" : "text-nav-ink/90 hover:bg-white/8 hover:text-white",
+                          iconOnly && "justify-center px-0",
                         )}
                       >
-                        <NavIcon name={item.icon} className={cn("size-[18px] shrink-0", !compact && (open || containsActive) && "text-accent")} />
-                        {!compact && (
-                          <>
-                            <span className="truncate">{item.label}</span>
-                            {item.sensitive && <Lock className="size-3 shrink-0 text-nav-muted" aria-label="Sensitive module" />}
-                            {!open && groupBadge > 0 ? <Badge value={groupBadge} /> : <span className="ml-auto" />}
-                            <ChevronDown className={cn("size-4 shrink-0 transition-transform duration-200", open ? "rotate-180 text-white/80" : "text-nav-muted")} aria-hidden />
-                          </>
-                        )}
-                        {compact && groupBadge > 0 && <span className="absolute top-1.5 right-2 size-2 rounded-full bg-accent ring-2 ring-nav" aria-hidden />}
-                      </button>
-                      {!compact && (
-                        <div className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-out", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")} inert={!open}>
-                          <div className="min-h-0 overflow-hidden">
-                            <ul id={`nav-${item.key}`} className="mt-0.5 mb-1 ml-[21px] space-y-0.5 border-l border-white/15 pl-3">
-                              {item.children.map((child) => {
-                                const active = child.key === activeKey;
-                                return (
-                                  <li key={child.key}>
-                                    <Link
-                                      href={child.href}
-                                      aria-current={active ? "page" : undefined}
-                                      className={cn(
-                                        "flex h-8 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors",
-                                        active ? "bg-nav-active font-medium text-nav-active-ink" : "text-nav-muted hover:bg-white/8 hover:text-white",
-                                      )}
-                                    >
-                                      <span className="truncate">{child.label}</span>
-                                      <Badge value={child.badge ? badges[child.badge] : 0} />
-                                    </Link>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
+                        <NavIcon name={item.icon} className="size-[18px] shrink-0" />
+                        {!iconOnly && <span className="truncate">{item.label}</span>}
+                      </Link>
                     </li>
                   );
-                })}
-              </ul>
-            </div>
-          ))}
+                }
+                const containsActive = groupContains(pathname, item);
+                const open = openKey === item.key;
+                const activeKey = activeChildKey(pathname, item.children);
+                const groupBadge = item.children.reduce((sum, child) => sum + (child.badge ? badges[child.badge] || 0 : 0), 0);
+                return (
+                  <li key={item.key}>
+                    <NavParentButton
+                      compact={iconOnly}
+                      open={open}
+                      containsActive={containsActive}
+                      label={item.label}
+                      icon={item.icon}
+                      sensitive={item.sensitive}
+                      badge={groupBadge}
+                      onClick={() => toggleGroup(item.key)}
+                      controlsId={`nav-${item.key}`}
+                    />
+                    {!iconOnly && (
+                      <div className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-out", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")} inert={!open}>
+                        <div className="min-h-0 overflow-hidden">
+                          <ul id={`nav-${item.key}`} className="mt-0.5 mb-1 ml-[21px] space-y-0.5 border-l border-white/15 pl-3">
+                            {item.children.map((child) => {
+                              const active = child.key === activeKey;
+                              return (
+                                <li key={child.key}>
+                                  <Link
+                                    href={child.href}
+                                    aria-current={active ? "page" : undefined}
+                                    className={cn(
+                                      "flex h-8 items-center gap-2 rounded-md px-2.5 text-[13px] transition-colors",
+                                      active ? "bg-nav-active font-medium text-nav-active-ink" : "text-nav-muted hover:bg-white/8 hover:text-white",
+                                    )}
+                                  >
+                                    <span className="truncate">{child.label}</span>
+                                    <Badge value={child.badge ? badges[child.badge] : 0} />
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              });
+
+            if (compact && section.section) {
+              const menuOpen = railMenu === sectionKey;
+              const anchor = railAnchors.current.get(sectionKey);
+              return (
+                <div key={sectionKey} className="mb-2">
+                  <div className="mx-4 mb-2 border-t border-nav-line" aria-hidden />
+                  <div
+                    className="px-2.5"
+                    ref={(node) => {
+                      if (node) railAnchors.current.set(sectionKey, node);
+                      else railAnchors.current.delete(sectionKey);
+                    }}
+                  >
+                    <NavParentButton
+                      compact
+                      open={menuOpen}
+                      containsActive={sectionActive}
+                      label={section.section}
+                      icon={section.icon}
+                      badge={sectionBadge}
+                      onClick={() => toggleRailMenu(sectionKey)}
+                      controlsId={menuOpen ? `nav-rail-${sectionKey}` : undefined}
+                    />
+                  </div>
+                  {menuOpen && anchor && (
+                    <RailFlyout anchor={anchor} onClose={() => setRailMenu(null)}>
+                      <div className="px-1.5">
+                        <NavParentButton
+                          open
+                          containsActive={sectionActive}
+                          label={section.section}
+                          icon={section.icon}
+                          badge={sectionBadge}
+                          onClick={() => setRailMenu(null)}
+                          controlsId={`nav-rail-${sectionKey}`}
+                        />
+                      </div>
+                      <ul id={`nav-rail-${sectionKey}`} className="mt-0.5 space-y-0.5 px-1.5" onClick={(event) => event.target.closest("a") && setRailMenu(null)}>
+                        {renderItems(false)}
+                      </ul>
+                    </RailFlyout>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div key={sectionKey ?? section.items[0]?.key} className={cn(compact ? "mb-2" : "mb-3")}>
+                {compact ? <div className="mx-4 mb-2 border-t border-nav-line" aria-hidden /> : null}
+                {collapsible && (
+                  <div className="px-2.5">
+                    <NavParentButton
+                      open={sectionOpen}
+                      containsActive={sectionActive}
+                      label={section.section}
+                      icon={section.icon}
+                      badge={sectionBadge}
+                      onClick={() => toggleSection(sectionKey)}
+                      controlsId={`nav-section-${sectionKey}`}
+                    />
+                  </div>
+                )}
+                <div
+                  className={cn(collapsible && "grid transition-[grid-template-rows,opacity] duration-200 ease-out", collapsible && (sectionOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"))}
+                  inert={collapsible && !sectionOpen ? true : undefined}
+                >
+                  <div className={cn(collapsible && "min-h-0 overflow-hidden")}>
+                    <ul id={collapsible ? `nav-section-${sectionKey}` : undefined} className={cn("space-y-0.5 px-2.5", collapsible && "mt-0.5")}>
+                      {renderItems(compact)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="hidden shrink-0 border-t border-nav-line p-2.5 md:block">

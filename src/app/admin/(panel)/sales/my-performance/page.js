@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Notice, PageHeader, ProgressBar, StatCard, StatGrid } from "@/components/ui/page";
 import { ApiUnavailable, EmptyState, PermissionDenied } from "@/components/ui/states";
-import { AchievementMonth, OrderRangeButtons, RefreshButton } from "@/components/admin/parity/crm/performance-controls";
+import { AchievementMonth, OrderRangeButtons, RefreshButton, SalesPersonSelect } from "@/components/admin/parity/crm/performance-controls";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
 
 export const metadata = { title: "My Sales Performance" };
@@ -35,9 +35,10 @@ export default async function MyPerformancePage({ searchParams }) {
   const params = await searchParams;
   const range = RANGES.includes(params.range) ? params.range : "month";
   const month = params.month === "all" || /^\d{4}-\d{2}$/.test(params.month || "") ? params.month : undefined;
+  const person = /^\d{1,20}$/.test(params.person || "") ? params.person : undefined;
   let data;
   try {
-    data = await getMyPerformance({ range, ...(month ? { month } : {}) }, user);
+    data = await getMyPerformance({ range, ...(month ? { month } : {}), ...(person ? { person } : {}) }, user);
   } catch (error) {
     return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={error} what="your sales performance" /></>);
   }
@@ -51,10 +52,19 @@ export default async function MyPerformancePage({ searchParams }) {
       </>
     );
   }
+  if (!data.person) {
+    return (
+      <>
+        <PageHeader title={TITLE} description={DESCRIPTION} />
+        <EmptyState title="No active sales executives or sales managers." />
+      </>
+    );
+  }
   const { standing, daily, orders, achievements } = data;
+  const picker = data.people?.length ? <SalesPersonSelect people={data.people} value={data.person.id} /> : null;
   return (
     <>
-      <PageHeader title={TITLE} description={DESCRIPTION} meta={<Badge tone="neutral">{data.person.name}</Badge>} actions={<RefreshButton />} />
+      <PageHeader title={TITLE} description={DESCRIPTION} meta={<Badge tone="neutral">{data.person.name}</Badge>} actions={<>{picker}<RefreshButton /></>} />
       <div className="space-y-4">
         <StatGrid className="xl:grid-cols-3">
           <StatCard label="Target Amount" value={formatINR(standing.target)} hint={monthLabel(standing.month)} icon={Target} />

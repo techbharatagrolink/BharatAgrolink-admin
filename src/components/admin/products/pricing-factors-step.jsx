@@ -84,16 +84,59 @@ function draftFrom(pricing) {
 function SummaryRow({ label, value, hint, strong, tone }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className="text-xs text-ink-muted">{label}{hint && <span className="block text-[11px]">{hint}</span>}</span>
-      <span className={`text-sm tabular-nums ${strong ? "font-semibold text-ink" : "text-ink-soft"} ${tone === "danger" ? "text-danger-ink" : tone === "warning" ? "text-warning-ink" : ""}`}>{value}</span>
+      <span className="min-w-0 text-xs text-ink-muted">{label}{hint && <span className="block text-[11px]">{hint}</span>}</span>
+      <span className={`shrink-0 text-right text-sm tabular-nums ${strong ? "font-semibold text-ink" : "text-ink-soft"} ${tone === "danger" ? "text-danger-ink" : tone === "warning" ? "text-warning-ink" : ""}`}>{value}</span>
     </div>
   );
 }
 
+function FactorCard({ code, label, targetPct, targetAmount, actual, achievement, variance, varianceTone, strong }) {
+  return (
+    <article data-factor={code} className="rounded-lg border border-line p-3">
+      <p className={`text-sm text-ink ${strong ? "font-semibold" : "font-medium"}`}>{label}</p>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
+        <div>
+          <dt className="text-xs text-ink-muted">Target %</dt>
+          <dd className="text-sm tabular-nums text-ink">{targetPct}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Target ₹</dt>
+          <dd className="text-sm tabular-nums text-ink">{targetAmount}</dd>
+        </div>
+        <div className="col-span-2 min-w-0">
+          <dt className="text-xs text-ink-muted">Actual ₹</dt>
+          <dd className="mt-1 min-w-0">{actual}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Achievement</dt>
+          <dd className="mt-1">{achievement}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Variance ₹</dt>
+          <dd className={`text-sm tabular-nums ${varianceTone}`}>{variance}</dd>
+        </div>
+      </dl>
+    </article>
+  );
+}
+
+function parcelFields(parcel) {
+  const out = {};
+  for (const key of ["weightKg", "lengthCm", "widthCm", "heightCm"]) {
+    const value = parcel?.[key];
+    if (value === "" || value == null) continue;
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) out[key] = n;
+  }
+  if (parcel?.vendorId) out.vendorId = parcel.vendorId;
+  if (parcel?.courierZone) out.courierZone = parcel.courierZone;
+  return out;
+}
+
 /** Step 3 "Pricing & Tax" with PRICING_FACTORS_V1: take rate -> display price -> service charge -> cost factors. */
-export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft }) {
+export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft, initialVariantId = 0, onSaved, parcel = null }) {
   const { notify } = useToast();
-  const [variantId, setVariantId] = useState(0);
+  const [variantId, setVariantId] = useState(() => Number(initialVariantId) || 0);
   const [pricing, setPricing] = useState(null);
   const [draft, setDraft] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -121,14 +164,17 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   useEffect(() => {
     let live = true;
     setLoadError("");
-    const load = creating ? loadDraftPricingAction() : loadProductPricingAction(productId, variantId);
+    const extra = parcelFields(parcel);
+    const load = creating
+      ? (Object.keys(extra).length ? previewDraftPricingAction(extra) : loadDraftPricingAction())
+      : (Object.keys(extra).length ? previewProductPricingAction(productId, { variantId, ...extra }) : loadProductPricingAction(productId, variantId));
     load.then((res) => {
       if (!live) return;
       if (res.ok) apply(res.pricing);
       else setLoadError(res.message);
     });
     return () => { live = false; };
-  }, [productId, variantId, apply, creating]);
+  }, [productId, variantId, apply, creating, parcel]);
 
   const body = useCallback((d) => ({
     variantId,
@@ -139,7 +185,8 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
     nrv: d.nrv,
     ...(variantId === 0 ? { gstPercent: d.gstPercent, hsn: d.hsn } : {}),
     factors: d.factors,
-  }), [variantId]);
+    ...parcelFields(parcel),
+  }), [variantId, parcel]);
 
   useEffect(() => {
     if (!dirty || !draft) return undefined;
@@ -193,27 +240,35 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const save = () => startTransition(async () => {
     const res = await saveProductPricingAction(productId, { ...body(draft), reason });
     notify({ message: res.ok ? res.message : res.message, tone: res.ok ? "success" : "error" });
-    if (res.ok) { setReason(""); apply(res.pricing); } else if (res.result) setPreview({ result: { ...res.result, errors: res.errors } });
+    if (res.ok) { setReason(""); apply(res.pricing); onSaved?.(res.pricing); } else if (res.result) setPreview({ result: { ...res.result, errors: res.errors } });
   });
   const resetActuals = () => {
     if (!pricing.saved) { update({ factors: draft.factors.map((f) => ({ ...f, overridden: false, actual: "" })) }); return; }
     startTransition(async () => {
       const res = await resetProductActualsAction(productId, variantId, [], reason || "Reset actuals to targets");
       notify({ message: res.message, tone: res.ok ? "success" : "error" });
-      if (res.ok) apply(res.pricing);
+      if (res.ok) { apply(res.pricing); onSaved?.(res.pricing); }
     });
   };
 
+  const actualControl = (f, r, label, inputClass) => (
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <Input aria-label={`${label} actual`} className={`min-w-0 text-right ${inputClass}`} inputMode="decimal" value={f.overridden ? f.actual : (r.actualAmount ?? "")} onChange={(e) => setFactor(f.code, { overridden: true, actual: e.target.value })} disabled={!canEdit} />
+      {f.overridden && <Badge tone="info">Edited</Badge>}
+      {f.overridden && canEdit && <button type="button" className="text-xs text-brand-700 underline" onClick={() => setFactor(f.code, { overridden: false, actual: "" })}>Reset</button>}
+    </div>
+  );
+
   return (
-    <div className="space-y-4" data-testid="pricing-factors-step">
+    <div className="@container min-w-0 space-y-4" data-testid="pricing-factors-step">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold text-ink">3. Pricing &amp; Tax</h2>
           <p className="text-xs text-ink-muted">Take rate → display price → service charge → cost factors. Every amount is calculated on the server.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           {pricing.variants.length > 1 && (
-            <Select aria-label="Variant" value={String(variantId)} onChange={(event) => setVariantId(Number(event.target.value))} options={pricing.variants.map((v) => ({ value: String(v.id), label: `${v.label}${v.priced ? "" : " (not priced)"}` }))} />
+            <Select className="w-full min-w-0 sm:w-auto" aria-label="Variant" value={String(variantId)} onChange={(event) => setVariantId(Number(event.target.value))} options={pricing.variants.map((v) => ({ value: String(v.id), label: `${v.label}${v.priced ? "" : " (not priced)"}` }))} />
           )}
           {pricing.saved ? <Badge tone="success" dot>Saved</Badge> : <Badge tone="warning" dot>Not saved yet</Badge>}
           {pricing.stale && <Badge tone="danger" dot>Catalog price changed to {money(pricing.currentDisplayPrice)}</Badge>}
@@ -221,48 +276,89 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-4">
         <Field label="MRP (₹)" required>{({ id }) => <Input id={id} inputMode="decimal" value={draft.mrp} onChange={(e) => update({ mrp: e.target.value })} disabled={!canEdit} />}</Field>
         <Field label="NRV (₹)" required hint="What the seller receives. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
         <Field label="GST %" required hint={isVariant ? "Set on the base product." : undefined}>{({ id }) => <Select id={id} value={draft.gstPercent} onChange={(e) => update({ gstPercent: e.target.value })} placeholder="Select" options={GST_OPTIONS} disabled={!canEdit || isVariant} />}</Field>
         <Field label="HSN Code" required hint={isVariant ? "Set on the base product." : "GST is not derived from HSN; check both."}>{({ id }) => <Input id={id} value={draft.hsn} onChange={(e) => update({ hsn: e.target.value })} disabled={!canEdit || isVariant} />}</Field>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Pricing mode">
+      <div className="grid grid-cols-1 gap-2 @lg:grid-cols-2" role="radiogroup" aria-label="Pricing mode">
         {MODES.map(([value, label, hint]) => (
-          <button key={value} type="button" role="radio" aria-checked={draft.mode === value} disabled={!canEdit} onClick={() => update({ mode: value })} className={`rounded-lg border px-3 py-2 text-left text-sm ${draft.mode === value ? "border-brand-600 bg-brand-50 font-semibold" : "border-line"}`}>
-            {label}<span className="block text-xs font-normal text-ink-muted">{hint}</span>
+          <button key={value} type="button" role="radio" aria-checked={draft.mode === value} disabled={!canEdit} onClick={() => update({ mode: value })} className={`w-full min-w-0 rounded-lg border px-3 py-2 text-left text-sm ${draft.mode === value ? "border-brand-600 bg-brand-50 font-semibold" : "border-line"}`}>
+            <span className="block">{label}</span>
+            <span className="block text-xs font-normal break-words text-ink-muted">{hint}</span>
           </button>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-3 rounded-lg border border-line p-3">
+      <div className="grid min-w-0 items-start gap-4 @4xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-3 rounded-lg border border-line p-3">
           {draft.mode === "TAKE_RATE" ? (
-            <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
+            <div className="grid min-w-0 gap-3 @md:grid-cols-[minmax(0,1fr)_9rem] @md:items-start">
               <Field label={`Take rate (${rateLabel})`} hint="Share of the display price kept by the platform: 1 − NRV / display price. Must stay between the configured minimum and maximum.">
-                {({ id }) => <input id={id} type="range" className="w-full accent-brand-600" min={minRate} max={maxRate} step="0.01" value={sliderRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
+                {({ id }) => <input id={id} type="range" className="block h-8 w-full max-w-full min-w-0 accent-brand-600" min={minRate} max={maxRate} step="0.01" value={sliderRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
               </Field>
               <Field label="Take rate %">{({ id }) => <Input id={id} inputMode="decimal" value={draft.takeRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}</Field>
             </div>
           ) : (
-            <div className="grid items-end gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-3 @md:grid-cols-2 @md:items-start">
               <Field label="Target margin %" hint="Contribution margin after net service charge pays the actual costs.">{({ id }) => <Input id={id} inputMode="decimal" value={draft.targetMargin} onChange={(e) => update({ targetMargin: e.target.value })} disabled={!canEdit} />}</Field>
-              <div className="pb-2 text-sm">Effective take rate <span className="font-semibold tabular-nums">{result.takeRate ? `${trimRate(result.takeRate)}%` : "—"}</span></div>
+              <div className="text-sm">Effective take rate <span className="font-semibold tabular-nums">{result.takeRate ? `${trimRate(result.takeRate)}%` : "—"}</span></div>
             </div>
           )}
-          <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg bg-surface-muted p-3">
-            <div>
+          <div className="flex w-full min-w-0 flex-col gap-2 rounded-lg bg-surface-muted p-3 @md:flex-row @md:items-end @md:justify-between">
+            <div className="min-w-0">
               <p className="text-xs text-ink-muted">Display price (customer pays, incl. GST)</p>
-              <p className="text-2xl font-semibold tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
+              <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
             </div>
-            <div className="text-right text-xs text-ink-muted">
+            <div className="min-w-0 text-xs text-ink-muted @md:max-w-64 @md:text-right">
               <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of display price</p>
               {result.limits?.maxTakeRate && <p>Max take rate under MRP: {result.limits.maxTakeRate}%</p>}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="space-y-2 md:hidden">
+            {draft.factors.map((f) => {
+              const r = resultFactors.get(f.code) || {};
+              const label = r.label || f.code;
+              return (
+                <FactorCard
+                  key={f.code}
+                  code={f.code}
+                  label={label}
+                  targetPct={bpsToPct(r.targetBps)}
+                  targetAmount={money(r.targetAmount)}
+                  actual={actualControl(f, r, label, "w-full")}
+                  achievement={<Badge tone={achievementTone(r.achievementBps, r.targetBps)}>{bpsToPct(r.achievementBps)}</Badge>}
+                  variance={r.varianceAmount ?? "—"}
+                  varianceTone={varianceClass(r.varianceAmount)}
+                />
+              );
+            })}
+            <FactorCard
+              code="CONTRIBUTION_MARGIN"
+              label="Contribution margin"
+              targetPct={bpsToPct(result.marginTargetBps ?? config.defaultTargetMarginBps)}
+              targetAmount={money(result.marginTargetAmount)}
+              actual={<div className={`text-sm tabular-nums ${result.platformMarginBps < 0 ? "text-danger-ink" : ""}`}>{money(result.platformMargin)}</div>}
+              achievement={<Badge tone={marginAchievementTone(result.platformMarginBps, result.marginTargetBps ?? config.defaultTargetMarginBps)}>{bpsToPct(result.platformMarginBps)}</Badge>}
+              variance={result.marginVarianceAmount ?? "—"}
+              varianceTone={marginVarianceClass(result.marginVarianceAmount)}
+            />
+            <FactorCard
+              label="Total"
+              strong
+              targetPct="—"
+              targetAmount={money(result.totalFactorTarget)}
+              actual={<div className="text-sm font-semibold tabular-nums">{money(result.totalFactorActual)}</div>}
+              achievement={null}
+              variance={subtractMoney(result.totalFactorTarget, result.totalFactorActual)}
+              varianceTone={varianceClass(subtractMoney(result.totalFactorTarget, result.totalFactorActual))}
+            />
+          </div>
+
+          <div className="hidden min-w-0 md:block md:overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-ink-muted">
@@ -282,13 +378,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                       <td className="py-2 pr-2">{r.label || f.code}</td>
                       <td className="py-2 pr-2 text-right tabular-nums">{bpsToPct(r.targetBps)}</td>
                       <td className="py-2 pr-2 text-right tabular-nums">{money(r.targetAmount)}</td>
-                      <td className="py-2 pr-2">
-                        <div className="flex items-center gap-2">
-                          <Input aria-label={`${r.label || f.code} actual`} className="w-28 text-right" inputMode="decimal" value={f.overridden ? f.actual : (r.actualAmount ?? "")} onChange={(e) => setFactor(f.code, { overridden: true, actual: e.target.value })} disabled={!canEdit} />
-                          {f.overridden && <Badge tone="info">Edited</Badge>}
-                          {f.overridden && canEdit && <button type="button" className="text-xs text-brand-700 underline" onClick={() => setFactor(f.code, { overridden: false, actual: "" })}>Reset</button>}
-                        </div>
-                      </td>
+                      <td className="py-2 pr-2">{actualControl(f, r, r.label || f.code, "w-28")}</td>
                       <td className="py-2 pr-2 text-right"><Badge tone={achievementTone(r.achievementBps, r.targetBps)}>{bpsToPct(r.achievementBps)}</Badge></td>
                       <td className={`py-2 text-right tabular-nums ${varianceClass(r.varianceAmount)}`}>{r.varianceAmount ?? "—"}</td>
                     </tr>
@@ -319,14 +409,14 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
           </div>
 
           {canEdit && (
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" disabled={!anyOverridden || draft.mode === "FROM_ACTUALS"} onClick={() => update({ mode: "FROM_ACTUALS" })}>Rebuild take rate from actuals</Button>
-              <Button size="sm" variant="secondary" disabled={!anyOverridden || pending} onClick={resetActuals}>Reset all actuals</Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <Button size="sm" variant="secondary" className="w-full sm:w-auto" disabled={!anyOverridden || draft.mode === "FROM_ACTUALS"} onClick={() => update({ mode: "FROM_ACTUALS" })}>Rebuild take rate from actuals</Button>
+              <Button size="sm" variant="secondary" className="w-full sm:w-auto" disabled={!anyOverridden || pending} onClick={resetActuals}>Reset all actuals</Button>
             </div>
           )}
         </div>
 
-        <aside className="space-y-3">
+        <aside className="min-w-0 space-y-3">
           <div className="rounded-lg border border-line p-3" data-testid="pricing-summary">
             <p className="mb-1 text-xs font-semibold text-ink-muted">Summary</p>
             <SummaryRow label="Display price" value={money(result.displayPrice)} strong />
@@ -371,9 +461,9 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
               <p className="mb-1 text-xs font-semibold text-ink-muted">Recent changes</p>
               <ul className="space-y-1 text-xs">
                 {pricing.history.map((h) => (
-                  <li key={h.id} className="flex justify-between gap-2">
-                    <span className="text-ink-muted">{new Date(h.at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} · {h.actor || "admin"}{h.reason ? ` · ${h.reason}` : ""}</span>
-                    <span className="tabular-nums text-ink">{h.before ? `${money(h.before)} → ` : ""}{money(h.after)}</span>
+                  <li key={h.id} className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                    <span className="min-w-0 break-words text-ink-muted">{new Date(h.at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} · {h.actor || "admin"}{h.reason ? ` · ${h.reason}` : ""}</span>
+                    <span className="shrink-0 tabular-nums text-ink">{h.before ? `${money(h.before)} → ` : ""}{money(h.after)}</span>
                   </li>
                 ))}
               </ul>

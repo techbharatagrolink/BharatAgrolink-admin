@@ -108,6 +108,7 @@ export const b2bOpsResources = {
     title: "B2B Orders",
     description: "Order numbers BAL-B2B-xxxxx. Status: confirmed → processing → packed → dispatched → in_transit → delivered (cancel/return need a reason).",
     permission: "b2b.orders",
+    headerActions: [{ label: "Create order", href: "/admin/b2b/orders/new", permission: "b2b.orders", action: "add", primary: true }],
     collection: "b2bOrders",
     ownerField: "owner",
     api: "GET/PATCH /api/b2b/orders/{id}",

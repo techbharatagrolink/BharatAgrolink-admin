@@ -3,7 +3,7 @@ import { api, ApiError } from "@/lib/api";
 
 /**
  * Bulk order screens ported from PHP bulk_orders/ (API /admin/parity/bulk):
- *   dashboard, all orders + order view, bulk shipments, quotations.
+ *   dashboard, all orders + order view, bulk shipments, quotations, create order.
  * The products list is the bulk.products resource (/admin/bulk-orders/products).
  */
 
@@ -51,3 +51,11 @@ export const getBulkQuotations = (filters, user) => get("quotations", user, filt
 export const getBulkQuotation = (id, user) => get(`quotations/${enc(id)}`, user);
 export const deleteBulkQuotation = (id, user) => attempt(() => send(`quotations/${enc(id)}`, user, "DELETE"));
 export const convertBulkQuotation = (id, user) => attempt(() => send(`quotations/${enc(id)}/convert`, user, "POST", {}));
+
+export const getBulkCreateOptions = (user) => get("create/options", user);
+export const searchBulkCustomers = (q, user) => attempt(() => get("create/customers", user, { q }));
+export const createBulkCustomer = (input, user) => attempt(() => send("create/customers", user, "POST", input));
+export const searchBulkProducts = (q, user) => attempt(() => get("create/products", user, { q }));
+export const lookupBulkPincode = (pincode, user) => attempt(() => get(`create/pincode/${enc(pincode)}`, user));
+export const checkBulkServiceability = (input, user) => attempt(() => send("create/serviceability", user, "POST", input));
+export const createBulkOrder = (input, user) => attempt(() => send("create", user, "POST", input));

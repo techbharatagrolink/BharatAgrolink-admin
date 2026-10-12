@@ -6,6 +6,7 @@ import { can, canPage } from "@/lib/auth/permissions";
 import {
   getDraftPricingFactors,
   getProductPricingFactors,
+  pricingFactorsEnabled,
   previewDraftPricingFactors,
   previewProductPricingFactors,
   removeCostFactor,
@@ -30,6 +31,11 @@ function pricingBody(input = {}) {
   if (input.targetMarginBps !== undefined && input.targetMarginBps !== "") body.targetMarginBps = Math.round(Number(input.targetMarginBps));
   if (input.gstPercent !== undefined && input.gstPercent !== "") body.gstPercent = Number(input.gstPercent);
   if (input.hsn !== undefined) body.hsn = text(input.hsn);
+  for (const key of ["weightKg", "lengthCm", "widthCm", "heightCm"]) {
+    if (input[key] !== undefined && input[key] !== "" && Number(input[key]) > 0) body[key] = Number(input[key]);
+  }
+  if (input.vendorId) body.vendorId = text(input.vendorId, 100);
+  if (input.courierZone) body.courierZone = text(input.courierZone, 80);
   if (Array.isArray(input.factors)) {
     body.factors = input.factors.slice(0, 50).map((f) => ({
       code: text(f.code, 40),
@@ -40,6 +46,18 @@ function pricingBody(input = {}) {
   }
   if (input.reason) body.reason = text(input.reason, 500);
   return body;
+}
+
+/** Whether this admin can read or change Pricing & Tax from the courier modal. */
+export async function productPricingAccessAction() {
+  const user = await getCurrentAdmin();
+  if (!user) return { ok: false, enabled: false, canView: false, canEdit: false, message: expired.message };
+  return {
+    ok: true,
+    enabled: await pricingFactorsEnabled(user),
+    canView: canPage(user, PRODUCT_PAGE, "view"),
+    canEdit: canPage(user, PRODUCT_PAGE, "edit"),
+  };
 }
 
 export async function loadProductPricingAction(id, variantId) {

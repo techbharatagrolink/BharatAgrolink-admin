@@ -43,3 +43,44 @@ export async function createQuotation(body, user) {
     return failure(error, "The quotation could not be saved.");
   }
 }
+
+export async function getOrderForm(user) {
+  const { data } = await api("admin/b2b/orders/form", { token: user.token });
+  return data;
+}
+
+export async function searchOrderBuyers(q, user) {
+  try {
+    const { data } = await api("admin/b2b/orders/buyers", { token: user.token, query: { q } });
+    return { ok: true, buyers: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Buyer search failed."), buyers: [] };
+  }
+}
+
+export async function searchOrderProducts(q, user) {
+  try {
+    const { data } = await api("admin/b2b/orders/products", { token: user.token, query: { q } });
+    return { ok: true, products: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Product search failed."), products: [] };
+  }
+}
+
+export async function startOrderPayment(body, user) {
+  try {
+    const { data } = await api("admin/b2b/orders/payment", { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "Could not start the payment.");
+  }
+}
+
+export async function createOrder(body, user) {
+  try {
+    const { data } = await api("admin/b2b/orders", { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The order could not be booked.");
+  }
+}

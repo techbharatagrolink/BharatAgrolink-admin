@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Repeat, Trash2 } from "lucide-react";
@@ -19,13 +19,19 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
   const { notify } = useToast();
   const [pending, setPending] = useState(null);
   const [busy, setBusy] = useState(false);
+  // React Compiler compares closed-over fields on every render. pending is null until a row action is chosen.
+  const pendingRef = useRef(null);
+  pendingRef.current = pending;
+  const rows = Array.isArray(result?.rows) ? result.rows.filter((q) => q && q.id != null) : [];
 
   async function confirm() {
+    const action = pendingRef.current;
+    if (!action?.row?.id) return;
     setBusy(true);
-    const res = pending.kind === "delete" ? await deleteBulkQuotationAction(pending.row.id) : await convertBulkQuotationAction(pending.row.id);
+    const res = action.kind === "delete" ? await deleteBulkQuotationAction(action.row.id) : await convertBulkQuotationAction(action.row.id);
     setBusy(false);
     setPending(null);
-    notify({ message: res.ok ? res.data.message ?? "Done." : res.message, tone: res.ok ? "success" : "error" });
+    notify({ message: res.ok ? res.data?.message ?? "Done." : res.message, tone: res.ok ? "success" : "error" });
     if (res.ok) router.refresh();
   }
 
@@ -44,14 +50,14 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
             </tr>
           </thead>
           <tbody>
-            {result.rows.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <td colSpan={12} className="px-4 py-8 text-center text-ink-muted">
                   No quotations match the filters.
                 </td>
               </tr>
             )}
-            {result.rows.map((q) => (
+            {rows.map((q) => (
               <tr key={q.id} className="border-b border-line last:border-0">
                 <td className="px-3 py-2 font-mono text-xs">
                   <Link href={`/admin/bulk-orders/quotations/${q.id}`} className="text-brand-700 hover:underline">

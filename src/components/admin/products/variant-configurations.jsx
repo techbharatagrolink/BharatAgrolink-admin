@@ -151,9 +151,9 @@ export function VariantConfigurations({ productName, productType, attributes = [
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-line p-3">
+    <div className="min-w-0 space-y-3 rounded-lg border border-line p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-ink">Variant Configurations</p>
           <p className="text-xs text-ink-muted">Configurable products let customers choose an option (for example a pack size). Each option becomes its own SKU. Values come from Configuration Attributes.</p>
         </div>
@@ -162,7 +162,28 @@ export function VariantConfigurations({ productName, productType, attributes = [
       {notice && !open && <p className="text-sm text-danger-ink">{notice}</p>}
 
       {savedRows.length > 0 && (
-        <div className="overflow-x-auto">
+        <ul className="space-y-2 md:hidden">
+          {savedRows.map((row) => (
+            <li key={row.id} className="rounded-lg border border-line p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 break-words font-medium text-ink">{row.label}</p>
+                <button type="button" className="shrink-0 text-xs text-danger-ink" disabled={pending} onClick={() => onDeleteSaved(row.id)}>Delete</button>
+              </div>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <div><dt className="text-ink-muted">SKU</dt><dd className="break-words text-ink">{row.sku || "—"}</dd></div>
+                <div><dt className="text-ink-muted">MRP</dt><dd className="tabular-nums text-ink">{row.mrp ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">NRV</dt><dd className="tabular-nums text-ink">{row.nrv ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">Stock</dt><dd className="tabular-nums text-ink">{row.stock}</dd></div>
+                <div><dt className="text-ink-muted">Weight</dt><dd className="text-ink">{row.weightKg ?? "—"}</dd></div>
+                <div className="col-span-2"><dt className="text-ink-muted">L/W/H</dt><dd className="break-words text-ink">{[row.lengthCm, row.widthCm, row.heightCm].filter((value) => value != null && value !== "").join("×") || "—"}</dd></div>
+              </dl>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {savedRows.length > 0 && (
+        <div className="hidden min-w-0 overflow-x-auto md:block">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b text-xs text-ink-muted">
@@ -188,7 +209,53 @@ export function VariantConfigurations({ productName, productType, attributes = [
       )}
 
       {rows.length > 0 && (
-        <div className="overflow-x-auto">
+        <ul className="space-y-3 md:hidden">
+          {rows.map((row, index) => (
+            <li key={row.key} className="rounded-lg border border-line p-3">
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="break-words font-medium text-ink">{row.variantName}</p>
+                  <p className="text-xs text-ink-muted">SKU assigned on save</p>
+                </div>
+                <button type="button" className="shrink-0 text-xs text-danger-ink" onClick={() => onRows(rows.filter((_, i) => i !== index))}>Delete</button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {["lengthCm", "widthCm", "heightCm"].map((key) => (
+                  <Field key={key} label={key === "lengthCm" ? "Length" : key === "widthCm" ? "Width" : "Height"}>
+                    {({ id }) => <Input id={id} type="number" min="0" step="0.01" value={row[key]} onChange={(event) => patch(index, key, event.target.value)} />}
+                  </Field>
+                ))}
+                <div className="col-span-2">
+                  <Field label="Weight">
+                    {({ id }) => (
+                      <>
+                        <div className="flex min-w-0 gap-1">
+                          <Input id={id} className="min-w-0 flex-1" type="number" min="0" step="0.01" value={row.weightValue} onChange={(event) => patch(index, "weightValue", event.target.value)} />
+                          <Select className="w-24 shrink-0" value={row.weightUnit} onChange={(event) => patch(index, "weightUnit", event.target.value)} options={UNITS} aria-label="Weight unit" />
+                        </div>
+                        <p className="mt-1 text-[11px] text-ink-muted">{toVariantGrams(row.weightValue, row.weightUnit) ? `${toVariantGrams(row.weightValue, row.weightUnit)} gm` : "0 gm"}</p>
+                      </>
+                    )}
+                  </Field>
+                </div>
+                {[["mrp", "MRP"], ["nrv", "NRV"], ["gstPercent", "GST %"], ["stock", "Stock"]].map(([key, label]) => (
+                  <Field key={key} label={label}>
+                    {({ id }) => <Input id={id} type="number" min="0" step="0.01" value={row[key]} onChange={(event) => patch(index, key, event.target.value)} />}
+                  </Field>
+                ))}
+                <div className="col-span-2">
+                  <Field label="Status">
+                    {({ id }) => <Select id={id} value={row.stockStatus} onChange={(event) => patch(index, "stockStatus", event.target.value)} options={[{ value: "In Stock", label: "In Stock" }, { value: "Out of Stock", label: "Out of Stock" }]} />}
+                  </Field>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {rows.length > 0 && (
+        <div className="hidden min-w-0 overflow-x-auto md:block">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b text-xs text-ink-muted">
@@ -250,9 +317,9 @@ export function VariantConfigurations({ productName, productType, attributes = [
         )}
       >
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search attribute values (e.g. 1kg, 500gm, Large)..." className="min-w-56 flex-1" />
-            <Select value={attributeId} onChange={(event) => setAttributeId(event.target.value)} options={[{ value: "all", label: "All Attributes" }, ...attributes.map((item) => ({ value: String(item.id), label: item.name }))]} className="w-44" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search attribute values (e.g. 1kg, 500gm, Large)..." className="w-full min-w-0 sm:min-w-56 sm:flex-1" />
+            <Select value={attributeId} onChange={(event) => setAttributeId(event.target.value)} options={[{ value: "all", label: "All Attributes" }, ...attributes.map((item) => ({ value: String(item.id), label: item.name }))]} className="w-full sm:w-44" />
             <Button type="button" size="sm" variant="secondary" onClick={() => setVisible(true)}>Select All</Button>
             <Button type="button" size="sm" variant="secondary" onClick={() => setVisible(false)}>Deselect All</Button>
           </div>

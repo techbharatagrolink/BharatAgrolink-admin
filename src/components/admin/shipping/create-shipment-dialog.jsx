@@ -12,6 +12,8 @@ import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { availableCouriersAction, createShipmentAction } from "@/lib/actions/admin/shipping";
+import { productPricingAccessAction } from "@/lib/actions/admin/pricing-factors";
+import { ShipmentProductPricing } from "./shipment-product-pricing";
 import { ShipmentResults } from "./shipment-results";
 
 const COMPANIES = [
@@ -65,6 +67,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [booking, startBooking] = useTransition();
+  const [pricingAccess, setPricingAccess] = useState(null);
   const fallbackRef = useRef(fallbackVendors);
   fallbackRef.current = fallbackVendors;
 
@@ -82,6 +85,13 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
     reset();
     onClose?.();
   };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let live = true;
+    productPricingAccessAction().then((res) => { if (live) setPricingAccess(res); });
+    return () => { live = false; };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -156,11 +166,11 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
       title={`Courier selection – ${orderId}`}
       footer={
         result ? (
-          <Button onClick={close}>Close</Button>
+          <Button className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={close}>Close</Button>
         ) : (
           <>
-            <Button variant="secondary" onClick={close} disabled={booking}>Close</Button>
-            <Button variant="primary" onClick={book} loading={booking} disabled={!canBook}>
+            <Button variant="secondary" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={close} disabled={booking}>Close</Button>
+            <Button variant="primary" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={book} loading={booking} disabled={!canBook}>
               Create shipment with selected couriers
             </Button>
           </>
@@ -171,7 +181,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
         <ShipmentResults vendors={result.vendors} />
       ) : (
         <div className="space-y-4">
-          <div className="flex gap-1 border-b border-line" role="tablist" aria-label="Courier company">
+          <div className="flex min-w-0 flex-wrap gap-1 border-b border-line" role="tablist" aria-label="Courier company">
             {COMPANIES.map((item) => (
               <button
                 key={item.value}
@@ -179,7 +189,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                 role="tab"
                 aria-selected={company === item.value}
                 className={cn(
-                  "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
+                  "-mb-px min-h-11 border-b-2 px-3 py-2 text-sm font-medium sm:min-h-0",
                   company === item.value ? "border-brand-600 text-brand-700" : "border-transparent text-ink-muted hover:text-ink",
                 )}
                 onClick={() => setCompany(item.value)}
@@ -209,6 +219,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
             const couriers = sortedCouriers(vendor);
             const cheapest = couriers[0];
             const parcel = vendor.package || {};
+            const choice = couriers.find((courier, index) => courierKey(courier, index) === selected[key]) || null;
             return (
               <Card key={key} className={cn(skip && "opacity-60")}>
                 <CardHeader
@@ -219,6 +230,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                       {vendor.locked && <Badge tone="warning">Already shipped</Badge>}
                       {vendor.validBox === false && <Badge tone="danger">Box not set</Badge>}
                       <Checkbox
+                        className="min-h-11"
                         label="Include in shipment"
                         checked={!skip}
                         onChange={(event) => setExcluded((list) => (event.target.checked ? list.filter((id) => id !== key) : [...list, key]))}
@@ -233,6 +245,14 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                     <p><span className="font-semibold">Weight:</span> {Number(parcel.weightGm) > 0 ? `${parcel.weightGm}g` : "—"}</p>
                     <p><span className="font-semibold">Dimensions:</span> {parcel.length || "—"} × {parcel.breadth || "—"} × {parcel.height || "—"} cm</p>
                   </div>
+                  {!loading && (
+                    <ShipmentProductPricing
+                      products={vendor.products}
+                      courierCharge={choice && Number.isFinite(Number(choice.totalCharges)) ? Number(choice.totalCharges) : null}
+                      courierName={choice?.name || ""}
+                      access={pricingAccess}
+                    />
+                  )}
                   {vendor.error && <Notice tone="danger">{label} quote could not be made. {vendor.error}</Notice>}
                   {!vendor.error && couriers.length === 0 && !loading && (
                     <Notice tone="warning">No couriers available for this route.</Notice>
@@ -243,7 +263,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                         Available couriers ({couriers.length})
                         {cheapest?.name && <Badge tone="success" className="ml-2">Cheapest: {cheapest.name}</Badge>}
                       </p>
-                      <div className="overflow-x-auto rounded-lg border border-line">
+                      <div className="max-w-full min-w-0 overflow-x-auto rounded-lg border border-line">
                         <table className="w-full min-w-[720px] text-left text-[12.5px]">
                           <thead>
                             <tr className="bg-ink text-white">
@@ -258,16 +278,18 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                               const best = index === 0;
                               return (
                                 <tr key={id} className={cn("border-t border-line", best && "bg-success-bg")}>
-                                  <td className="px-3 py-2 text-center">
-                                    <input
-                                      type="radio"
-                                      name={`courier-${key}`}
-                                      className="size-4 accent-brand-600"
-                                      checked={selected[key] === id}
-                                      disabled={skip}
-                                      onChange={() => setSelected((current) => ({ ...current, [key]: id }))}
-                                      aria-label={`Select ${courier.name || "courier"}`}
-                                    />
+                                  <td className="px-1 py-1 text-center">
+                                    <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
+                                      <input
+                                        type="radio"
+                                        name={`courier-${key}`}
+                                        className="size-4 accent-brand-600"
+                                        checked={selected[key] === id}
+                                        disabled={skip}
+                                        onChange={() => setSelected((current) => ({ ...current, [key]: id }))}
+                                        aria-label={`Select ${courier.name || "courier"}`}
+                                      />
+                                    </label>
                                   </td>
                                   <td className="px-3 py-2">
                                     <span className="font-semibold text-ink">{courier.name || "Courier"}</span>

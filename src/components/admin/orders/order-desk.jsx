@@ -29,9 +29,81 @@ function grandTotal(order, shipping) {
   return Math.max(0, Math.round(grand * 100) / 100);
 }
 
+function productsOf(lines) {
+  const grouped = new Map();
+  for (const line of lines || []) {
+    const productId = String(line.productId || "");
+    if (!productId) continue;
+    const sku = line.sku && line.sku !== "—" ? String(line.sku) : "";
+    const key = `${productId}\0${sku}`;
+    const qty = Number(line.qty) || 0;
+    const existing = grouped.get(key);
+    if (existing) existing.qty += qty;
+    else grouped.set(key, { productId, variantId: 0, name: line.productName || "Product", sku, qty });
+  }
+  return [...grouped.values()];
+}
+
 function shortVendor(name) {
   const text = String(name || "Vendor");
   return text.length > 20 ? `${text.slice(0, 17)}...` : text;
+}
+
+function bpsText(bps) {
+  if (bps == null || Number.isNaN(Number(bps))) return "—";
+  const abs = Math.abs(Math.trunc(Number(bps)));
+  return `${Number(bps) < 0 ? "-" : ""}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}%`;
+}
+
+function factorText(factors) {
+  if (!factors?.length) return "—";
+  return factors.map((factor) => `${factor.name || factor.code} ${formatINR(factor.actualAmount)}`).join(" · ");
+}
+
+/** Saved Pricing & Tax snapshot for this order, one row per product line. */
+function OrderCostTable({ costs }) {
+  if (!costs?.length) return null;
+  const headers = ["Product", "Qty", "Display price", "Taxable", "TCS", "NRV", "Service charge", "Net service charge", "Factors actual", "Contribution margin", "Courier", "Courier charge", "Shipping actual", "Difference", "Adjusted margin", "Seller payout", "Cost factors"];
+  return (
+    <section className="overflow-x-auto rounded-xl border border-line bg-surface">
+      <div className="border-b border-line px-4 py-3">
+        <h2 className="text-sm font-semibold text-ink">Pricing &amp; Tax at shipment</h2>
+        <p className="text-xs text-ink-muted">Saved when the shipment was created. Prices are per unit. The courier charge is the parcel charge, and the difference is that charge minus shipping actual.</p>
+      </div>
+      <table className="w-max min-w-full text-left text-[12.5px]">
+        <thead>
+          <tr className="bg-ink text-white">
+            {headers.map((label) => (
+              <th key={label} className="whitespace-nowrap px-3 py-2 font-semibold">{label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {costs.map((cost) => (
+            <tr key={cost.id || `${cost.productId}:${cost.variantId}`} className="border-t border-line">
+              <td className="max-w-64 px-3 py-2 font-medium">{cost.productName || cost.productId}</td>
+              <td className="px-3 py-2 tabular">{cost.qty}</td>
+              <td className="px-3 py-2 tabular">{cost.displayPrice == null ? "—" : formatINR(cost.displayPrice)}</td>
+              <td className="px-3 py-2 tabular">{cost.taxableValue == null ? "—" : formatINR(cost.taxableValue)}</td>
+              <td className="px-3 py-2 tabular">{cost.tcs == null ? "—" : formatINR(cost.tcs)}</td>
+              <td className="px-3 py-2 tabular">{cost.nrv == null ? "—" : formatINR(cost.nrv)}</td>
+              <td className="px-3 py-2 tabular">{cost.serviceCharge == null ? "—" : formatINR(cost.serviceCharge)}</td>
+              <td className="px-3 py-2 tabular">{cost.netServiceCharge == null ? "—" : formatINR(cost.netServiceCharge)}</td>
+              <td className="px-3 py-2 tabular">{cost.totalFactorActual == null ? "—" : formatINR(cost.totalFactorActual)}</td>
+              <td className="px-3 py-2 tabular">{cost.contributionMargin == null ? "—" : `${formatINR(cost.contributionMargin)} · ${bpsText(cost.contributionMarginBps)}`}</td>
+              <td className="px-3 py-2">{cost.courierName || "—"}</td>
+              <td className="px-3 py-2 tabular">{cost.courierCharge == null ? "—" : formatINR(cost.courierCharge)}</td>
+              <td className="px-3 py-2 tabular">{cost.shippingActual == null ? "—" : formatINR(cost.shippingActual)}</td>
+              <td className="px-3 py-2 tabular">{cost.shippingDifference == null ? "—" : formatINR(cost.shippingDifference)}</td>
+              <td className="px-3 py-2 tabular">{cost.adjustedContributionMargin == null ? "—" : `${formatINR(cost.adjustedContributionMargin)} · ${bpsText(cost.adjustedContributionMarginBps)}`}</td>
+              <td className="px-3 py-2 tabular">{cost.sellerPayout == null ? "—" : formatINR(cost.sellerPayout)}</td>
+              <td className="max-w-sm whitespace-normal px-3 py-2 text-ink-soft">{factorText(cost.factors)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
 }
 
 function prepaidDiscount(order) {
@@ -45,7 +117,7 @@ function prepaidDiscount(order) {
  * The PHP edit_order.php page: address strip, line finance table,
  * shipment and payment panel, totals, and the fixed order actions.
  */
-export function OrderDesk({ order, groups, totals, editor, canEdit }) {
+export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canEdit }) {
   const lines = groups.flatMap((group) => group.lines.map((line) => ({ ...line, vendor: group.vendor })));
   const [panel, setPanel] = useState("");
   const [shipmentOpen, setShipmentOpen] = useState(false);
@@ -125,6 +197,8 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
           </tbody>
         </table>
       </section>
+
+      <OrderCostTable costs={orderCosts} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="space-y-3 rounded-xl border border-line bg-surface p-4 text-sm">
@@ -224,6 +298,7 @@ export function OrderDesk({ order, groups, totals, editor, canEdit }) {
             paymentType: String(order.paymentMode || "").toLowerCase(),
             orderAmount: Math.round(amount * 100) / 100,
             package: { weightGm: weight, length: box?.box?.length || 0, breadth: box?.box?.width || 0, height: box?.box?.height || 0 },
+            products: productsOf(group.lines),
             couriers: [],
           };
         })}

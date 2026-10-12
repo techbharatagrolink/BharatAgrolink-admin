@@ -118,6 +118,13 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     gstPercent: priced.gstPercent == null ? current.gstPercent : String(priced.gstPercent),
     hsn: priced.hsn || current.hsn,
   })), []);
+  const pricingParcel = useMemo(() => ({
+    ...(creating ? { weightKg: form.weightKg, vendorId: form.vendorId } : {}),
+    lengthCm: form.lengthCm,
+    widthCm: form.widthCm,
+    heightCm: form.heightCm,
+    courierZone: form.courierZone,
+  }), [creating, form.weightKg, form.vendorId, form.lengthCm, form.widthCm, form.heightCm, form.courierZone]);
   const hasStock = Number(form.stock) > 0;
   const stockStatus = effectiveStockStatus(form.stock, form.stockStatus);
 
@@ -236,14 +243,14 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <div className="min-w-0 space-y-4">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs text-ink-muted">Catalog / Products / {creating ? "Add Product" : "Edit Product"}</p>
-          <h1 className="text-xl font-semibold text-ink">{creating ? "Add Product" : "Edit Product"} {!creating && <span className="ml-2 align-middle text-xs font-medium text-success-ink">{product.status}</span>}</h1>
-          <p className="text-sm text-ink-muted">{creating ? "Same fields as the product editor. SKU and URL are assigned when you save." : `${product.name}${product.sku ? ` · SKU ${product.sku}` : ""}`}</p>
+          <h1 className="break-words text-xl font-semibold text-ink">{creating ? "Add Product" : "Edit Product"} {!creating && <span className="ml-2 align-middle text-xs font-medium text-success-ink">{product.status}</span>}</h1>
+          <p className="break-words text-sm text-ink-muted">{creating ? "Same fields as the product editor. SKU and URL are assigned when you save." : `${product.name}${product.sku ? ` · SKU ${product.sku}` : ""}`}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex max-w-full flex-wrap gap-2">
           <ButtonLink href="/admin/products" variant="secondary" size="sm">Back</ButtonLink>
           <Button size="sm" loading={pending} onClick={() => save(false)}>Save as Draft</Button>
           {form.webUrl && <ButtonLink href={`https://bharatagrolink.com/product/${form.webUrl}`} target="_blank" rel="noopener noreferrer" variant="secondary" size="sm">Preview</ButtonLink>}
@@ -251,24 +258,24 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 2xl:grid-cols-8">
         {STEPS.map(([id, label, hint], index) => (
-          <button key={id} type="button" onClick={() => setStep(id)} className={`min-w-36 rounded-lg border px-3 py-2 text-left ${step === id ? "border-brand-600 bg-brand-50" : "border-line bg-surface"}`}>
+          <button key={id} type="button" onClick={() => setStep(id)} className={`min-w-0 rounded-lg border px-3 py-2 text-left ${step === id ? "border-brand-600 bg-brand-50" : "border-line bg-surface"}`}>
             <span className="text-xs text-ink-muted">{index + 1}</span>
-            <span className="block text-sm font-semibold text-ink">{label}</span>
-            <span className="block text-xs text-ink-muted">{hint}</span>
+            <span className="block break-words text-sm font-semibold text-ink">{label}</span>
+            <span className="block break-words text-xs text-ink-muted">{hint}</span>
           </button>
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="rounded-xl border border-line bg-surface p-4">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 rounded-xl border border-line bg-surface p-4">
           {step === "basic" && (
             <div className="grid gap-3 sm:grid-cols-2">
               <h2 className="sm:col-span-2 text-sm font-semibold text-ink">1. Basic Information</h2>
-              <div className="sm:col-span-2 flex gap-2">
+              <div className="sm:col-span-2 flex flex-wrap gap-2">
                 {[["simple", "Simple Product"], ["configure", "Configurable Product"]].map(([value, label]) => (
-                  <button key={value} type="button" onClick={() => setForm((current) => ({ ...current, productType: value }))} className={`rounded-lg border px-3 py-2 text-sm ${form.productType === value ? "border-brand-600 bg-brand-50 font-semibold" : "border-line"}`}>{label}</button>
+                  <button key={value} type="button" onClick={() => setForm((current) => ({ ...current, productType: value }))} className={`min-w-0 rounded-lg border px-3 py-2 text-sm ${form.productType === value ? "border-brand-600 bg-brand-50 font-semibold" : "border-line"}`}>{label}</button>
                 ))}
               </div>
               <Field label="Product Name" required>{({ id }) => <Input id={id} value={form.name} onChange={set("name")} required />}</Field>
@@ -277,15 +284,15 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 <Field label="Category" required>
                   {() => (
                     <div className="rounded-lg border border-line">
-                      <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-                        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search categories..." />
-                        <span className="shrink-0 text-xs text-ink-muted">{selectedCategory.length ? `${selectedCategory.length} selected` : "No category selected"}</span>
+                      <div className="flex flex-col gap-2 border-b border-line px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                        <Input className="min-w-0" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search categories..." />
+                        <span className="text-xs text-ink-muted sm:shrink-0">{selectedCategory.length ? `${selectedCategory.length} selected` : "No category selected"}</span>
                       </div>
                       <div className="max-h-56 overflow-auto p-2">
                         {categories.slice(0, 80).map((item) => (
-                          <label key={item.value} className="flex items-center gap-2 px-2 py-1 text-sm">
-                            <input type="checkbox" checked={form.categoryIds.includes(item.value)} onChange={() => setForm((current) => { const categoryIds = current.categoryIds.includes(item.value) ? current.categoryIds.filter((id) => id !== item.value) : [...current.categoryIds, item.value]; return { ...current, categoryIds, categoryId: categoryIds[0] || "" }; })} />
-                            {item.label}
+                          <label key={item.value} className="flex items-start gap-2 px-2 py-1 text-sm">
+                            <input type="checkbox" className="mt-0.5 shrink-0" checked={form.categoryIds.includes(item.value)} onChange={() => setForm((current) => { const categoryIds = current.categoryIds.includes(item.value) ? current.categoryIds.filter((id) => id !== item.value) : [...current.categoryIds, item.value]; return { ...current, categoryIds, categoryId: categoryIds[0] || "" }; })} />
+                            <span className="min-w-0 break-words">{item.label}</span>
                           </label>
                         ))}
                       </div>
@@ -304,7 +311,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           {step === "seller" && (
             <div className="space-y-4">
               <h2 className="text-sm font-semibold text-ink">2. Seller & Variants</h2>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Field label="Seller" required={creating}>{({ id }) => creating ? <Select id={id} value={form.vendorId} onChange={set("vendorId")} placeholder="Select seller" options={options.vendors || []} /> : <Input id={id} value={vendorName || product.vendor || ""} readOnly />}</Field>
                 <Field label="Available Quantity" required>{({ id }) => <Input id={id} type="number" min="0" value={form.stock} onChange={setStock} />}</Field>
                 <Field label="Stock Status" hint={!hasStock ? "Quantity is 0, so the product is out of stock." : stockStatus === "Out of Stock" ? "Customers cannot buy it while it is out of stock." : undefined}>
@@ -344,12 +351,12 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           )}
 
           {step === "pricing" && pricingFactors && (
-            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} />
+            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} parcel={pricingParcel} />
           )}
 
           {step === "pricing" && !pricingFactors && (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <h2 className="sm:col-span-3 text-sm font-semibold text-ink">3. Pricing & Tax</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <h2 className="text-sm font-semibold text-ink sm:col-span-2 lg:col-span-3">3. Pricing & Tax</h2>
               <Field label="MRP (₹)" hint="Maximum Retail Price.">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.mrp} onChange={set("mrp")} />}</Field>
               <Field label="NRV (₹)" required hint="Net Realizable Value: what the vendor receives.">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.nrv} onChange={set("nrv")} />}</Field>
               <Field label="GST %">{({ id }) => <Input id={id} type="number" min="0" max="100" step="0.01" value={form.gstPercent} onChange={set("gstPercent")} />}</Field>
@@ -376,7 +383,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                   </div>
                 ))}
               </div>
-              <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(event) => {
+              <form className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2" onSubmit={(event) => {
                 event.preventDefault();
                 const featured = event.target.featured.files?.[0];
                 const gallery = [...(event.target.images.files ?? [])];
@@ -394,8 +401,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 if ([...data.keys()].length) run(() => uploadProductImagesAction(product.id, data));
                 event.target.reset();
               }}>
-                <Field label="Featured image">{({ id }) => <Input id={id} name="featured" type="file" accept="image/jpeg,image/png,image/webp" />}</Field>
-                <Field label="Gallery">{({ id }) => <Input id={id} name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />}</Field>
+                <Field label="Featured image">{({ id }) => <Input id={id} className="max-w-full" name="featured" type="file" accept="image/jpeg,image/png,image/webp" />}</Field>
+                <Field label="Gallery">{({ id }) => <Input id={id} className="max-w-full" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />}</Field>
                 <Field label="Video URL" className="sm:col-span-2">{({ id }) => <Input id={id} value={form.videoUrl} onChange={set("videoUrl")} />}</Field>
                 <Button type="submit" loading={pending}>{creating ? "Add images" : "Upload to Cloudflare R2"}</Button>
               </form>
@@ -403,8 +410,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           )}
 
           {step === "shipping" && (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <h2 className="sm:col-span-3 text-sm font-semibold text-ink">5. Shipping</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <h2 className="text-sm font-semibold text-ink sm:col-span-2 lg:col-span-3">5. Shipping</h2>
               <Field label="Weight (kg)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.weightKg} onChange={set("weightKg")} />}</Field>
               <Field label="Length (cm)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.lengthCm} onChange={set("lengthCm")} />}</Field>
               <Field label="Width (cm)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.widthCm} onChange={set("widthCm")} />}</Field>
@@ -425,8 +432,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 <ProductHtmlEditor value={form.details} onChange={(details) => setForm((current) => ({ ...current, details }))} />
               </div>
               <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
+                <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-ink">Specifications</h3>
                     <p className="text-xs text-ink-muted">Name / value rows for the specification table.</p>
                   </div>
@@ -434,18 +441,18 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 </div>
                 <div className="space-y-2">
                   {form.specifications.map((row, index) => (
-                    <div key={index} className="flex flex-wrap items-center gap-2">
+                    <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center">
                       <Input value={row.name} placeholder="Name" onChange={(event) => setForm((current) => ({ ...current, specifications: current.specifications.map((item, i) => i === index ? { ...item, name: event.target.value } : item) }))} />
                       <Input value={row.value} placeholder="Value" onChange={(event) => setForm((current) => ({ ...current, specifications: current.specifications.map((item, i) => i === index ? { ...item, value: event.target.value } : item) }))} />
-                      <Button type="button" size="sm" variant="secondary" onClick={() => setForm((current) => ({ ...current, specifications: current.specifications.filter((_, i) => i !== index) }))}>Remove</Button>
+                      <Button type="button" size="sm" variant="secondary" className="w-full sm:w-auto" onClick={() => setForm((current) => ({ ...current, specifications: current.specifications.filter((_, i) => i !== index) }))}>Remove</Button>
                     </div>
                   ))}
                 </div>
               </div>
               <Field label="Product Usage">{({ id }) => <Textarea id={id} value={form.usage} onChange={set("usage")} rows={4} placeholder="Describe how to use this product" />}</Field>
               <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
+                <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-ink">Frequently Asked Questions</h3>
                     <p className="text-xs text-ink-muted">Each question is followed by its answer.</p>
                   </div>
@@ -483,17 +490,17 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 ["Display price", form.salePrice ? formatINR(form.salePrice) : (pricingFactors && creating ? "Set on Pricing & Tax" : "")],
                 ["Stock", form.stock], ["Stock Status", stockStatus], ["Images", photos.length],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-4 border-b border-line py-1.5"><span className="text-ink-muted">{label}</span><span className="font-medium text-ink">{value || "—"}</span></div>
+                <div key={label} className="flex items-baseline justify-between gap-4 border-b border-line py-1.5"><span className="shrink-0 text-ink-muted">{label}</span><span className="min-w-0 break-words text-right font-medium text-ink">{value || "—"}</span></div>
               ))}
             </div>
           )}
         </div>
 
-        <aside className="space-y-3">
+        <aside className="min-w-0 space-y-3">
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Product Preview</p>
             {photos[0] ? <img src={photos[0]} alt="" className="mt-2 h-40 w-full rounded-lg object-contain" /> : <div className="mt-2 flex h-40 items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted">No image</div>}
-            <p className="mt-2 text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
+            <p className="mt-2 break-words text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
             <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {creating ? "assigned on save" : (product.sku || "—")}</p>
             <p className="mt-2 text-lg font-semibold text-ink">{form.salePrice ? formatINR(form.salePrice) : form.mrp ? formatINR(form.mrp) : "—"}</p>
             <p className="text-xs text-ink-muted">{hasStock ? `${stockStatus} · Qty ${form.stock}` : "Out of Stock"}</p>

@@ -3,8 +3,9 @@ import { LinkTabs, PageHeader } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { requireAdmin } from "@/lib/auth/session";
 import { canPage } from "@/lib/auth/permissions";
-import { getHeroBoard, getHomeCopy } from "@/lib/services/admin/home-editor";
+import { getHeroBoard, getHomeCopy, getHomeEditor } from "@/lib/services/admin/home-editor";
 import { HeroOrder } from "@/components/admin/cms/hero-order";
+import { SectionOrder } from "@/components/admin/cms/section-order";
 import { HomePageText } from "@/components/admin/cms/home-page-text";
 
 const PAGE = "newhomepage_website.php";
@@ -62,19 +63,26 @@ export default async function HomeSectionsPage({ searchParams }) {
     );
   }
 
-  let hero = null;
-  if (current.value === "banners") {
+  let move = null;
+  if (current.value === "banners" || current.value === "sections") {
     const user = await requireAdmin();
     if (canPage(user, PAGE, "view")) {
-      const board = await getHeroBoard(user);
-      if (board.ok) hero = <HeroOrder items={board.data} canEdit={canPage(user, PAGE, "edit")} />;
+      const canEdit = canPage(user, PAGE, "edit");
+      if (current.value === "banners") {
+        const board = await getHeroBoard(user);
+        if (board.ok) move = <HeroOrder items={board.data} canEdit={canEdit} />;
+      } else {
+        const editor = await getHomeEditor(user);
+        const sections = editor.ok && Array.isArray(editor.data?.sections) ? editor.data.sections : null;
+        if (sections) move = <SectionOrder items={sections} canEdit={canEdit} />;
+      }
     }
   }
 
   return (
     <ResourcePage resourceKey={current.key} pathname="/admin/cms/home-sections" searchParams={params}>
       {tabs(current.value)}
-      {hero}
+      {move}
     </ResourcePage>
   );
 }

@@ -4,12 +4,18 @@ import { revalidatePath } from "next/cache";
 import { assertPermission } from "@/lib/auth/session";
 import {
   addBulkOrderRemark,
+  checkBulkServiceability,
   convertBulkQuotation,
+  createBulkCustomer,
+  createBulkOrder,
   deleteBulkOrder,
   deleteBulkQuotation,
   exportBulkOrders,
   getBulkOrderLabel,
   getBulkOrderTracking,
+  lookupBulkPincode,
+  searchBulkCustomers,
+  searchBulkProducts,
   updateBulkOrderAgent,
   updateBulkOrderStatus,
   updateBulkWaybill,
@@ -118,6 +124,92 @@ export async function convertBulkQuotationAction(id) {
   if (result.ok) {
     revalidatePath("/admin/bulk-orders/quotations");
     revalidatePath("/admin/bulk-orders/orders");
+  }
+  return result;
+}
+
+async function allowCreate() {
+  const view = await assertPermission("bulk.create", "view");
+  if (view.ok) return view;
+  return assertPermission("bulk.create", "add");
+}
+
+export async function searchBulkCustomersAction(q) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  const query = str(q, 80);
+  if (query.length < 2) return { ok: true, customers: [] };
+  const result = await searchBulkCustomers(query, auth.user);
+  if (!result.ok) return result;
+  return { ok: true, customers: result.data?.customers || [] };
+}
+
+export async function createBulkCustomerAction(input) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  const fullname = str(input?.fullname, 150);
+  const phone = str(input?.phone, 15).replace(/\D/g, "").slice(-10);
+  const fulladdress = str(input?.fulladdress, 300);
+  if (!fullname) return invalid("Full name is required.");
+  if (!/^[6-9]\d{9}$/.test(phone)) return invalid("Phone must be a 10-digit mobile number.");
+  if (!fulladdress) return invalid("Address is required.");
+  const pincode = str(input?.pincode, 6);
+  if (pincode && !/^\d{6}$/.test(pincode)) return invalid("Pincode must be 6 digits.");
+  const alternate = str(input?.alternatePhone, 15).replace(/\D/g, "").slice(-10);
+  if (alternate && !/^[6-9]\d{9}$/.test(alternate)) return invalid("Alternative phone must be 10 digits.");
+  const result = await createBulkCustomer({
+    fullname,
+    phone,
+    email: str(input?.email, 150),
+    alternatePhone: alternate,
+    landHoldingValue: str(input?.landHoldingValue, 40),
+    landHoldingUnit: str(input?.landHoldingUnit, 40),
+    season: str(input?.season, 80),
+    crop: str(input?.crop, 80),
+    soil: str(input?.soil, 40),
+    water: str(input?.water, 40),
+    fulladdress,
+    city: str(input?.city, 80),
+    district: str(input?.district, 80),
+    state: str(input?.state, 80),
+    pincode,
+    addresstype: str(input?.addresstype, 40) || "Home",
+  }, auth.user);
+  return result;
+}
+
+export async function searchBulkProductsAction(q) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  const query = str(q, 80);
+  if (query.length < 2) return { ok: true, products: [] };
+  const result = await searchBulkProducts(query, auth.user);
+  if (!result.ok) return result;
+  return { ok: true, products: result.data?.products || [] };
+}
+
+export async function lookupBulkPincodeAction(pincode) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  const pin = str(pincode, 6);
+  if (!/^\d{6}$/.test(pin)) return invalid("Pincode must be 6 digits.");
+  return lookupBulkPincode(pin, auth.user);
+}
+
+export async function checkBulkServiceabilityAction(input) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  return checkBulkServiceability(input, auth.user);
+}
+
+export async function createBulkOrderAction(input) {
+  const auth = await allowCreate();
+  if (!auth.ok) return auth;
+  const result = await createBulkOrder(input, auth.user);
+  if (result.ok) {
+    revalidatePath("/admin/bulk-orders/orders");
+    revalidatePath("/admin/bulk-orders/shipments");
+    if (result.data?.orderNumber) revalidatePath(`/admin/bulk-orders/orders/${encodeURIComponent(result.data.orderNumber)}`);
   }
   return result;
 }

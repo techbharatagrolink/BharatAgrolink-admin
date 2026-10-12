@@ -55,6 +55,7 @@ export default async function OrderDetailPage({ params, searchParams }) {
         groups={groups}
         totals={totals}
         editor={data.editor}
+        orderCosts={data.orderCosts || []}
         canEdit={can(user, "orders", "edit") && Boolean(data.editor)}
       />
 

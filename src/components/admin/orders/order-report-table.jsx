@@ -10,8 +10,8 @@ import { useToast } from "@/components/ui/toast";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
 import { exportOrderReportAction, saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
-const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl"]);
-const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct"]);
+const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout"]);
+const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct"]);
 
 const COLUMNS = [
   ["sr", "Sr No"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer Name"], ["customerState", "Customer State"],
@@ -26,6 +26,13 @@ const COLUMNS = [
   ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross Amount"], ["unitNrv", "Single Qty NRV"], ["totalNrv", "Total NRV"],
   ["bsa", "BSA"], ["serviceExcl", "Service Charge (Excl. GST)"], ["serviceGst", "Service GST (18%)"], ["serviceIncl", "Service Charge (Incl. GST)"],
   ["status", "Status"], ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
+  ["costDisplayPrice", "Pricing display price"], ["costTaxable", "Pricing taxable value"], ["costTcs", "Pricing TCS"], ["costNrv", "Pricing NRV to seller"],
+  ["costServiceCharge", "Pricing service charge"], ["costScGst", "Pricing GST on service charge"], ["costNetServiceCharge", "Pricing net service charge"],
+  ["costTakeRatePct", "Pricing take rate %"], ["costFactorsTotal", "Pricing cost factors actual"], ["costMargin", "Pricing contribution margin"],
+  ["costMarginPct", "Pricing contribution margin %"], ["costCourier", "Pricing courier"], ["costCourierCharge", "Pricing courier charge"],
+  ["costShippingActual", "Pricing shipping actual"], ["costShippingDiff", "Pricing shipping difference"], ["costAdjustedMargin", "Pricing adjusted contribution margin"],
+  ["costAdjustedMarginPct", "Pricing adjusted contribution margin %"], ["costTcsBalance", "Pricing TCS balance retained"], ["costSellerPayout", "Pricing seller payout"],
+  ["costFactors", "Pricing cost factors"],
 ];
 
 function cell(row, key) {
@@ -40,7 +47,7 @@ function cell(row, key) {
   if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
   if (key === "status" || key === "paymentStatus") return <Badge tone={value === "Paid" || value === "Delivered" ? "success" : "warning"}>{value}</Badge>;
   if (MONEY.has(key)) return value == null ? "—" : formatINR(value);
-  if (PERCENT.has(key)) return `${Number(value || 0).toFixed(2)}%`;
+  if (PERCENT.has(key)) return value == null || value === "" ? "—" : `${Number(value).toFixed(2)}%`;
   if (key === "qty" || key === "sr") return formatNumber(value);
   return value || "—";
 }

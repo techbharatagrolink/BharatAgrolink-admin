@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/form";
+import { Input, Select } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 
 const RANGES = [
@@ -49,6 +49,21 @@ export function AchievementMonth({ value }) {
         </Button>
       )}
     </div>
+  );
+}
+
+/** Super admin picks which executive's performance to open (URL param `person`). */
+export function SalesPersonSelect({ people, value }) {
+  const { setParams, pending } = useQueryState();
+  return (
+    <Select
+      aria-label="Sales person"
+      value={String(value ?? "")}
+      disabled={pending}
+      className="w-64"
+      options={people.map((p) => ({ value: String(p.id), label: p.role ? `${p.name} (${p.role})` : p.name }))}
+      onChange={(e) => setParams({ person: e.target.value }, { resetPage: false })}
+    />
   );
 }
 

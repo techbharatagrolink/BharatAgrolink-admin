@@ -149,6 +149,7 @@ function adaptOrder(data, user) {
     returns: [],
     refunds: [],
     tickets: [],
+    orderCosts: Array.isArray(data.orderCosts) ? data.orderCosts : [],
     timeline: [
       { id: "placed", title: "Order placed", description: `${data.source || "Website"} · ${mode}`, at: data.createdAt },
       ...(data.remarks || []).map((remark, index) => ({

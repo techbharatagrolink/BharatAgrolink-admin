@@ -23,8 +23,8 @@ import { navigation } from "./navigation";
 const norm = (link) => String(link ?? "").trim().replace(/^\/+/, "");
 const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 
-/** Sidebar routes whose screen is not built yet (bulk orders, plan phase 10). Remove a route when its page lands. */
-const PENDING_ROUTES = new Set(["/admin/bulk-orders/new"]);
+/** Sidebar routes whose screen is not built yet. Remove a route when its page lands. */
+const PENDING_ROUTES = new Set();
 
 const isRouteLink = (link) => String(link ?? "").trim().startsWith("/admin/");
 
@@ -232,7 +232,7 @@ export function buildSidebar(items) {
       const children = uniqueByHref(leavesOf(node.children));
       if (children.length) sectionItems.push({ key: `menu-${node.id}`, label: node.name, icon: rowIcon(node.icon, meta?.icon), sensitive: meta?.sensitive || undefined, children });
     }
-    if (sectionItems.length) sections.push({ section: top.name, items: sectionItems });
+    if (sectionItems.length) sections.push({ key: `menu-${top.id}`, section: top.name, icon: rowIcon(top.icon), items: sectionItems });
   }
 
   return sections.length ? sections : FALLBACK;

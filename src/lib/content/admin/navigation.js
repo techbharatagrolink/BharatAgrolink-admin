@@ -16,6 +16,7 @@
 export const navigation = [
   {
     section: "Overview",
+    icon: "LayoutDashboard",
     items: [
       {
         key: "founder-dashboard",
@@ -51,6 +52,7 @@ export const navigation = [
   },
   {
     section: "Seller",
+    icon: "Store",
     items: [
       {
         key: "seller-dashboard",
@@ -135,6 +137,7 @@ export const navigation = [
   },
   {
     section: "Marketing",
+    icon: "Megaphone",
     items: [
       {
         key: "mktg-dashboard",
@@ -180,6 +183,7 @@ export const navigation = [
   },
   {
     section: "Sales",
+    icon: "ShoppingCart",
     items: [
       {
         key: "sales-overview",
@@ -284,6 +288,7 @@ export const navigation = [
   },
   {
     section: "Operation",
+    icon: "Truck",
     items: [
       {
         key: "ops-control",
@@ -369,6 +374,7 @@ export const navigation = [
   },
   {
     section: "Tech",
+    icon: "Cpu",
     items: [
       {
         key: "tech-settings",
@@ -386,6 +392,7 @@ export const navigation = [
   },
   {
     section: "Finance",
+    icon: "TrendingUp",
     items: [
       {
         key: "finance-dashboard",
@@ -463,6 +470,7 @@ export const navigation = [
   },
   {
     section: "Support",
+    icon: "LifeBuoy",
     items: [
       {
         key: "support-dashboard",
@@ -498,6 +506,7 @@ export const navigation = [
   },
   {
     section: "Admin",
+    icon: "Settings",
     items: [
       {
         key: "user-staff",
@@ -564,6 +573,7 @@ export const navigation = [
   },
   {
     section: "Help",
+    icon: "CircleHelp",
     items: [{ key: "help", label: "Help & Guide", icon: "CircleHelp", href: "/admin/help" }],
   },
 ];
@@ -580,6 +590,7 @@ export const hiddenRoutes = [
   { pattern: /^\/admin\/support\/[^/]+$/, label: "Ticket Details", parent: "/admin/support" },
   { pattern: /^\/admin\/crm\/leads\/[^/]+$/, label: "Lead Details", parent: "/admin/crm/leads" },
   { pattern: /^\/admin\/b2b\/buyers\/[^/]+$/, label: "Buyer 360", parent: "/admin/b2b/buyers" },
+  { pattern: /^\/admin\/b2b\/orders\/new$/, label: "Create B2B Order", parent: "/admin/b2b/orders" },
   { pattern: /^\/admin\/b2b\/orders\/[^/]+$/, label: "B2B Order Details", parent: "/admin/b2b/orders" },
   { pattern: /^\/admin\/roles\/[^/]+$/, label: "Edit Role", parent: "/admin/roles" },
   { pattern: /^\/admin\/account$/, label: "My Account" },

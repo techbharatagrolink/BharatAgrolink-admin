@@ -57,6 +57,7 @@ export const pages = {
   "bulk.orders": ["bulk_orders/orders.php"],
   "bulk.shipments": ["bulk_orders/shipments.php"],
   "bulk.quotations": ["bulk_orders/quotations.php"],
+  "bulk.create": ["bulk_orders/create_order.php"],
 };
 
 export const livePaths = [
@@ -65,4 +66,5 @@ export const livePaths = [
   "/admin/bulk-orders/shipments",
   "/admin/bulk-orders/quotations",
   "/admin/bulk-orders/products",
+  "/admin/bulk-orders/new",
 ];

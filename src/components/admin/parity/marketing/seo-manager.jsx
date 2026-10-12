@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { deleteSeoPageAction, loadSeoPageAction, saveSeoPageAction } from "@/lib/actions/admin/parity/marketing";
 import { formatNumber } from "@/lib/format";
+import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
@@ -73,9 +74,14 @@ export function SeoManager({ items, meta, q, can, siteUrl }) {
     router.refresh();
   }
 
+  // Read the id up front. The React compiler compares this during render, and
+  // `removing` is null until a row is chosen, so `removing.id` crashes the page.
+  const removingId = removing?.id ?? null;
+
   async function remove() {
+    if (removingId == null) return;
     setBusy(true);
-    const result = await deleteSeoPageAction(removing.id);
+    const result = await deleteSeoPageAction(removingId);
     setBusy(false);
     setRemoving(null);
     if (!result.ok) return notify({ message: result.message, tone: "error" });
@@ -211,7 +217,16 @@ export function SeoManager({ items, meta, q, can, siteUrl }) {
             {({ id }) => <Textarea id={id} rows={2} maxLength={2000} value={form.metaKeywords} onChange={set("metaKeywords")} />}
           </Field>
           <Field label="Page Content" hint="HTML shown on the page." className="sm:col-span-2">
-            {({ id, describedBy }) => <Textarea id={id} rows={10} value={form.content} onChange={set("content")} aria-describedby={describedBy} className="font-mono text-xs" />}
+            {({ id, describedBy }) => (
+              <ProductHtmlEditor
+                key={editing ?? "new"}
+                id={id}
+                describedBy={describedBy}
+                label="Page Content"
+                value={form.content}
+                onChange={(html) => setForm((current) => ({ ...current, content: html }))}
+              />
+            )}
           </Field>
         </form>
       </Dialog>
