@@ -195,7 +195,7 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
       <ConfigCard key={config.configId} config={config} canEdit={permissions.edit} onSaved={refresh} />
 
       <Card>
-        <CardHeader title="Product margins" description="Lowest margin first. Open a product to change its take rate or actual costs in Step 3." />
+        <CardHeader title="Contribution margin" description="Lowest contribution margin first. Open a product to change its take rate or actual costs in Step 3." />
         <div className="flex flex-wrap items-end gap-2 border-b border-line p-3">
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); go({ q: query.trim(), page: "1" }); }}>
             <Input aria-label="Search products" value={query} placeholder="Product id, name or SKU" onChange={(e) => setQuery(e.target.value)} />
@@ -218,7 +218,7 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
                 <th className="px-3 py-2 text-right font-medium">Display price</th>
                 <th className="px-3 py-2 text-right font-medium">Net SC</th>
                 <th className="px-3 py-2 text-right font-medium">Costs (actual)</th>
-                <th className="px-3 py-2 text-right font-medium">Margin</th>
+                <th className="px-3 py-2 text-right font-medium">Contribution margin</th>
               </tr>
             </thead>
             <tbody>

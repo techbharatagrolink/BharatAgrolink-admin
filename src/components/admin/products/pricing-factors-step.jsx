@@ -39,11 +39,33 @@ function subtractMoney(a, b) {
   return `${d < 0n ? "-" : ""}${abs / 100n}.${String(abs % 100n).padStart(2, "0")}`;
 }
 
-function achievementTone(bps) {
-  if (bps == null) return "neutral";
-  if (bps <= 10_000) return "success";
-  if (bps <= 11_500) return "warning";
+/** At or under the target percent of display price is on plan; past it warns, then fails. */
+function achievementTone(achievementBps, targetBps) {
+  if (achievementBps == null) return "neutral";
+  const target = Number(targetBps);
+  if (!Number.isFinite(target)) return "neutral";
+  if (achievementBps <= target) return "success";
+  if (target > 0 && achievementBps <= Math.round(target * 1.15)) return "warning";
   return "danger";
+}
+
+function marginAchievementTone(achievementBps, targetBps) {
+  if (achievementBps == null) return "neutral";
+  if (achievementBps < 0) return "danger";
+  if (targetBps != null && achievementBps < targetBps) return "warning";
+  return "success";
+}
+
+/** Cost-factor variance is target − actual, so a leading minus means the actual ran over target. */
+function varianceClass(amount) {
+  if (amount == null || amount === "0.00" || amount === "—") return "text-success-ink";
+  return String(amount).startsWith("-") ? "text-danger-ink" : "text-success-ink";
+}
+
+/** Margin variance uses the same target − actual sign; a shortfall (positive) is the miss. */
+function marginVarianceClass(amount) {
+  if (amount == null || amount === "0.00" || amount === "—") return "text-success-ink";
+  return String(amount).startsWith("-") ? "text-success-ink" : "text-danger-ink";
 }
 
 function draftFrom(pricing) {
@@ -162,9 +184,11 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const warnings = result.warnings || [];
   const canSave = canEdit && !pending && !previewing && result.ok !== false && errors.length === 0;
   const anyOverridden = draft.factors.some((f) => f.overridden);
-  /* Any rate below 100% works: display price = NRV / (1 − take rate). */
-  const minRate = 0;
-  const maxRate = 99.99;
+  /* Slider and server both use pricing_config min/max take rate, not a fixed 0–100 band. */
+  const minRate = Number(config.minTakeRateBps ?? 0) / 100;
+  const maxRate = Number(config.maxTakeRateBps ?? 9999) / 100;
+  const rateLabel = `${minRate.toFixed(2)}% – ${maxRate.toFixed(2)}%`;
+  const sliderRate = Math.min(maxRate, Math.max(minRate, Number(draft.takeRate) || minRate));
 
   const save = () => startTransition(async () => {
     const res = await saveProductPricingAction(productId, { ...body(draft), reason });
@@ -216,14 +240,14 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
         <div className="space-y-3 rounded-lg border border-line p-3">
           {draft.mode === "TAKE_RATE" ? (
             <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
-              <Field label="Take rate (0% – 100%)" hint="Share of the display price kept by the platform: 1 − NRV / display price. Must be below 100%.">
-                {({ id }) => <input id={id} type="range" className="w-full accent-brand-600" min={minRate} max={maxRate} step="0.01" value={Number(draft.takeRate) || minRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
+              <Field label={`Take rate (${rateLabel})`} hint="Share of the display price kept by the platform: 1 − NRV / display price. Must stay between the configured minimum and maximum.">
+                {({ id }) => <input id={id} type="range" className="w-full accent-brand-600" min={minRate} max={maxRate} step="0.01" value={sliderRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
               </Field>
               <Field label="Take rate %">{({ id }) => <Input id={id} inputMode="decimal" value={draft.takeRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}</Field>
             </div>
           ) : (
             <div className="grid items-end gap-3 sm:grid-cols-2">
-              <Field label="Target margin %" hint="Platform margin after net service charge pays the actual costs.">{({ id }) => <Input id={id} inputMode="decimal" value={draft.targetMargin} onChange={(e) => update({ targetMargin: e.target.value })} disabled={!canEdit} />}</Field>
+              <Field label="Target margin %" hint="Contribution margin after net service charge pays the actual costs.">{({ id }) => <Input id={id} inputMode="decimal" value={draft.targetMargin} onChange={(e) => update({ targetMargin: e.target.value })} disabled={!canEdit} />}</Field>
               <div className="pb-2 text-sm">Effective take rate <span className="font-semibold tabular-nums">{result.takeRate ? `${trimRate(result.takeRate)}%` : "—"}</span></div>
             </div>
           )}
@@ -265,11 +289,21 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                           {f.overridden && canEdit && <button type="button" className="text-xs text-brand-700 underline" onClick={() => setFactor(f.code, { overridden: false, actual: "" })}>Reset</button>}
                         </div>
                       </td>
-                      <td className="py-2 pr-2 text-right"><Badge tone={achievementTone(r.achievementBps)}>{bpsToPct(r.achievementBps)}</Badge></td>
-                      <td className={`py-2 text-right tabular-nums ${r.varianceAmount && !String(r.varianceAmount).startsWith("-") && r.varianceAmount !== "0.00" ? "text-danger-ink" : "text-success-ink"}`}>{r.varianceAmount ?? "—"}</td>
+                      <td className="py-2 pr-2 text-right"><Badge tone={achievementTone(r.achievementBps, r.targetBps)}>{bpsToPct(r.achievementBps)}</Badge></td>
+                      <td className={`py-2 text-right tabular-nums ${varianceClass(r.varianceAmount)}`}>{r.varianceAmount ?? "—"}</td>
                     </tr>
                   );
                 })}
+                <tr data-factor="CONTRIBUTION_MARGIN">
+                  <td className="py-2 pr-2">Contribution margin</td>
+                  <td className="py-2 pr-2 text-right tabular-nums">{bpsToPct(result.marginTargetBps ?? config.defaultTargetMarginBps)}</td>
+                  <td className="py-2 pr-2 text-right tabular-nums">{money(result.marginTargetAmount)}</td>
+                  <td className="py-2 pr-2">
+                    <div className={`w-28 text-right tabular-nums ${result.platformMarginBps < 0 ? "text-danger-ink" : ""}`}>{money(result.platformMargin)}</div>
+                  </td>
+                  <td className="py-2 pr-2 text-right"><Badge tone={marginAchievementTone(result.platformMarginBps, result.marginTargetBps ?? config.defaultTargetMarginBps)}>{bpsToPct(result.platformMarginBps)}</Badge></td>
+                  <td className={`py-2 text-right tabular-nums ${marginVarianceClass(result.marginVarianceAmount)}`}>{result.marginVarianceAmount ?? "—"}</td>
+                </tr>
               </tbody>
               <tfoot>
                 <tr className="text-sm font-semibold">
@@ -278,7 +312,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                   <td className="py-2 pr-2 text-right tabular-nums">{money(result.totalFactorTarget)}</td>
                   <td className="py-2 pr-2 tabular-nums">{money(result.totalFactorActual)}</td>
                   <td />
-                  <td className="py-2 text-right tabular-nums">{subtractMoney(result.totalFactorActual, result.totalFactorTarget)}</td>
+                  <td className={`py-2 text-right tabular-nums ${varianceClass(subtractMoney(result.totalFactorTarget, result.totalFactorActual))}`}>{subtractMoney(result.totalFactorTarget, result.totalFactorActual)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -303,7 +337,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             <SummaryRow label="GST on service charge" value={money(result.scGst)} />
             <SummaryRow label="Net service charge" value={money(result.netServiceCharge)} strong />
             <SummaryRow label="Cost factors (actual)" value={money(result.totalFactorActual)} />
-            <SummaryRow label="Platform margin" value={`${money(result.platformMargin)} · ${bpsToPct(result.platformMarginBps)}`} strong tone={result.platformMarginBps < 0 ? "danger" : result.platformMarginBps < config.minMarginBps ? "warning" : undefined} />
+            <SummaryRow label="Contribution margin" value={`${money(result.platformMargin)} · ${bpsToPct(result.platformMarginBps)}`} strong tone={result.platformMarginBps < 0 ? "danger" : result.platformMarginBps < config.minMarginBps ? "warning" : undefined} />
             <div className="mt-2 border-t border-line pt-2">
               <SummaryRow label="TCS balance retained" hint="Memo: TCS collected, not part of margin" value={money(result.tcsBalance)} />
               <SummaryRow label="Seller payout" hint="NRV − TCS" value={money(result.sellerPayout)} />
