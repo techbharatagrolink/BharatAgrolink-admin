@@ -26,7 +26,10 @@ import { useToast } from "@/components/ui/toast";
 /* Rows that open Menu Master and Manage Role; the API refuses to hide or delete them. */
 const PROTECTED = new Set(["menu-master.php", "manage-role.php", "manage_roles.php"]);
 const LOCKED_HINT = "This entry controls access to Menu Master and Manage Role.";
-const GRID = "md:grid md:grid-cols-[minmax(0,2.3fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,2.2fr)_6.75rem] md:items-center md:gap-4";
+/* Container queries: the sidebar eats into the viewport, so the card's own width decides table vs stacked rows. */
+const GRID = "@3xl:grid @3xl:grid-cols-[minmax(0,2.3fr)_minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,2.2fr)_6.75rem] @3xl:items-center @3xl:gap-4";
+const CELL = "mt-1.5 min-w-0 @3xl:mt-0";
+const CELL_LABEL = "mr-1 text-[11px] font-medium tracking-wide text-ink-muted uppercase @3xl:hidden";
 
 const norm = (link) => String(link ?? "").trim().replace(/^\/+/, "");
 const isGroupLink = (link) => {
@@ -78,7 +81,7 @@ function RoleList({ roles }) {
         </Badge>
       ))}
       {roles.length > 3 && (
-        <button type="button" onClick={() => setOpen((v) => !v)} className="rounded-full px-1.5 text-[11.5px] font-medium text-brand-700 hover:underline" title={open ? undefined : roles.slice(3).join(", ")}>
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="rounded-full px-1.5 text-[11.5px] font-medium text-brand-700 hover:underline" title={open ? undefined : roles.slice(3).join(", ")}>
           {open ? "Show less" : `+${roles.length - 3} more`}
         </button>
       )}
@@ -105,15 +108,15 @@ function Opens({ node, kind }) {
   );
 }
 
-function MoveButtons({ index, count, onMove, disabled }) {
+function MoveButtons({ name, index, count, onMove, disabled }) {
   if (count < 0) return null;
   return (
     <>
-      <Button variant="ghost" size="icon-sm" aria-label="Move up" title="Move up" disabled={disabled || index === 0} onClick={() => onMove("up")}>
-        <ArrowUp className="size-4" />
+      <Button variant="ghost" size="icon-sm" aria-label={`Move ${name} up`} title="Move up" disabled={disabled || index === 0} onClick={() => onMove("up")}>
+        <ArrowUp className="size-4" aria-hidden />
       </Button>
-      <Button variant="ghost" size="icon-sm" aria-label="Move down" title="Move down" disabled={disabled || index >= count - 1} onClick={() => onMove("down")}>
-        <ArrowDown className="size-4" />
+      <Button variant="ghost" size="icon-sm" aria-label={`Move ${name} down`} title="Move down" disabled={disabled || index >= count - 1} onClick={() => onMove("down")}>
+        <ArrowDown className="size-4" aria-hidden />
       </Button>
     </>
   );
@@ -135,7 +138,7 @@ function RowMenu({ node, kind, ctx }) {
       panelClassName="w-52"
       trigger={({ toggle, props }) => (
         <Button variant="ghost" size="icon-sm" onClick={toggle} {...props}>
-          <MoreHorizontal className="size-4" />
+          <MoreHorizontal className="size-4" aria-hidden />
         </Button>
       )}
     >
@@ -167,7 +170,7 @@ function MenuRow({ node, depth, index, count, parentHidden, ctx }) {
   const pages = kind === "group" ? pageCount(ctx.full(node), true) : 0;
   const actions = (
     <div className="flex shrink-0 items-center justify-end">
-      {ctx.can.edit && <MoveButtons index={index} count={count} disabled={ctx.busy} onMove={(direction) => ctx.onMove(node, direction)} />}
+      {ctx.can.edit && <MoveButtons name={node.name} index={index} count={count} disabled={ctx.busy} onMove={(direction) => ctx.onMove(node, direction)} />}
       <RowMenu node={node} kind={kind} ctx={ctx} />
     </div>
   );
@@ -189,19 +192,21 @@ function MenuRow({ node, depth, index, count, parentHidden, ctx }) {
             </div>
             {!node.status && <Badge tone="neutral">Hidden</Badge>}
           </div>
-          <div className="md:hidden">{actions}</div>
+          <div className="@3xl:hidden">{actions}</div>
         </div>
-        <div className="mt-1.5 min-w-0 md:mt-0">
-          <span className="text-[11px] font-medium tracking-wide text-ink-muted uppercase md:hidden">Link </span>
+        <div className={CELL}>
+          <span className={CELL_LABEL}>Link</span>
           <code className="font-mono text-xs break-all text-ink-soft">{node.link || "—"}</code>
         </div>
-        <div className="mt-1.5 min-w-0 md:mt-0">
+        <div className={cn(CELL, "flex items-center @3xl:block")}>
+          <span className={CELL_LABEL}>Opens</span>
           <Opens node={node} kind={kind} />
         </div>
-        <div className="mt-1.5 min-w-0 md:mt-0">
+        <div className={cn(CELL, "flex items-start @3xl:block")}>
+          <span className={cn(CELL_LABEL, "mt-0.5 shrink-0")}>Visible to</span>
           <RoleList roles={node.roles || []} />
         </div>
-        <div className="hidden md:block">{actions}</div>
+        <div className="hidden @3xl:block">{actions}</div>
       </div>
       {(node.children || []).map((child, i, list) => (
         <MenuRow key={child.id} node={child} depth={depth + 1} index={i} count={count < 0 ? -1 : list.length} parentHidden={hidden} ctx={ctx} />
@@ -215,9 +220,9 @@ function SectionCard({ node, index, count, expanded, onToggle, canMove, ctx }) {
   const groups = groupCount(ctx.full(node));
   const pages = pageCount(ctx.full(node));
   return (
-    <Card>
+    <Card className="@container">
       <div className={cn("flex flex-wrap items-center gap-2 px-4 py-3", expanded && "border-b border-line")}>
-        <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <button type="button" onClick={onToggle} aria-expanded={expanded} className="flex min-w-48 flex-1 items-center gap-3 text-left">
           <ChevronRight className={cn("size-4 shrink-0 text-ink-muted transition-transform", expanded && "rotate-90")} aria-hidden />
           <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700", !node.status && "opacity-55")}>
             <NavIcon name={faIcon(node.icon)} className="size-4.5" />
@@ -232,20 +237,20 @@ function SectionCard({ node, index, count, expanded, onToggle, canMove, ctx }) {
             </span>
           </span>
         </button>
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1">
           {can.add && (
             <Button size="sm" variant="secondary" onClick={() => ctx.onAction("add", node, "section")} disabled={busy}>
               <Plus className="size-4" aria-hidden /> Add
             </Button>
           )}
-          {can.edit && canMove && <MoveButtons index={index} count={count} disabled={busy} onMove={(direction) => ctx.onMove(node, direction)} />}
+          {can.edit && canMove && <MoveButtons name={node.name} index={index} count={count} disabled={busy} onMove={(direction) => ctx.onMove(node, direction)} />}
           <RowMenu node={node} kind="section" ctx={ctx} />
         </div>
       </div>
       {expanded &&
         (node.children?.length ? (
           <div>
-            <div className={cn("hidden border-b border-line bg-surface-muted px-4 py-2 text-xs font-semibold text-ink-muted", GRID)}>
+            <div className={cn("hidden border-b border-line bg-surface-muted px-4 py-2 text-xs font-semibold text-ink-muted", GRID)} aria-hidden>
               <span>Menu</span>
               <span>Link</span>
               <span>Opens</span>
@@ -365,7 +370,7 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
     >
       <div className="space-y-4">
         <Field label={editing ? "Parent" : "Add to"} hint={editing && parentId !== initialParent ? "The entry moves to the end of its new parent." : undefined}>
-          {({ id }) => <Select id={id} value={parentId} onChange={(e) => changeParent(e.target.value)} options={parents} />}
+          {({ id, describedBy }) => <Select id={id} value={parentId} onChange={(e) => changeParent(e.target.value)} options={parents} aria-describedby={describedBy} />}
         </Field>
 
         {!editing && parentId !== "0" && (
@@ -376,7 +381,7 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
                 { value: "group", label: "Group", hint: "A sub-menu that holds pages" },
                 { value: "page", label: "Page", hint: "Opens a screen" },
               ].map((option) => (
-                <label key={option.value} className={cn("cursor-pointer rounded-lg border px-3 py-2", kind === option.value ? "border-brand-600 bg-brand-50" : "border-line-strong hover:bg-surface-muted")}>
+                <label key={option.value} className={cn("cursor-pointer rounded-lg border px-3 py-2 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring", kind === option.value ? "border-brand-600 bg-brand-50" : "border-line-strong hover:bg-surface-muted")}>
                   <input type="radio" name="menu-kind" value={option.value} checked={kind === option.value} onChange={() => setKind(option.value)} className="sr-only" />
                   <span className="block text-sm font-medium text-ink">{option.label}</span>
                   <span className="block text-xs text-ink-muted">{option.hint}</span>
@@ -460,12 +465,12 @@ function MenuDialog({ dialog, tree, pages, icons, onClose, onSaved }) {
         )}
 
         <Field label="Icon" hint="A Font Awesome class from the PHP admin, e.g. fa fa-truck. The preview is the icon this sidebar shows.">
-          {({ id }) => (
+          {({ id, describedBy }) => (
             <div className="flex items-center gap-2">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-muted text-ink-soft">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-muted text-ink-soft" aria-hidden>
                 <NavIcon name={faIcon(icon)} className="size-4" />
               </span>
-              <Input id={id} value={icon} maxLength={80} list={`${id}-icons`} onChange={(e) => setIcon(e.target.value)} placeholder="fa fa-cubes" className="font-mono" />
+              <Input id={id} value={icon} maxLength={80} list={`${id}-icons`} onChange={(e) => setIcon(e.target.value)} placeholder="fa fa-cubes" className="font-mono" aria-describedby={describedBy} />
               <datalist id={`${id}-icons`}>
                 {icons.map((value) => (
                   <option key={value} value={value} />
@@ -618,9 +623,9 @@ export function MenuMaster({ tree, can }) {
           <label className="relative block min-w-0 sm:w-80">
             <span className="sr-only">Search menus</span>
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or link" className="pl-9" />
+            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or link" className="pl-9" />
           </label>
-          <Checkbox label={`Show hidden (${stats.hidden})`} checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
+          <Checkbox label={`Show hidden (${stats.hidden})`} checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} className="shrink-0 whitespace-nowrap" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-ink-muted tabular">

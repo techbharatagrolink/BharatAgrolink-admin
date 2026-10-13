@@ -7,6 +7,7 @@ import { b2bOpsResources } from "./b2b-ops";
 import { adminResources } from "./admin";
 import { parityResources, parityRoutes } from "./parity";
 import { portResources, portRoutes } from "./port";
+import { sellerServiceResources } from "./seller-services";
 
 /**
  * Declarative list screens. A resource describes columns, filters, actions and
@@ -23,6 +24,7 @@ export const resources = {
   ...adminResources,
   ...parityResources,
   ...portResources,
+  ...sellerServiceResources,
 };
 
 /** Admin route → resource key, for routes rendered by the generic page. */
@@ -50,6 +52,8 @@ export const resourceRoutes = {
   "/admin/pricing/master-nrv": "pricing.masterNrv",
   "/admin/pricing/commission": "pricing.commission",
   "/admin/pricing/cost-config": "pricing.costConfig",
+  "/admin/seller-services/charges": "sellerServices.charges",
+  "/admin/seller-services/requests": "sellerServices.requests",
 
   "/admin/orders/invoices": "orders.invoices",
   "/admin/orders/transactions": "orders.transactions",
