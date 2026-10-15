@@ -305,17 +305,23 @@ export function DataTable({
                 const href = resolveHref(rowHref, row);
                 const actions = rowActions.filter((a) => matchesWhen(a, row));
                 return (
-                  <tr key={key} className={cn("border-b border-line last:border-0 hover:bg-surface-muted", selected.includes(key) && "bg-brand-50/60")}>
+                  <tr
+  key={key}
+  className={cn(
+    "group border-b border-line last:border-0",
+    selected.includes(key) && "bg-brand-50/60"
+  )}
+>
                     {showSelection && (
-                      <td className="border-b border-line px-3 py-2">
+                      <td className="border-b border-line bg-surface px-3 py-2 group-hover:bg-surface-muted">
                         <Checkbox aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                       </td>
                     )}
-                    {showSerial && <td className={cn("border-b border-line bg-surface px-3 text-right align-middle text-ink-muted tabular", dense ? "py-2" : "py-3")}>{serialOf(index)}</td>}
+                    {showSerial && <td className={cn("border-b border-line bg-surface group-hover:bg-surface-muted px-3 text-right align-middle text-ink-muted tabular", dense ? "py-2" : "py-3")}>{serialOf(index)}</td>}
                     {visible.map((column, ci) => (
                       <td
                         key={column.key}
-                        className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
+                        className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft group-hover:bg-surface-muted", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
                         style={{ maxWidth: column.width || 320 }}
                       >
                         {ci === 0 && href && !column.href && column.type !== "image" ? (
@@ -328,8 +334,11 @@ export function DataTable({
                         )}
                       </td>
                     ))}
-                    {hasRowActions && <td className="border-b border-line px-3 py-2 text-right">{actionsMenu(key, actions)}</td>}
-                  </tr>
+                   {hasRowActions && (
+  <td className="border-b border-line bg-surface px-3 py-2 text-right group-hover:bg-surface-muted">
+    {actionsMenu(key, actions)}
+  </td>
+)}    </tr>
                 );
               })}
             </tbody>
