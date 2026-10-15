@@ -288,10 +288,11 @@ export const coreResources = {
     search: "Search vendor",
     searchFields: ["name", "id"],
     defaultSort: "score:desc",
-    rowHref: "/admin/vendors/{id}",
+    // sellerId is the seller's account id; `id` is the score snapshot row and opens no vendor.
+    rowHref: "/admin/vendors/{sellerId}",
     exportable: true,
     columns: [
-      { key: "name", label: "Vendor", width: 240, sub: "id" },
+      { key: "name", label: "Vendor", width: 240, sub: "vendorId" },
       { key: "score", label: "Score", type: "number", sortable: true },
       { key: "orders", label: "Order lines", type: "number", sortable: true },
       { key: "gmv", label: "Delivered GMV", type: "currency", sortable: true },
