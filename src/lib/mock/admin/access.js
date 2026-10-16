@@ -18,7 +18,7 @@ export function buildRoles() {
       name: "Finance Manager",
       description: "Finance, payouts, refunds, ledgers and finance reports.",
       permissions: {
-        ...grant(["dashboard.main", "dashboard.finance", "orders", "orders.invoices", "orders.transactions", "vendors", "vendors.reports", "rto", "reports", "customers"], VIEW),
+        ...grant(["dashboard.main", "dashboard.finance", "orders", "orders.invoices", "orders.transactions", "vendors", "vendors.reports", "vendors.agreements", "rto", "reports", "customers"], VIEW),
         ...grant(["finance", "finance.ledger", "finance.tax", "finance.expenses", "finance.wallet", "payouts", "payouts.access", "refunds", "b2b.finance"], WRITE),
         "finance.holdLedger": ALL,
       },
@@ -49,7 +49,7 @@ export function buildRoles() {
       description: "Team pipeline, CRM, targets and B2B approvals.",
       permissions: {
         ...grant(["dashboard.main", "orders", "customers", "sales.payouts"], VIEW),
-        ...grant(["crm", "crm.leads", "crm.legacy", "crm.whatsapp", "crm.aiCalls", "crm.callAudit", "crm.circles", "sales", "sales.targets", "b2b", "b2b.buyers", "b2b.rfqs", "b2b.quotations", "b2b.orders", "bulk"], WRITE),
+        ...grant(["crm", "crm.leads", "crm.legacy", "crm.whatsapp", "crm.aiCalls", "crm.callAudit", "crm.circles", "sales", "sales.targets", "b2b", "b2b.buyers", "b2b.rfqs", "b2b.quotations", "b2b.orders", "bulk", "vendors.agreements"], WRITE),
       },
     },
     {

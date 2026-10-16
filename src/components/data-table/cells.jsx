@@ -174,7 +174,8 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
   const value = row[column.key];
   const sub = column.sub ? row[column.sub] : null;
   let content;
-  if (column.type === "lineStatus") content = <LineStatusCell row={row} activeLineId={activeLineId} onPickLine={onPickLine} />;
+  if (typeof column.render === "function") content = column.render(row, value);
+  else if (column.type === "lineStatus") content = <LineStatusCell row={row} activeLineId={activeLineId} onPickLine={onPickLine} />;
   else if (column.type === "remarks") content = <RemarksCell remarks={value} orderId={row.id} />;
   else if (column.type === "image")
     content = value ? (

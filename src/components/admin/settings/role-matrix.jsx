@@ -11,6 +11,10 @@ import { useToast } from "@/components/ui/toast";
 import { updateRolePermissionsAction } from "@/lib/actions/admin/settings";
 
 const ACTIONS = ["view", "add", "edit", "delete"];
+const HEADING_HINT = "Section headings only use View; the API saves them as view-only.";
+
+/** Section headings ("#..." menu links) open no page, so only View applies to them. */
+const notApplicable = (p, action) => p.groupMenu && action !== "view";
 
 function countChanges(a, b, keys) {
   let n = 0;
@@ -80,10 +84,12 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
                   <p className="text-sm text-ink">
                     {p.label}
                     {p.sensitive && <span className="ml-1.5 text-[11px] font-medium text-warning-ink">sensitive</span>}
+                    {p.groupMenu && <span className="ml-1.5 text-[11px] font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
                   </p>
                   <p className="font-mono text-[11px] break-all text-ink-muted">{p.key}</p>
                   <div className="mt-2 grid grid-cols-4 gap-2">
                     {ACTIONS.map((a) => {
+                      if (notApplicable(p, a)) return <span key={a} className="text-[13px] text-ink-muted" title={HEADING_HINT}>—</span>;
                       const on = (grants[p.key] ?? []).includes(a);
                       const allowed = editable && (grantable === true || grantable?.[p.key]?.includes(a) || on);
                       return <Checkbox key={a} label={<span className="capitalize">{a}</span>} checked={on} disabled={!allowed} onChange={(e) => toggle(p.key, a, e.target.checked)} aria-label={`${a} ${p.label}`} className="text-[13px]" />;
@@ -117,9 +123,17 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
                     <th scope="row" className="px-4 py-2 text-left font-normal">
                       <span className="text-ink">{p.label}</span>
                       {p.sensitive && <span className="ml-1.5 text-[11px] font-medium text-warning-ink">sensitive</span>}
+                      {p.groupMenu && <span className="ml-1.5 text-[11px] font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
                       <span className="block font-mono text-[11px] text-ink-muted">{p.key}</span>
                     </th>
                     {ACTIONS.map((a) => {
+                      if (notApplicable(p, a)) {
+                        return (
+                          <td key={a} className="px-2 py-2 text-center text-ink-muted" title={HEADING_HINT}>
+                            <span aria-label={`${a} does not apply to ${p.label}`}>—</span>
+                          </td>
+                        );
+                      }
                       const on = (grants[p.key] ?? []).includes(a);
                       const allowed = editable && (grantable === true || grantable?.[p.key]?.includes(a) || on);
                       return (

@@ -67,8 +67,9 @@ export const navigation = [
         children: [
           { key: "vendors-all", label: "All Sellers", href: "/admin/vendors", page: "seller.php", permission: "vendors" },
           { key: "vendors-new", label: "Add Seller", href: "/admin/vendors/new", page: "add_seller.php", permission: "vendors.add" },
-          { key: "vendors-verification", label: "Seller Approval", href: "/admin/vendors/verification", page: "seller.php?status=pending", permission: "vendors.verification", badge: "pendingVendors" },
-          { key: "vendors-reports", label: "Vendor Reports", href: "/admin/vendors/reports", permission: "vendors.reports" },
+{ key: "vendors-verification", label: "Seller Approval", href: "/admin/vendors/verification", page: "seller.php?status=pending", permission: "vendors.verification", badge: "pendingVendors" },
+           { key: "vendors-agreements", label: "Seller Agreements", href: "/admin/vendors/agreements", page: "seller_agreements.php", permission: "vendors.agreements" },
+           { key: "vendors-reports", label: "Vendor Reports", href: "/admin/vendors/reports", permission: "vendors.reports" },
         ],
       },
       {
@@ -210,6 +211,7 @@ export const navigation = [
           { key: "orders-all", label: "B2C Orders", href: "/admin/orders", page: "manage_orders.php", permission: "orders" },
           { key: "orders-whatsapp", label: "WhatsApp Orders", href: "/admin/orders/whatsapp", page: "whatsapp_orders.php", permission: "orders.whatsapp" },
           { key: "orders-new", label: "Create Order", href: "/admin/orders/new", page: "create_order.php", permission: "orders", action: "add" },
+          { key: "orders-payment-attempts", label: "Payment Attempts", href: "/admin/payment-attempts", page: "manual_payment_attempts.php", permission: "orders" },
           { key: "orders-invoices", label: "Invoices", href: "/admin/orders/invoices", permission: "orders.invoices" },
           { key: "orders-transactions", label: "Date-wise Transactions", href: "/admin/orders/transactions", permission: "orders.transactions" },
           { key: "orders-report", label: "Order Reports", href: "/admin/orders/report", page: "orders_report.php", permission: "orders.transactions" },
