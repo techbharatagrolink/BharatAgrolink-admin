@@ -5,7 +5,7 @@ import { assertPermission } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api";
 import { lookupVendorIfsc, saveVendorBank, saveVendorKycFiles, verifyVendorBank } from "@/lib/services/admin/people";
 
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const MAX_IMAGE = 5 * 1024 * 1024;
 const IFSC = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
@@ -60,8 +60,8 @@ export async function saveVendorKycAction(id, formData) {
   for (const name of ["seller_logo", "pan_card", "aadhar_card", "business_proof"]) {
     const file = formData.get(name);
     if (!file || typeof file !== "object" || !file.size) continue;
-    if (!IMAGE_TYPES.includes(file.type)) return { ok: false, message: "Only JPG, PNG or WEBP images are allowed." };
-    if (file.size > MAX_IMAGE) return { ok: false, message: "Each image must be 5 MB or smaller." };
+    if (!ALLOWED_TYPES.includes(file.type)) return { ok: false, message: "Only JPG, PNG, WebP images or PDF documents are allowed." };
+    if (file.size > MAX_IMAGE) return { ok: false, message: "Each file must be 5 MB or smaller." };
     body.append(name, file, file.name || name);
     count += 1;
   }

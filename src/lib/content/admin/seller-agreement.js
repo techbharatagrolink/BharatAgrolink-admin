@@ -399,3 +399,4 @@ export function agreementDetails(party = {}, acceptance = null) {
     ],
   };
 }
+
