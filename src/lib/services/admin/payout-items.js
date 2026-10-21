@@ -8,6 +8,7 @@ import { can } from "@/lib/auth/permissions";
  *   GET   /api/admin/payouts/{id}/items/export?...        (.xlsx, proxied by the documents route)
  *   GET   /api/admin/payouts/{id}/documents/{doc}?...     (invoice, order-summary, payment-receipt, order-report)
  *   POST  /api/admin/payouts/{id}/items/pay                (multipart: transactionId, itemIds, file)
+ *   POST  /api/admin/payouts/{id}/items/payment-stop       ({ action: stop|resume, itemIds, reason })
  *   PATCH /api/admin/payouts/{id}/items/{itemId}
  *   GET   /api/admin/payouts/{id}/items/{itemId}/timeline | /proof
  * Cycles are only filtered here; there is no shift or reset.
@@ -78,6 +79,17 @@ export async function payPayoutItems(id, formData, user) {
     return { ok: true, ...data };
   } catch (error) {
     return fail(error, "The payment could not be saved.");
+  }
+}
+
+/** Stop or resume payment for items (PHP stop_payout_payment.php). */
+export async function setPayoutItemPaymentStop(id, input, user) {
+  if (!can(user, "payouts", "edit")) return { ok: false, message: "You do not have permission to stop or resume payouts." };
+  try {
+    const { data } = await api(`admin/payouts/${encodeURIComponent(id)}/items/payment-stop`, { method: "POST", token: user.token, body: input });
+    return { ok: true, ...data };
+  } catch (error) {
+    return fail(error, "The payment could not be updated.");
   }
 }
 

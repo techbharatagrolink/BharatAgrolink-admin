@@ -4,12 +4,12 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Field, Input } from "@/components/ui/form";
+import { Field, Input, Textarea } from "@/components/ui/form";
 import { Notice, Timeline } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
 import { formatDateTime, formatINR } from "@/lib/format";
-import { payPayoutItemsAction, payoutItemTimelineAction, updatePayoutItemAction } from "@/lib/actions/admin/payout-items";
+import { payPayoutItemsAction, payoutItemPaymentStopAction, payoutItemTimelineAction, updatePayoutItemAction } from "@/lib/actions/admin/payout-items";
 
 const PROOF_TYPES = ".pdf,.jpg,.jpeg,.png,.gif,.webp";
 const fileClasses = "block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium";
@@ -76,6 +76,71 @@ export function PayItemsDialog({ payoutId, items, onClose, onPaid }) {
           {({ id }) => <input id={id} type="file" accept={PROOF_TYPES} onChange={(e) => setFile(e.target.files?.[0] ?? null)} className={fileClasses} />}
         </Field>
         <p className="text-xs text-ink-muted">The transaction date is recorded as now. Only pending items are updated; paid items are left unchanged.</p>
+      </div>
+    </Dialog>
+  );
+}
+
+/**
+ * PHP "Stop Payment" / "Resume Payment". A stopped item stays unpaid in its own cycle (not forwarded
+ * to the next cycle) and cannot be paid until payment is resumed. mode: "stop" | "resume".
+ */
+export function PaymentStopDialog({ payoutId, mode, items, onClose, onDone }) {
+  const router = useRouter();
+  const { notify } = useToast();
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState(null);
+  const [busy, startBusy] = useTransition();
+  const open = items.length > 0;
+  const stop = mode === "stop";
+
+  const submit = () => {
+    setError(null);
+    startBusy(async () => {
+      const r = await payoutItemPaymentStopAction(payoutId, mode, items.map((i) => i.id), reason.trim());
+      if (!r.ok) return setError(r.message);
+      notify({ message: r.message, tone: "success" });
+      onDone?.();
+      onClose();
+      router.refresh();
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={busy ? () => {} : onClose}
+      title={stop ? "Stop Payment" : "Resume Payment"}
+      description={`${items.length} item${items.length === 1 ? "" : "s"}`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button variant={stop ? "danger" : "primary"} onClick={submit} loading={busy}>{stop ? "Stop payment" : "Resume payment"}</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {error && <Notice tone="danger">{error}</Notice>}
+        <p className="text-sm text-ink-soft">
+          {stop
+            ? "These items stay unpaid in their cycle and are not forwarded to the next cycle. They cannot be paid until payment is resumed."
+            : "These items become payable again."}
+        </p>
+        <div className="max-h-40 overflow-auto rounded-lg border border-line text-xs">
+          <ul className="divide-y divide-line">
+            {items.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-1.5">
+                <span className="min-w-0 truncate"><span className="font-mono">{r.orderId}</span> · {r.productSku}</span>
+                <span className="shrink-0 tabular">{formatINR(r.finalPayout)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {stop && (
+          <Field label="Reason" hint="Optional. Shown in Cycle Movement and the item history.">
+            {({ id }) => <Textarea id={id} rows={2} value={reason} maxLength={255} onChange={(e) => setReason(e.target.value)} />}
+          </Field>
+        )}
       </div>
     </Dialog>
   );

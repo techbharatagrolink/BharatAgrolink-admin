@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Download, FileText, History, ImageIcon, Pencil, RefreshCw, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, Ban, ChevronLeft, ChevronRight, Download, FileText, History, ImageIcon, Pencil, Play, RefreshCw, Wallet } from "lucide-react";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { EditItemDialog, ItemHistoryDialog, PayItemsDialog } from "./payout-item-dialogs";
+import { EditItemDialog, ItemHistoryDialog, PayItemsDialog, PaymentStopDialog } from "./payout-item-dialogs";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthLabel = (ym) => {
@@ -38,13 +38,23 @@ const COLUMNS = [
     render: (r) => (r.balInvoiceNumber ? <span className="font-mono text-xs" title={r.balInvoiceStored ? "Saved on the order" : "Computed as in PHP (not saved)"}>{r.balInvoiceNumber}</span> : <span className="text-ink-muted">—</span>),
   },
   { group: "basic", key: "balInvoiceDate", label: "Invoice Date Bharat Agrolink", width: 120, render: (r) => formatDate(r.balInvoiceDate) },
-  { group: "basic", key: "status", label: "Payment Status", filter: { key: "status", type: "status" }, width: 120, render: (r) => <StatusBadge status={r.status} /> },
+  {
+    group: "basic", key: "status", label: "Payment Status", filter: { key: "status", type: "status" }, width: 140,
+    render: (r) =>
+      r.paymentStopped ? (
+        <span title={["Payment stopped", r.paymentStopReason, r.paymentStoppedBy, r.paymentStoppedAt && formatDateTime(r.paymentStoppedAt)].filter(Boolean).join(" · ")}>
+          <Badge tone="danger" dot>Stopped</Badge>
+        </span>
+      ) : (
+        <StatusBadge status={r.status} />
+      ),
+  },
   {
     group: "basic", key: "cycleMovement", label: "Cycle Movement", filter: { key: "cycleMovement", type: "text" }, width: 220,
     render: (r) => (
       <span className="flex min-w-0 flex-col gap-0.5">
-        {r.shifted && <Badge tone="info" className="self-start">Shifted</Badge>}
-        <span className="text-xs whitespace-normal text-ink-soft" title={r.shifted && r.shiftedAt ? `Shifted ${formatDateTime(r.shiftedAt)}${r.shiftedBy ? ` by ${r.shiftedBy}` : ""}` : undefined}>
+        {r.shifted && !r.paymentStopped && <Badge tone="info" className="self-start">Shifted</Badge>}
+        <span className={cn("text-xs whitespace-normal", r.paymentStopped ? "font-semibold text-danger-ink" : "text-ink-soft")} title={r.shifted && r.shiftedAt ? `Shifted ${formatDateTime(r.shiftedAt)}${r.shiftedBy ? ` by ${r.shiftedBy}` : ""}` : undefined}>
           {r.cycleMovement || <span className="text-ink-muted">—</span>}
         </span>
       </span>
@@ -73,6 +83,10 @@ const COLUMNS = [
   { group: "financial", key: "totalNrv", label: "Total NRV", width: 120, ...money("totalNrv") },
   { group: "financial", key: "singleQtyNrv", label: "Single Qty NRV", width: 120, ...money("singleQtyNrv") },
   { group: "financial", key: "finalPayout", label: "Final seller Payout", width: 140, align: "right", render: (r) => <b className="tabular text-ink">{formatINR(r.finalPayout)}</b> },
+  {
+    group: "financial", key: "pendingPayout", label: "Pending Payment", width: 140, align: "right",
+    render: (r) => <b className={cn("tabular", r.pendingPayout > 0 ? (r.paymentStopped ? "text-danger-ink" : "text-warning-ink") : "text-ink-muted")}>{formatINR(r.pendingPayout)}</b>,
+  },
   { group: "other", key: "transactionId", label: "Transaction ID", filter: { key: "transactionId", type: "text" }, width: 180, ...mono("transactionId") },
   { group: "other", key: "invoiceProof", label: "Invoice Proof", width: 120, render: null },
   { group: "other", key: "transactionDate", label: "Transaction Date", filter: { key: "transactionDate", type: "date" }, width: 160, render: (r) => formatDateTime(r.transactionDate) },
@@ -110,10 +124,14 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
   const [payKey, setPayKey] = useState(0);
   const [editRow, setEditRow] = useState(null);
   const [historyRow, setHistoryRow] = useState(null);
+  const [stopState, setStopState] = useState({ mode: "stop", rows: [], key: 0 });
 
   const rows = data.rows;
   const pendingRows = rows.filter((r) => r.statusCode === "0");
-  const selectedRows = pendingRows.filter((r) => selected.has(r.id));
+  const selectedPending = pendingRows.filter((r) => selected.has(r.id));
+  // Stopped items can only be resumed: no payment
+  const selectedRows = selectedPending.filter((r) => !r.paymentStopped);
+  const selectedStopped = selectedPending.filter((r) => r.paymentStopped);
   const months = useMemo(() => {
     const list = [...new Set(cycles.map((c) => c.month))];
     if (draft.cycleMonth && !list.includes(draft.cycleMonth)) list.unshift(draft.cycleMonth);
@@ -149,6 +167,7 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
     setPayKey((k) => k + 1);
     setPayRows(list);
   };
+  const openStop = (mode, list) => setStopState((s) => ({ mode, rows: list, key: s.key + 1 }));
   const toggle = (id) =>
     setSelected((s) => {
       const n = new Set(s);
@@ -210,6 +229,16 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
           {canEdit && (
             <Button size="sm" variant="primary" disabled={!selectedRows.length} onClick={() => openPay(selectedRows)} title={selectedRows.length ? undefined : "Select pending items first"}>
               <Wallet className="size-4" aria-hidden /> Add Payment{selectedRows.length ? ` (${selectedRows.length})` : ""}
+            </Button>
+          )}
+          {canEdit && (
+            <Button size="sm" variant="danger-outline" disabled={!selectedRows.length} onClick={() => openStop("stop", selectedRows)} title="Hold payment: the item stays unpaid in its cycle and is not forwarded to the next cycle">
+              <Ban className="size-4" aria-hidden /> Stop Payment{selectedRows.length ? ` (${selectedRows.length})` : ""}
+            </Button>
+          )}
+          {canEdit && (
+            <Button size="sm" variant="secondary" disabled={!selectedStopped.length} onClick={() => openStop("resume", selectedStopped)} title={selectedStopped.length ? undefined : "Select stopped items first"}>
+              <Play className="size-4" aria-hidden /> Resume Payment{selectedStopped.length ? ` (${selectedStopped.length})` : ""}
             </Button>
           )}
           <span className="hidden h-6 w-px bg-line sm:block" aria-hidden />
@@ -289,7 +318,7 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
                   </th>
                 );
               })}
-              <th scope="col" className={cn(thBase, "py-2")} style={{ minWidth: 120 }}>Action</th>
+              <th scope="col" className={cn(thBase, "py-2")} style={{ minWidth: 180 }}>Action</th>
             </tr>
             <tr>
               <th className={cn(thBase, "py-1.5")} />
@@ -337,8 +366,18 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
                   ))}
                   <td className="border-b border-line px-3 py-2 align-top whitespace-nowrap">
                     <span className="flex items-center gap-1">
-                      {canEdit && isPending && (
-                        <Button size="xs" variant="primary" onClick={() => openPay([r])}>Pay</Button>
+                      {canEdit && isPending && r.paymentStopped && (
+                        <Button size="xs" variant="secondary" onClick={() => openStop("resume", [r])} title="Resume payment">
+                          <Play className="size-3.5" aria-hidden /> Resume
+                        </Button>
+                      )}
+                      {canEdit && isPending && !r.paymentStopped && (
+                        <>
+                          <Button size="xs" variant="primary" onClick={() => openPay([r])}>Pay</Button>
+                          <Button size="xs" variant="danger-outline" onClick={() => openStop("stop", [r])} title="Stop payment: keep it unpaid in this cycle, not forwarded to the next cycle">
+                            <Ban className="size-3.5" aria-hidden /> Stop
+                          </Button>
+                        </>
                       )}
                       <Button size="icon-sm" variant="ghost" aria-label={`History of item ${r.id}`} title="View History" onClick={() => setHistoryRow(r)}>
                         <History className="size-4" />
@@ -373,6 +412,7 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
       </div>
 
       <PayItemsDialog key={`pay-${payKey}`} payoutId={payoutId} items={payRows} onClose={() => setPayRows([])} onPaid={() => setSelected(new Set())} />
+      <PaymentStopDialog key={`stop-${stopState.key}`} payoutId={payoutId} mode={stopState.mode} items={stopState.rows} onClose={() => setStopState((s) => ({ ...s, rows: [] }))} onDone={() => setSelected(new Set())} />
       <EditItemDialog key={`edit-${editRow?.id ?? "none"}`} payoutId={payoutId} row={editRow} onClose={() => setEditRow(null)} />
       <ItemHistoryDialog key={`history-${historyRow?.id ?? "none"}`} payoutId={payoutId} row={historyRow} onClose={() => setHistoryRow(null)} />
     </section>

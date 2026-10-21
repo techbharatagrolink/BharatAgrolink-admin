@@ -4,8 +4,9 @@ import { can } from "@/lib/auth/permissions";
 
 /**
  * Vendor Payout Summary (PHP payout_new.php):
- *   GET /api/admin/payouts?page&pageSize&q&status&sort&cycleMonth&cycle
+ *   GET /api/admin/payouts?page&pageSize&q&status&sort&cycleMonth&cycle&orderIds
  *   GET /api/admin/payouts/export?...   (same filters, up to 5000 rows)
+ *   GET /api/admin/payouts/items-export?...&payoutIds   (.xlsx of the vendors' items, proxied by /admin/payouts/items-export)
  *   GET /api/admin/payouts/cycles       (cycles that have payout items)
  * Read only: payout cycles are viewed and selected here, never shifted.
  */
@@ -26,7 +27,8 @@ export function payoutQuery(searchParams = {}) {
   const sort = PAYOUT_SORTS.includes(sf) && ["asc", "desc"].includes(sd) ? `${sf}:${sd}` : "";
   const cycleMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(get("cycleMonth")) ? get("cycleMonth") : "";
   const cycle = cycleMonth && ["first", "second"].includes(get("cycle")) ? get("cycle") : "";
-  return { page, pageSize, q: get("q").slice(0, 120), status, sort, cycleMonth, cycle };
+  const orderIds = [...new Set(get("orderIds").split(",").map((s) => s.trim()).filter(Boolean))].slice(0, 300).join(",");
+  return { page, pageSize, q: get("q").slice(0, 120), status, sort, cycleMonth, cycle, orderIds };
 }
 
 const strip = (query) => Object.fromEntries(Object.entries(query).filter(([, v]) => v !== "" && v != null));
@@ -42,9 +44,9 @@ export async function getPayoutSummary(searchParams, user) {
 
 export async function exportPayoutSummary(searchParams, user) {
   if (!can(user, "payouts", "view")) return { ok: false, message: "You do not have permission to export payouts." };
-  const { q, status, sort, cycleMonth, cycle } = payoutQuery(searchParams);
+  const { q, status, sort, cycleMonth, cycle, orderIds } = payoutQuery(searchParams);
   try {
-    const { data } = await api("admin/payouts/export", { token: user.token, query: strip({ q, status, sort, cycleMonth, cycle }) });
+    const { data } = await api("admin/payouts/export", { token: user.token, query: strip({ q, status, sort, cycleMonth, cycle, orderIds }) });
     return { ok: true, rows: data?.rows ?? [] };
   } catch (error) {
     return { ok: false, message: error instanceof ApiError ? error.message : "The export could not be created." };

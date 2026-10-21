@@ -1,9 +1,11 @@
 "use client";
 
-import { CalendarRange, X } from "lucide-react";
+import { useState } from "react";
+import { CalendarRange, Download, X } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
 import { useQueryState } from "@/components/data-table/use-query-state";
-import { Select } from "@/components/ui/form";
+import { Input, Select } from "@/components/ui/form";
+import { buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,43 @@ const ROW_ACTIONS = [
 ];
 
 const STATUS_FILTER = { key: "status", label: "Status", options: ["Pending", "Paid", "On Hold"] };
+
+/* PHP Export with vendors ticked: their items (same columns as the items page export), as .xlsx. */
+const BULK_ACTIONS = [{ id: "export-items", label: "Export items (Excel)", kind: "form" }];
+const ITEM_EXPORT_FILTERS = ["q", "status", "cycleMonth", "cycle", "orderIds"];
+
+/** /admin/payouts/items-export for the current filters; payoutIds narrows it to the ticked vendors. */
+function itemsExportHref(payoutIds = []) {
+  const current = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+  const out = new URLSearchParams();
+  for (const key of ITEM_EXPORT_FILTERS) if (current.get(key)) out.set(key, current.get(key));
+  if (payoutIds.length) out.set("payoutIds", payoutIds.join(","));
+  return `/admin/payouts/items-export?${out.toString()}`;
+}
+
+/** PHP "Order ID (comma-separated)": only vendors with an item of those orders. */
+function OrderIdsFilter() {
+  const { get, setParams } = useQueryState();
+  const applied = get("orderIds");
+  const [value, setValue] = useState(applied);
+  const apply = () => setParams({ orderIds: value.split(",").map((s) => s.trim()).filter(Boolean).join(",") });
+  return (
+    <Input
+      aria-label="Order IDs"
+      className="w-64"
+      placeholder="Order ID(s), comma separated"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          apply();
+        }
+      }}
+      onBlur={() => value.trim() !== applied && apply()}
+    />
+  );
+}
 
 function CycleSelector({ cycles }) {
   const { get, setParams } = useQueryState();
@@ -166,8 +205,22 @@ export function PayoutSummaryTable({ data, cycles }) {
         data={{ ...data, rows }}
         search="Search vendor name or vendor ID"
         filters={[STATUS_FILTER]}
-        toolbar={<CycleSelector cycles={cycles} />}
+        toolbar={
+          <>
+            <CycleSelector cycles={cycles} />
+            <OrderIdsFilter />
+            <a href={itemsExportHref()} onClick={(e) => (e.currentTarget.href = itemsExportHref())} className={buttonClasses({ size: "sm" })} title="Items of every vendor matching these filters, as on the items page export">
+              <Download className="size-4" aria-hidden /> Export items
+            </a>
+          </>
+        }
         rowActions={ROW_ACTIONS}
+        bulkActions={BULK_ACTIONS}
+        onCustomAction={(action, ids, _rows, clear) => {
+          if (action.id !== "export-items") return;
+          window.location.href = itemsExportHref(ids);
+          clear();
+        }}
         onExport={payoutSummaryExportAction}
         exportName="vendor_payout_summary"
         summary={summary}
