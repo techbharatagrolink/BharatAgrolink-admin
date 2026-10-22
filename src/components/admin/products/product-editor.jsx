@@ -147,24 +147,28 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     });
   };
 
+  const variationPayload = (row) => {
+    const values = row.values?.length ? row.values : [row.label];
+    return {
+      label: values.join(" / ").slice(0, 240),
+      values,
+      variantName: (row.variantName || `${form.name.trim()}-${values.join("-")}`).slice(0, 300),
+      stockStatus: row.stockStatus || "In Stock",
+      mrp: row.mrp,
+      nrv: row.nrv,
+      display: row.display,
+      gstPercent: row.gstPercent,
+      stock: row.stock,
+      weightKg: toVariantGrams(row.weightValue, row.weightUnit),
+      lengthCm: row.lengthCm,
+      widthCm: row.widthCm,
+      heightCm: row.heightCm,
+    };
+  };
+
   const persistVariations = async (id) => {
     for (const row of draftVariations) {
-      const values = row.values?.length ? row.values : [row.label];
-      const added = await saveVariationAction(id, {
-        label: values.join(" / ").slice(0, 240),
-        values,
-        variantName: (row.variantName || `${form.name.trim()}-${values.join("-")}`).slice(0, 300),
-        stockStatus: row.stockStatus || "In Stock",
-        mrp: row.mrp,
-        nrv: row.nrv,
-        display: row.display,
-        gstPercent: row.gstPercent,
-        stock: row.stock,
-        weightKg: toVariantGrams(row.weightValue, row.weightUnit),
-        lengthCm: row.lengthCm,
-        widthCm: row.widthCm,
-        heightCm: row.heightCm,
-      });
+      const added = await saveVariationAction(id, variationPayload(row));
       if (!added.ok) return added;
     }
     if (attributeGroups.length) {
@@ -174,6 +178,14 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     setDraftVariations([]);
     setAttributeGroups([]);
     return { ok: true };
+  };
+
+  // Saves one pending variant row right away, without going through the page-level Save button.
+  // Only possible once the product exists (not while still creating it).
+  const saveDraftRow = async (row) => {
+    const added = await saveVariationAction(product.id, variationPayload(row));
+    if (added.ok) setDraftVariations((current) => current.filter((item) => item.key !== row.key));
+    return added;
   };
 
   const save = (publish) => {
@@ -334,6 +346,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 rows={draftVariations}
                 savedRows={creating ? [] : (product.variations || [])}
                 onRows={setDraftVariations}
+                onSaveRow={creating ? undefined : (row) => run(() => saveDraftRow(row))}
                 onDeleteSaved={(variationId) => run(() => deleteVariationAction(product.id, variationId))}
                 onGroups={(groups) => setAttributeGroups((current) => {
                   const map = new Map(current.map((group) => [group.attributeId, new Set(group.values)]));

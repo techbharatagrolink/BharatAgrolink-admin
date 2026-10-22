@@ -50,7 +50,7 @@ export function toVariantGrams(value, unit) {
 }
 
 /** Configuration picker used by add_product.php: values come from Configuration Attributes. */
-export function VariantConfigurations({ productName, productType, attributes = [], rows, savedRows = [], onRows, onDeleteSaved, onGroups, pending, size, onSize }) {
+export function VariantConfigurations({ productName, productType, attributes = [], rows, savedRows = [], onRows, onSaveRow, onDeleteSaved, onGroups, pending, size, onSize }) {
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
@@ -217,7 +217,10 @@ export function VariantConfigurations({ productName, productType, attributes = [
                   <p className="break-words font-medium text-ink">{row.variantName}</p>
                   <p className="text-xs text-ink-muted">SKU assigned on save</p>
                 </div>
-                <button type="button" className="shrink-0 text-xs text-danger-ink" onClick={() => onRows(rows.filter((_, i) => i !== index))}>Delete</button>
+                <div className="flex shrink-0 items-center gap-3">
+                  {onSaveRow && <button type="button" className="text-xs font-medium text-brand-700" disabled={pending} onClick={() => onSaveRow(row)}>Save</button>}
+                  <button type="button" className="text-xs text-danger-ink" onClick={() => onRows(rows.filter((_, i) => i !== index))}>Delete</button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {["lengthCm", "widthCm", "heightCm"].map((key) => (
@@ -295,7 +298,12 @@ export function VariantConfigurations({ productName, productType, attributes = [
                   <td className="py-2 pr-2">
                     <Select className="w-28" value={row.stockStatus} onChange={(event) => patch(index, "stockStatus", event.target.value)} options={[{ value: "In Stock", label: "In Stock" }, { value: "Out of Stock", label: "Out of Stock" }]} />
                   </td>
-                  <td className="py-2"><button type="button" className="text-xs text-danger-ink" onClick={() => onRows(rows.filter((_, i) => i !== index))}>Delete</button></td>
+                  <td className="py-2">
+                    <div className="flex items-center gap-3">
+                      {onSaveRow && <button type="button" className="text-xs font-medium text-brand-700" disabled={pending} onClick={() => onSaveRow(row)}>Save</button>}
+                      <button type="button" className="text-xs text-danger-ink" onClick={() => onRows(rows.filter((_, i) => i !== index))}>Delete</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
