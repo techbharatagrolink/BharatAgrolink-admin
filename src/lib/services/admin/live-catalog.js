@@ -112,6 +112,11 @@ export const LIVE_RESOURCES = {
 
 /** PHP pages for sidebar items that are not a resource list yet. */
 const EXTRA_PAGES = {
+  // navigation.js points "Create Order" at create_order.php (distinct from the manage_orders.php
+  // list page), but only LIVE_RESOURCES.orders fed permissionPages() before - so a role granted
+  // only on the create_order.php menu row never got "add" on the "orders" permission that
+  // app/admin/(panel)/orders/new/page.js actually checks.
+  orders: ["create_order.php"],
   "dashboard.main": ["dashboard.php", "main_dashboard.php"],
   "dashboard.orders": ["order_management_dashboard.php"],
   "dashboard.products": ["product_management_dashboard.php", "product_dashboard.php"],
