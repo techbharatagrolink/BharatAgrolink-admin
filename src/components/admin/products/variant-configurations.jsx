@@ -49,13 +49,62 @@ export function toVariantGrams(value, unit) {
   return normalized === "kg" || normalized === "liter" ? number * 1000 : number;
 }
 
+const SAVED_STOCK_STATUS_OPTIONS = [{ value: "In Stock", label: "In Stock" }, { value: "Out of Stock", label: "Out of Stock" }];
+
+function savedEditValues(row) {
+  return {
+    mrp: row.mrp ?? "",
+    nrv: row.nrv ?? "",
+    display: row.display ?? "",
+    gstPercent: row.gstPercent ?? "",
+    stock: row.stock ?? "",
+    stockStatus: row.stockStatus || "In Stock",
+    weightKg: row.weightKg ?? "",
+    lengthCm: row.lengthCm ?? "",
+    widthCm: row.widthCm ?? "",
+    heightCm: row.heightCm ?? "",
+  };
+}
+
 /** Configuration picker used by add_product.php: values come from Configuration Attributes. */
-export function VariantConfigurations({ productName, productType, attributes = [], rows, savedRows = [], onRows, onSaveRow, onDeleteSaved, onGroups, pending, size, onSize }) {
+export function VariantConfigurations({ productName, productType, attributes = [], rows, savedRows = [], onRows, onSaveRow, onEditRow, onToggleStatus, onDeleteSaved, onGroups, pending, size, onSize, priceLocked = false }) {
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [attributeId, setAttributeId] = useState("all");
   const [picked, setPicked] = useState({});
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({});
+  const [busyId, setBusyId] = useState(null);
+
+  const startEdit = (row) => {
+    setEditingId(row.id);
+    setEditValues(savedEditValues(row));
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditValues({});
+  };
+  const patchEdit = (key, value) => setEditValues((current) => ({ ...current, [key]: value }));
+  const saveEdit = async (row) => {
+    if (!onEditRow) return;
+    setBusyId(row.id);
+    try {
+      const result = await onEditRow(row, editValues);
+      if (result?.ok !== false) cancelEdit();
+    } finally {
+      setBusyId(null);
+    }
+  };
+  const toggleStatus = async (row) => {
+    if (!onToggleStatus) return;
+    setBusyId(row.id);
+    try {
+      await onToggleStatus(row);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const sizeOptions = useMemo(() => {
     const sizeAttribute = attributes.find((item) => item.name.trim().toLowerCase() === "size");
@@ -163,46 +212,173 @@ export function VariantConfigurations({ productName, productType, attributes = [
 
       {savedRows.length > 0 && (
         <ul className="space-y-2 md:hidden">
-          {savedRows.map((row) => (
-            <li key={row.id} className="rounded-lg border border-line p-3 text-sm">
-              <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 break-words font-medium text-ink">{row.label}</p>
-                <button type="button" className="shrink-0 text-xs text-danger-ink" disabled={pending} onClick={() => onDeleteSaved(row.id)}>Delete</button>
-              </div>
-              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <div><dt className="text-ink-muted">SKU</dt><dd className="break-words text-ink">{row.sku || "—"}</dd></div>
-                <div><dt className="text-ink-muted">MRP</dt><dd className="tabular-nums text-ink">{row.mrp ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">NRV</dt><dd className="tabular-nums text-ink">{row.nrv ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Stock</dt><dd className="tabular-nums text-ink">{row.stock}</dd></div>
-                <div><dt className="text-ink-muted">Weight</dt><dd className="text-ink">{row.weightKg ?? "—"}</dd></div>
-                <div className="col-span-2"><dt className="text-ink-muted">L/W/H</dt><dd className="break-words text-ink">{[row.lengthCm, row.widthCm, row.heightCm].filter((value) => value != null && value !== "").join("×") || "—"}</dd></div>
-              </dl>
-            </li>
-          ))}
+          {savedRows.map((row) => {
+            const editing = editingId === row.id;
+            const busy = busyId === row.id;
+            return (
+              <li key={row.id} className="rounded-lg border border-line p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="break-words font-medium text-ink">{row.label}</p>
+                    <p className="text-xs text-ink-muted">{row.sku || "—"}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {editing ? (
+                      <>
+                        <button type="button" className="text-xs font-medium text-brand-700" disabled={busy} onClick={() => saveEdit(row)}>Save</button>
+                        <button type="button" className="text-xs text-ink-muted" disabled={busy} onClick={cancelEdit}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        {onEditRow && <button type="button" className="text-xs font-medium text-brand-700" disabled={pending} onClick={() => startEdit(row)}>Edit</button>}
+                        <button type="button" className="text-xs text-danger-ink" disabled={pending} onClick={() => onDeleteSaved(row.id)}>Delete</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {onToggleStatus && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => toggleStatus(row)}
+                    className={`mt-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
+                  >
+                    {row.active ? "Active" : "Inactive"}
+                  </button>
+                )}
+                {editing ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {["lengthCm", "widthCm", "heightCm"].map((key) => (
+                      <Field key={key} label={key === "lengthCm" ? "Length" : key === "widthCm" ? "Width" : "Height"}>
+                        {({ id }) => <Input id={id} type="number" min="0" step="0.01" value={editValues[key]} onChange={(event) => patchEdit(key, event.target.value)} />}
+                      </Field>
+                    ))}
+                    <Field label="Weight (g)">
+                      {({ id }) => <Input id={id} type="number" min="0" step="0.01" value={editValues.weightKg} onChange={(event) => patchEdit("weightKg", event.target.value)} />}
+                    </Field>
+                    {[["mrp", "MRP"], ["nrv", "NRV"], ["display", "Display Price"], ["gstPercent", "GST %"], ["stock", "Stock"]].map(([key, label]) => (
+                      priceLocked && (key === "display" || key === "gstPercent") ? (
+                        <div key={key}>
+                          <p className="text-[13px] font-medium text-ink-soft">{label}</p>
+                          <p className="mt-1 text-sm tabular-nums text-ink">{row[key] ?? "—"}</p>
+                          <p className="text-[11px] text-ink-muted">Set by Pricing &amp; Tax</p>
+                        </div>
+                      ) : (
+                        <Field key={key} label={label}>
+                          {({ id }) => <Input id={id} type="number" min="0" step="0.01" value={editValues[key]} onChange={(event) => patchEdit(key, event.target.value)} />}
+                        </Field>
+                      )
+                    ))}
+                    <div className="col-span-2">
+                      <Field label="Status">
+                        {({ id }) => <Select id={id} value={editValues.stockStatus} onChange={(event) => patchEdit("stockStatus", event.target.value)} options={SAVED_STOCK_STATUS_OPTIONS} />}
+                      </Field>
+                    </div>
+                  </div>
+                ) : (
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div><dt className="text-ink-muted">MRP</dt><dd className="tabular-nums text-ink">{row.mrp ?? "—"}</dd></div>
+                    <div><dt className="text-ink-muted">NRV</dt><dd className="tabular-nums text-ink">{row.nrv ?? "—"}</dd></div>
+                    <div><dt className="text-ink-muted">Display Price</dt><dd className="tabular-nums text-ink">{row.display ?? "—"}</dd></div>
+                    <div><dt className="text-ink-muted">Stock</dt><dd className="tabular-nums text-ink">{row.stock}</dd></div>
+                    <div><dt className="text-ink-muted">Weight</dt><dd className="text-ink">{row.weightKg ?? "—"}</dd></div>
+                    <div className="col-span-2"><dt className="text-ink-muted">L/W/H</dt><dd className="break-words text-ink">{[row.lengthCm, row.widthCm, row.heightCm].filter((value) => value != null && value !== "").join("×") || "—"}</dd></div>
+                  </dl>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {savedRows.length > 0 && (
         <div className="hidden min-w-0 overflow-x-auto md:block">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b text-xs text-ink-muted">
-                <th className="py-2 pr-3">Name</th><th className="pr-3">SKU</th><th className="pr-3">MRP</th><th className="pr-3">NRV</th><th className="pr-3">L/W/H</th><th className="pr-3">Weight</th><th className="pr-3">Stock</th><th></th>
+                <th className="py-2 pr-3">Name</th>
+                <th className="pr-3">SKU</th>
+                <th className="pr-3">MRP</th>
+                <th className="pr-3">NRV</th>
+                <th className="pr-3">Display Price</th>
+                <th className="pr-3">GST %</th>
+                <th className="pr-3">L/W/H</th>
+                <th className="pr-3">Weight (g)</th>
+                <th className="pr-3">Stock</th>
+                <th className="pr-3">Status</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {savedRows.map((row) => (
-                <tr key={row.id} className="border-b">
-                  <td className="py-2 pr-3">{row.label}</td>
-                  <td className="pr-3">{row.sku || "—"}</td>
-                  <td className="pr-3">{row.mrp ?? "—"}</td>
-                  <td className="pr-3">{row.nrv ?? "—"}</td>
-                  <td className="pr-3">{[row.lengthCm, row.widthCm, row.heightCm].filter((value) => value != null && value !== "").join("×") || "—"}</td>
-                  <td className="pr-3">{row.weightKg ?? "—"}</td>
-                  <td className="pr-3">{row.stock}</td>
-                  <td><button type="button" className="text-xs text-danger-ink" disabled={pending} onClick={() => onDeleteSaved(row.id)}>Delete</button></td>
-                </tr>
-              ))}
+              {savedRows.map((row) => {
+                const editing = editingId === row.id;
+                const busy = busyId === row.id;
+                const numberInput = (key) => (
+                  <Input className="w-20" type="number" min="0" step="0.01" value={editValues[key]} onChange={(event) => patchEdit(key, event.target.value)} />
+                );
+                return (
+                  <tr key={row.id} className={`border-b align-top ${row.active === false ? "text-ink-muted" : ""}`}>
+                    <td className="py-2 pr-3">{row.label}</td>
+                    <td className="py-2 pr-3">{row.sku || "—"}</td>
+                    <td className="py-2 pr-3">{editing ? numberInput("mrp") : row.mrp ?? "—"}</td>
+                    <td className="py-2 pr-3">{editing ? numberInput("nrv") : row.nrv ?? "—"}</td>
+                    <td className="py-2 pr-3" title={editing && priceLocked ? "Set by Pricing & Tax from MRP, NRV and the take rate" : undefined}>{editing && !priceLocked ? numberInput("display") : row.display ?? "—"}</td>
+                    <td className="py-2 pr-3" title={editing && priceLocked ? "GST comes from the product's tax class" : undefined}>{editing && !priceLocked ? numberInput("gstPercent") : row.gstPercent ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {editing ? (
+                        <div className="flex gap-1">
+                          {["lengthCm", "widthCm", "heightCm"].map((key) => (
+                            <Input key={key} className="w-16" type="number" min="0" step="0.01" aria-label={key === "lengthCm" ? "Length" : key === "widthCm" ? "Width" : "Height"} value={editValues[key]} onChange={(event) => patchEdit(key, event.target.value)} />
+                          ))}
+                        </div>
+                      ) : (
+                        [row.lengthCm, row.widthCm, row.heightCm].filter((value) => value != null && value !== "").join("×") || "—"
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">{editing ? numberInput("weightKg") : row.weightKg ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {editing ? (
+                        <div className="space-y-1">
+                          {numberInput("stock")}
+                          <Select className="w-28" value={editValues.stockStatus} onChange={(event) => patchEdit("stockStatus", event.target.value)} options={SAVED_STOCK_STATUS_OPTIONS} aria-label="Stock status" />
+                        </div>
+                      ) : (
+                        row.stock
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">
+                      {onToggleStatus ? (
+                        <button
+                          type="button"
+                          disabled={busy || editing}
+                          onClick={() => toggleStatus(row)}
+                          title={row.active ? "Click to deactivate" : "Click to activate"}
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
+                        >
+                          {row.active ? "Active" : "Inactive"}
+                        </button>
+                      ) : (
+                        row.active ? "Active" : "Inactive"
+                      )}
+                    </td>
+                    <td className="py-2">
+                      <div className="flex items-center gap-3">
+                        {editing ? (
+                          <>
+                            <button type="button" className="text-xs font-medium text-brand-700" disabled={busy} onClick={() => saveEdit(row)}>Save</button>
+                            <button type="button" className="text-xs text-ink-muted" disabled={busy} onClick={cancelEdit}>Cancel</button>
+                          </>
+                        ) : (
+                          <>
+                            {onEditRow && <button type="button" className="text-xs font-medium text-brand-700" disabled={pending || busy} onClick={() => startEdit(row)}>Edit</button>}
+                            <button type="button" className="text-xs text-danger-ink" disabled={pending || busy} onClick={() => onDeleteSaved(row.id)}>Delete</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

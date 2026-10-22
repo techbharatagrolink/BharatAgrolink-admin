@@ -74,7 +74,7 @@ function manualPayload(input) {
   return {
     customerId: input.customerId,
     paymentMode: String(input.paymentMode ?? ""),
-    items: Array.isArray(input.items) ? input.items.map((i) => ({ productId: String(i?.productId ?? ""), qty: i?.qty })) : [],
+    items: Array.isArray(input.items) ? input.items.map((i) => ({ productId: String(i?.productId ?? ""), ...(i?.sku ? { sku: String(i.sku) } : {}), qty: i?.qty })) : [],
     shipping: input.shipping && typeof input.shipping === "object" ? input.shipping : undefined,
     leadCode: String(input.leadCode ?? ""),
     couponCode: String(input.couponCode ?? ""),

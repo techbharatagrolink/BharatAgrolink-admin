@@ -97,7 +97,7 @@ export function ManualOrderForm({ leadCode = "" }) {
     userUniqueId: customer?.userUniqueId || "",
     phone: shipping.phone || customer?.phone || "",
     paymentMode,
-    items: items.map((item) => ({ productId: item.productId, qty: item.qty })),
+    items: items.map((item) => ({ productId: item.productId, sku: item.sku, qty: item.qty })),
     shipping,
     leadCode: lead,
     couponCode: appliedCoupon,
@@ -478,7 +478,7 @@ export function ManualOrderForm({ leadCode = "" }) {
                   <tr><td colSpan={6} className="py-8 text-center text-ink-muted">No products selected yet</td></tr>
                 )}
                 {items.map((item) => {
-                  const priced = quote.lines.find((line) => line.productId === item.productId) || item;
+                  const priced = quote.lines.find((line) => line.sku === item.sku) || item;
                   return (
                     <tr key={item.sku} className="border-b border-line">
                       <td className="py-2 pr-2">

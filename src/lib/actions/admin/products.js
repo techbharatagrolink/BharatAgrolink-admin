@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { STOCK_STATUSES } from "@/lib/content/admin/stock";
-import { adjustStock, calculatePricingLive, createCatalogProduct, createProduct, deleteProductVariation, removeProductImage, saveProduct, saveProductAttributes, saveProductVariation, setProductStatus, updateProductPricing, uploadProductImages, validateImport } from "@/lib/services/admin/products";
+import { adjustStock, calculatePricingLive, createCatalogProduct, createProduct, deleteProductVariation, removeProductImage, saveProduct, saveProductAttributes, saveProductVariation, setProductStatus, setProductVariationStatus, updateProductPricing, uploadProductImages, validateImport } from "@/lib/services/admin/products";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
 const plain = (input, keys) => Object.fromEntries(keys.map((k) => [k, input && typeof input[k] !== "object" ? String(input[k] ?? "") : ""]));
@@ -176,6 +176,14 @@ export async function saveProductAttributesAction(id, groups) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   const result = await saveProductAttributes(String(id), Array.isArray(groups) ? groups : [], user);
+  if (result.ok) revalidatePath(`/admin/products/${id}`);
+  return result;
+}
+
+export async function setVariationStatusAction(id, variationId, active) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  const result = await setProductVariationStatus(String(id), variationId, active, user);
   if (result.ok) revalidatePath(`/admin/products/${id}`);
   return result;
 }
