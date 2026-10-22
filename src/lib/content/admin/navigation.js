@@ -184,6 +184,7 @@ export const navigation = [
           { key: "cms-blogs", label: "Blogs", href: "/admin/cms/blogs", page: "blogs.php", permission: "cms" },
           { key: "cms-seo", label: "Custom Page", href: "/admin/cms/seo", page: "meta.php", permission: "cms.seo" },
           { key: "cms-pages", label: "Custom Add Pages", href: "/admin/cms/pages", page: "pages_custom.php", permission: "cms.pages" },
+          { key: "cms-redirects", label: "301 URL Redirects", href: "/admin/cms/redirects", page: "redirects.php", permission: "cms.redirects" },
           { key: "cms-banners", label: "Banners", href: "/admin/cms/banners", permission: "cms" },
           { key: "cms-events", label: "Events", href: "/admin/cms/events", permission: "cms" },
           { key: "cms-faqs", label: "FAQs", href: "/admin/cms/faqs", permission: "cms" },

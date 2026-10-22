@@ -144,6 +144,7 @@ const EXTRA_PAGES = {
   settings: ["system_settings.php", "smtp_settings.php", "sms_settings.php"],
   "cms.pages": ["pages_custom.php", "meta.php"],
   "cms.notifications": ["notification.php", "notification_list.php"],
+  "cms.redirects": ["redirects.php"],
   "operations.center": ["ndr_escalations.php"],
   "support.settings": ["admin_dashboard.php"],
 };
@@ -278,6 +279,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/cms/banners",
   "/admin/cms/home-sections",
   "/admin/cms/pages",
+  "/admin/cms/redirects",
   "/admin/cms/notifications",
   "/admin/roles",
   "/admin/roles/menus",
