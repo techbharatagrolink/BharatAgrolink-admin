@@ -117,6 +117,7 @@ const EXTRA_PAGES = {
   // only on the create_order.php menu row never got "add" on the "orders" permission that
   // app/admin/(panel)/orders/new/page.js actually checks.
   orders: ["create_order.php"],
+  "orders.paymentAttempts": ["manual_payment_attempts.php"],
   "dashboard.main": ["dashboard.php", "main_dashboard.php"],
   "dashboard.orders": ["order_management_dashboard.php"],
   "dashboard.products": ["product_management_dashboard.php", "product_dashboard.php"],
@@ -174,6 +175,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/finance",
   "/admin/orders",
   "/admin/orders/new",
+  "/admin/payment-attempts",
   "/admin/products/new",
   "/admin/products/import",
   "/admin/products",

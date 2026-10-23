@@ -6,6 +6,7 @@ import {
   changeLineStatus,
   createManualCustomer,
   createManualOrder,
+  failManualPayment,
   lookupManualLead,
   lookupManualPincode,
   quoteManualOrder,
@@ -124,6 +125,13 @@ export async function startManualPaymentAction(input) {
   if (!user) return expired;
   if (!input || typeof input !== "object") return { ok: false, message: "Invalid request." };
   return startManualPayment(manualPayload(input), user);
+}
+
+export async function failManualPaymentAction(input) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!input?.pendingOrderId) return { ok: false, message: "Invalid request." };
+  return failManualPayment({ pendingOrderId: String(input.pendingOrderId), reason: input.reason || "" }, user);
 }
 
 export async function createManualCustomerAction(input) {

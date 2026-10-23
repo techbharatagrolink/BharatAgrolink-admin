@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CreditCard, Minus, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   createManualCustomerAction,
   createManualOrderAction,
+  failManualPaymentAction,
   lookupManualLeadAction,
   lookupManualPincodeAction,
   quoteManualOrderAction,
@@ -89,6 +90,7 @@ export function ManualOrderForm({ leadCode = "" }) {
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [createdId, setCreatedId] = useState("");
+  const pendingOrderIdRef = useRef("");
   const [customerModal, setCustomerModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState(blankCustomer);
 
@@ -262,7 +264,9 @@ export function ManualOrderForm({ leadCode = "" }) {
     }
     setBusy(true);
     setFormError("");
-    const result = await createManualOrderAction({ ...payload, courier: courierOf(quote.couriers, courierId), payment });
+    const pendingOrderId = pendingOrderIdRef.current;
+    pendingOrderIdRef.current = "";
+    const result = await createManualOrderAction({ ...payload, courier: courierOf(quote.couriers, courierId), payment, pendingOrderId: pendingOrderId || undefined });
     setBusy(false);
     if (result?.ok) {
       notify({ message: result.message, tone: "success" });
@@ -290,6 +294,7 @@ export function ManualOrderForm({ leadCode = "" }) {
       setFormError(started?.message || "Could not start the payment.");
       return;
     }
+    pendingOrderIdRef.current = started.pendingOrderId || "";
     try {
       await loadRazorpay();
     } catch (error) {
@@ -312,9 +317,21 @@ export function ManualOrderForm({ leadCode = "" }) {
           razorpaySignature: response.razorpay_signature,
         });
       },
-      modal: { ondismiss: () => setBusy(false) },
+      modal: {
+        ondismiss: () => {
+          if (pendingOrderIdRef.current) {
+            failManualPaymentAction({ pendingOrderId: pendingOrderIdRef.current, reason: "Payment dismissed." });
+            pendingOrderIdRef.current = "";
+          }
+          setBusy(false);
+        },
+      },
     });
     checkout.on("payment.failed", (response) => {
+      if (pendingOrderIdRef.current) {
+        failManualPaymentAction({ pendingOrderId: pendingOrderIdRef.current, reason: response?.error?.description || "Payment failed." });
+        pendingOrderIdRef.current = "";
+      }
       setBusy(false);
       setFormError(response?.error?.description || "Payment failed. You can retry.");
     });
