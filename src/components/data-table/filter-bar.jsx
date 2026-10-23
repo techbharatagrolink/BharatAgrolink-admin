@@ -75,7 +75,7 @@ export function SearchInput({ placeholder = "Search…", className }) {
     <div className={cn("relative min-w-0", className)}>
       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
       <input
-        type="search"
+        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
