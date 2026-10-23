@@ -113,6 +113,7 @@ export const coreResources = {
     searchFields: ["name", "sku", "brand", "vendor", "id", "uniqueId"],
     filterFields: ["parentCategory", "stockStatus", "verdict", "vendorId"],
     filters: [
+      { key: "vendorId", label: "Vendor", optionsFrom: "lookup:sellers" },
       { key: "parentCategory", label: "Category", options: categories },
       { key: "stockStatus", label: "Stock", options: ["In Stock", "Low Stock", "Out of Stock"] },
       { key: "verdict", label: "Economics", options: [{ value: "ok", label: "Healthy" }, { value: "below_target", label: "Below target CM" }, { value: "below_floor", label: "Below floor CM" }, { value: "loss", label: "Loss-making" }] },

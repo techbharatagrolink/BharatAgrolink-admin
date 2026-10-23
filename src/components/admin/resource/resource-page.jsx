@@ -1,7 +1,7 @@
 import { getResource } from "@/lib/content/admin/resources";
 import { checkPermission } from "@/lib/auth/session";
 import { can, columnVisible } from "@/lib/auth/permissions";
-import { listResource, resolveFormOptions, withReasonOptions } from "@/lib/services/admin/resources";
+import { listResource, resolveFilterOptions, resolveFormOptions, withReasonOptions } from "@/lib/services/admin/resources";
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
@@ -50,6 +50,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
     : null;
 
   const tableData = { rows: data.rows, total: data.total, page: data.page, pageSize: data.pageSize, pageCount: data.pageCount };
+  const resolvedFilters = await resolveFilterOptions(resource, user);
   const links = (resource.headerActions ?? []).filter((a) => can(user, a.permission ?? resource.permission, a.action ?? "view"));
   const headerActions =
     actions || links.length ? (
@@ -74,7 +75,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
         resource={{
           title: resource.title,
           columns: resource.columns.filter((column) => columnVisible(user, column)),
-          filters: resource.filters,
+          filters: resolvedFilters,
           search: resource.search,
           searchFields: resource.searchFields,
           dateRange: resource.dateRange,

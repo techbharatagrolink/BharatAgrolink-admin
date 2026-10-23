@@ -69,7 +69,7 @@ export function SearchInput({ placeholder = "Search…", className }) {
   const onChange = (next) => {
     setValue(next);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setParams({ q: next.trim() }), 350);
+    timer.current = setTimeout(() => setParams({ q: next.trim() }), 800);
   };
   return (
     <div className={cn("relative min-w-0", className)}>
@@ -124,6 +124,42 @@ export function DateRangeFilter({ label = "Date" }) {
   );
 }
 
+export function TextFilter({ name, label }) {
+  const { get, setParams } = useQueryState();
+  const urlValue = get(name) || "";
+  const [value, setValue] = useState(urlValue);
+  const [lastUrl, setLastUrl] = useState(urlValue);
+  if (lastUrl !== urlValue) {
+    setLastUrl(urlValue);
+    setValue(urlValue);
+  }
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onChange = (next) => {
+    setValue(next);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setParams({ [name]: next.trim() }), 800);
+  };
+  return (
+    <div className="relative min-w-0 w-full sm:w-44">
+      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={`${label}…`}
+        aria-label={label}
+        className="h-9 w-full rounded-lg border border-line-strong bg-surface pr-8 pl-9 text-sm text-ink placeholder:text-ink-muted focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none"
+      />
+      {value && (
+        <button type="button" onClick={() => onChange("")} className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-ink-muted hover:text-ink" aria-label={`Clear ${label}`}>
+          <X className="size-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function SelectFilter({ name, label, options }) {
   const { get, setParams } = useQueryState();
   return (
@@ -146,9 +182,13 @@ export function FilterBar({ search, filters = [], dateRange, children, className
     <div className={cn("flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center", className)}>
       {search && <SearchInput placeholder={search} className="lg:w-72" />}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-        {filters.map((f) => (
-          <SelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
-        ))}
+        {filters.map((f) =>
+          f.type === "text" ? (
+            <TextFilter key={f.key} name={f.key} label={f.label} />
+          ) : (
+            <SelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
+          )
+        )}
       </div>
       {dateRange && <DateRangeFilter label={typeof dateRange === "string" ? dateRange : "Date"} />}
       {children}
