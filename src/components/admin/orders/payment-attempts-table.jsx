@@ -360,7 +360,7 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-ink-muted">
-              {["Attempt / Order", "Mode", "Amount", "Status", "Razorpay Order", "Payment ID", "Updated", "Reason", "Action"].map((h) => (
+              {["Attempt / Order", "Customer", "Mode", "Amount", "Status", "Razorpay Order", "Payment ID", "Updated", "Reason", "Action"].map((h) => (
                 <th key={h} className="text-left px-4 py-3 font-medium whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -368,7 +368,7 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="text-center py-10 text-ink-muted">No payment attempts found.</td>
+                <td colSpan={10} className="text-center py-10 text-ink-muted">No payment attempts found.</td>
               </tr>
             )}
             {rows.map((row) => {
@@ -381,6 +381,17 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
                       <a href={`/admin/orders/${row.orderId}`} className="font-mono text-xs text-brand hover:underline">{row.orderId}</a>
                     ) : (
                       <code className="font-mono text-xs text-ink-muted">{row.pendingOrderId}</code>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 min-w-[140px]">
+                    {row.customerName ? (
+                      <div>
+                        <div className="text-xs font-medium text-ink truncate max-w-40" title={row.customerName}>{row.customerName}</div>
+                        {row.customerPhone && <div className="text-xs text-ink-muted">{row.customerPhone}</div>}
+                        {row.customerCity && <div className="text-xs text-ink-muted">{row.customerCity}</div>}
+                      </div>
+                    ) : (
+                      <span className="text-ink-muted">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">{String(row.paymentMode || "").toUpperCase()}</td>

@@ -145,5 +145,6 @@ export async function createManualOrderAction(input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   if (!input || typeof input !== "object") return { ok: false, message: "Invalid request." };
-  return createManualOrder(manualPayload(input), user);
+  const pendingOrderId = input.pendingOrderId ? String(input.pendingOrderId) : undefined;
+  return createManualOrder(manualPayload(input), user, null, { pendingOrderId });
 }

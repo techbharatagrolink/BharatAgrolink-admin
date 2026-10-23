@@ -110,9 +110,9 @@ export function OrderReportTable({ report, filters, canEdit }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="border-b border-danger-ink/20 bg-danger-bg px-4 py-2.5 text-sm font-medium text-danger-ink">
-        Please note that the Order Report data should be considered accurate only for orders created from 12/05/2026 onwards.
-      </div>
+      {/* <div className="border-b border-danger-ink/20 bg-danger-bg px-4 py-2.5 text-sm font-medium text-danger-ink"> */}
+        
+      {/* </div> */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-ink">Order Details (Delivered Items Only)</h2>
