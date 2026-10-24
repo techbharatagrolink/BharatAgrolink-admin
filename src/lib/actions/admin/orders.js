@@ -6,6 +6,7 @@ import {
   changeLineStatus,
   createManualCustomer,
   createManualOrder,
+  failManualPayment,
   lookupManualLead,
   lookupManualPincode,
   quoteManualOrder,
@@ -74,7 +75,7 @@ function manualPayload(input) {
   return {
     customerId: input.customerId,
     paymentMode: String(input.paymentMode ?? ""),
-    items: Array.isArray(input.items) ? input.items.map((i) => ({ productId: String(i?.productId ?? ""), qty: i?.qty })) : [],
+    items: Array.isArray(input.items) ? input.items.map((i) => ({ productId: String(i?.productId ?? ""), ...(i?.sku ? { sku: String(i.sku) } : {}), qty: i?.qty })) : [],
     shipping: input.shipping && typeof input.shipping === "object" ? input.shipping : undefined,
     leadCode: String(input.leadCode ?? ""),
     couponCode: String(input.couponCode ?? ""),
@@ -126,6 +127,13 @@ export async function startManualPaymentAction(input) {
   return startManualPayment(manualPayload(input), user);
 }
 
+export async function failManualPaymentAction(input) {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  if (!input?.pendingOrderId) return { ok: false, message: "Invalid request." };
+  return failManualPayment({ pendingOrderId: String(input.pendingOrderId), reason: input.reason || "" }, user);
+}
+
 export async function createManualCustomerAction(input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
@@ -137,5 +145,6 @@ export async function createManualOrderAction(input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   if (!input || typeof input !== "object") return { ok: false, message: "Invalid request." };
-  return createManualOrder(manualPayload(input), user);
+  const pendingOrderId = input.pendingOrderId ? String(input.pendingOrderId) : undefined;
+  return createManualOrder(manualPayload(input), user, null, { pendingOrderId });
 }

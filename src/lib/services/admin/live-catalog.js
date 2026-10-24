@@ -112,6 +112,12 @@ export const LIVE_RESOURCES = {
 
 /** PHP pages for sidebar items that are not a resource list yet. */
 const EXTRA_PAGES = {
+  // navigation.js points "Create Order" at create_order.php (distinct from the manage_orders.php
+  // list page), but only LIVE_RESOURCES.orders fed permissionPages() before - so a role granted
+  // only on the create_order.php menu row never got "add" on the "orders" permission that
+  // app/admin/(panel)/orders/new/page.js actually checks.
+  orders: ["create_order.php"],
+  "orders.paymentAttempts": ["manual_payment_attempts.php"],
   "dashboard.main": ["dashboard.php", "main_dashboard.php"],
   "dashboard.orders": ["order_management_dashboard.php"],
   "dashboard.products": ["product_management_dashboard.php", "product_dashboard.php"],
@@ -139,6 +145,7 @@ const EXTRA_PAGES = {
   settings: ["system_settings.php", "smtp_settings.php", "sms_settings.php"],
   "cms.pages": ["pages_custom.php", "meta.php"],
   "cms.notifications": ["notification.php", "notification_list.php"],
+  "cms.redirects": ["redirects.php"],
   "operations.center": ["ndr_escalations.php"],
   "support.settings": ["admin_dashboard.php"],
 };
@@ -168,6 +175,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/finance",
   "/admin/orders",
   "/admin/orders/new",
+  "/admin/payment-attempts",
   "/admin/products/new",
   "/admin/products/import",
   "/admin/products",
@@ -273,6 +281,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/cms/banners",
   "/admin/cms/home-sections",
   "/admin/cms/pages",
+  "/admin/cms/redirects",
   "/admin/cms/notifications",
   "/admin/roles",
   "/admin/roles/menus",

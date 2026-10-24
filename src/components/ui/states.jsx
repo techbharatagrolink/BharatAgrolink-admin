@@ -53,7 +53,7 @@ export function PermissionDenied({ module = "this page" }) {
           <Lock className="size-5" aria-hidden />
         </span>
         <h2 className="text-base font-semibold text-ink">You don&apos;t have access to {module}</h2>
-        <p className="mt-1 max-w-sm text-sm text-ink-muted">Your role does not include view permission for this module. Ask a Super Admin to update your role under Staff &amp; Roles.</p>
+        <p className="mt-1 max-w-sm text-sm text-ink-muted">Your role does not include the required permission for this module. Ask a Super Admin to update your role under Staff &amp; Roles.</p>
         <Link href="/admin/dashboard" className="mt-5 inline-flex h-9 items-center rounded-lg bg-brand-600 px-3.5 text-sm font-medium text-brand-fg hover:bg-brand-700">
           Go to dashboard
         </Link>

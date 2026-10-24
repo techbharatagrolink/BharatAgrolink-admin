@@ -7,7 +7,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
 import { effectiveStockStatus, STOCK_STATUSES, toStockStatus } from "@/lib/content/admin/stock";
-import { createCatalogProductAction, deleteVariationAction, removeProductImageAction, saveProductAction, saveProductAttributesAction, saveVariationAction, setProductStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
+import { createCatalogProductAction, deleteVariationAction, removeProductImageAction, saveProductAction, saveProductAttributesAction, saveVariationAction, setProductStatusAction, setVariationStatusAction, uploadProductImagesAction } from "@/lib/actions/admin/products";
 import { ProductHtmlEditor } from "@/components/admin/products/product-html-editor";
 import { toVariantGrams, VariantConfigurations } from "@/components/admin/products/variant-configurations";
 import { PricingFactorsStep } from "@/components/admin/products/pricing-factors-step";
@@ -147,24 +147,28 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     });
   };
 
+  const variationPayload = (row) => {
+    const values = row.values?.length ? row.values : [row.label];
+    return {
+      label: values.join(" / ").slice(0, 240),
+      values,
+      variantName: (row.variantName || `${form.name.trim()}-${values.join("-")}`).slice(0, 300),
+      stockStatus: row.stockStatus || "In Stock",
+      mrp: row.mrp,
+      nrv: row.nrv,
+      display: row.display,
+      gstPercent: row.gstPercent,
+      stock: row.stock,
+      weightKg: toVariantGrams(row.weightValue, row.weightUnit),
+      lengthCm: row.lengthCm,
+      widthCm: row.widthCm,
+      heightCm: row.heightCm,
+    };
+  };
+
   const persistVariations = async (id) => {
     for (const row of draftVariations) {
-      const values = row.values?.length ? row.values : [row.label];
-      const added = await saveVariationAction(id, {
-        label: values.join(" / ").slice(0, 240),
-        values,
-        variantName: (row.variantName || `${form.name.trim()}-${values.join("-")}`).slice(0, 300),
-        stockStatus: row.stockStatus || "In Stock",
-        mrp: row.mrp,
-        nrv: row.nrv,
-        display: row.display,
-        gstPercent: row.gstPercent,
-        stock: row.stock,
-        weightKg: toVariantGrams(row.weightValue, row.weightUnit),
-        lengthCm: row.lengthCm,
-        widthCm: row.widthCm,
-        heightCm: row.heightCm,
-      });
+      const added = await saveVariationAction(id, variationPayload(row));
       if (!added.ok) return added;
     }
     if (attributeGroups.length) {
@@ -175,6 +179,49 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     setAttributeGroups([]);
     return { ok: true };
   };
+
+  // Saves one pending variant row right away, without going through the page-level Save button.
+  // Only possible once the product exists (not while still creating it).
+  const saveDraftRow = async (row) => {
+    const added = await saveVariationAction(product.id, variationPayload(row));
+    if (added.ok) setDraftVariations((current) => current.filter((item) => item.key !== row.key));
+    return added;
+  };
+
+  const report = (result) => {
+    notify({ message: result.message, tone: result.ok ? "success" : "error" });
+    if (result.ok) router.refresh();
+    return result;
+  };
+
+  // Edits an already-saved variant. Fields the panel doesn't edit (price ex-GST, commission,
+  // courier zone) are sent back unchanged so the update can't null them out. With pricing factors
+  // on, the variant update ignores MRP / NRV / GST / display price; MRP and NRV changes go through
+  // the pricing engine instead, which recomputes the display price for that variant.
+  const saveEditedRow = async (row, edits) => {
+    const base = {
+      id: row.id,
+      label: row.label,
+      stockStatus: edits.stockStatus,
+      stock: edits.stock,
+      weightKg: edits.weightKg,
+      lengthCm: edits.lengthCm,
+      widthCm: edits.widthCm,
+      heightCm: edits.heightCm,
+      saleExGst: row.saleExGst,
+      commission: row.commission,
+      courier: row.courier,
+    };
+    const saved = await saveVariationAction(product.id, pricingFactors ? base : { ...base, mrp: edits.mrp, nrv: edits.nrv, display: edits.display, gstPercent: edits.gstPercent });
+    if (!saved.ok || !pricingFactors) return report(saved);
+    const priceChanged = String(edits.mrp ?? "") !== String(row.mrp ?? "") || String(edits.nrv ?? "") !== String(row.nrv ?? "");
+    if (!priceChanged) return report(saved);
+    const priced = await saveProductPricingAction(product.id, { variantId: row.id, mrp: edits.mrp, nrv: edits.nrv });
+    if (!priced.ok) return report({ ok: false, message: `Stock and size saved, but pricing was not: ${priced.message}` });
+    return report({ ok: true, message: `Variation updated. ${priced.message}` });
+  };
+
+  const toggleRowStatus = async (row) => report(await setVariationStatusAction(product.id, row.id, !row.active));
 
   const save = (publish) => {
     run(async () => {
@@ -334,6 +381,10 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 rows={draftVariations}
                 savedRows={creating ? [] : (product.variations || [])}
                 onRows={setDraftVariations}
+                onSaveRow={creating ? undefined : (row) => run(() => saveDraftRow(row))}
+                onEditRow={creating ? undefined : saveEditedRow}
+                onToggleStatus={creating ? undefined : toggleRowStatus}
+                priceLocked={pricingFactors}
                 onDeleteSaved={(variationId) => run(() => deleteVariationAction(product.id, variationId))}
                 onGroups={(groups) => setAttributeGroups((current) => {
                   const map = new Map(current.map((group) => [group.attributeId, new Set(group.values)]));

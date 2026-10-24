@@ -241,6 +241,16 @@ export async function saveProductAttributes(id, groups, user) {
   }
 }
 
+export async function setProductVariationStatus(id, variationId, active, user) {
+  if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
+  try {
+    const { data } = await api(`admin/products/${encodeURIComponent(id)}/variations/${variationId}/status`, { method: "PATCH", token: user.token, body: { active: Boolean(active) } });
+    return data;
+  } catch (error) {
+    return liveError(error, "Could not change the variation status.");
+  }
+}
+
 export async function deleteProductVariation(id, variationId, user) {
   if (!can(user, "products", "edit")) return { ok: false, message: "You do not have permission to edit products." };
   try {

@@ -144,6 +144,18 @@ export async function lookupOptions(spec, user) {
   }
 }
 
+/** Resolves `optionsFrom` on filter definitions so dropdowns have their options at render time. */
+export async function resolveFilterOptions(resource, user) {
+  if (!user?.token) return resource.filters ?? [];
+  return Promise.all(
+    (resource.filters ?? []).map(async (f) => {
+      if (!f.optionsFrom) return f;
+      const opts = await lookupOptions(f.optionsFrom, user);
+      return { ...f, options: [...(f.options ?? []), ...opts] };
+    }),
+  );
+}
+
 /** Predefined reject reasons (seller_flag_reason) of a type, for actions with `confirm.reasonType`. */
 export const rejectReasonOptions = (type, user) => lookupOptions(`lookup:reject-reasons?type=${encodeURIComponent(String(type ?? ""))}`, user);
 

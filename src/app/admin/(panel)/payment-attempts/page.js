@@ -1,22 +1,43 @@
-import { checkPermission } from "@/lib/auth/session";
+import { getCurrentAdmin, checkPermission } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
+import { ButtonLink } from "@/components/ui/button";
 import { PaymentAttemptsTable } from "@/components/admin/orders/payment-attempts-table";
+import { listPaymentAttempts, ATTEMPT_STATUSES } from "@/lib/services/admin/payment-attempts";
 
 export const metadata = { title: "Payment Attempts" };
 
 export default async function PaymentAttemptsPage({ searchParams }) {
   const params = await searchParams;
-  const status = typeof params?.status === "string" ? params.status : "";
-  const { allowed } = await checkPermission("orders");
-  if (!allowed) return (<><PageHeader title="Payment Attempts" /><PermissionDenied module="payment attempts" /></>);
+  const statusParam = typeof params?.status === "string" ? params.status : "";
+  const status = ATTEMPT_STATUSES.some((s) => s.value === statusParam) ? statusParam : "";
+
+  const { allowed: allowedAttempts } = await checkPermission("orders.paymentAttempts");
+  const { allowed: allowedOrders } = allowedAttempts ? { allowed: true } : await checkPermission("orders");
+  if (!allowedAttempts && !allowedOrders) {
+    return (
+      <>
+        <PageHeader title="Payment Attempts" />
+        <PermissionDenied module="payment attempts" />
+      </>
+    );
+  }
+
+  const user = await getCurrentAdmin();
+  const { rows, statusCounts } = await listPaymentAttempts(user, { status });
+
   return (
     <>
       <PageHeader
-        title="Payment Attempts"
-        description="View and manage manual payment attempts. Filter by status, retry failed payments, or sync captured payments."
+        title="Manual Payment Attempts"
+        description="Track, retry, and sync manual order payments. Expired pending payments auto-clear after 15 minutes."
+        actions={<ButtonLink href="/admin/orders/new" variant="secondary" size="sm">Create Manual Order</ButtonLink>}
       />
-      <PaymentAttemptsTable initialStatus={status} />
+      <PaymentAttemptsTable
+        initialRows={rows}
+        statusCounts={statusCounts}
+        initialStatus={status}
+      />
     </>
   );
 }

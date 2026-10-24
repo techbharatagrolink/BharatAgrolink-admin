@@ -8,6 +8,9 @@ import { Button } from "./button";
 import { Field, Select, Textarea } from "./form";
 
 function useModalBehaviour(open, onClose, panelRef) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
@@ -17,7 +20,7 @@ function useModalBehaviour(open, onClose, panelRef) {
     const first = focusable()?.[0];
     (first || panelRef.current)?.focus();
     const onKey = (event) => {
-      if (event.key === "Escape") onClose?.();
+      if (event.key === "Escape") onCloseRef.current?.();
       if (event.key === "Tab") {
         const nodes = focusable();
         if (!nodes?.length) return;
@@ -38,7 +41,7 @@ function useModalBehaviour(open, onClose, panelRef) {
       document.removeEventListener("keydown", onKey);
       previous?.focus?.();
     };
-  }, [open, onClose, panelRef]);
+  }, [open, panelRef]); // onClose intentionally omitted — accessed via ref to avoid re-triggering focus
 }
 
 function Portal({ children }) {

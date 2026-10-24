@@ -371,6 +371,16 @@ export async function startManualPayment(input, user) {
   }
 }
 
+export async function failManualPayment(input, user) {
+  if (!user?.token) return { ok: false, message: "Not connected." };
+  try {
+    const { data } = await api("admin/orders/manual/payment/fail", { method: "POST", token: user.token, body: input });
+    return data;
+  } catch {
+    return { ok: false, message: "Could not record payment failure." };
+  }
+}
+
 export async function createManualCustomer(input, user) {
   if (!user?.token) return { ok: false, message: "Connect to the API to add a customer." };
   try {

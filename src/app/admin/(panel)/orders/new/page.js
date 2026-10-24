@@ -16,7 +16,7 @@ export default async function NewOrderPage({ searchParams }) {
       <PageHeader
         title="Create Manual Order"
         description="Create a customer order quickly. Search the customer, add products, then choose courier and payment."
-        actions={<ButtonLink href="/admin/not-ported?name=Payment%20Attempts&link=manual_payment_attempts.php" variant="secondary" size="sm">Attempts</ButtonLink>}
+        actions={<ButtonLink href="/admin/payment-attempts" variant="secondary" size="sm">Attempts</ButtonLink>}
       />
       <ManualOrderForm leadCode={leadCode} />
     </>
