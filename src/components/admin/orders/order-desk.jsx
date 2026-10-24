@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatDateTime, formatINR } from "@/lib/format";
 import { changeLineStatusAction, updateLineBoxAction } from "@/lib/actions/admin/orders";
 import { cancelShipmentsAction, openLabelAction, regenerateLabelAction } from "@/lib/actions/admin/shipping";
-import { OrderEditor } from "@/components/admin/orders/order-editor";
+import { OrderAddressDialog, OrderEditor } from "@/components/admin/orders/order-editor";
 import { CreateShipmentDialog } from "@/components/admin/shipping/create-shipment-dialog";
 
 function money(value) {
@@ -121,6 +121,8 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
   const lines = groups.flatMap((group) => group.lines.map((line) => ({ ...line, vendor: group.vendor })));
   const [panel, setPanel] = useState("");
   const [shipmentOpen, setShipmentOpen] = useState(false);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const closeAddress = useCallback(() => setAddressOpen(false), []);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const shipping = shippingCharge(order);
@@ -158,7 +160,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
             <p className="mt-1 text-ink">Primary: {order.mobile || "—"}</p>
             <p className="text-ink">Secondary: {editor?.address?.alternateMobile || "—"}</p>
           </div>
-          {canEdit && <Button size="sm" variant="secondary" onClick={() => setPanel(panel === "address" ? "" : "address")}>Edit Address</Button>}
+          {canEdit && editor?.address && <Button size="sm" variant="secondary" onClick={() => setAddressOpen(true)}>Edit Address</Button>}
         </div>
       </section>
 
@@ -304,11 +306,13 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
         })}
       />
 
-      {canEdit && editor && (panel === "address" || panel === "payment") && (
+      {canEdit && editor && panel === "payment" && (
         <section className="rounded-xl border border-line bg-surface p-4">
-          <OrderEditor orderId={order.id} editor={editor} lines={lines} focus={panel} />
+          <OrderEditor orderId={order.id} editor={editor} lines={lines} focus="payment" />
         </section>
       )}
+
+      {canEdit && editor?.address && <OrderAddressDialog orderId={order.id} address={editor.address} open={addressOpen} onClose={closeAddress} />}
 
       <p className="text-xs text-ink-muted">Taxable {money(totals.taxable)} · TCS is calculated on the finance report.</p>
     </div>

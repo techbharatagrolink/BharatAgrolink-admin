@@ -633,25 +633,28 @@ export function findNavItem(pathname) {
     .sort((a, b) => pathOf(b.href).length - pathOf(a.href).length)[0];
 }
 
+/** A sidebar group has no page of its own: its crumb carries the group's pages (`pages`) to pick from. */
+const groupCrumb = (group) => ({ label: group.label, pages: group.children.map(({ label, href }) => ({ label, href })) });
+
 export function getBreadcrumbs(pathname) {
   const crumbs = [{ label: "Admin", href: "/admin/dashboard" }];
   const exact = flattenNavigation().find((item) => item.href && pathOf(item.href) === pathname);
   if (exact) {
-    if (exact.group) crumbs.push({ label: exact.group.label });
+    if (exact.group) crumbs.push(groupCrumb(exact.group));
     crumbs.push({ label: exact.label, href: pathOf(exact.href) });
     return crumbs;
   }
   const hidden = hiddenRoutes.find((route) => route.pattern.test(pathname));
   if (hidden) {
     const parent = hidden.parent && flattenNavigation().find((item) => item.href === hidden.parent);
-    if (parent?.group) crumbs.push({ label: parent.group.label });
+    if (parent?.group) crumbs.push(groupCrumb(parent.group));
     if (parent) crumbs.push({ label: parent.label, href: parent.href });
     crumbs.push({ label: hidden.label });
     return crumbs;
   }
   const nearest = findNavItem(pathname);
   if (nearest) {
-    if (nearest.group) crumbs.push({ label: nearest.group.label });
+    if (nearest.group) crumbs.push(groupCrumb(nearest.group));
     crumbs.push({ label: nearest.label, href: pathOf(nearest.href) });
   }
   return crumbs;

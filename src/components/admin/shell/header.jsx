@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, BookOpen, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, UserRound } from "lucide-react";
+import { Bell, BookOpen, ChevronDown, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, UserRound } from "lucide-react";
 import { getBreadcrumbs } from "@/lib/content/admin/navigation";
 import { initials } from "@/lib/format";
 import { site } from "@/lib/site";
@@ -18,27 +18,70 @@ const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 /**
  * Breadcrumbs named the way the sidebar names them (admin_menus via Menu Master).
  * navigation.js still decides the trail; live names replace its labels where the
- * screen, or the list screen above it, is in the role's sidebar.
+ * screen, or the list screen above it, is in the role's sidebar. A group crumb
+ * (no page of its own) gets `menu`: the group's pages in the role's sidebar.
  */
 function liveBreadcrumbs(navigation, pathname) {
   const crumbs = getBreadcrumbs(pathname);
   const leaves = [];
   for (const section of navigation) {
     for (const item of section.items) {
-      if (item.href) leaves.push({ href: pathOf(item.href), label: item.label, group: null });
-      for (const child of item.children || []) leaves.push({ href: pathOf(child.href), label: child.label, group: item.label });
+      if (item.href) leaves.push({ href: item.href, path: pathOf(item.href), label: item.label, group: null });
+      for (const child of item.children || []) leaves.push({ href: child.href, path: pathOf(child.href), label: child.label, group: item });
     }
   }
-  const live = (href) => leaves.find((leaf) => leaf.href === pathOf(href) && leaf.href !== "/admin/not-ported");
+  const live = (href) => leaves.find((leaf) => leaf.path === pathOf(href) && leaf.path !== "/admin/not-ported");
+  const groupCrumb = (group) => ({ label: group.label, menu: group.children.map(({ label, href }) => ({ label, href })) });
+  // navigation.js group pages the role's sidebar does not show are left out, under their sidebar names.
+  const visiblePages = (pages) =>
+    pages.flatMap((page) => {
+      const leaf = leaves.find((l) => l.href === page.href);
+      return leaf ? [{ label: leaf.label, href: leaf.href }] : [];
+    });
+
   const exact = live(pathname);
-  if (exact) return [crumbs[0], ...(exact.group ? [{ label: exact.group }] : []), { label: exact.label, href: exact.href }];
-  const at = crumbs.findLastIndex((crumb, i) => i > 0 && crumb.href && live(crumb.href));
-  if (at < 0) return crumbs;
-  const match = live(crumbs[at].href);
+  if (exact) return [crumbs[0], ...(exact.group ? [groupCrumb(exact.group)] : []), { label: exact.label, href: exact.path }];
   const next = [...crumbs];
-  next[at] = { ...next[at], label: match.label };
-  if (match.group && at > 1 && !next[at - 1].href) next[at - 1] = { ...next[at - 1], label: match.group };
-  return next;
+  const at = crumbs.findLastIndex((crumb, i) => i > 0 && crumb.href && live(crumb.href));
+  if (at >= 0) {
+    const match = live(crumbs[at].href);
+    next[at] = { ...next[at], label: match.label };
+    if (match.group && at > 1 && !next[at - 1].href) next[at - 1] = groupCrumb(match.group);
+  }
+  return next.map(({ pages, ...crumb }) => (pages ? { ...crumb, menu: visiblePages(pages) } : crumb));
+}
+
+function CrumbMenu({ crumb, activeHref }) {
+  return (
+    <Popover
+      align="left"
+      panelClassName="w-64 py-1.5"
+      trigger={({ toggle, props }) => (
+        <button type="button" onClick={toggle} {...props} className="flex items-center gap-0.5 rounded hover:text-ink hover:underline aria-expanded:text-ink">
+          {crumb.label}
+          <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+        </button>
+      )}
+    >
+      <p className="px-3 pt-1 pb-1.5 text-[10.5px] font-semibold tracking-wide text-ink-muted uppercase">{crumb.label}</p>
+      <ul>
+        {crumb.menu.map((page) => {
+          const current = page.href === activeHref;
+          return (
+            <li key={page.href}>
+              <Link
+                href={page.href}
+                aria-current={current ? "page" : undefined}
+                className={cn("mx-1.5 block truncate rounded-lg px-2.5 py-2 text-sm hover:bg-surface-muted", current ? "bg-brand-50 font-medium text-brand-700" : "text-ink")}
+              >
+                {page.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </Popover>
+  );
 }
 
 function Breadcrumbs({ wide = false, navigation = [] }) {
@@ -50,17 +93,24 @@ function Breadcrumbs({ wide = false, navigation = [] }) {
       <ol className="flex min-w-0 items-center gap-1 text-[13px] text-ink-muted">
         {crumbs.map((crumb, i) => {
           const last = i === crumbs.length - 1;
+          // The trail's last crumb is the screen you are on (or the list screen it belongs to); "Admin" alone is just home.
+          const href = last && i > 0 ? (crumb.href ?? pathname) : crumb.href;
           return (
             <li key={`${crumb.label}-${i}`} className={cn("flex min-w-0 items-center gap-1", isAncestor(i) && (wide ? "hidden 2xl:flex" : "hidden sm:flex"), last ? "font-medium text-ink" : "shrink-0")}>
               {i > 0 && <ChevronRight className={cn("size-3.5 shrink-0 text-ink-muted/60", isAncestor(i - 1) && (wide ? "hidden 2xl:block" : "hidden sm:block"))} aria-hidden />}
-              {crumb.href && !last ? (
-                <Link href={crumb.href} className="hover:text-ink hover:underline">
+              {href ? (
+                <Link
+                  href={href}
+                  className={cn("hover:text-ink hover:underline", last && "min-w-0 truncate")}
+                  aria-current={last && pathOf(href) === pathname ? "page" : undefined}
+                  title={last ? crumb.label : undefined}
+                >
                   {crumb.label}
                 </Link>
+              ) : crumb.menu?.length ? (
+                <CrumbMenu crumb={crumb} activeHref={crumbs[i + 1]?.href} />
               ) : (
-                <span className="min-w-0 truncate" aria-current={last ? "page" : undefined} title={last ? crumb.label : undefined}>
-                  {crumb.label}
-                </span>
+                <span className="min-w-0 truncate">{crumb.label}</span>
               )}
             </li>
           );
