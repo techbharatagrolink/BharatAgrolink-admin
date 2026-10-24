@@ -72,7 +72,7 @@ export function calculatePricing(input) {
   if (!(values.mrp > 300)) price.errors.push("MRP must be greater than ₹300.");
   if (display > values.mrp) price.errors.push("Display price cannot exceed MRP.");
   if (serviceCharge < 0) price.errors.push("Service charge cannot be negative.");
-  if (takeRate < 25 || takeRate > 45) price.errors.push("Take rate must be between 25% and 45%.");
+  // if (takeRate < 25 || takeRate > 45) price.errors.push("Take rate must be between 25% and 45%.");
   price.ok = price.errors.length === 0;
   const econ = listingEconomics({ display, nrv, gstPercent });
   const econCod = listingEconomics({ display, nrv, gstPercent, paymentMode: "cod" });
