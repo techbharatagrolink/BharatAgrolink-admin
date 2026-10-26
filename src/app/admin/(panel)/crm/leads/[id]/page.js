@@ -18,6 +18,38 @@ export async function generateMetadata({ params }) {
 
 const duration = (sec) => (sec ? `${Math.floor(sec / 60)}m ${sec % 60}s` : "No connect");
 
+/** Krishi Salahkar (AI agronomist): AI summary of every chat and voice call this mobile had with it. */
+function AgronomistCard({ card }) {
+  return (
+    <Card>
+      <CardHeader
+        title="Krishi Salahkar (AI) chats"
+        description={card ? `${card.chats} chat${card.chats === 1 ? "" : "s"} · ${card.messages} farmer messages · AI summary of all of them` : "AI agronomist on the website"}
+      />
+      <CardBody>
+        {card ? (
+          <DescriptionList
+            columns={2}
+            items={[
+              { label: "Chat summary", value: card.summary || card.note || "—" },
+              { label: "Problem", value: card.problem || "—" },
+              { label: "Product interest", value: card.productInterest || "—" },
+              { label: "Products suggested by AI", value: card.productsRecommended || "—" },
+              { label: "Crop", value: [card.crop, card.season].filter(Boolean).join(" · ") || "—" },
+              { label: "AI priority", value: card.priority ? <span title={card.priorityReason}><StatusBadge status={card.priority} /></span> : "—" },
+              { label: "Last farmer message", value: card.lastMessage || "—" },
+              { label: "Last chat", value: formatDateTime(card.lastMessageAt) },
+              { label: "Note for sales", value: card.note || "—" },
+            ]}
+          />
+        ) : (
+          <p className="text-sm text-ink-muted">This number has not used the AI agronomist yet.</p>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 export default async function LeadDetailPage({ params }) {
   const { id } = await params;
   const { user, allowed } = await checkPermission("crm.leads");
@@ -75,6 +107,7 @@ export default async function LeadDetailPage({ params }) {
               />
             </CardBody>
           </Card>
+          <AgronomistCard card={data.agronomist} />
           <LeadRecordPanels leadId={lead.id} mobile={lead.mobile} chat={chat} attachments={attachments} canEdit={canEdit} />
           <Card>
             <CardHeader title="Call history" description={`${data.activities.length} logged activities`} />

@@ -35,6 +35,8 @@ export const crmResources = {
       { key: "attempts", label: "Call attempts", type: "number", sortable: true },
       { key: "lastCallDate", label: "Last call", type: "date", sortable: true },
       { key: "lastNote", label: "Last discussion", width: 220, wrap: true },
+      { key: "aiSummary", label: "AI chat summary", width: 280, wrap: true },
+      { key: "aiProductInterest", label: "AI product interest", width: 180, wrap: true },
       { key: "nextFollowUp", label: "Next follow-up", type: "date", sortable: true },
       { key: "city", label: "Location", width: 180 },
       { key: "crop", label: "Current crop" },

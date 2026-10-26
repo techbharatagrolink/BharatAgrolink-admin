@@ -51,7 +51,7 @@ export async function getLead(id, user) {
   try {
     const { data } = await api(`admin/crm/leads/${encodeURIComponent(id)}`, { token: user.token });
     if (!data?.lead) return null;
-    return { lead: data.lead, activities: data.activities || [] };
+    return { lead: data.lead, agronomist: data.agronomist || null, activities: data.activities || [] };
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
     throw error;
