@@ -6,6 +6,7 @@
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export function optionValues(options = []) {
   return options.map((o) => (typeof o === "object" ? String(o.value) : String(o)));
@@ -40,6 +41,8 @@ export function validateField(field, raw, { options } = {}) {
       return { value: String(value).toLowerCase(), error: EMAIL.test(value) ? null : "Enter a valid email address." };
     case "date":
       return { value, error: DATE.test(value) && !Number.isNaN(new Date(value).getTime()) ? null : "Enter a valid date." };
+    case "month":
+      return { value, error: MONTH.test(value) ? null : "Pick a month." };
     case "select": {
       const allowed = optionValues(options ?? field.options);
       return { value: String(value), error: allowed.includes(String(value)) ? null : `Choose a valid ${field.label.toLowerCase()}.` };
