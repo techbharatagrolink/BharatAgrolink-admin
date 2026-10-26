@@ -237,7 +237,8 @@ export const b2bOpsResources = {
     columns: [
       { key: "id", label: "Inquiry", type: "mono" },
       { key: "buyer", label: "Buyer" },
-      { key: "mobile", label: "Mobile", type: "mobile" },
+      // Full number: the sales team calls these buyers back.
+      { key: "mobile", label: "Mobile" },
       { key: "product", label: "Product", width: 260 },
       { key: "quantity", label: "Quantity" },
       { key: "city", label: "City" },
