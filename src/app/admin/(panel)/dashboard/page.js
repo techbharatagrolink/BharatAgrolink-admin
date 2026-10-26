@@ -24,6 +24,8 @@ import {
   RotateCcw,
   ShoppingBag,
   ShoppingCart,
+  Sigma,
+  SlidersHorizontal,
   Sparkles,
   Store,
   TrendingDown,
@@ -38,6 +40,7 @@ import {
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
+import { getFixedExpenses } from "@/lib/services/admin/fixed-expenses";
 import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -69,15 +72,23 @@ export default async function MainDashboardPage({ searchParams }) {
     );
   }
   const params = await searchParams;
-  const result = await getMainDashboard(params, user).then((data) => ({ data }), (error) => ({ error }));
+  const showFixed = can(user, "finance.expenses");
+  const [result, fixedResult] = await Promise.all([
+    getMainDashboard(params, user).then((data) => ({ data }), (error) => ({ error })),
+    // Fixed Expenses page cards for the current month (that page's default view).
+    showFixed ? getFixedExpenses({ pageSize: "10" }, user) : null,
+  ]);
   if (result.error) return (<><PageHeader title="Main Dashboard" /><ApiUnavailable error={result.error} what="the main dashboard" /></>);
   const d = result.data;
   const { sales, orders, shipping, marketplace, customers, finance, deltas } = d;
+  const fixed = fixedResult?.ok ? fixedResult.data : null;
+  const fixedMonth = fixed ? new Date(`${fixed.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }) : "";
+  const fixedShort = fixed ? new Date(`${fixed.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
   const showFinance = can(user, "finance") || can(user, "payouts");
   const showOrders = can(user, "orders");
   const vs = d.filters.compare ? "vs previous period" : undefined;
   const card = (slug) => dashboardFilterHref(`/admin/dashboard/cards/${slug}`, params);
-  const sectionIds = ["sales", "orders", "shipping", "marketplace", "customers", ...(showFinance ? ["finance"] : []), "payments", "charts"];
+  const sectionIds = ["sales", "orders", "shipping", "marketplace", "customers", ...(showFinance ? ["finance"] : []), "payments", "charts", ...(fixed ? ["fixed"] : [])];
 
   return (
     <>
@@ -213,6 +224,31 @@ export default async function MainDashboardPage({ searchParams }) {
           </Card>
         </div>
       </DashboardSection>
+
+      {fixed && (
+        <DashboardSection
+          id="fixed"
+          index={showFinance ? 9 : 8}
+          title="Fixed expenses"
+          note={fixedMonth}
+          summary={`${formatINR(fixed.kpis.total)} total · ${formatINR(fixed.kpis.baseRecurring)} recurring · ${formatINR(fixed.kpis.monthAdjustments)} adjustments`}
+          action={<Link href="/admin/finance/fixed-expenses" className="text-[13px] font-medium text-brand-700 hover:underline">Open fixed expenses</Link>}
+        >
+          <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
+            <StatCard label="Total Fixed Cost" value={formatINR(fixed.kpis.total)} hint={`Effective total for ${fixedMonth}`} icon={Sigma} href="/admin/finance/fixed-expenses" />
+            <StatCard label="Base Recurring" value={formatINR(fixed.kpis.baseRecurring)} hint="Applies to all months automatically" icon={Repeat} tone="info" href="/admin/finance/fixed-expenses?month=all" />
+            <StatCard
+              label="Month Adjustments"
+              value={formatINR(fixed.kpis.monthAdjustments)}
+              hint={`${fixed.kpis.monthItems} custom item(s) in ${fixedShort}`}
+              icon={SlidersHorizontal}
+              tone={fixed.kpis.monthAdjustments > 0 ? "warning" : "neutral"}
+              href="/admin/finance/fixed-expenses"
+            />
+            <StatCard label="Active Expense Items" value={formatNumber(fixed.kpis.activeItems)} hint="Deducted from Contribution Margin" icon={Layers} tone="neutral" href="/admin/finance/fixed-expenses" />
+          </Grid>
+        </DashboardSection>
+      )}
       </DashboardAccordion>
 
       {showOrders && (

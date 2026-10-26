@@ -145,7 +145,7 @@ export function RecordFormDrawer({ open, onClose, title, description, fields: al
                 return (
                   <Input
                     {...common}
-                    type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "email" ? "email" : field.type === "password" ? "password" : "text"}
+                    type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "month" ? "month" : field.type === "email" ? "email" : field.type === "password" ? "password" : "text"}
                     inputMode={field.type === "number" ? "decimal" : undefined}
                     min={field.min}
                     max={field.max}
