@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarRange, Search, X } from "lucide-react";
+import { CalendarRange, Check, ChevronDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/form";
+import { Popover } from "@/components/ui/popover";
 import { useQueryState } from "./use-query-state";
 
 const DATE_PRESETS = [
@@ -174,6 +175,71 @@ export function SelectFilter({ name, label, options }) {
   );
 }
 
+/** Several values of one field at once; the URL keeps them "|"-separated (the API matches any of them). */
+export function MultiSelectFilter({ name, label, options }) {
+  const { get, setParams } = useQueryState();
+  const selected = (get(name) || "").split("|").filter(Boolean);
+  const items = options.map((o) => (typeof o === "string" ? { value: o, label: o } : o));
+  const toggle = (value) => {
+    const next = selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value];
+    setParams({ [name]: next.join("|") });
+  };
+  const text = !selected.length
+    ? `${label}: all`
+    : selected.length === 1
+      ? `${label}: ${items.find((i) => i.value === selected[0])?.label ?? selected[0]}`
+      : `${label}: ${selected.length} selected`;
+  return (
+    <Popover
+      align="left"
+      label={label}
+      className="w-full sm:w-52"
+      trigger={({ toggle: open, props }) => (
+        <button
+          type="button"
+          onClick={open}
+          {...props}
+          className={cn(
+            "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-line-strong bg-surface px-3 text-left text-sm",
+            selected.length ? "text-ink" : "text-ink-muted",
+          )}
+        >
+          <span className="truncate">{text}</span>
+          <ChevronDown className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        </button>
+      )}
+    >
+      <div className="max-h-80 overflow-y-auto p-1.5" role="group" aria-label={label}>
+        {items.map((item) => {
+          const on = selected.includes(item.value);
+          return (
+            <button
+              key={item.value}
+              type="button"
+              role="checkbox"
+              aria-checked={on}
+              onClick={() => toggle(item.value)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink hover:bg-neutral-bg"
+            >
+              <span className={cn("grid size-4 shrink-0 place-items-center rounded border", on ? "border-brand-600 bg-brand-600 text-white" : "border-line-strong")}>
+                {on && <Check className="size-3" aria-hidden />}
+              </span>
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      {selected.length > 0 && (
+        <div className="border-t border-line p-1.5">
+          <button type="button" data-close onClick={() => setParams({ [name]: "" })} className="w-full rounded-lg px-2 py-1.5 text-left text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
+            Clear {label.toLowerCase()}
+          </button>
+        </div>
+      )}
+    </Popover>
+  );
+}
+
 /** Reusable filter row: search, selects and date range, all synced to the URL. */
 export function FilterBar({ search, filters = [], dateRange, children, className }) {
   const { searchParams, setParams } = useQueryState();
@@ -185,6 +251,8 @@ export function FilterBar({ search, filters = [], dateRange, children, className
         {filters.map((f) =>
           f.type === "text" ? (
             <TextFilter key={f.key} name={f.key} label={f.label} />
+          ) : f.type === "multi" ? (
+            <MultiSelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
           ) : (
             <SelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
           )
