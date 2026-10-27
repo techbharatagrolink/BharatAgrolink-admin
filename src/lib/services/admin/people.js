@@ -72,6 +72,32 @@ export async function saveVendorKycFiles(id, formData, user) {
   return data;
 }
 
+/** Approve / reject / delete one of the seller panel's documents (sellerlogin column). */
+export async function reviewVendorSellerDocument(id, body, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/kyc`, { method: "POST", token: user.token, body });
+  return data;
+}
+
+export async function uploadVendorSellerDocument(id, docId, formData, user) {
+  const { data } = await apiForm(`admin/vendors/${encodeURIComponent(id)}/seller-documents/${encodeURIComponent(docId)}`, { method: "PUT", token: user.token, formData });
+  return data;
+}
+
+export async function uploadVendorLicenseDocument(id, formData, user) {
+  const { data } = await apiForm(`admin/vendors/${encodeURIComponent(id)}/license-documents`, { token: user.token, formData });
+  return data;
+}
+
+export async function reviewVendorLicenseDocument(id, docId, body, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/license-documents/${encodeURIComponent(docId)}/review`, { method: "POST", token: user.token, body });
+  return data;
+}
+
+export async function deleteVendorLicenseDocument(id, docId, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/license-documents/${encodeURIComponent(docId)}`, { method: "DELETE", token: user.token });
+  return data;
+}
+
 export async function getCustomer(id, user) {
   if (user?.token) {
     try {

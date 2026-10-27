@@ -10,6 +10,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
 import { VendorKyc } from "@/components/admin/vendors/vendor-kyc";
+import { VendorDocuments } from "@/components/admin/vendors/vendor-documents";
 import { HBarList } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
@@ -52,6 +53,15 @@ export default async function VendorDetailPage({ params, searchParams }) {
         actions={<ButtonLink href={`/admin/vendors/${v.id}/bank`} variant="secondary" size="sm">Bank details</ButtonLink>}
       />
       <VendorKyc vendorId={v.id} documents={data.documents || []} canEdit={can(user, "vendors", "edit")} />
+      <VendorDocuments
+        vendorId={v.id}
+        businessType={data.businessType}
+        sellerType={data.sellerType}
+        categories={data.categories || []}
+        sellerDocuments={data.sellerDocuments || []}
+        licenseDocuments={data.licenseDocuments ?? null}
+        canEdit={can(user, "vendors", "edit")}
+      />
       <StatGrid>
         <StatCard label="Score" value={v.score ?? "—"} hint="out of 100" tone="info" href="/admin/vendors/scores" />
         <StatCard label="Products" value={formatNumber(data.productCount)} href={`/admin/products?vendorId=${v.id}`} />
