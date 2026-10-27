@@ -61,7 +61,7 @@ function VariationsCard({ product: p }) {
                     <td className="px-4 py-2.5 text-right text-ink-soft tabular">{formatINR(r.mrp)}</td>
                     <td className="px-4 py-2.5 text-right text-ink-soft tabular">{formatINR(r.nrv)}</td>
                     <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(r.display)}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-soft tabular">{r.weightKg} kg</td>
+                    <td className="px-4 py-2.5 text-right text-ink-soft tabular">{r.weightKg} g</td>
                     <td className="px-4 py-2.5 text-right">
                       <span className="tabular">{formatNumber(r.stock)}</span> <StatusBadge status={r.stockStatus} />
                     </td>
@@ -83,7 +83,7 @@ function VariationsCard({ product: p }) {
                   <div><dt className="text-xs text-ink-muted">SKU</dt><dd className="text-ink-soft">{r.sku}</dd></div>
                   <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(r.display)}</dd></div>
                   <div><dt className="text-xs text-ink-muted">MRP / NRV</dt><dd className="text-ink-soft">{formatINR(r.mrp)} / {formatINR(r.nrv)}</dd></div>
-                  <div><dt className="text-xs text-ink-muted">Stock · weight</dt><dd className="text-ink-soft">{formatNumber(r.stock)} · {r.weightKg} kg</dd></div>
+                  <div><dt className="text-xs text-ink-muted">Stock · weight</dt><dd className="text-ink-soft">{formatNumber(r.stock)} · {r.weightKg} g</dd></div>
                 </dl>
               </li>
             ))}
@@ -181,7 +181,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
                   { label: "Product ID", value: `${p.id} · ${p.uniqueId}` },
                   { label: "HSN", value: p.hsn },
                   { label: "GST", value: `${p.gstPercent}% (inclusive)` },
-                  { label: "Weight", value: `${p.weightKg} kg` },
+                  { label: "Weight", value: `${p.weightKg} g` },
                   { label: "Variants", value: p.variants },
                   { label: "Return policy", value: p.returnPolicy },
                   { label: "Created", value: formatDate(p.createdAt) },
