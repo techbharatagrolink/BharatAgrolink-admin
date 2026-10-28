@@ -16,7 +16,13 @@ export const crmResources = {
     filters: [
       { key: "priority", label: "Priority", options: ["Hot", "Warm", "Cold"] },
       { key: "customerType", label: "Customer type", options: ["Farmer", "Retailer", "Distributor"] },
-      { key: "source", label: "Source", options: ["CRM", "AiSensy WhatsApp", "WhatsApp", "Website Engagement", "Bulk Inquiry", "CSV Import", "AI Call (VAPI)", "Missed Call"] },
+      {
+        key: "source",
+        label: "Source",
+        type: "multi",
+        // channels first; "WhatsApp (AiSensy)" and "Bulk Enquiry" cover every value they were saved under
+        options: ["Krishi Salahkar (AI)", "Krishi Assistant", "WhatsApp (AiSensy)", "Bulk Enquiry", "Meta", "ORGANIC", "Engagement", "Delivered", "IMPORTED", "CRM", "Model Login", "new-landing-page form", "Manual Customer", "AI Call (VAPI)", "Missed Call", "CSV Import"],
+      },
       { key: "assignedTo", label: "Executive", options: execs },
     ],
     tabs: { field: "status", values: ["New", "Called", "Interested", "Follow Up", "Not Interested", "Converted"] },
