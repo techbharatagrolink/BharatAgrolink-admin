@@ -39,6 +39,7 @@ const emptyForm = {
   details: "", usage: "", offerTitle: "", offerShort: "", returnPolicyId: "", purchaseLimit: "", relatedProducts: "",
   upsellProducts: "", commission: "", adExpense: "", officeExpense: "", profit: "", selfShip: false, chemicalFormula: "",
   courierZone: "", size: "", specifications: [], faqs: [], vendorId: "",
+  unit: "", metaTitle: "", metaKeywords: "", metaDescription: "",
 };
 
 function imagesOf(product) {
@@ -98,6 +99,10 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     size: product.size || "",
     specifications: Array.isArray(product.specifications) ? product.specifications.map((row) => ({ name: row.name || "", value: row.value || "" })) : [],
     faqs: Array.isArray(product.faqs) ? product.faqs.map((row) => ({ id: row.id, question: row.question || "", answer: row.answer || "" })) : [],
+    unit: product.unit || "",
+    metaTitle: product.metaTitle || "",
+    metaKeywords: product.metaKeywords || "",
+    metaDescription: product.metaDescription || "",
   }));
   const [draftVariations, setDraftVariations] = useState([]);
   const [attributeGroups, setAttributeGroups] = useState([]);
@@ -119,7 +124,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     hsn: priced.hsn || current.hsn,
   })), []);
   const pricingParcel = useMemo(() => ({
-    ...(creating ? { weightKg: form.weightKg, vendorId: form.vendorId } : {}),
+    // The pricing preview's weightKg is a true kilogram override; the Shipping step's field is grams.
+    ...(creating ? { weightKg: form.weightKg === "" || form.weightKg == null ? form.weightKg : Number(form.weightKg) / 1000, vendorId: form.vendorId } : {}),
     lengthCm: form.lengthCm,
     widthCm: form.widthCm,
     heightCm: form.heightCm,
@@ -463,7 +469,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           {step === "shipping" && (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <h2 className="text-sm font-semibold text-ink sm:col-span-2 lg:col-span-3">5. Shipping</h2>
-              <Field label="Weight (kg)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.weightKg} onChange={set("weightKg")} />}</Field>
+              <Field label="Weight (g)">{({ id }) => <Input id={id} type="number" min="0" step="1" value={form.weightKg} onChange={set("weightKg")} />}</Field>
+              <Field label="Unit / pack size">{({ id }) => <Input id={id} value={form.unit} onChange={set("unit")} placeholder="e.g. 1 Kg, 500 ml, Pack of 5" />}</Field>
               <Field label="Length (cm)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.lengthCm} onChange={set("lengthCm")} />}</Field>
               <Field label="Width (cm)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.widthCm} onChange={set("widthCm")} />}</Field>
               <Field label="Height (cm)">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={form.heightCm} onChange={set("heightCm")} />}</Field>
@@ -529,6 +536,15 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <Field label="Offer short description">{({ id }) => <Input id={id} value={form.offerShort} onChange={set("offerShort")} />}</Field>
               <Field label="Return policy">{({ id }) => <Select id={id} value={form.returnPolicyId} onChange={set("returnPolicyId")} placeholder="None" options={options.returnPolicyOptions || []} />}</Field>
               <Field label="URL Key">{({ id }) => <Input id={id} value={form.webUrl} readOnly />}</Field>
+              <div className="sm:col-span-2">
+                <h3 className="text-sm font-semibold text-ink">Search engine meta</h3>
+                <p className="text-xs text-ink-muted">What shows up in Google results and the browser tab for this product's page.</p>
+              </div>
+              <Field label="Meta title">{({ id }) => <Input id={id} value={form.metaTitle} onChange={set("metaTitle")} placeholder={form.name || "Defaults to the product name"} />}</Field>
+              <Field label="Meta keywords">{({ id }) => <Input id={id} value={form.metaKeywords} onChange={set("metaKeywords")} placeholder="Comma-separated" />}</Field>
+              <div className="sm:col-span-2">
+                <Field label="Meta description">{({ id }) => <Textarea id={id} rows={3} value={form.metaDescription} onChange={set("metaDescription")} placeholder="Defaults to the product description" />}</Field>
+              </div>
             </div>
           )}
 
