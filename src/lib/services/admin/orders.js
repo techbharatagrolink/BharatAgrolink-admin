@@ -100,7 +100,9 @@ function adaptOrder(data, user) {
       subtotal: data.totals?.subtotal ?? 0,
       shippingFee: data.totals?.shippingFee ?? 0,
       handling: data.totals?.handlingFee ?? 0,
-      discount: (data.totals?.orderDiscount || 0) + (data.totals?.couponValue || 0) + (data.totals?.productDiscount || 0),
+      // orderDiscount (orders.discount) and productDiscount (sum of line.discount * qty) are the same
+      // total discount computed two different ways — adding both doubled the figure shown here.
+      discount: (data.totals?.orderDiscount || 0) + (data.totals?.couponValue || 0),
       total: data.totals?.orderTotal ?? 0,
       advance: data.payment?.advanceAmount || 0,
       partial: Boolean(data.payment?.isPartial),
