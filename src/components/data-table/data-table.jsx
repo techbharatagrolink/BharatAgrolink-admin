@@ -15,6 +15,7 @@ import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
 import { Cell, formatCellValue, resolveHref } from "./cells";
 import { FilterBar } from "./filter-bar";
+import { applyColumnFilters, ColumnFilter, columnFilterable, columnFilterActive } from "./column-filter";
 import { useQueryState } from "./use-query-state";
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -71,6 +72,7 @@ export function DataTable({
   dense = true,
   pageSizes = PAGE_SIZES,
   serial = true,
+  columnFilters = false,
 }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -82,9 +84,13 @@ export function DataTable({
   const [confirm, setConfirm] = useState(null);
   const [running, startRunning] = useTransition();
   const [exporting, setExporting] = useState(false);
+  const [colFilters, setColFilters] = useState({});
 
   const visible = useMemo(() => columns.filter((c) => !hidden.includes(c.key)), [columns, hidden]);
-  const rows = data.rows;
+  // Header filters match the loaded rows in the browser, so typing never reloads the page.
+  const rows = useMemo(() => (columnFilters ? applyColumnFilters(data.rows, columns, colFilters) : data.rows), [columnFilters, data.rows, columns, colFilters]);
+  const filteredCount = columnFilters && columns.some((c) => columnFilterActive(colFilters[c.key])) ? rows.length : null;
+  const setColFilter = (key, value) => setColFilters((current) => ({ ...current, [key]: value }));
   const pageIds = rows.map((r) => r[rowKey]);
   const selectedOnPage = selected.filter((sid) => pageIds.includes(sid));
   const allChecked = rows.length > 0 && selectedOnPage.length === rows.length;
@@ -136,8 +142,9 @@ export function DataTable({
       if (onExport) {
         const result = await onExport(Object.fromEntries(new URLSearchParams(window.location.search)));
         if (!result?.ok) throw new Error(result?.message);
-        download(`${exportName || id}-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(columns, result.rows));
-        notify({ message: `Exported ${formatNumber(result.rows.length)} rows.` });
+        const exported = columnFilters ? applyColumnFilters(result.rows, columns, colFilters) : result.rows;
+        download(`${exportName || id}-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(columns, exported));
+        notify({ message: `Exported ${formatNumber(exported.length)} rows.` });
       } else {
         download(`${exportName || id}-page.csv`, toCsv(columns, rows));
       }
@@ -280,14 +287,17 @@ export function DataTable({
                       className={cn("sticky top-0 z-10 border-b border-line bg-surface-muted px-3 py-2.5 text-xs font-semibold whitespace-nowrap text-ink-muted", index === 0 && "left-0 z-20", ["currency", "number", "percent"].includes(column.type) && "text-right", column.align === "right" && "text-right")}
                       style={column.width ? { width: column.width, maxWidth: column.width } : undefined}
                     >
-                      {column.sortable ? (
-                        <button type="button" onClick={() => sortBy(column)} className={cn("inline-flex items-center gap-1 hover:text-ink", active && "text-ink")}>
-                          {column.label}
-                          <SortIcon className="size-3.5" aria-hidden />
-                        </button>
-                      ) : (
-                        column.label
-                      )}
+                      <span className={cn("flex items-center gap-2", columnFilters && columnFilterable(column) ? "justify-between" : (["currency", "number", "percent"].includes(column.type) || column.align === "right") && "justify-end")}>
+                        {column.sortable ? (
+                          <button type="button" onClick={() => sortBy(column)} className={cn("inline-flex items-center gap-1 hover:text-ink", active && "text-ink")}>
+                            {column.label}
+                            <SortIcon className="size-3.5" aria-hidden />
+                          </button>
+                        ) : (
+                          column.label
+                        )}
+                        {columnFilters && columnFilterable(column) && <ColumnFilter column={column} filter={colFilters[column.key]} onChange={(value) => setColFilter(column.key, value)} />}
+                      </span>
                     </th>
                   );
                 })}
@@ -409,12 +419,26 @@ export function DataTable({
             })}
           </ul>
         </div>
-        {rows.length === 0 && <EmptyState title={emptyTitle} description={emptyDescription} />}
+        {rows.length === 0 &&
+          (filteredCount === 0 && data.rows.length > 0 ? (
+            <EmptyState title="No matching rows" description="No row on this page matches the column filters." />
+          ) : (
+            <EmptyState title={emptyTitle} description={emptyDescription} />
+          ))}
       </div>
 
       <div className="flex flex-col gap-2 border-t border-line px-3 py-2.5 text-[13px] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
         <p className="tabular">
           {data.total === 0 ? "No results" : `Showing ${formatNumber(from)}–${formatNumber(to)} of ${formatNumber(data.total)}`}
+          {filteredCount != null && (
+            <>
+              {" · "}
+              <span className="font-medium text-brand-700">{formatNumber(filteredCount)} match column filters</span>{" "}
+              <button type="button" onClick={() => setColFilters({})} className="font-medium underline hover:text-ink">
+                Reset
+              </button>
+            </>
+          )}
         </p>
         <div className="flex items-center gap-2">
           <label className="hidden items-center gap-2 sm:flex">

@@ -56,6 +56,8 @@ export const coreResources = {
     defaultSort: "createdAt:desc",
     rowHref: "/admin/orders/{id}",
     exportable: true,
+    // Funnel filter in every column header (not S.No. or the product image).
+    columnFilters: true,
     headerActions: [{ label: "Create order", href: "/admin/orders/new", action: "add", primary: true }],
     columns: [
       { key: "id", label: "Order", type: "mono" },
