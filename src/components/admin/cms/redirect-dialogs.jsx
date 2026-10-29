@@ -288,38 +288,65 @@ function ImportPreview({ preview, updateExisting }) {
       </div>
 
       {preview.preview.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-line">
-          <table className="w-full min-w-max text-left text-[12.5px]">
-            <thead>
-              <tr className="border-b border-line bg-surface-muted">
-                <th className="px-3 py-2 font-semibold text-ink-muted">Row</th>
-                <th className="px-3 py-2 font-semibold text-ink-muted">Source path</th>
-                <th className="px-3 py-2 font-semibold text-ink-muted">Destination</th>
-                <th className="px-3 py-2 font-semibold text-ink-muted">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.preview.map((r) => (
-                <tr key={r.row} className="border-b border-line last:border-0">
-                  <td className="px-3 py-1.5 text-ink-muted tabular">{r.row}</td>
-                  <td className="max-w-[16rem] truncate px-3 py-1.5" title={r.sourceUrl}>
-                    <code>{showPath(r.sourcePath)}</code>
-                  </td>
-                  <td className="max-w-[20rem] truncate px-3 py-1.5" title={r.targetUrl}>
-                    {r.targetUrl}
-                  </td>
-                  <td className="px-3 py-1.5">
+        <div className="rounded-lg border border-line">
+          <div className="hidden overflow-x-auto xl:block">
+            <table className="w-full min-w-max text-left text-[12.5px]">
+              <thead>
+                <tr className="border-b border-line bg-surface-muted">
+                  <th className="px-3 py-2 font-semibold text-ink-muted">Row</th>
+                  <th className="px-3 py-2 font-semibold text-ink-muted">Source path</th>
+                  <th className="px-3 py-2 font-semibold text-ink-muted">Destination</th>
+                  <th className="px-3 py-2 font-semibold text-ink-muted">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.preview.map((r) => (
+                  <tr key={r.row} className="border-b border-line last:border-0">
+                    <td className="px-3 py-1.5 text-ink-muted tabular">{r.row}</td>
+                    <td className="max-w-[16rem] truncate px-3 py-1.5" title={r.sourceUrl}>
+                      <code>{showPath(r.sourcePath)}</code>
+                    </td>
+                    <td className="max-w-[20rem] truncate px-3 py-1.5" title={r.targetUrl}>
+                      {r.targetUrl}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {r.existingId ? <Badge tone="warning">Rule #{r.existingId}</Badge> : <Badge tone="success">New</Badge>}
+                      {r.liveRoute && (
+                        <Badge tone="info" className="ml-1">
+                          Live page
+                        </Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="divide-y divide-line xl:hidden">
+            {preview.preview.map((r) => (
+              <li key={r.row} className="space-y-1.5 px-3 py-2.5 text-[12.5px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-ink-muted tabular">Row {r.row}</span>
+                  <span>
                     {r.existingId ? <Badge tone="warning">Rule #{r.existingId}</Badge> : <Badge tone="success">New</Badge>}
                     {r.liveRoute && (
                       <Badge tone="info" className="ml-1">
                         Live page
                       </Badge>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Source path</p>
+                  <p className="break-all" title={r.sourceUrl}><code>{showPath(r.sourcePath)}</code></p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Destination</p>
+                  <p className="break-all" title={r.targetUrl}>{r.targetUrl}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
           {preview.validRows > preview.preview.length && <p className="border-t border-line px-3 py-1.5 text-xs text-ink-muted">First {preview.preview.length} of {formatNumber(preview.validRows)} valid rows.</p>}
         </div>
       )}
@@ -442,35 +469,67 @@ export function LogsDialog({ onClose }) {
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {!state.loading && !state.error && !state.logs.length && <p className="py-6 text-center text-sm text-ink-muted">No changes recorded yet.</p>}
       {state.logs.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-line">
-          <table className="w-full min-w-max text-left text-[12.5px]">
-            <thead>
-              <tr className="border-b border-line bg-surface-muted">
-                {["#", "Action", "Path", "Details", "By", "IP", "When"].map((h) => (
-                  <th key={h} scope="col" className="px-3 py-2 font-semibold text-ink-muted">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {state.logs.map((log) => (
-                <tr key={log.id} className="border-b border-line align-top last:border-0">
-                  <td className="px-3 py-1.5 text-ink-muted tabular">{log.id}</td>
-                  <td className="px-3 py-1.5">
-                    <Badge tone={ACTION_TONE[log.action] ?? "neutral"}>{log.action.replace(/_/g, " ")}</Badge>
-                  </td>
-                  <td className="max-w-[14rem] truncate px-3 py-1.5" title={log.sourcePath ?? ""}>
-                    <code>{log.sourcePath && !["*", "bulk"].includes(log.sourcePath) ? showPath(log.sourcePath) : log.sourcePath ?? "—"}</code>
-                  </td>
-                  <td className="max-w-[22rem] px-3 py-1.5 whitespace-normal text-ink-soft">{log.details ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-ink-soft">{log.performedBy ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-ink-muted tabular">{log.ipAddress ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-ink-muted">{formatDateTime(log.createdAt)}</td>
+        <div className="rounded-lg border border-line">
+          <div className="hidden overflow-x-auto xl:block">
+            <table className="w-full min-w-max text-left text-[12.5px]">
+              <thead>
+                <tr className="border-b border-line bg-surface-muted">
+                  {["#", "Action", "Path", "Details", "By", "IP", "When"].map((h) => (
+                    <th key={h} scope="col" className="px-3 py-2 font-semibold text-ink-muted">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {state.logs.map((log) => (
+                  <tr key={log.id} className="border-b border-line align-top last:border-0">
+                    <td className="px-3 py-1.5 text-ink-muted tabular">{log.id}</td>
+                    <td className="px-3 py-1.5">
+                      <Badge tone={ACTION_TONE[log.action] ?? "neutral"}>{log.action.replace(/_/g, " ")}</Badge>
+                    </td>
+                    <td className="max-w-[14rem] truncate px-3 py-1.5" title={log.sourcePath ?? ""}>
+                      <code>{log.sourcePath && !["*", "bulk"].includes(log.sourcePath) ? showPath(log.sourcePath) : log.sourcePath ?? "—"}</code>
+                    </td>
+                    <td className="max-w-[22rem] px-3 py-1.5 whitespace-normal text-ink-soft">{log.details ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-ink-soft">{log.performedBy ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-ink-muted tabular">{log.ipAddress ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-ink-muted">{formatDateTime(log.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="divide-y divide-line xl:hidden">
+            {state.logs.map((log) => (
+              <li key={log.id} className="space-y-1.5 px-3 py-2.5 text-[12.5px]">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge tone={ACTION_TONE[log.action] ?? "neutral"}>{log.action.replace(/_/g, " ")}</Badge>
+                  <span className="text-ink-muted">{formatDateTime(log.createdAt)}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Path</p>
+                  <p className="break-all"><code>{log.sourcePath && !["*", "bulk"].includes(log.sourcePath) ? showPath(log.sourcePath) : log.sourcePath ?? "—"}</code></p>
+                </div>
+                {log.details && (
+                  <div className="min-w-0">
+                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Details</p>
+                    <p className="break-words text-ink-soft">{log.details}</p>
+                  </div>
+                )}
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                  <div className="min-w-0">
+                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">By</dt>
+                    <dd className="truncate text-ink-soft">{log.performedBy ?? "—"}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">IP</dt>
+                    <dd className="truncate tabular text-ink-muted">{log.ipAddress ?? "—"}</dd>
+                  </div>
+                </dl>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </Dialog>

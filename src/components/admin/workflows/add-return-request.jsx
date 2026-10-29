@@ -166,41 +166,71 @@ export function AddReturnRequest({ reasons }) {
               {orders.message && <Notice tone={orders.message.startsWith("Error") ? "danger" : "info"}>{orders.message}</Notice>}
               {orders.list.length > 0 && (
                 <div className="max-h-80 overflow-auto rounded-lg border border-line scrollbar-thin">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
-                      <tr>
-                        <th className="w-8 px-3 py-2" />
-                        <th className="px-3 py-2 font-medium">Product</th>
-                        <th className="px-3 py-2 font-medium">SKU</th>
-                        <th className="px-3 py-2 text-right font-medium">Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Price</th>
-                        <th className="px-3 py-2 font-medium">Status</th>
-                      </tr>
-                    </thead>
-                    {orders.list.map((o) => (
-                      <tbody key={o.orderId} className="divide-y divide-line border-b border-line last:border-0">
-                        <tr className="bg-surface-muted/60">
-                          <td colSpan={6} className="px-3 py-2 text-xs text-ink-muted">
-                            <span className="font-mono font-medium text-ink">{o.orderId}</span>{" "}
-                            <Badge tone={o.eligible ? "success" : "warning"}>{o.eligible ? "Eligible" : "Not eligible"}</Badge>
-                            <span className="ml-2">{o.createdAt} · {o.paymentMode} · {formatINR(o.totalPrice)} · {o.status} · {o.daysElapsed} days</span>
-                          </td>
+                  <div className="hidden xl:block">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
+                        <tr>
+                          <th className="w-8 px-3 py-2" />
+                          <th className="px-3 py-2 font-medium">Product</th>
+                          <th className="px-3 py-2 font-medium">SKU</th>
+                          <th className="px-3 py-2 text-right font-medium">Qty</th>
+                          <th className="px-3 py-2 text-right font-medium">Price</th>
+                          <th className="px-3 py-2 font-medium">Status</th>
                         </tr>
-                        {o.items.map((i) => (
-                          <tr key={i.orderProductId} className="hover:bg-surface-muted/60">
-                            <td className="px-3 py-2">
-                              <Checkbox aria-label={`Select ${i.name}`} checked={picked.includes(i.orderProductId)} onChange={(e) => toggle(i.orderProductId, e.target.checked)} />
+                      </thead>
+                      {orders.list.map((o) => (
+                        <tbody key={o.orderId} className="divide-y divide-line border-b border-line last:border-0">
+                          <tr className="bg-surface-muted/60">
+                            <td colSpan={6} className="px-3 py-2 text-xs text-ink-muted">
+                              <span className="font-mono font-medium text-ink">{o.orderId}</span>{" "}
+                              <Badge tone={o.eligible ? "success" : "warning"}>{o.eligible ? "Eligible" : "Not eligible"}</Badge>
+                              <span className="ml-2">{o.createdAt} · {o.paymentMode} · {formatINR(o.totalPrice)} · {o.status} · {o.daysElapsed} days</span>
                             </td>
-                            <td className="px-3 py-2 text-ink">{i.name || "N/A"}</td>
-                            <td className="px-3 py-2 font-mono text-xs text-ink-soft">{i.sku || "N/A"}</td>
-                            <td className="px-3 py-2 text-right tabular">{i.qty}</td>
-                            <td className="px-3 py-2 text-right tabular">{formatINR(i.price)}</td>
-                            <td className="px-3 py-2 text-xs text-ink-soft">{i.status}</td>
                           </tr>
-                        ))}
-                      </tbody>
+                          {o.items.map((i) => (
+                            <tr key={i.orderProductId} className="hover:bg-surface-muted/60">
+                              <td className="px-3 py-2">
+                                <Checkbox aria-label={`Select ${i.name}`} checked={picked.includes(i.orderProductId)} onChange={(e) => toggle(i.orderProductId, e.target.checked)} />
+                              </td>
+                              <td className="px-3 py-2 text-ink">{i.name || "N/A"}</td>
+                              <td className="px-3 py-2 font-mono text-xs text-ink-soft">{i.sku || "N/A"}</td>
+                              <td className="px-3 py-2 text-right tabular">{i.qty}</td>
+                              <td className="px-3 py-2 text-right tabular">{formatINR(i.price)}</td>
+                              <td className="px-3 py-2 text-xs text-ink-soft">{i.status}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      ))}
+                    </table>
+                  </div>
+
+                  <div className="divide-y divide-line xl:hidden">
+                    {orders.list.map((o) => (
+                      <div key={o.orderId}>
+                        <div className="bg-surface-muted/60 px-3 py-2 text-xs text-ink-muted">
+                          <span className="font-mono font-medium text-ink">{o.orderId}</span>{" "}
+                          <Badge tone={o.eligible ? "success" : "warning"}>{o.eligible ? "Eligible" : "Not eligible"}</Badge>
+                          <span className="mt-1 block">{o.createdAt} · {o.paymentMode} · {formatINR(o.totalPrice)} · {o.status} · {o.daysElapsed} days</span>
+                        </div>
+                        <ul className="divide-y divide-line">
+                          {o.items.map((i) => (
+                            <li key={i.orderProductId} className="flex gap-2.5 px-3 py-2.5 text-sm hover:bg-surface-muted/60">
+                              <Checkbox aria-label={`Select ${i.name}`} checked={picked.includes(i.orderProductId)} onChange={(e) => toggle(i.orderProductId, e.target.checked)} className="mt-0.5" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-ink">{i.name || "N/A"}</p>
+                                <p className="font-mono text-xs text-ink-soft">{i.sku || "N/A"}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+                                  <span className="tabular">Qty {i.qty}</span>
+                                  <span className="tabular">{formatINR(i.price)}</span>
+                                  <span>{i.status}</span>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </table>
+                  </div>
                 </div>
               )}
             </div>

@@ -52,15 +52,18 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show." })
     setSort((s) => (s.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : { key: null, dir: "asc" }));
   }
 
+  const cellValue = (c, row, i) => (c.index ? start + i + 1 : c.render ? c.render(row) : (row[c.key] ?? "—"));
+  const [lead, ...rest] = columns;
+
   return (
     <div>
-      <div className="flex justify-end px-4 pb-2 print:hidden">
+      <div className="hidden justify-end px-4 pb-2 print:hidden xl:flex">
         <Button size="xs" variant={showFilters ? "primary" : "ghost"} onClick={() => setShowFilters((v) => !v)} aria-pressed={showFilters}>
           <Filter className="size-3.5" aria-hidden />
           Column filters
         </Button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto xl:block">
         <table className="w-full text-sm">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead className="bg-surface-muted text-left text-xs font-semibold text-ink-muted">
@@ -119,6 +122,26 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show." })
           </tbody>
         </table>
       </div>
+
+      <div className="space-y-3 p-3 xl:hidden">
+        {visible.map((row, i) => (
+          <div key={row.userId ?? start + i} className="rounded-lg border border-line p-3 text-sm">
+            <p className="font-medium text-ink">{cellValue(lead, row, i)}</p>
+            {rest.length > 0 && (
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                {rest.map((c) => (
+                  <div key={c.key} className="min-w-0">
+                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{c.label}</dt>
+                    <dd className="mt-0.5 min-w-0 break-words text-ink">{cellValue(c, row, i)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        ))}
+        {!visible.length && <p className="py-8 text-center text-sm text-ink-muted">{empty}</p>}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-xs text-ink-muted print:hidden">
         <label className="flex items-center gap-2">
           Page size

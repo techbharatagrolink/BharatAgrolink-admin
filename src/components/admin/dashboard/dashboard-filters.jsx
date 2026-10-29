@@ -54,9 +54,9 @@ export function DashboardFilters({ values, options, label }) {
         </Field>
         <fieldset className="col-span-2 min-w-0 md:col-span-2 xl:col-span-1">
           <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">Date range</legend>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input type="date" aria-label="From date" value={draft.from} max={draft.to || undefined} onChange={(e) => set("from", e.target.value)} className="min-w-0" />
-            <span className="shrink-0 text-xs text-ink-muted">to</span>
+            <span className="hidden shrink-0 text-xs text-ink-muted sm:inline">to</span>
             <Input type="date" aria-label="To date" value={draft.to} min={draft.from || undefined} onChange={(e) => set("to", e.target.value)} className="min-w-0" />
           </div>
           {dateError && <p className="mt-1 text-xs text-danger-ink" role="alert">{dateError}</p>}
@@ -97,11 +97,11 @@ export function DashboardFilters({ values, options, label }) {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button type="button" size="sm" variant="ghost" className="md:hidden" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
             <SlidersHorizontal className="size-4" aria-hidden /> {expanded ? "Fewer filters" : `More filters${extraCount ? ` (${extraCount})` : ""}`}
           </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={reset} className="ml-auto lg:ml-0">
+          <Button type="button" size="sm" variant="ghost" onClick={reset}>
             <RotateCcw className="size-4" aria-hidden /> Reset
           </Button>
           <Button type="submit" size="sm" variant="primary" disabled={Boolean(dateError)}>

@@ -17,6 +17,15 @@ import { TrackingCell } from "./tracking-cell";
 
 const keyOf = (r) => `${r.orderId}|${r.vendorId}`;
 
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 export function ShipmentsTable({ rows, canAdd, canEdit }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -62,7 +71,41 @@ export function ShipmentsTable({ rows, canAdd, canEdit }) {
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
         </div>
       )}
-      <div className="overflow-x-auto">
+      <div className="space-y-3 p-3 xl:hidden">
+        {rows.map((r) => (
+          <div key={keyOf(r)} className="rounded-lg border border-line p-3 text-sm">
+            <div className="flex items-start gap-2.5">
+              <Checkbox aria-label={`Select ${r.orderId} ${r.vendorName}`} checked={selected.includes(keyOf(r))} onChange={(e) => toggle(keyOf(r), e.target.checked)} className="mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link href={`/admin/orders/${encodeURIComponent(r.orderId)}`} className="font-mono text-xs text-brand-700 hover:underline">{r.orderId}</Link>
+                    <p className="text-xs text-ink-muted">{r.vendorName} · {formatDate(r.orderDate)}</p>
+                    {r.invoiceNumber && <p className="font-mono text-[11px] text-ink-muted">{r.invoiceNumber}</p>}
+                  </div>
+                  <StatusBadge status={r.status} />
+                </div>
+                {r.statuses?.length > 1 && <p className="mt-1 text-[11px] text-ink-muted">{r.statuses.join(", ")}</p>}
+                <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                  <CardField label="Customer" value={r.customer} />
+                  <CardField label="Destination" value={r.destination} />
+                  <CardField label="Payment" value={r.paymentMode} />
+                  <CardField label="Amount" value={formatINR(r.amount)} />
+                  <CardField label="Lines / qty" value={`${r.lines} line${r.lines === 1 ? "" : "s"} · qty ${r.qty}`} />
+                </dl>
+                <div className="mt-2.5">
+                  <TrackingCell awb={r.awb} courier={r.courier} carrier={r.carrier} trackingUrl={r.trackingUrl} labelUrl={r.labelUrl} manifestUrl={r.manifestUrl} />
+                </div>
+                <div className="mt-2.5 flex justify-end border-t border-line pt-2.5">
+                  <ShipmentActions row={r} canAdd={canAdd} canEdit={canEdit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto xl:block">
         <table className="w-full text-sm">
           <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
             <tr>

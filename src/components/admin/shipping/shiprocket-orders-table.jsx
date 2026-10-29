@@ -17,6 +17,15 @@ import { ShiprocketBulkTrackingDialog, ShiprocketOrderDialog, ShiprocketTracking
 const unique = (list) => [...new Set(list.filter(Boolean))];
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 function RowActions({ row, onTrack, onDetails }) {
   return (
     <Popover
@@ -137,7 +146,33 @@ export function ShiprocketOrdersTable({ rows, canEdit }) {
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
         </div>
       )}
-      <div className="overflow-x-auto">
+      <div className="space-y-3 p-3 xl:hidden">
+        {rows.map((r) => (
+          <div key={r.key} className="rounded-lg border border-line p-3 text-sm">
+            <div className="flex items-start gap-2.5">
+              <Checkbox aria-label={`Select ${r.channelOrderId || r.srOrderId}`} checked={selected.includes(r.key)} onChange={(e) => toggle(r.key, e.target.checked)} className="mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="truncate font-mono text-xs font-medium text-ink">{r.channelOrderId || "N/A"}</span>
+                  <Badge tone={listTone(r.status)} dot>{r.status || "N/A"}</Badge>
+                </div>
+                <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                  <CardField label="Shipment ID" value={r.shipmentId} />
+                  <CardField label="AWB code" value={r.awb} />
+                  <CardField label="Courier" value={r.courier} />
+                  <CardField label="Freight charges" value={formatINR(r.freight)} />
+                  <CardField label="Created at" value={r.createdAt} />
+                </dl>
+                <div className="mt-2.5 flex justify-end border-t border-line pt-2.5">
+                  <RowActions row={r} onTrack={() => setTracking(r.shipmentId)} onDetails={() => setDetails(r.srOrderId)} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto xl:block">
         <table className="w-full text-sm">
           <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
             <tr>

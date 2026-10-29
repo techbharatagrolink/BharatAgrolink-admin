@@ -131,7 +131,7 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
       {rows.length === 0 ? (
         <EmptyState title="No bulk orders" description="No orders match these filters. Clear the filters to see every bulk order." />
       ) : (
-        <div className="overflow-x-auto scrollbar-thin">
+        <div className="hidden overflow-x-auto scrollbar-thin xl:block">
           <table className="w-full min-w-max text-left text-[13px]">
             <thead>
               <tr className="border-b border-line text-xs text-ink-muted">
@@ -217,6 +217,84 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {rows.length > 0 && (
+        <div className="space-y-3 p-3 xl:hidden">
+          {rows.map((order, index) => {
+            const orderId = plain(order.orderId) || "—";
+            const href = order.orderId ? `/admin/bulk-orders/orders/${encodeURIComponent(plain(order.orderId))}` : "/admin/bulk-orders/orders";
+            const vendorBits = [plain(order.provider) && plain(order.provider) !== "N/A" ? plain(order.provider) : "", plain(order.waybillNo) ? `AWB: ${plain(order.waybillNo)}` : ""].filter(Boolean);
+            const last = order.lastRemark;
+            const remarkText = plain(last?.remark);
+            return (
+              <div key={plain(order.id) || orderId} className="space-y-2.5 rounded-lg border border-line p-3 text-[13px]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <Link href={href} className="font-mono text-xs font-semibold text-brand-700 hover:underline">#{(page - 1) * pageSize + index + 1} · {orderId}</Link>
+                    <p className="mt-0.5 font-medium text-ink">{plain(order.customerName) || "N/A"}</p>
+                    {plain(order.customerContact) && <p className="text-xs text-ink-muted">{plain(order.customerContact)}</p>}
+                  </div>
+                  <StatusBadge status={displayStatus(order)} />
+                </div>
+                <p className="text-ink-soft" title={plain(order.productNames)}>{plain(order.productNames) || "N/A"}</p>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Qty</dt>
+                    <dd className="text-ink tabular">{formatNumber(order.totalQuantity)} ({formatNumber(order.noOfPackages)} pkg)</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Amount</dt>
+                    <dd className="font-medium text-ink tabular">{inr(order.invoiceValue)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Payment</dt>
+                    <dd className="text-ink">{plain(order.paymentStatus) || "Unpaid"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Sales agent</dt>
+                    <dd className="text-ink">{plain(order.salesmanName) || "Unassigned"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Created</dt>
+                    <dd className="text-ink">{formatDateTime(order.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Warehouse</dt>
+                    <dd className="text-ink">{plain(order.sourceWarehouse) || "N/A"}{vendorBits.length > 0 && <span className="block text-xs text-ink-muted capitalize">{vendorBits.join(" | ")}</span>}</dd>
+                  </div>
+                </dl>
+                <p className="border-t border-line pt-2 text-xs text-ink-soft">
+                  {remarkText ? (
+                    <>
+                      {remarkText}
+                      <span className="block text-ink-muted">{plain(last.addedBy) || "Unknown"}{Number(order.remarkCount) > 1 ? ` · ${formatNumber(order.remarkCount)} total` : ""}</span>
+                    </>
+                  ) : (
+                    "No remarks"
+                  )}
+                </p>
+                <div className="flex gap-1 border-t border-line pt-2">
+                  <Link href={href} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${orderId}`} title="View details">
+                    <Eye className="size-4" aria-hidden />
+                  </Link>
+                  {canEdit && (
+                    <Button size="icon-sm" variant="ghost" onClick={() => openRemark(order)} aria-label={`Remark ${orderId}`} title="Add remark">
+                      <MessageSquare className="size-4" aria-hidden />
+                    </Button>
+                  )}
+                  <Button size="icon-sm" variant="ghost" onClick={() => openLabel(order)} loading={labelFor === orderId} aria-label={`Label ${orderId}`} title="Download label">
+                    <FileText className="size-4" aria-hidden />
+                  </Button>
+                  {canDelete && (
+                    <Button size="icon-sm" variant="ghost" onClick={() => setPending(order)} aria-label={`Delete ${orderId}`} title="Delete">
+                      <Trash2 className="size-4 text-danger-ink" aria-hidden />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       <BulkPager result={result} query={query} />

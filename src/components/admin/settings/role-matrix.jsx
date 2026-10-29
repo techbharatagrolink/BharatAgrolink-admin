@@ -74,7 +74,7 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
           <span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" aria-hidden />{lockedReason}</span>
         </Notice>
       )}
-      <div className="md:hidden">
+      <div className="xl:hidden">
         {groups.map(([group, items]) => (
           <section key={group}>
             <h3 className="border-b border-line bg-surface-muted px-4 py-1.5 text-xs font-semibold text-ink-soft">{group}</h3>
@@ -101,7 +101,7 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
           </section>
         ))}
       </div>
-      <div className="hidden overflow-x-auto scrollbar-thin md:block">
+      <div className="hidden overflow-x-auto scrollbar-thin xl:block">
         <table className="w-full min-w-[560px] text-sm">
           <caption className="sr-only">Permissions by module</caption>
           <thead className="sticky top-0 z-10 bg-surface">

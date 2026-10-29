@@ -55,28 +55,54 @@ function FactorRow({ factor, permissions, onSaved }) {
     notify({ message: res.message, tone: res.ok ? "success" : "error" });
     if (res.ok) onSaved();
   });
+  const FIELD_LABEL = "text-[10.5px] font-medium uppercase tracking-wide text-ink-muted xl:hidden";
   return (
-    <tr className="border-b border-line" data-factor={factor.code}>
-      <td className="px-3 py-2 font-mono text-xs">{factor.code}</td>
-      <td className="px-3 py-2">{permissions.edit ? <Input aria-label={`${factor.code} label`} value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} /> : factor.label}</td>
-      <td className="px-3 py-2 text-right">{permissions.edit ? <Input aria-label={`${factor.code} target %`} className="w-20 text-right" value={draft.target} onChange={(e) => setDraft({ ...draft, target: e.target.value })} /> : bpsToPct(factor.defaultTargetBps)}</td>
-      <td className="px-3 py-2 text-right tabular-nums">{formatNumber(factor.rows)}</td>
-      <td className="px-3 py-2 text-right tabular-nums">{formatNumber(factor.overridden)}</td>
-      <td className="px-3 py-2 text-right tabular-nums">{formatINR(factor.targetTotal)}</td>
-      <td className="px-3 py-2 text-right tabular-nums">{formatINR(factor.actualTotal)}</td>
-      <td className="px-3 py-2 text-right">{factor.achievementBps == null ? "—" : <Badge tone={factor.achievementBps <= 10_000 ? "success" : factor.achievementBps <= 11_500 ? "warning" : "danger"}>{bpsToPct(factor.achievementBps)}</Badge>}</td>
-      <td className="px-3 py-2">
-        <div className="flex items-center justify-end gap-2">
-          {permissions.edit ? (
-            <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> Active</label>
-          ) : (
-            <Badge tone={factor.active ? "success" : "neutral"}>{factor.active ? "Active" : "Inactive"}</Badge>
-          )}
-          {permissions.edit && <Button size="sm" disabled={!changed} loading={pending} onClick={save}>Save</Button>}
-          {permissions.remove && <Button size="sm" variant="secondary" loading={pending} onClick={remove}>Delete</Button>}
-        </div>
-      </td>
-    </tr>
+    <div
+      className="grid grid-cols-2 gap-x-3 gap-y-2 border-b border-line p-3 text-sm xl:grid-cols-[70px_minmax(0,1fr)_90px_80px_70px_90px_90px_100px_auto] xl:items-center xl:gap-3 xl:px-3 xl:py-2"
+      data-factor={factor.code}
+    >
+      <div className="col-span-2 xl:col-span-1">
+        <p className={FIELD_LABEL}>Code</p>
+        <p className="font-mono text-xs">{factor.code}</p>
+      </div>
+      <div className="col-span-2 xl:col-span-1">
+        <p className={FIELD_LABEL}>Label</p>
+        {permissions.edit ? <Input aria-label={`${factor.code} label`} value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} /> : factor.label}
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Target %</p>
+        {permissions.edit ? <Input aria-label={`${factor.code} target %`} className="w-20 xl:text-right" value={draft.target} onChange={(e) => setDraft({ ...draft, target: e.target.value })} /> : <p className="xl:text-right">{bpsToPct(factor.defaultTargetBps)}</p>}
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Priced rows</p>
+        <p className="tabular-nums xl:text-right">{formatNumber(factor.rows)}</p>
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Edited</p>
+        <p className="tabular-nums xl:text-right">{formatNumber(factor.overridden)}</p>
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Target ₹</p>
+        <p className="tabular-nums xl:text-right">{formatINR(factor.targetTotal)}</p>
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Actual ₹</p>
+        <p className="tabular-nums xl:text-right">{formatINR(factor.actualTotal)}</p>
+      </div>
+      <div>
+        <p className={FIELD_LABEL}>Achievement</p>
+        <p className="xl:text-right">{factor.achievementBps == null ? "—" : <Badge tone={factor.achievementBps <= 10_000 ? "success" : factor.achievementBps <= 11_500 ? "warning" : "danger"}>{bpsToPct(factor.achievementBps)}</Badge>}</p>
+      </div>
+      <div className="col-span-2 flex items-center justify-between gap-2 xl:col-span-1 xl:justify-end">
+        {permissions.edit ? (
+          <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> Active</label>
+        ) : (
+          <Badge tone={factor.active ? "success" : "neutral"}>{factor.active ? "Active" : "Inactive"}</Badge>
+        )}
+        {permissions.edit && <Button size="sm" disabled={!changed} loading={pending} onClick={save}>Save</Button>}
+        {permissions.remove && <Button size="sm" variant="secondary" loading={pending} onClick={remove}>Delete</Button>}
+      </div>
+    </div>
   );
 }
 
@@ -167,27 +193,21 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
 
       <Card>
         <CardHeader title="Cost factors" description="Each factor's target is a % of the display price. Changing a target applies to a product the next time its price is saved." />
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead>
-              <tr className="border-y border-line bg-surface-muted text-left text-xs text-ink-muted">
-                <th className="px-3 py-2 font-medium">Code</th>
-                <th className="px-3 py-2 font-medium">Label</th>
-                <th className="px-3 py-2 text-right font-medium">Target %</th>
-                <th className="px-3 py-2 text-right font-medium">Priced rows</th>
-                <th className="px-3 py-2 text-right font-medium">Edited</th>
-                <th className="px-3 py-2 text-right font-medium">Target ₹</th>
-                <th className="px-3 py-2 text-right font-medium">Actual ₹</th>
-                <th className="px-3 py-2 text-right font-medium">Achievement</th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {factors.map((f) => (
-                <FactorRow key={`${f.id}-${f.updatedAt}`} factor={{ ...f, ...(usage.get(f.id) ? { rows: usage.get(f.id).rows, overridden: usage.get(f.id).overridden, targetTotal: usage.get(f.id).targetTotal, actualTotal: usage.get(f.id).actualTotal, achievementBps: usage.get(f.id).achievementBps } : { rows: 0, overridden: 0 }) }} permissions={permissions} onSaved={refresh} />
-              ))}
-            </tbody>
-          </table>
+        <div>
+          <div className="hidden border-y border-line bg-surface-muted px-3 py-2 text-xs text-ink-muted xl:grid xl:grid-cols-[70px_minmax(0,1fr)_90px_80px_70px_90px_90px_100px_auto] xl:items-center xl:gap-3">
+            <span className="font-medium">Code</span>
+            <span className="font-medium">Label</span>
+            <span className="text-right font-medium">Target %</span>
+            <span className="text-right font-medium">Priced rows</span>
+            <span className="text-right font-medium">Edited</span>
+            <span className="text-right font-medium">Target ₹</span>
+            <span className="text-right font-medium">Actual ₹</span>
+            <span className="text-right font-medium">Achievement</span>
+            <span />
+          </div>
+          {factors.map((f) => (
+            <FactorRow key={`${f.id}-${f.updatedAt}`} factor={{ ...f, ...(usage.get(f.id) ? { rows: usage.get(f.id).rows, overridden: usage.get(f.id).overridden, targetTotal: usage.get(f.id).targetTotal, actualTotal: usage.get(f.id).actualTotal, achievementBps: usage.get(f.id).achievementBps } : { rows: 0, overridden: 0 }) }} permissions={permissions} onSaved={refresh} />
+          ))}
         </div>
         {permissions.add && <AddFactor onSaved={refresh} />}
       </Card>
@@ -207,43 +227,86 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
             ))}
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-sm">
-            <thead>
-              <tr className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
-                <th className="px-3 py-2 font-medium">Product</th>
-                <th className="px-3 py-2 font-medium">Mode</th>
-                <th className="px-3 py-2 text-right font-medium">Take rate</th>
-                <th className="px-3 py-2 text-right font-medium">NRV</th>
-                <th className="px-3 py-2 text-right font-medium">Display price</th>
-                <th className="px-3 py-2 text-right font-medium">Net SC</th>
-                <th className="px-3 py-2 text-right font-medium">Costs (actual)</th>
-                <th className="px-3 py-2 text-right font-medium">Contribution margin</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.rows.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-ink-muted">No priced products match.</td></tr>
-              )}
+        {summary.rows.length === 0 ? (
+          <p className="px-3 py-6 text-center text-sm text-ink-muted">No priced products match.</p>
+        ) : (
+          <>
+            <div className="hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[960px] text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
+                    <th className="px-3 py-2 font-medium">Product</th>
+                    <th className="px-3 py-2 font-medium">Mode</th>
+                    <th className="px-3 py-2 text-right font-medium">Take rate</th>
+                    <th className="px-3 py-2 text-right font-medium">NRV</th>
+                    <th className="px-3 py-2 text-right font-medium">Display price</th>
+                    <th className="px-3 py-2 text-right font-medium">Net SC</th>
+                    <th className="px-3 py-2 text-right font-medium">Costs (actual)</th>
+                    <th className="px-3 py-2 text-right font-medium">Contribution margin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.rows.map((r) => (
+                    <tr key={`${r.productId}-${r.variantId}`} className="border-b border-line">
+                      <td className="px-3 py-2">
+                        <Link href={`/admin/products/${encodeURIComponent(r.productId)}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link>
+                        <span className="block text-xs text-ink-muted">{r.variant ? `${r.variant} · ` : ""}{r.sku || r.productId}{r.overridden ? ` · ${r.overridden} edited` : ""}</span>
+                        {r.stale && <Badge tone="danger">Catalog price changed outside Step 3</Badge>}
+                      </td>
+                      <td className="px-3 py-2 text-xs">{r.mode === "FROM_ACTUALS" ? "From actuals" : "Take rate"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{r.takeRate.replace(/0+$/, "").replace(/\.$/, "")}%</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.nrv)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.displayPrice)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.netServiceCharge)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.actualTotal)}</td>
+                      <td className="px-3 py-2 text-right"><Badge tone={marginTone(r.marginBps, config.minMarginBps)}>{formatINR(r.margin)} · {bpsToPct(r.marginBps)}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul className="divide-y divide-line xl:hidden">
               {summary.rows.map((r) => (
-                <tr key={`${r.productId}-${r.variantId}`} className="border-b border-line">
-                  <td className="px-3 py-2">
-                    <Link href={`/admin/products/${encodeURIComponent(r.productId)}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link>
-                    <span className="block text-xs text-ink-muted">{r.variant ? `${r.variant} · ` : ""}{r.sku || r.productId}{r.overridden ? ` · ${r.overridden} edited` : ""}</span>
-                    {r.stale && <Badge tone="danger">Catalog price changed outside Step 3</Badge>}
-                  </td>
-                  <td className="px-3 py-2 text-xs">{r.mode === "FROM_ACTUALS" ? "From actuals" : "Take rate"}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.takeRate.replace(/0+$/, "").replace(/\.$/, "")}%</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.nrv)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.displayPrice)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.netServiceCharge)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatINR(r.actualTotal)}</td>
-                  <td className="px-3 py-2 text-right"><Badge tone={marginTone(r.marginBps, config.minMarginBps)}>{formatINR(r.margin)} · {bpsToPct(r.marginBps)}</Badge></td>
-                </tr>
+                <li key={`${r.productId}-${r.variantId}`} className="space-y-2 px-3 py-3 text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <Link href={`/admin/products/${encodeURIComponent(r.productId)}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link>
+                      <span className="block text-xs text-ink-muted">{r.variant ? `${r.variant} · ` : ""}{r.sku || r.productId}{r.overridden ? ` · ${r.overridden} edited` : ""}</span>
+                      {r.stale && <Badge tone="danger">Catalog price changed outside Step 3</Badge>}
+                    </div>
+                    <Badge tone={marginTone(r.marginBps, config.minMarginBps)} className="shrink-0">{formatINR(r.margin)} · {bpsToPct(r.marginBps)}</Badge>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[12.5px] sm:grid-cols-3">
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Mode</dt>
+                      <dd className="truncate text-ink-soft">{r.mode === "FROM_ACTUALS" ? "From actuals" : "Take rate"}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Take rate</dt>
+                      <dd className="tabular-nums text-ink-soft">{r.takeRate.replace(/0+$/, "").replace(/\.$/, "")}%</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">NRV</dt>
+                      <dd className="tabular-nums text-ink-soft">{formatINR(r.nrv)}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Display price</dt>
+                      <dd className="tabular-nums text-ink-soft">{formatINR(r.displayPrice)}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Net SC</dt>
+                      <dd className="tabular-nums text-ink-soft">{formatINR(r.netServiceCharge)}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Costs (actual)</dt>
+                      <dd className="tabular-nums text-ink-soft">{formatINR(r.actualTotal)}</dd>
+                    </div>
+                  </dl>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          </>
+        )}
         <div className="flex items-center justify-between p-3 text-xs text-ink-muted">
           <span>{formatNumber(meta?.total ?? 0)} rows · page {filters.page} of {pages}</span>
           <div className="flex gap-2">

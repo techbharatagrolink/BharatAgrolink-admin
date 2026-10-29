@@ -234,35 +234,63 @@ export function QuotationForm({ options }) {
           {lines.length === 0 ? (
             <p className="text-sm text-ink-muted">No products yet. Search above to add a line.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b border-line text-left text-xs text-ink-muted">
-                    <th className="py-2 pr-3 font-medium">Product</th>
-                    <th className="py-2 pr-3 font-medium">Stock</th>
-                    <th className="py-2 pr-3 font-medium">Qty</th>
-                    <th className="py-2 pr-3 font-medium">Unit rate excl. GST</th>
-                    <th className="py-2 pr-3 font-medium">GST %</th>
-                    <th className="py-2 font-medium"> </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((line, index) => (
-                    <tr key={`${line.productId}-${line.variantId}`} className="border-b border-line">
-                      <td className="py-2 pr-3">
-                        <span className="font-medium text-ink">{line.name}</span>
-                        <span className="block font-mono text-xs text-ink-muted">{line.sku}</span>
-                      </td>
-                      <td className="py-2 pr-3 tabular">{line.stock}</td>
-                      <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></td>
-                      <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></td>
-                      <td className="py-2 pr-3 tabular">{line.gstPct}</td>
-                      <td className="py-2"><Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button></td>
+            <>
+              <div className="hidden overflow-x-auto xl:block">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-left text-xs text-ink-muted">
+                      <th className="py-2 pr-3 font-medium">Product</th>
+                      <th className="py-2 pr-3 font-medium">Stock</th>
+                      <th className="py-2 pr-3 font-medium">Qty</th>
+                      <th className="py-2 pr-3 font-medium">Unit rate excl. GST</th>
+                      <th className="py-2 pr-3 font-medium">GST %</th>
+                      <th className="py-2 font-medium"> </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {lines.map((line, index) => (
+                      <tr key={`${line.productId}-${line.variantId}`} className="border-b border-line">
+                        <td className="py-2 pr-3">
+                          <span className="font-medium text-ink">{line.name}</span>
+                          <span className="block font-mono text-xs text-ink-muted">{line.sku}</span>
+                        </td>
+                        <td className="py-2 pr-3 tabular">{line.stock}</td>
+                        <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></td>
+                        <td className="py-2 pr-3 tabular">{line.gstPct}</td>
+                        <td className="py-2"><Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-3 xl:hidden">
+                {lines.map((line, index) => (
+                  <div key={`${line.productId}-${line.variantId}`} className="space-y-3 rounded-lg border border-line p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-ink">{line.name}</p>
+                        <p className="font-mono text-xs text-ink-muted">{line.sku}</p>
+                      </div>
+                      <Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div>
+                        <p className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Stock</p>
+                        <p className="text-sm text-ink tabular">{line.stock}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">GST %</p>
+                        <p className="text-sm text-ink tabular">{line.gstPct}</p>
+                      </div>
+                      <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></Field>
+                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></Field>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardBody>
       </Card>
