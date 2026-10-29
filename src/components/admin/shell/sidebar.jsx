@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronsLeft, ChevronsRight, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,20 +12,39 @@ import { NavIcon } from "./icons";
 
 const pathOf = (href) => (href || "").split(/[?#]/)[0];
 
-function isActive(pathname, href) {
+/** Collect all leaf hrefs from navigation to prevent false prefix matches. */
+function collectLeafHrefs(navigation) {
+  const set = new Set();
+  for (const section of navigation) {
+    for (const item of section.items) {
+      if (item.children) {
+        for (const child of item.children) set.add(pathOf(child.href));
+      } else {
+        set.add(pathOf(item.href));
+      }
+    }
+  }
+  return set;
+}
+
+function isActive(pathname, href, leafHrefs) {
   if (!href) return false;
-  return pathname === href;
+  const exact = pathname === href;
+  if (exact) return true;
+  // Prefix match only if no other registered leaf matches the path
+  const prefixed = pathname.startsWith(`${pathOf(href)}/`);
+  return prefixed && !leafHrefs.has(pathname);
 }
 
-function groupContains(pathname, item) {
-  return (item.children || []).some((child) => pathname === child.href || (child.href !== "/admin/dashboard" && pathname.startsWith(`${child.href}/`)));
+function groupContains(pathname, item, leafHrefs) {
+  return (item.children || []).some((child) => isActive(pathname, child.href, leafHrefs));
 }
 
-function activeChildKey(pathname, children) {
+function activeChildKey(pathname, children, leafHrefs) {
   const exact = children.find((c) => c.href === pathname);
   if (exact) return exact.key;
   return children
-    .filter((c) => pathname.startsWith(`${pathOf(c.href)}/`))
+    .filter((c) => isActive(pathname, c.href, leafHrefs))
     .sort((a, b) => pathOf(b.href).length - pathOf(a.href).length)[0]?.key;
 }
 
@@ -44,9 +63,9 @@ function Badge({ value }) {
 const nestedList = "border-l border-white/15 pl-[10px]";
 const guideMark = "before:absolute before:inset-y-1.5 before:-left-[11px] before:w-px before:rounded-full";
 
-function itemIsCurrent(pathname, item) {
-  if (item.children) return groupContains(pathname, item);
-  return isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
+function itemIsCurrent(pathname, item, leafHrefs) {
+  if (item.children) return groupContains(pathname, item, leafHrefs);
+  return isActive(pathname, item.href, leafHrefs);
 }
 
 function badgeCount(item, badges) {
@@ -155,14 +174,15 @@ function RailFlyout({ anchor, onClose, children }) {
 
 export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpen, onCloseMobile }) {
   const pathname = usePathname();
+  const leafHrefs = useMemo(() => collectLeafHrefs(navigation), [navigation]);
   const sectionKeyOf = (section) => section.key || section.section;
   const activeGroupKey = () => {
-    for (const section of navigation) for (const item of section.items) if (item.children && groupContains(pathname, item)) return item.key;
+    for (const section of navigation) for (const item of section.items) if (item.children && groupContains(pathname, item, leafHrefs)) return item.key;
     return null;
   };
   const activeSectionKey = () => {
     for (const section of navigation) {
-      if (section.section && section.items.some((item) => itemIsCurrent(pathname, item))) return sectionKeyOf(section);
+      if (section.section && section.items.some((item) => itemIsCurrent(pathname, item, leafHrefs))) return sectionKeyOf(section);
     }
     return null;
   };
@@ -240,12 +260,12 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
             const collapsible = Boolean(section.section) && !compact;
             const sectionOpen = !collapsible || openSection === sectionKey;
             const sectionBadge = section.items.reduce((sum, item) => sum + badgeCount(item, badges), 0);
-            const sectionActive = section.section ? section.items.some((item) => itemIsCurrent(pathname, item)) : false;
+            const sectionActive = section.section ? section.items.some((item) => itemIsCurrent(pathname, item, leafHrefs)) : false;
             const renderItems = (iconOnly) => {
               const nested = Boolean(section.section) && !iconOnly;
               return section.items.map((item) => {
                 if (!item.children) {
-                  const active = isActive(pathname, item.href) || pathname.startsWith(`${item.href}/`);
+                  const active = isActive(pathname, item.href, leafHrefs);
                   return (
                     <li key={item.key}>
                       <Link
@@ -270,9 +290,9 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
                     </li>
                   );
                 }
-                const containsActive = groupContains(pathname, item);
+                const containsActive = groupContains(pathname, item, leafHrefs);
                 const open = openKey === item.key;
-                const activeKey = activeChildKey(pathname, item.children);
+                const activeKey = activeChildKey(pathname, item.children, leafHrefs);
                 const groupBadge = item.children.reduce((sum, child) => sum + (child.badge ? badges[child.badge] || 0 : 0), 0);
                 return (
                   <li key={item.key}>
