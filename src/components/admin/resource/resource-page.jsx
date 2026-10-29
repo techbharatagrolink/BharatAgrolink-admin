@@ -79,6 +79,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
           search: resource.search,
           searchFields: resource.searchFields,
           dateRange: resource.dateRange,
+          columnFilters: resource.columnFilters,
           rowHref: resource.rowHref,
           exportable: resource.exportable,
           form: resource.form ? { title: resource.form.title, fields: resource.form.fields, requireReason: resource.form.requireReason } : null,

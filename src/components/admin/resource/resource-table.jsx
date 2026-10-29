@@ -110,6 +110,7 @@ export function ResourceTable({ resourceKey, resource, data, canAdd, rowActions,
         search={resource.searchFields?.length ? resource.search || "Search…" : undefined}
         filters={resource.filters ?? []}
         dateRange={resource.dateRange}
+        columnFilters={Boolean(resource.columnFilters)}
         rowHref={resource.rowHref}
         rowActions={rowActions}
         bulkActions={bulkActions}
