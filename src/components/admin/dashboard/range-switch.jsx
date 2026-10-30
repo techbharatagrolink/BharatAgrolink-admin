@@ -44,7 +44,7 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
   const [lead, ...rest] = columns;
   return (
     <>
-      <ul className="divide-y divide-line md:hidden">
+      <ul className="divide-y divide-line xl:hidden">
         {rows.map((row, i) => (
           <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3">
             <div className="min-w-0 text-sm">
@@ -63,7 +63,7 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto scrollbar-thin md:block">
+      <div className="hidden overflow-x-auto scrollbar-thin xl:block">
         <table className="w-full min-w-max text-left text-[13px]">
           <thead>
             <tr className="border-b border-line">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startRouteProgress } from "@/components/admin/shell/route-progress";
 import { useMemo, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Columns3, Download, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Columns3, Download, Filter, Loader2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,6 @@ export function DataTable({
   emptyDescription = "Try changing the search or filters.",
   toolbar,
   summary,
-  dense = true,
   pageSizes = PAGE_SIZES,
   serial = true,
   columnFilters = false,
@@ -85,8 +84,10 @@ export function DataTable({
   const [running, startRunning] = useTransition();
   const [exporting, setExporting] = useState(false);
   const [colFilters, setColFilters] = useState({});
+  const [showColFilters, setShowColFilters] = useState(false);
 
   const visible = useMemo(() => columns.filter((c) => !hidden.includes(c.key)), [columns, hidden]);
+  const filterableColumns = useMemo(() => (columnFilters ? columns.filter((c) => columnFilterable(c)) : []), [columnFilters, columns]);
   // Header filters match the loaded rows in the browser, so typing never reloads the page.
   const rows = useMemo(() => (columnFilters ? applyColumnFilters(data.rows, columns, colFilters) : data.rows), [columnFilters, data.rows, columns, colFilters]);
   const filteredCount = columnFilters && columns.some((c) => columnFilterActive(colFilters[c.key])) ? rows.length : null;
@@ -155,12 +156,6 @@ export function DataTable({
     }
   };
 
-  const sortBy = (column) => {
-    if (!column.sortable) return;
-    const next = sortField !== column.key ? "desc" : sortDir === "desc" ? "asc" : "";
-    setParams({ sort: next ? `${column.key}:${next}` : "" }, { resetPage: false });
-  };
-
   const sortable = visible.filter((c) => c.sortable);
   const sortOptions = sortable.flatMap((c) => [
     { value: `${c.key}:desc`, label: `${c.label} ↓` },
@@ -207,6 +202,11 @@ export function DataTable({
           <FilterBar search={search} filters={filters} dateRange={dateRange} className="min-w-0 flex-1" />
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {toolbar}
+            {filterableColumns.length > 0 && (
+              <Button size="sm" variant={showColFilters ? "primary" : "secondary"} onClick={() => setShowColFilters((v) => !v)} aria-pressed={showColFilters}>
+                <Filter className="size-4" aria-hidden /> Column filters
+              </Button>
+            )}
             <Popover
               label="Choose columns"
               panelClassName="w-56"
@@ -262,100 +262,17 @@ export function DataTable({
             </span>
           </div>
         )}
-        <div className={cn("hidden max-h-[70vh] overflow-auto scrollbar-thin xl:block", pending && "opacity-55")}>
-          <table className="w-full min-w-max border-separate border-spacing-0 text-left text-[13px]">
-            <thead>
-              <tr>
-                {showSelection && (
-                  <th scope="col" className="sticky top-0 z-10 w-10 border-b border-line bg-surface-muted px-3 py-2.5">
-                    <Checkbox aria-label="Select all rows on this page" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? [...new Set([...selected, ...pageIds])] : selected.filter((sid) => !pageIds.includes(sid)))} />
-                  </th>
-                )}
-                {showSerial && (
-                  <th scope="col" className="sticky top-0 z-10 w-14 border-b border-line bg-surface-muted px-3 py-2.5 text-right text-xs font-semibold whitespace-nowrap text-ink-muted">
-                    S.No.
-                  </th>
-                )}
-                {visible.map((column, index) => {
-                  const active = sortField === column.key;
-                  const SortIcon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
-                  return (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                      className={cn("sticky top-0 z-10 border-b border-line bg-surface-muted px-3 py-2.5 text-xs font-semibold whitespace-nowrap text-ink-muted", index === 0 && "left-0 z-20", ["currency", "number", "percent"].includes(column.type) && "text-right", column.align === "right" && "text-right")}
-                      style={column.width ? { width: column.width, maxWidth: column.width } : undefined}
-                    >
-                      <span className={cn("flex items-center gap-2", columnFilters && columnFilterable(column) ? "justify-between" : (["currency", "number", "percent"].includes(column.type) || column.align === "right") && "justify-end")}>
-                        {column.sortable ? (
-                          <button type="button" onClick={() => sortBy(column)} className={cn("inline-flex items-center gap-1 hover:text-ink", active && "text-ink")}>
-                            {column.label}
-                            <SortIcon className="size-3.5" aria-hidden />
-                          </button>
-                        ) : (
-                          column.label
-                        )}
-                        {columnFilters && columnFilterable(column) && <ColumnFilter column={column} filter={colFilters[column.key]} onChange={(value) => setColFilter(column.key, value)} />}
-                      </span>
-                    </th>
-                  );
-                })}
-                {hasRowActions && (
-                  <th scope="col" className="sticky top-0 z-10 w-12 border-b border-line bg-surface-muted px-3 py-2.5">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => {
-                const key = row[rowKey];
-                const view = viewOf(row);
-                const href = resolveHref(rowHref, row);
-                const actions = rowActions.filter((a) => matchesWhen(a, row));
-                return (
-                  <tr
-  key={key}
-  className={cn(
-    "group border-b border-line last:border-0",
-    selected.includes(key) && "bg-brand-50/60"
-  )}
->
-                    {showSelection && (
-                      <td className="border-b border-line bg-surface px-3 py-2 group-hover:bg-surface-muted">
-                        <Checkbox aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
-                      </td>
-                    )}
-                    {showSerial && <td className={cn("border-b border-line bg-surface group-hover:bg-surface-muted px-3 text-right align-middle text-ink-muted tabular", dense ? "py-2" : "py-3")}>{serialOf(index)}</td>}
-                    {visible.map((column, ci) => (
-                      <td
-                        key={column.key}
-                        className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft group-hover:bg-surface-muted", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
-                        style={{ maxWidth: column.width || 320 }}
-                      >
-                        {ci === 0 && href && !column.href && column.type !== "image" ? (
-                          <Link href={href} className="block truncate font-medium text-brand-700 hover:underline">
-                            {formatCellValue(column, view)}
-                            {column.sub && view[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{view[column.sub]}</span>}
-                          </Link>
-                        ) : (
-                          <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
-                        )}
-                      </td>
-                    ))}
-                   {hasRowActions && (
-  <td className="border-b border-line bg-surface px-3 py-2 text-right group-hover:bg-surface-muted">
-    {actionsMenu(key, actions)}
-  </td>
-)}    </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className={cn("xl:hidden", pending && "opacity-55")}>
+        <div className={cn(pending && "opacity-55")}>
+          {showColFilters && filterableColumns.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 border-b border-line bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-3">
+              {filterableColumns.map((column) => (
+                <div key={column.key} className="min-w-0 space-y-1">
+                  <span className="block text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</span>
+                  <ColumnFilter column={column} filter={colFilters[column.key]} onChange={(value) => setColFilter(column.key, value)} />
+                </div>
+              ))}
+            </div>
+          )}
           {(showSelection || sortOptions.length > 0) && rows.length > 0 && (
             <div className="flex items-center gap-3 border-b border-line bg-surface-muted px-3 py-2">
               {showSelection && (
@@ -403,7 +320,7 @@ export function DataTable({
                     {hasRowActions && <div className="-mt-1 -mr-1 shrink-0">{actionsMenu(key, actions)}</div>}
                   </div>
                   {rest.length > 0 && (
-                    <dl className={cn("mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px]", showSelection && "pl-7")}>
+                    <dl className={cn("mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px] sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6", showSelection && "pl-7")}>
                       {rest.map((column) => (
                         <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
                           <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
