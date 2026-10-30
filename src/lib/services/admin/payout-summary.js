@@ -33,13 +33,19 @@ export function payoutQuery(searchParams = {}) {
 
 const strip = (query) => Object.fromEntries(Object.entries(query).filter(([, v]) => v !== "" && v != null));
 
-export async function getPayoutSummary(searchParams, user) {
+/** The summary rows only (no cycle cards), for filter changes made on the page. */
+export async function listPayoutSummary(searchParams, user) {
   const query = payoutQuery(searchParams);
+  const list = await api("admin/payouts", { token: user.token, query: strip(query) });
+  return { ...list.data, query };
+}
+
+export async function getPayoutSummary(searchParams, user) {
   const [list, cycles] = await Promise.all([
-    api("admin/payouts", { token: user.token, query: strip(query) }),
+    listPayoutSummary(searchParams, user),
     api("admin/payouts/cycles", { token: user.token }).catch(() => ({ data: [] })),
   ]);
-  return { ...list.data, query, cycles: Array.isArray(cycles.data) ? cycles.data : [] };
+  return { ...list, cycles: Array.isArray(cycles.data) ? cycles.data : [] };
 }
 
 export async function exportPayoutSummary(searchParams, user) {

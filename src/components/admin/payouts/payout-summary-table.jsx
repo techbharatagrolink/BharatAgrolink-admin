@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarRange, Download, X } from "lucide-react";
+import { CalendarRange, Download, FileSpreadsheet, FileText, X } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Input, Select } from "@/components/ui/form";
-import { buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Popover } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { payoutSummaryExportAction } from "@/lib/actions/admin/payout-summary";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthLabel = (ym) => {
@@ -46,17 +46,51 @@ const ROW_ACTIONS = [
 
 const STATUS_FILTER = { key: "status", label: "Status", options: ["Pending", "Paid", "On Hold"] };
 
-/* PHP Export with vendors ticked: their items (same columns as the items page export), as .xlsx. */
-const BULK_ACTIONS = [{ id: "export-items", label: "Export items (Excel)", kind: "form" }];
+/* PHP Export with vendors ticked: their items (same columns as the items page export). */
+const BULK_ACTIONS = [
+  { id: "export-items-xlsx", label: "Export items (Excel)", kind: "form", format: "xlsx" },
+  { id: "export-items-csv", label: "Export items (CSV)", kind: "form", format: "csv" },
+];
+const FORMATS = [
+  { value: "xlsx", label: "Excel (.xlsx)", icon: FileSpreadsheet },
+  { value: "csv", label: "CSV (.csv)", icon: FileText },
+];
+const SUMMARY_EXPORT_FILTERS = ["q", "status", "sort", "cycleMonth", "cycle", "orderIds"];
 const ITEM_EXPORT_FILTERS = ["q", "status", "cycleMonth", "cycle", "orderIds"];
 
-/** /admin/payouts/items-export for the current filters; payoutIds narrows it to the ticked vendors. */
-function itemsExportHref(payoutIds = []) {
-  const current = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+/** A download URL carrying the page's current filters, so every export matches what the table shows. */
+function exportHref(path, filters, searchParams, format, payoutIds = []) {
   const out = new URLSearchParams();
-  for (const key of ITEM_EXPORT_FILTERS) if (current.get(key)) out.set(key, current.get(key));
+  for (const key of filters) if (searchParams.get(key)) out.set(key, searchParams.get(key));
   if (payoutIds.length) out.set("payoutIds", payoutIds.join(","));
-  return `/admin/payouts/items-export?${out.toString()}`;
+  out.set("format", format);
+  return `${path}?${out.toString()}`;
+}
+
+/** Export button that asks Excel or CSV, for the page's current filters. Disabled while new filters are still loading. */
+function ExportMenu({ label, title, path, filters }) {
+  const { searchParams, pending } = useQueryState();
+  return (
+    <Popover
+      label={`${label}: choose format`}
+      panelClassName="w-44"
+      trigger={({ toggle, props }) => (
+        <Button size="sm" onClick={toggle} disabled={pending} title={title} {...props}>
+          <Download className="size-4" aria-hidden /> {label}
+        </Button>
+      )}
+    >
+      <ul className="p-1">
+        {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
+          <li key={value}>
+            <a href={exportHref(path, filters, searchParams, value)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
+              <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Popover>
+  );
 }
 
 /** PHP "Order ID (comma-separated)": only vendors with an item of those orders. */
@@ -167,6 +201,7 @@ function CycleStrip({ cycles }) {
 }
 
 export function PayoutSummaryTable({ data, cycles }) {
+  const { searchParams } = useQueryState();
   const rows = data.rows.map((r) => ({ ...r, view: "View" }));
   const t = data.totals ?? {};
   const counts = data.tabCounts ?? {};
@@ -205,24 +240,22 @@ export function PayoutSummaryTable({ data, cycles }) {
         data={{ ...data, rows }}
         search="Search vendor name or vendor ID"
         filters={[STATUS_FILTER]}
+        inlineToolbar
+        toolbarEnd={<ExportMenu label="Export" title="These vendor rows with the current filters" path="/admin/payouts/summary-export" filters={SUMMARY_EXPORT_FILTERS} />}
         toolbar={
           <>
             <CycleSelector cycles={cycles} />
             <OrderIdsFilter />
-            <a href={itemsExportHref()} onClick={(e) => (e.currentTarget.href = itemsExportHref())} className={buttonClasses({ size: "sm" })} title="Items of every vendor matching these filters, as on the items page export">
-              <Download className="size-4" aria-hidden /> Export items
-            </a>
+            <ExportMenu label="Export items" title="Items of every vendor matching these filters (status, cycle, order IDs)" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} />
           </>
         }
         rowActions={ROW_ACTIONS}
         bulkActions={BULK_ACTIONS}
         onCustomAction={(action, ids, _rows, clear) => {
-          if (action.id !== "export-items") return;
-          window.location.href = itemsExportHref(ids);
+          if (!action.format) return;
+          window.location.href = exportHref("/admin/payouts/items-export", ITEM_EXPORT_FILTERS, searchParams, action.format, ids);
           clear();
         }}
-        onExport={payoutSummaryExportAction}
-        exportName="vendor_payout_summary"
         summary={summary}
         emptyTitle="No vendor payouts found"
         emptyDescription={data.cycle ? "No vendor has payout items in this cycle with these filters." : "Try changing the search or filters."}

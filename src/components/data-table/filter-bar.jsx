@@ -240,10 +240,28 @@ export function MultiSelectFilter({ name, label, options }) {
   );
 }
 
-/** Reusable filter row: search, selects and date range, all synced to the URL. */
-export function FilterBar({ search, filters = [], dateRange, children, className }) {
+/** "Clear filters": resets every URL filter except the tab; hidden while nothing is filtered. */
+export function ClearFiltersButton({ className }) {
   const { searchParams, setParams } = useQueryState();
   const active = [...searchParams.keys()].some((k) => !["page", "pageSize", "sort", "tab"].includes(k));
+  if (!active) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const reset = {};
+        for (const k of searchParams.keys()) if (!["tab"].includes(k)) reset[k] = "";
+        setParams(reset);
+      }}
+      className={cn("inline-flex h-9 items-center gap-1 self-start rounded-lg px-2.5 text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink lg:self-auto", className)}
+    >
+      <X className="size-3.5" aria-hidden /> Clear filters
+    </button>
+  );
+}
+
+/** Reusable filter row: search, selects and date range, all synced to the URL. hideClear leaves "Clear filters" to the caller. */
+export function FilterBar({ search, filters = [], dateRange, children, className, hideClear = false }) {
   return (
     <div className={cn("flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center", className)}>
       {search && <SearchInput placeholder={search} className="lg:w-72" />}
@@ -260,19 +278,7 @@ export function FilterBar({ search, filters = [], dateRange, children, className
       </div>
       {dateRange && <DateRangeFilter label={typeof dateRange === "string" ? dateRange : "Date"} />}
       {children}
-      {active && (
-        <button
-          type="button"
-          onClick={() => {
-            const reset = {};
-            for (const k of searchParams.keys()) if (!["tab"].includes(k)) reset[k] = "";
-            setParams(reset);
-          }}
-          className="inline-flex h-9 items-center gap-1 self-start rounded-lg px-2.5 text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink lg:self-auto"
-        >
-          <X className="size-3.5" aria-hidden /> Clear filters
-        </button>
-      )}
+      {!hideClear && <ClearFiltersButton />}
     </div>
   );
 }
