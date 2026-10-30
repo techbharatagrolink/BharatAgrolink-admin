@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/ui/states";
 import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
 import { Cell, formatCellValue, resolveHref } from "./cells";
-import { FilterBar } from "./filter-bar";
+import { ClearFiltersButton, FilterBar } from "./filter-bar";
 import { applyColumnFilters, ColumnFilter, columnFilterable, columnFilterActive } from "./column-filter";
 import { useQueryState } from "./use-query-state";
 
@@ -65,6 +65,8 @@ export function DataTable({
   onCustomAction,
   onExport,
   exportName,
+  toolbarEnd,
+  inlineToolbar = false,
   emptyTitle = "No records found",
   emptyDescription = "Try changing the search or filters.",
   toolbar,
@@ -203,8 +205,9 @@ export function DataTable({
   return (
     <div className="min-w-0 rounded-xl border border-line bg-surface shadow-sm">
       {(search || filters.length > 0 || dateRange || toolbar || onExport !== undefined) && (
-        <div className="flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start xl:justify-between">
-          <FilterBar search={search} filters={filters} dateRange={dateRange} className="min-w-0 flex-1" />
+        <div className={cn("flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start", inlineToolbar ? "xl:flex-wrap" : "xl:justify-between")}>
+          {/* inlineToolbar: the toolbar sits right after the filters and "Clear filters" gets its own line */}
+          <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {toolbar}
             <Popover
@@ -229,12 +232,14 @@ export function DataTable({
                 ))}
               </div>
             </Popover>
+            {toolbarEnd}
             {onExport !== undefined && (
               <Button size="sm" onClick={exportCsv} loading={exporting}>
                 {!exporting && <Download className="size-4" aria-hidden />} Export
               </Button>
             )}
           </div>
+          {inlineToolbar && <ClearFiltersButton className="xl:basis-full" />}
         </div>
       )}
 
