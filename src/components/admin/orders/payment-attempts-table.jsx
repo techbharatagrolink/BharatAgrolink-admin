@@ -45,6 +45,15 @@ function fmtDatetime(v) {
   }
 }
 
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 /* ---- Sync dialog ---- */
 function SyncDialog({ attempt, onClose, onDone }) {
   const [step, setStep] = useState("loading"); // loading | input | preview | error
@@ -328,6 +337,38 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
 
   const totalCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
+  const Actions = ({ row }) => {
+    const canRetry = ["Payment Failed", "Payment Expired"].includes(row.status);
+    const canSync = row.status !== "Placed" && row.razorpayOrderId;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {canSync && (
+          <Button onClick={() => setDialog({ type: "sync", attempt: row })} variant="secondary" size="xs">
+            Sync Paid Order
+          </Button>
+        )}
+        {canRetry && (
+          <Button onClick={() => handleRetry(row)} variant="primary" size="xs">
+            Retry Payment
+          </Button>
+        )}
+        {!canSync && !canRetry && row.status !== "Placed" && (
+          <Button onClick={() => setDialog({ type: "fail", attempt: row })} variant="ghost" size="xs">
+            Mark Failed
+          </Button>
+        )}
+        {row.status === "Placed" &&
+          (row.orderId ? (
+            <a href={`/admin/orders/${row.orderId}`} className="text-xs text-success font-medium hover:underline">{row.orderId}</a>
+          ) : row.razorpayPaymentId ? (
+            <a href={`/admin/orders?q=${row.razorpayPaymentId}`} className="text-xs text-success font-medium hover:underline">View Order ↗</a>
+          ) : (
+            <span className="text-xs text-success font-medium">Completed</span>
+          ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <Script
@@ -356,25 +397,53 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
         })}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-line text-ink-muted">
-              {["Attempt / Order", "Customer", "Mode", "Amount", "Status", "Razorpay Order", "Payment ID", "Updated", "Reason", "Action"].map((h) => (
-                <th key={h} className="text-left px-4 py-3 font-medium whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={10} className="text-center py-10 text-ink-muted">No payment attempts found.</td>
+      {rows.length === 0 && <p className="text-center py-10 text-ink-muted rounded-xl border border-line bg-surface">No payment attempts found.</p>}
+
+      {rows.length > 0 && (
+        <div className="space-y-3 xl:hidden">
+          {rows.map((row) => (
+            <div key={row.pendingOrderId} className="rounded-lg border border-line bg-surface p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  {row.orderId ? (
+                    <a href={`/admin/orders/${row.orderId}`} className="font-mono text-xs text-brand hover:underline">{row.orderId}</a>
+                  ) : (
+                    <code className="font-mono text-xs text-ink-muted">{row.pendingOrderId}</code>
+                  )}
+                  {row.customerName && <div className="mt-0.5 truncate text-xs font-medium text-ink" title={row.customerName}>{row.customerName}</div>}
+                </div>
+                <StatusBadge status={STATUS_TONE[row.status] ?? "neutral"} dot>{row.status}</StatusBadge>
+              </div>
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                <CardField label="Mode" value={String(row.paymentMode || "").toUpperCase()} />
+                <CardField label="Amount" value={formatINR(row.amount)} />
+                <CardField label="Phone" value={row.customerPhone} />
+                <CardField label="City" value={row.customerCity} />
+                <CardField label="Razorpay Order" value={row.razorpayOrderId} />
+                <CardField label="Payment ID" value={row.razorpayPaymentId} />
+                <CardField label="Updated" value={fmtDatetime(row.updatedAt)} />
+                <CardField label="Reason" value={row.failureReason} />
+              </dl>
+              <div className="mt-2.5 pt-2.5 border-t border-line">
+                <Actions row={row} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <div className="hidden overflow-x-auto rounded-xl border border-line bg-surface xl:block">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-ink-muted">
+                {["Attempt / Order", "Customer", "Mode", "Amount", "Status", "Razorpay Order", "Payment ID", "Updated", "Reason", "Action"].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 font-medium whitespace-nowrap">{h}</th>
+                ))}
               </tr>
-            )}
-            {rows.map((row) => {
-              const canRetry = ["Payment Failed", "Payment Expired"].includes(row.status);
-              const canSync = row.status !== "Placed" && row.razorpayOrderId;
-              return (
+            </thead>
+            <tbody>
+              {rows.map((row) => (
                 <tr key={row.pendingOrderId} className="border-b border-line/50 hover:bg-surface-raised/50">
                   <td className="px-4 py-3">
                     {row.orderId ? (
@@ -404,51 +473,14 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
                   <td className="px-4 py-3 whitespace-nowrap text-ink-muted text-xs">{fmtDatetime(row.updatedAt)}</td>
                   <td className="px-4 py-3 max-w-[180px] text-xs text-ink-muted truncate" title={row.failureReason ?? ""}>{fmt(row.failureReason)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1">
-                      {canSync && (
-                        <Button
-                          onClick={() => setDialog({ type: "sync", attempt: row })}
-                          variant="secondary"
-                          size="xs"
-                        >
-                          Sync Paid Order
-                        </Button>
-                      )}
-                      {canRetry && (
-                        <Button
-                          onClick={() => handleRetry(row)}
-                          variant="primary"
-                          size="xs"
-                        >
-                          Retry Payment
-                        </Button>
-                      )}
-                      {!canSync && !canRetry && row.status !== "Placed" && (
-                        <Button
-                          onClick={() => setDialog({ type: "fail", attempt: row })}
-                          variant="ghost"
-                          size="xs"
-                        >
-                          Mark Failed
-                        </Button>
-                      )}
-                      {row.status === "Placed" && (
-                        row.orderId ? (
-                          <a href={`/admin/orders/${row.orderId}`} className="text-xs text-success font-medium hover:underline">{row.orderId}</a>
-                        ) : row.razorpayPaymentId ? (
-                          <a href={`/admin/orders?q=${row.razorpayPaymentId}`} className="text-xs text-success font-medium hover:underline">View Order ↗</a>
-                        ) : (
-                          <span className="text-xs text-success font-medium">Completed</span>
-                        )
-                      )}
-                    </div>
+                    <Actions row={row} />
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {dialog?.type === "sync" && (
         <SyncDialog attempt={dialog.attempt} onClose={() => setDialog(null)} onDone={handleSyncDone} />

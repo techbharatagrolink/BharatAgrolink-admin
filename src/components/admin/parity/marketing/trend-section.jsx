@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { formatStamp } from "./format";
 import { Markdown } from "./markdown";
 import { printElement } from "./print-button";
-import { ChipGroup, Collapsible, MetaItem, StatusPill, capitalize, truncate } from "./social-shared";
+import { CardField, ChipGroup, Collapsible, MetaItem, StatusPill, capitalize, truncate } from "./social-shared";
 
 const SCOPES = [
   { value: "quick", label: "Quick", hint: "Top 5 trends, faster" },
@@ -195,7 +195,7 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
         </Collapsible>
 
         <Collapsible id="trend-report-history" nested defaultOpen title="Reports History" icon={History} badge={`${history.rows.length} REPORTS`}>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
               <caption className="sr-only">Trend reports history</caption>
               <thead className="text-left text-xs font-semibold text-ink-muted">
@@ -231,6 +231,30 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="divide-y divide-line xl:hidden">
+            {history.rows.map((r) => (
+              <div key={r.id} className="p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <code className="rounded bg-brand-50 px-2 py-0.5 text-xs text-[#10A450]">#{r.reportId}</code>
+                  <StatusPill status={r.status} />
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                  <CardField label="Generated" value={formatStamp(r.generatedAt)} />
+                  <CardField label="Scope" value={capitalize(r.scope)} />
+                  <CardField label="Time Frame" value={TIME_FRAME_LABELS[r.timeFrame] ?? r.timeFrame} />
+                  <CardField label="Cost" value={`$${r.cost.toFixed(4)}`} />
+                  <CardField label="Categories" value={<Tags list={r.categories} max={2} len={15} />} />
+                  <CardField label="Regions" value={<Tags list={r.regions} max={2} len={12} />} />
+                </dl>
+                <Button size="xs" variant="outline" className="mt-2" onClick={() => view(r.id)} loading={viewing === r.id}>
+                  <Eye className="size-3.5" aria-hidden />
+                  View
+                </Button>
+              </div>
+            ))}
+            {!history.rows.length && <p className="px-3 py-10 text-center text-sm text-ink-muted">No reports generated yet</p>}
           </div>
         </Collapsible>
       </div>

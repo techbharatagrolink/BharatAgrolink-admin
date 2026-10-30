@@ -36,6 +36,15 @@ function sortedCouriers(vendor) {
   return [...(vendor.couriers || [])].sort((a, b) => Number(a.totalCharges || 0) - Number(b.totalCharges || 0));
 }
 
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 function weightText(courier, parcelWeight) {
   const raw = courier?.minWeight;
   if (raw != null && raw !== "" && Number(raw) !== 0) return `${raw}g`;
@@ -263,7 +272,41 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                         Available couriers ({couriers.length})
                         {cheapest?.name && <Badge tone="success" className="ml-2">Cheapest: {cheapest.name}</Badge>}
                       </p>
-                      <div className="max-w-full min-w-0 overflow-x-auto rounded-lg border border-line">
+                      <div className="space-y-2 xl:hidden">
+                        {couriers.map((courier, index) => {
+                          const id = courierKey(courier, index);
+                          const best = index === 0;
+                          return (
+                            <label key={id} className={cn("flex min-w-0 cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3 text-[12.5px]", best && "bg-success-bg", skip && "cursor-not-allowed opacity-70")}>
+                              <input
+                                type="radio"
+                                name={`courier-${key}`}
+                                className="mt-0.5 size-4 shrink-0 accent-brand-600"
+                                checked={selected[key] === id}
+                                disabled={skip}
+                                onChange={() => setSelected((current) => ({ ...current, [key]: id }))}
+                                aria-label={`Select ${courier.name || "courier"}`}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold text-ink">{courier.name || "Courier"}</span>
+                                  {best && <Badge tone="success">Best price</Badge>}
+                                </div>
+                                <span className="mt-0.5 block text-[11px] text-ink-muted">ID: {courier.id || "—"}</span>
+                                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                                  <CardField label="Freight" value={formatINR(courier.freightCharges || 0)} />
+                                  <CardField label="COD" value={formatINR(courier.codCharges || 0)} />
+                                  <CardField label="Total" value={formatINR(courier.totalCharges || 0)} />
+                                  <CardField label="Delivery" value={courier.edd || "N/A"} />
+                                  <CardField label="Weight" value={weightText(courier, parcel.weightGm)} />
+                                </dl>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      <div className="hidden max-w-full min-w-0 overflow-x-auto rounded-lg border border-line xl:block">
                         <table className="w-full min-w-[720px] text-left text-[12.5px]">
                           <thead>
                             <tr className="bg-ink text-white">

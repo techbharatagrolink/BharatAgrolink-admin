@@ -82,3 +82,13 @@ export function MetaItem({ label, children }) {
     </div>
   );
 }
+
+/** Label/value pair for a mobile card view, standing in for one table cell. */
+export function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 min-w-0 break-words text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}

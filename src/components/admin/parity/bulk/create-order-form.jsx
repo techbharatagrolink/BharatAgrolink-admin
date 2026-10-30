@@ -633,44 +633,74 @@ export function CreateBulkOrderForm({ options, quotation }) {
               ))}
             </ul>
           )}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-xs text-ink-muted">
-                <tr>
-                  <th className="py-2 pr-2 font-medium">Product</th>
-                  <th className="py-2 pr-2 font-medium">SKU</th>
-                  <th className="py-2 pr-2 font-medium">Qty</th>
-                  <th className="py-2 pr-2 font-medium">Unit price</th>
-                  <th className="py-2 pr-2 font-medium">GST %</th>
-                  <th className="py-2 pr-2 font-medium">Taxable</th>
-                  <th className="py-2 pr-2 font-medium">GST</th>
-                  <th className="py-2 pr-2 font-medium">Total</th>
-                  <th className="py-2 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {lines.length === 0 && (
-                  <tr><td colSpan={9} className="py-6 text-center text-ink-muted">No products selected. Search and add products above.</td></tr>
-                )}
+          {lines.length === 0 ? (
+            <p className="py-6 text-center text-sm text-ink-muted">No products selected. Search and add products above.</p>
+          ) : (
+            <>
+              <div className="hidden overflow-x-auto xl:block">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead className="text-xs text-ink-muted">
+                    <tr>
+                      <th className="py-2 pr-2 font-medium">Product</th>
+                      <th className="py-2 pr-2 font-medium">SKU</th>
+                      <th className="py-2 pr-2 font-medium">Qty</th>
+                      <th className="py-2 pr-2 font-medium">Unit price</th>
+                      <th className="py-2 pr-2 font-medium">GST %</th>
+                      <th className="py-2 pr-2 font-medium">Taxable</th>
+                      <th className="py-2 pr-2 font-medium">GST</th>
+                      <th className="py-2 pr-2 font-medium">Total</th>
+                      <th className="py-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lines.map((line) => {
+                      const money = lineMoney(line);
+                      return (
+                        <tr key={line.key} className="border-t border-line">
+                          <td className="py-2 pr-2">{line.name}</td>
+                          <td className="py-2 pr-2 text-ink-muted">{line.sku}</td>
+                          <td className="py-2 pr-2"><Input type="number" min="1" className="w-20" value={line.quantity} onChange={(event) => updateLine(line.key, { quantity: event.target.value })} /></td>
+                          <td className="py-2 pr-2"><Input type="number" min="0" step="0.01" className="w-24" value={line.price} onChange={(event) => updateLine(line.key, { price: event.target.value })} /></td>
+                          <td className="py-2 pr-2"><Input type="number" min="0" step="0.01" className="w-20" value={line.gst} onChange={(event) => updateLine(line.key, { gst: event.target.value })} /></td>
+                          <td className="py-2 pr-2">{formatINR(money.taxable)}</td>
+                          <td className="py-2 pr-2">{formatINR(money.gstAmount)}</td>
+                          <td className="py-2 pr-2">{formatINR(money.total)}</td>
+                          <td className="py-2"><Button type="button" variant="danger-outline" size="sm" onClick={() => removeLine(line.key)}>Remove</Button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-3 xl:hidden">
                 {lines.map((line) => {
                   const money = lineMoney(line);
                   return (
-                    <tr key={line.key} className="border-t border-line">
-                      <td className="py-2 pr-2">{line.name}</td>
-                      <td className="py-2 pr-2 text-ink-muted">{line.sku}</td>
-                      <td className="py-2 pr-2"><Input type="number" min="1" className="w-20" value={line.quantity} onChange={(event) => updateLine(line.key, { quantity: event.target.value })} /></td>
-                      <td className="py-2 pr-2"><Input type="number" min="0" step="0.01" className="w-24" value={line.price} onChange={(event) => updateLine(line.key, { price: event.target.value })} /></td>
-                      <td className="py-2 pr-2"><Input type="number" min="0" step="0.01" className="w-20" value={line.gst} onChange={(event) => updateLine(line.key, { gst: event.target.value })} /></td>
-                      <td className="py-2 pr-2">{formatINR(money.taxable)}</td>
-                      <td className="py-2 pr-2">{formatINR(money.gstAmount)}</td>
-                      <td className="py-2 pr-2">{formatINR(money.total)}</td>
-                      <td className="py-2"><Button type="button" variant="danger-outline" size="sm" onClick={() => removeLine(line.key)}>Remove</Button></td>
-                    </tr>
+                    <div key={line.key} className="space-y-2.5 rounded-lg border border-line p-3 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink">{line.name}</p>
+                          <p className="text-xs text-ink-muted">{line.sku}</p>
+                        </div>
+                        <Button type="button" variant="danger-outline" size="sm" onClick={() => removeLine(line.key)}>Remove</Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(event) => updateLine(line.key, { quantity: event.target.value })} /></Field>
+                        <Field label="Unit price"><Input type="number" min="0" step="0.01" value={line.price} onChange={(event) => updateLine(line.key, { price: event.target.value })} /></Field>
+                        <Field label="GST %"><Input type="number" min="0" step="0.01" value={line.gst} onChange={(event) => updateLine(line.key, { gst: event.target.value })} /></Field>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 border-t border-line pt-2.5 text-xs">
+                        <div><p className="text-ink-muted">Taxable</p><p className="font-medium text-ink tabular">{formatINR(money.taxable)}</p></div>
+                        <div><p className="text-ink-muted">GST</p><p className="font-medium text-ink tabular">{formatINR(money.gstAmount)}</p></div>
+                        <div><p className="text-ink-muted">Total</p><p className="font-medium text-ink tabular">{formatINR(money.total)}</p></div>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
           {lines.length > 0 && <p className="text-sm text-ink-soft">Lines {formatINR(totals.total)} · {totals.units} units · {(totals.grams / 1000).toFixed(2)} kg</p>}
         </CardBody>
       </Card>

@@ -8,6 +8,7 @@ import { formatDateTime, formatINR } from "@/lib/format";
 import { changeLineStatusAction, updateLineBoxAction } from "@/lib/actions/admin/orders";
 import { cancelShipmentsAction, openLabelAction, regenerateLabelAction } from "@/lib/actions/admin/shipping";
 import { OrderAddressDialog, OrderEditor } from "@/components/admin/orders/order-editor";
+import { OrderVerificationDialog } from "@/components/admin/orders/order-verification-dialog";
 import { CreateShipmentDialog } from "@/components/admin/shipping/create-shipment-dialog";
 
 function money(value) {
@@ -60,48 +61,51 @@ function factorText(factors) {
   return factors.map((factor) => `${factor.name || factor.code} ${formatINR(factor.actualAmount)}`).join(" · ");
 }
 
+/** Label/value pair for a mobile card view, standing in for one table cell. */
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 /** Saved Pricing & Tax snapshot for this order, one row per product line. */
 function OrderCostTable({ costs }) {
   if (!costs?.length) return null;
-  const headers = ["Product", "Qty", "Display price", "Taxable", "TCS", "NRV", "Service charge", "Net service charge", "Factors actual", "Contribution margin", "Courier", "Courier charge", "Shipping actual", "Difference", "Adjusted margin", "Seller payout", "Cost factors"];
   return (
-    <section className="overflow-x-auto rounded-xl border border-line bg-surface">
+    <section className="rounded-xl border border-line bg-surface">
       <div className="border-b border-line px-4 py-3">
         <h2 className="text-sm font-semibold text-ink">Pricing &amp; Tax at shipment</h2>
         <p className="text-xs text-ink-muted">Saved when the shipment was created. Prices are per unit. The courier charge is the parcel charge, and the difference is that charge minus shipping actual.</p>
       </div>
-      <table className="w-max min-w-full text-left text-[12.5px]">
-        <thead>
-          <tr className="bg-ink text-white">
-            {headers.map((label) => (
-              <th key={label} className="whitespace-nowrap px-3 py-2 font-semibold">{label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {costs.map((cost) => (
-            <tr key={cost.id || `${cost.productId}:${cost.variantId}`} className="border-t border-line">
-              <td className="max-w-64 px-3 py-2 font-medium">{cost.productName || cost.productId}</td>
-              <td className="px-3 py-2 tabular">{cost.qty}</td>
-              <td className="px-3 py-2 tabular">{cost.displayPrice == null ? "—" : formatINR(cost.displayPrice)}</td>
-              <td className="px-3 py-2 tabular">{cost.taxableValue == null ? "—" : formatINR(cost.taxableValue)}</td>
-              <td className="px-3 py-2 tabular">{cost.tcs == null ? "—" : formatINR(cost.tcs)}</td>
-              <td className="px-3 py-2 tabular">{cost.nrv == null ? "—" : formatINR(cost.nrv)}</td>
-              <td className="px-3 py-2 tabular">{cost.serviceCharge == null ? "—" : formatINR(cost.serviceCharge)}</td>
-              <td className="px-3 py-2 tabular">{cost.netServiceCharge == null ? "—" : formatINR(cost.netServiceCharge)}</td>
-              <td className="px-3 py-2 tabular">{cost.totalFactorActual == null ? "—" : formatINR(cost.totalFactorActual)}</td>
-              <td className="px-3 py-2 tabular">{cost.contributionMargin == null ? "—" : `${formatINR(cost.contributionMargin)} · ${bpsText(cost.contributionMarginBps)}`}</td>
-              <td className="px-3 py-2">{cost.courierName || "—"}</td>
-              <td className="px-3 py-2 tabular">{cost.courierCharge == null ? "—" : formatINR(cost.courierCharge)}</td>
-              <td className="px-3 py-2 tabular">{cost.shippingActual == null ? "—" : formatINR(cost.shippingActual)}</td>
-              <td className="px-3 py-2 tabular">{cost.shippingDifference == null ? "—" : formatINR(cost.shippingDifference)}</td>
-              <td className="px-3 py-2 tabular">{cost.adjustedContributionMargin == null ? "—" : `${formatINR(cost.adjustedContributionMargin)} · ${bpsText(cost.adjustedContributionMarginBps)}`}</td>
-              <td className="px-3 py-2 tabular">{cost.sellerPayout == null ? "—" : formatINR(cost.sellerPayout)}</td>
-              <td className="max-w-sm whitespace-normal px-3 py-2 text-ink-soft">{factorText(cost.factors)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <div className="space-y-3 p-3">
+        {costs.map((cost) => (
+          <div key={cost.id || `${cost.productId}:${cost.variantId}`} className="rounded-lg border border-line p-3 text-[12.5px]">
+            <p className="font-medium text-ink">{cost.productName || cost.productId}</p>
+            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <CardField label="Qty" value={cost.qty} />
+              <CardField label="Display price" value={cost.displayPrice == null ? null : formatINR(cost.displayPrice)} />
+              <CardField label="Taxable" value={cost.taxableValue == null ? null : formatINR(cost.taxableValue)} />
+              <CardField label="TCS" value={cost.tcs == null ? null : formatINR(cost.tcs)} />
+              <CardField label="NRV" value={cost.nrv == null ? null : formatINR(cost.nrv)} />
+              <CardField label="Service charge" value={cost.serviceCharge == null ? null : formatINR(cost.serviceCharge)} />
+              <CardField label="Net service charge" value={cost.netServiceCharge == null ? null : formatINR(cost.netServiceCharge)} />
+              <CardField label="Factors actual" value={cost.totalFactorActual == null ? null : formatINR(cost.totalFactorActual)} />
+              <CardField label="Contribution margin" value={cost.contributionMargin == null ? null : `${formatINR(cost.contributionMargin)} · ${bpsText(cost.contributionMarginBps)}`} />
+              <CardField label="Courier" value={cost.courierName} />
+              <CardField label="Courier charge" value={cost.courierCharge == null ? null : formatINR(cost.courierCharge)} />
+              <CardField label="Shipping actual" value={cost.shippingActual == null ? null : formatINR(cost.shippingActual)} />
+              <CardField label="Difference" value={cost.shippingDifference == null ? null : formatINR(cost.shippingDifference)} />
+              <CardField label="Adjusted margin" value={cost.adjustedContributionMargin == null ? null : `${formatINR(cost.adjustedContributionMargin)} · ${bpsText(cost.adjustedContributionMarginBps)}`} />
+              <CardField label="Seller payout" value={cost.sellerPayout == null ? null : formatINR(cost.sellerPayout)} />
+            </dl>
+            <p className="mt-2 text-[11px] text-ink-soft"><span className="font-medium text-ink-muted">Cost factors: </span>{factorText(cost.factors)}</p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -120,6 +124,7 @@ function prepaidDiscount(order) {
 export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canEdit }) {
   const lines = groups.flatMap((group) => group.lines.map((line) => ({ ...line, vendor: group.vendor })));
   const [panel, setPanel] = useState("");
+  const [verifyOpen, setVerifyOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const [addressOpen, setAddressOpen] = useState(false);
   const closeAddress = useCallback(() => setAddressOpen(false), []);
@@ -146,6 +151,28 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
     const result = await work();
     setMessage(result?.message || (result?.ok ? "Saved." : "Could not save."));
     setPending(false);
+    return result;
+  };
+
+  const acceptOrder = async (remarks) => {
+    const result = await run(async () => {
+      let last = { ok: true, message: "Order accepted." };
+      for (const line of lines) last = await changeLineStatusAction(order.id, line.id, "Accepted", remarks || "Accepted from the order page");
+      return last;
+    });
+    if (result?.ok !== false) {
+      setVerifyOpen(false);
+      setShipmentOpen(true);
+    }
+  };
+
+  const rejectFromVerification = async (remarks) => {
+    const result = await run(async () => {
+      let last = { ok: true, message: "Order rejected." };
+      for (const line of lines) last = await changeLineStatusAction(order.id, line.id, "Rejected", remarks || "Rejected from the order page");
+      return last;
+    });
+    if (result?.ok !== false) setVerifyOpen(false);
   };
 
   return (
@@ -164,40 +191,34 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
         </div>
       </section>
 
-      <section className="overflow-x-auto rounded-xl border border-line bg-surface">
-        <table className="w-max min-w-full text-left text-[12.5px]">
-          <thead>
-            <tr className="bg-ink text-white">
-              {["Image", "Invoice no.", "Product name", "Product ID", "Vendor", "SKU", "SGST", "CGST", "IGST", "Price", "Selling price", "Vendor NRV", "Qty", "Tax", "Status"].map((label) => (
-                <th key={label} className="whitespace-nowrap px-3 py-2 font-semibold">{label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((line) => (
-              <tr key={line.id} className="border-t border-line">
-                <td className="px-3 py-2">{line.image ? <img src={line.image} alt="" className="h-10 w-10 rounded object-cover" /> : "—"}</td>
-                <td className="px-3 py-2">{line.invoice || "—"}</td>
-                <td className="px-3 py-2 font-medium"><Link href={`/admin/products/${line.productId}`} className="hover:underline">{line.productName}</Link></td>
-                <td className="px-3 py-2">{line.productId}</td>
-                <td className="max-w-44 px-3 py-2">{line.vendor}</td>
-                <td className="px-3 py-2">{line.sku}</td>
-                <td className="px-3 py-2 tabular">{Number(line.sgst || 0).toFixed(2)}</td>
-                <td className="px-3 py-2 tabular">{Number(line.cgst || 0).toFixed(2)}</td>
-                <td className="px-3 py-2 tabular">{Number(line.igst || 0).toFixed(2)}</td>
-                <td className="px-3 py-2 tabular">{Number(line.unitPrice || 0).toFixed(2)}</td>
-                <td className="px-3 py-2 tabular">{Number(line.sellingPrice || 0).toFixed(2)}</td>
-                <td className="px-3 py-2 font-semibold tabular">
-                  {Number(line.vendorNrv || 0).toFixed(2)}
-                  {Number(line.qty) > 1 && <div className="text-[11px] font-normal text-ink-muted">Total: {Number(line.vendorNrvTotal || 0).toFixed(2)}</div>}
-                </td>
-                <td className="px-3 py-2">{line.qty}</td>
-                <td className="px-3 py-2">{line.gstPercent}</td>
-                <td className="px-3 py-2"><StatusBadge status={line.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <section className="rounded-xl border border-line bg-surface">
+        <div className="space-y-3 p-3">
+          {lines.map((line) => (
+            <div key={line.id} className="flex gap-3 rounded-lg border border-line p-3 text-[12.5px]">
+              {line.image ? <img src={line.image} alt="" className="h-16 w-16 shrink-0 rounded object-cover" /> : <div className="h-16 w-16 shrink-0 rounded bg-line/40" />}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <Link href={`/admin/products/${line.productId}`} className="font-medium text-ink hover:underline">{line.productName}</Link>
+                  <StatusBadge status={line.status} />
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                  <CardField label="Product ID" value={line.productId} />
+                  <CardField label="Vendor" value={line.vendor} />
+                  <CardField label="SKU" value={line.sku} />
+                  <CardField label="Invoice no." value={line.invoice} />
+                  <CardField label="Qty" value={line.qty} />
+                  <CardField label="Tax" value={line.gstPercent} />
+                  <CardField label="Price" value={Number(line.unitPrice || 0).toFixed(2)} />
+                  <CardField label="Selling price" value={Number(line.sellingPrice || 0).toFixed(2)} />
+                  <CardField label="SGST" value={Number(line.sgst || 0).toFixed(2)} />
+                  <CardField label="CGST" value={Number(line.cgst || 0).toFixed(2)} />
+                  <CardField label="IGST" value={Number(line.igst || 0).toFixed(2)} />
+                  <CardField label="Vendor NRV" value={`${Number(line.vendorNrv || 0).toFixed(2)}${Number(line.qty) > 1 ? ` (Total ${Number(line.vendorNrvTotal || 0).toFixed(2)})` : ""}`} />
+                </dl>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <OrderCostTable costs={orderCosts} />
@@ -247,7 +268,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
             <span>Grand total</span><span className="tabular">{money(grandTotal(order, shipping))}</span>
           </div>
           <div className="mt-3 flex flex-col gap-2">
-            <Button variant="primary" size="sm" onClick={() => setShipmentOpen(true)}>Process Order</Button>
+            <Button variant="primary" size="sm" onClick={() => setVerifyOpen(true)}>Process Order</Button>
             {labelVendors.map((vendor) => vendor.printLabel ? (
               <Button key={`print-${vendor.vendorId}`} variant="secondary" size="sm" loading={pending} onClick={() => run(async () => {
                 const opened = await openLabelAction(order.id, vendor.vendorId);
@@ -285,6 +306,16 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
           {lines.map((line) => <BoxForm key={line.id} orderId={order.id} line={line} onSave={(box) => run(() => updateLineBoxAction(order.id, line.id, box))} pending={pending} />)}
         </section>
       )}
+
+      <OrderVerificationDialog
+        order={order}
+        editor={editor}
+        open={verifyOpen}
+        onClose={() => setVerifyOpen(false)}
+        onAccept={acceptOrder}
+        onReject={rejectFromVerification}
+        pending={pending}
+      />
 
       <CreateShipmentDialog
         orderId={order.id}

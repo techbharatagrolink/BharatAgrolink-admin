@@ -112,7 +112,7 @@ export function ExpensesManager({ data, can }) {
 
       <Card className="mt-4">
         <CardHeader title="Entries" />
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto xl:block">
           <table className="w-full text-sm">
             <caption className="sr-only">Marketing spend entries for {month}</caption>
             <thead className="border-b border-line text-left text-[11px] font-bold tracking-wide text-ink-muted uppercase">
@@ -159,6 +159,48 @@ export function ExpensesManager({ data, can }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="divide-y divide-line xl:hidden">
+          {rows.map((r) => {
+            const who = [r.campaignName, r.vendorName].filter(Boolean).join(" · ");
+            return (
+              <div key={r.id} className="p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">{r.bucketLabel}</p>
+                    <p className="text-xs text-ink-muted">{r.spendDate || "—"}</p>
+                  </div>
+                  <p className="shrink-0 font-semibold text-ink tabular">{rupees(r.amount)}</p>
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                  <div className="min-w-0 col-span-2 sm:col-span-1">
+                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Campaign / Vendor</dt>
+                    <dd className="truncate text-ink">{who || "—"}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Invoice</dt>
+                    <dd className="truncate text-ink">{r.invoiceNumber || "—"}</dd>
+                  </div>
+                </dl>
+                {(can.edit || can.delete) && (
+                  <div className="mt-2 flex items-center gap-1">
+                    {can.edit && (
+                      <Button size="icon-sm" variant="ghost" onClick={() => open(r)} aria-label="Edit" title="Edit">
+                        <Pencil className="size-4" aria-hidden />
+                      </Button>
+                    )}
+                    {can.delete && (
+                      <Button size="icon-sm" variant="ghost" className="text-danger-ink" onClick={() => setRemoving(r.id)} aria-label="Remove" title="Remove">
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {!rows.length && <p className="px-3 py-8 text-center text-sm text-ink-muted">No marketing spend recorded for this month yet.</p>}
         </div>
         {pagination.pages > 1 && (
           <div className="flex items-center justify-between border-t border-line px-4 py-2.5 text-xs text-ink-muted">

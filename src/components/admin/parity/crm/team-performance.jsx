@@ -33,6 +33,16 @@ function Metric({ label, value, className }) {
   );
 }
 
+/** Label/value pair for a mobile card view, standing in for one table cell. */
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 /** get_agent_detailed_performance.php modal. */
 function AgentDialog({ agentId, onClose }) {
   const [state, setState] = useState({ loading: true, result: null });
@@ -144,7 +154,8 @@ function SalesByLeadsDialog({ type, onClose }) {
         ) : d.rows.length === 0 ? (
           <p className="py-6 text-center text-sm text-ink-muted">No sales agents found.</p>
         ) : (
-          <div className="overflow-x-auto scrollbar-thin">
+          <>
+          <div className="hidden overflow-x-auto scrollbar-thin xl:block">
             <table className="w-full min-w-max text-left text-[13px]">
               <thead>
                 <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
@@ -177,6 +188,28 @@ function SalesByLeadsDialog({ type, onClose }) {
               </tbody>
             </table>
           </div>
+
+          <div className="space-y-3 xl:hidden">
+            {d.rows.map((r) => (
+              <div key={r.id} className="rounded-lg border border-line p-3 text-[13px]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">{r.name}</p>
+                    <p className="text-xs text-ink-muted">{r.role}</p>
+                  </div>
+                  <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                  <CardField label="Total Leads" value={formatNumber(r.totalLeads)} />
+                  <CardField label="Converted Leads" value={formatNumber(r.converted)} />
+                  <CardField label="Total Revenue" value={formatINR(r.revenue)} />
+                  <CardField label="Avg Amount/Lead" value={formatINR(r.avgPerLead)} />
+                  <CardField label="Conversion Rate" value={`${r.rate}%`} />
+                </dl>
+              </div>
+            ))}
+          </div>
+          </>
         )}
       </div>
     </Dialog>
@@ -254,7 +287,7 @@ export function TeamPerformance({ rows, summary }) {
             </div>
           }
         />
-        <div className="overflow-x-auto scrollbar-thin">
+        <div className="hidden overflow-x-auto scrollbar-thin xl:block">
           <table className="w-full min-w-max text-left text-[13px]">
             <thead>
               <tr className="border-y border-line bg-surface-muted text-xs text-ink-muted">
@@ -301,6 +334,33 @@ export function TeamPerformance({ rows, summary }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="divide-y divide-line xl:hidden">
+          {visible.map((r) => (
+            <button key={r.id} type="button" onClick={() => setAgent(r.id)} className="block w-full px-4 py-3 text-left hover:bg-surface-muted">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="block font-medium text-ink">{r.name}</span>
+                  <span className="block text-xs text-ink-muted">{r.role}</span>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1.5">
+                  <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                  {r.alert && <AlertTriangle className="size-4 text-danger-ink" aria-label="Low conversion alert" />}
+                </span>
+              </div>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                <CardField label="Total Leads" value={formatNumber(r.totalLeads)} />
+                <CardField label="Converted" value={formatNumber(r.converted)} />
+                <CardField label="Dead" value={formatNumber(r.dead)} />
+              </dl>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="w-12 text-xs font-medium tabular">{r.rate}%</span>
+                <ProgressBar value={r.rate} tone={rateTone(r.rate)} label={`${r.name} conversion rate`} />
+              </div>
+            </button>
+          ))}
+          {visible.length === 0 && <p className="px-4 py-8 text-center text-sm text-ink-muted">No agents found.</p>}
         </div>
       </Card>
 

@@ -262,7 +262,7 @@ export function DataTable({
             </span>
           </div>
         )}
-        <div className={cn("hidden max-h-[70vh] overflow-auto scrollbar-thin md:block", pending && "opacity-55")}>
+        <div className={cn("hidden max-h-[70vh] overflow-auto scrollbar-thin xl:block", pending && "opacity-55")}>
           <table className="w-full min-w-max border-separate border-spacing-0 text-left text-[13px]">
             <thead>
               <tr>
@@ -355,7 +355,7 @@ export function DataTable({
           </table>
         </div>
 
-        <div className={cn("md:hidden", pending && "opacity-55")}>
+        <div className={cn("xl:hidden", pending && "opacity-55")}>
           {(showSelection || sortOptions.length > 0) && rows.length > 0 && (
             <div className="flex items-center gap-3 border-b border-line bg-surface-muted px-3 py-2">
               {showSelection && (

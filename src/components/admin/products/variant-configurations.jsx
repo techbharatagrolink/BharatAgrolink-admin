@@ -211,7 +211,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
       {notice && !open && <p className="text-sm text-danger-ink">{notice}</p>}
 
       {savedRows.length > 0 && (
-        <ul className="space-y-2 md:hidden">
+        <ul className="space-y-2 xl:hidden">
           {savedRows.map((row) => {
             const editing = editingId === row.id;
             const busy = busyId === row.id;
@@ -292,7 +292,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
       )}
 
       {savedRows.length > 0 && (
-        <div className="hidden min-w-0 overflow-x-auto md:block">
+        <div className="hidden min-w-0 overflow-x-auto xl:block">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b text-xs text-ink-muted">
@@ -385,7 +385,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
       )}
 
       {rows.length > 0 && (
-        <ul className="space-y-3 md:hidden">
+        <ul className="space-y-3 xl:hidden">
           {rows.map((row, index) => (
             <li key={row.key} className="rounded-lg border border-line p-3">
               <div className="mb-2 flex items-start justify-between gap-2">
@@ -434,7 +434,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
       )}
 
       {rows.length > 0 && (
-        <div className="hidden min-w-0 overflow-x-auto md:block">
+        <div className="hidden min-w-0 overflow-x-auto xl:block">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b text-xs text-ink-muted">

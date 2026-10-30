@@ -115,6 +115,16 @@ function ParamText({ name, label, placeholder, type }) {
   );
 }
 
+/** Label/value pair for a mobile card view, standing in for one table cell. */
+function CardField({ label, value }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dd className="truncate text-ink">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 function ParamDate({ name, label }) {
   const { get, setParams } = useQueryState();
   return (
@@ -150,45 +160,76 @@ function CustomersDialog({ target, sources, onClose }) {
       ) : rows.length === 0 ? (
         <p className="py-6 text-center text-sm text-ink-muted">No customers found.</p>
       ) : (
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-max text-left text-[13px]">
-            <thead>
-              <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
-                {["Customer", "Mobile Number", "Type", product ? "Times Opened" : "Times Searched", ...(product ? ["Clicked From", "Search Term", "City"] : ["Results Found", "Searched From", "City"]), "First Seen", "Last Seen"].map((h) => (
-                  <th key={h} className="px-3 py-2 font-semibold">
-                    {h}
-                  </th>
+        <>
+          <div className="hidden overflow-x-auto scrollbar-thin xl:block">
+            <table className="w-full min-w-max text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
+                  {["Customer", "Mobile Number", "Type", product ? "Times Opened" : "Times Searched", ...(product ? ["Clicked From", "Search Term", "City"] : ["Results Found", "Searched From", "City"]), "First Seen", "Last Seen"].map((h) => (
+                    <th key={h} className="px-3 py-2 font-semibold">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i} className="border-b border-line last:border-0">
+                    <td className="px-3 py-2 font-medium text-ink">{r.customer_name || "Guest Visitor"}</td>
+                    <td className="px-3 py-2">{r.phone || "-"}</td>
+                    <td className="px-3 py-2">
+                      <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
+                    </td>
+                    <td className="px-3 py-2 tabular">{formatNumber(r.times)}</td>
+                    {product ? (
+                      <>
+                        <td className="px-3 py-2">{sourceLabel(r.source)}</td>
+                        <td className="px-3 py-2">{r.search_term || "-"}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-3 py-2 tabular">{r.results_count ?? "-"}</td>
+                        <td className="px-3 py-2">{sourceLabel(r.source)}</td>
+                      </>
+                    )}
+                    <td className="px-3 py-2">{r.city || "-"}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.created_at)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.updated_at)}</td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i} className="border-b border-line last:border-0">
-                  <td className="px-3 py-2 font-medium text-ink">{r.customer_name || "Guest Visitor"}</td>
-                  <td className="px-3 py-2">{r.phone || "-"}</td>
-                  <td className="px-3 py-2">
-                    <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
-                  </td>
-                  <td className="px-3 py-2 tabular">{formatNumber(r.times)}</td>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="space-y-3 xl:hidden">
+            {rows.map((r, i) => (
+              <div key={i} className="rounded-lg border border-line p-3 text-[13px]">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink">{r.customer_name || "Guest Visitor"}</p>
+                  <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                  <CardField label="Mobile Number" value={r.phone || "-"} />
+                  <CardField label={product ? "Times Opened" : "Times Searched"} value={formatNumber(r.times)} />
                   {product ? (
                     <>
-                      <td className="px-3 py-2">{sourceLabel(r.source)}</td>
-                      <td className="px-3 py-2">{r.search_term || "-"}</td>
+                      <CardField label="Clicked From" value={sourceLabel(r.source)} />
+                      <CardField label="Search Term" value={r.search_term || "-"} />
                     </>
                   ) : (
                     <>
-                      <td className="px-3 py-2 tabular">{r.results_count ?? "-"}</td>
-                      <td className="px-3 py-2">{sourceLabel(r.source)}</td>
+                      <CardField label="Results Found" value={r.results_count ?? "-"} />
+                      <CardField label="Searched From" value={sourceLabel(r.source)} />
                     </>
                   )}
-                  <td className="px-3 py-2">{r.city || "-"}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.created_at)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.updated_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  <CardField label="City" value={r.city || "-"} />
+                  <CardField label="First Seen" value={formatDateTime(r.created_at)} />
+                  <CardField label="Last Seen" value={formatDateTime(r.updated_at)} />
+                </dl>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </Dialog>
   );

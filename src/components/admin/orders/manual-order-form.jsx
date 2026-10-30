@@ -478,50 +478,85 @@ export function ManualOrderForm({ leadCode = "" }) {
               </div>
             )}
           </Field>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs text-ink-muted">
-                  <th className="py-2 font-medium">Product</th>
-                  <th className="py-2 font-medium">SKU</th>
-                  <th className="py-2 font-medium">Qty</th>
-                  <th className="py-2 font-medium">Price</th>
-                  <th className="py-2 font-medium">Subtotal</th>
-                  <th className="py-2 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-ink-muted">No products selected yet</td></tr>
-                )}
+          {items.length === 0 ? (
+            <p className="py-8 text-center text-sm text-ink-muted">No products selected yet</p>
+          ) : (
+            <>
+              <div className="hidden overflow-x-auto xl:block">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-left text-xs text-ink-muted">
+                      <th className="py-2 font-medium">Product</th>
+                      <th className="py-2 font-medium">SKU</th>
+                      <th className="py-2 font-medium">Qty</th>
+                      <th className="py-2 font-medium">Price</th>
+                      <th className="py-2 font-medium">Subtotal</th>
+                      <th className="py-2 font-medium" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => {
+                      const priced = quote.lines.find((line) => line.sku === item.sku) || item;
+                      return (
+                        <tr key={item.sku} className="border-b border-line">
+                          <td className="py-2 pr-2">
+                            <p className="font-medium text-ink">{item.name}</p>
+                            <p className="mt-1 flex flex-wrap gap-2 text-xs">
+                              <Link href={`/admin/products/${item.productId}`} className="text-brand-700 hover:underline">Product</Link>
+                              {item.sellerId && <Link href={`/admin/vendors/${item.sellerId}`} className="text-brand-700 hover:underline">{item.sellerName || "Vendor"}</Link>}
+                            </p>
+                          </td>
+                          <td className="py-2 font-mono text-xs text-ink-muted">{item.sku}</td>
+                          <td className="py-2">
+                            <div className="flex items-center gap-1">
+                              <Button type="button" size="icon-sm" variant="secondary" aria-label="Decrease quantity" onClick={() => setQty(item.sku, item.qty - 1)}><Minus className="size-3.5" /></Button>
+                              <Input className="h-8 w-14 text-center" type="number" min={1} value={item.qty} onChange={(event) => setQty(item.sku, event.target.value)} />
+                              <Button type="button" size="icon-sm" variant="secondary" aria-label="Increase quantity" onClick={() => setQty(item.sku, item.qty + 1)}><Plus className="size-3.5" /></Button>
+                            </div>
+                          </td>
+                          <td className="py-2 tabular">{formatINR(priced.price)}</td>
+                          <td className="py-2 font-semibold tabular">{formatINR(priced.subtotal ?? priced.price * item.qty)}</td>
+                          <td className="py-2"><Button type="button" variant="ghost" size="icon-sm" aria-label="Remove product" onClick={() => setItems((list) => list.filter((row) => row.sku !== item.sku))}><Trash2 className="size-4" /></Button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-3 xl:hidden">
                 {items.map((item) => {
                   const priced = quote.lines.find((line) => line.sku === item.sku) || item;
                   return (
-                    <tr key={item.sku} className="border-b border-line">
-                      <td className="py-2 pr-2">
-                        <p className="font-medium text-ink">{item.name}</p>
-                        <p className="mt-1 flex flex-wrap gap-2 text-xs">
-                          <Link href={`/admin/products/${item.productId}`} className="text-brand-700 hover:underline">Product</Link>
-                          {item.sellerId && <Link href={`/admin/vendors/${item.sellerId}`} className="text-brand-700 hover:underline">{item.sellerName || "Vendor"}</Link>}
-                        </p>
-                      </td>
-                      <td className="py-2 font-mono text-xs text-ink-muted">{item.sku}</td>
-                      <td className="py-2">
+                    <div key={item.sku} className="space-y-2.5 rounded-lg border border-line p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink">{item.name}</p>
+                          <p className="font-mono text-xs text-ink-muted">{item.sku}</p>
+                          <p className="mt-1 flex flex-wrap gap-2 text-xs">
+                            <Link href={`/admin/products/${item.productId}`} className="text-brand-700 hover:underline">Product</Link>
+                            {item.sellerId && <Link href={`/admin/vendors/${item.sellerId}`} className="text-brand-700 hover:underline">{item.sellerName || "Vendor"}</Link>}
+                          </p>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove product" onClick={() => setItems((list) => list.filter((row) => row.sku !== item.sku))}><Trash2 className="size-4" /></Button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-1">
                           <Button type="button" size="icon-sm" variant="secondary" aria-label="Decrease quantity" onClick={() => setQty(item.sku, item.qty - 1)}><Minus className="size-3.5" /></Button>
                           <Input className="h-8 w-14 text-center" type="number" min={1} value={item.qty} onChange={(event) => setQty(item.sku, event.target.value)} />
                           <Button type="button" size="icon-sm" variant="secondary" aria-label="Increase quantity" onClick={() => setQty(item.sku, item.qty + 1)}><Plus className="size-3.5" /></Button>
                         </div>
-                      </td>
-                      <td className="py-2 tabular">{formatINR(priced.price)}</td>
-                      <td className="py-2 font-semibold tabular">{formatINR(priced.subtotal ?? priced.price * item.qty)}</td>
-                      <td className="py-2"><Button type="button" variant="ghost" size="icon-sm" aria-label="Remove product" onClick={() => setItems((list) => list.filter((row) => row.sku !== item.sku))}><Trash2 className="size-4" /></Button></td>
-                    </tr>
+                        <div className="text-right text-sm">
+                          <p className="text-ink-muted">{formatINR(priced.price)} each</p>
+                          <p className="font-semibold tabular text-ink">{formatINR(priced.subtotal ?? priced.price * item.qty)}</p>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
         </CardBody>
       </Card>
 
@@ -594,7 +629,7 @@ export function ManualOrderForm({ leadCode = "" }) {
         <CardHeader title="Live order summary" actions={<span className="rounded bg-success-bg px-2 py-0.5 text-[11px] font-semibold text-success-ink">LIVE</span>} />
         <CardBody>
           <div className="grid gap-4 md:grid-cols-5">
-            <div className="overflow-x-auto md:col-span-3">
+            <div className="hidden overflow-x-auto md:col-span-3 md:block">
               <table className="w-full text-sm">
                 <thead><tr className="text-left text-xs text-ink-muted"><th className="py-1">Item</th><th>Qty</th><th className="text-right">Price</th><th className="text-right">Total</th></tr></thead>
                 <tbody>
@@ -608,6 +643,17 @@ export function ManualOrderForm({ leadCode = "" }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="space-y-1.5 md:hidden">
+              {(quote.lines.length ? quote.lines : items).map((line) => (
+                <div key={line.sku || line.productId} className="flex items-center justify-between gap-3 border-t border-line py-1.5 text-sm first:border-t-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-ink">{line.name}</p>
+                    <p className="text-xs text-ink-muted">Qty {line.qty} × {formatINR(line.price)}</p>
+                  </div>
+                  <p className="shrink-0 font-medium tabular text-ink">{formatINR(line.subtotal ?? line.price * line.qty)}</p>
+                </div>
+              ))}
             </div>
             <div className="space-y-1.5 rounded-lg bg-surface-muted p-3 text-sm md:col-span-2">
               <Row label="Items subtotal" value={quote.subtotal} />

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
+import { CardField } from "./social-shared";
 
 const PER_PAGE = ["10", "25", "50"];
 const EMPTY = { pageTitle: "", pageHeading: "", pageSlug: "", metaTags: "", metaDescription: "", metaKeywords: "", canonicalUrl: "", content: "" };
@@ -121,7 +122,7 @@ export function SeoManager({ items, meta, q, can, siteUrl }) {
             )}
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto xl:block">
           <table className="w-full text-sm">
             <caption className="sr-only">SEO pages</caption>
             <thead className="bg-surface-muted text-left text-xs font-semibold text-ink-muted">
@@ -169,6 +170,38 @@ export function SeoManager({ items, meta, q, can, siteUrl }) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="divide-y divide-line xl:hidden">
+          {items.map((p, i) => (
+            <div key={p.id} className="p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs text-ink-muted tabular">#{start + i + 1}</span>
+                <div className="flex items-center gap-1">
+                  {can.edit && (
+                    <Button size="icon-sm" variant="ghost" onClick={() => open(p)} loading={loadingId === p.id} aria-label={`Edit ${p.pageTitle}`} title="Edit">
+                      <Pencil className="size-4" aria-hidden />
+                    </Button>
+                  )}
+                  {can.delete && (
+                    <Button size="icon-sm" variant="ghost" className="text-danger-ink" onClick={() => setRemoving(p)} aria-label={`Delete ${p.pageTitle}`} title="Delete">
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="font-medium text-ink">{p.pageTitle}</p>
+              <a href={new URL(p.websitePath.replace(/^\//, ""), siteUrl).toString()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-brand-700 hover:underline">
+                {p.websitePath}
+                <ExternalLink className="size-3" aria-hidden />
+              </a>
+              <dl className="mt-2 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
+                <CardField label="Page Heading" value={p.pageHeading} />
+                <CardField label="Meta Tags" value={p.metaTags || "—"} />
+              </dl>
+            </div>
+          ))}
+          {!items.length && <p className="px-3 py-8 text-center text-sm text-ink-muted">{q ? "No pages match your search." : "No pages yet."}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-xs text-ink-muted">
           <span>Total Row : {formatNumber(meta.total)}</span>

@@ -318,7 +318,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             </div>
           </div>
 
-          <div className="space-y-2 md:hidden">
+          <div className="space-y-2 xl:hidden">
             {draft.factors.map((f) => {
               const r = resultFactors.get(f.code) || {};
               const label = r.label || f.code;
@@ -358,7 +358,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             />
           </div>
 
-          <div className="hidden min-w-0 md:block md:overflow-x-auto">
+          <div className="hidden min-w-0 xl:block xl:overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-ink-muted">

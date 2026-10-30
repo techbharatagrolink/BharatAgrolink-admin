@@ -50,6 +50,10 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
     : null;
 
   const tableData = { rows: data.rows, total: data.total, page: data.page, pageSize: data.pageSize, pageCount: data.pageCount };
+  const rowActions = await withReasonOptions(permitted(resource.rowActions), user);
+  // The row already opens its detail page via rowHref (first column); mirror that as an explicit
+  // "View" action too, since some rows hide/truncate that column or users expect it in the menu.
+  const viewAction = resource.rowHref && !rowActions.some((a) => a.href === resource.rowHref) ? [{ id: "view", label: "View", href: resource.rowHref }] : [];
   const resolvedFilters = await resolveFilterOptions(resource, user);
   const links = (resource.headerActions ?? []).filter((a) => can(user, a.permission ?? resource.permission, a.action ?? "view"));
   const headerActions =
@@ -86,7 +90,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
         }}
         data={tableData}
         canAdd={Boolean(resource.form) && can(user, resource.permission, "add") && !resource.noAdd}
-        rowActions={await withReasonOptions(permitted(resource.rowActions), user)}
+        rowActions={[...viewAction, ...rowActions]}
         bulkActions={await withReasonOptions(permitted(resource.bulkActions), user)}
         optionSets={await resolveFormOptions(resource, user)}
       />

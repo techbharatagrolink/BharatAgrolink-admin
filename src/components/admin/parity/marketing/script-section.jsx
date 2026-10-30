@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatStamp } from "./format";
 import { Markdown } from "./markdown";
-import { ChipGroup, Collapsible, MetaItem, StatusPill, capitalize, truncate } from "./social-shared";
+import { CardField, ChipGroup, Collapsible, MetaItem, StatusPill, capitalize, truncate } from "./social-shared";
 
 const DURATIONS = [
   { value: "15", label: "15 seconds - Ultra-short" },
@@ -259,7 +259,7 @@ export function ScriptSection({ latest, history, canAdd, onRefresh, refreshing }
         </Collapsible>
 
         <Collapsible id="video-script-history" nested defaultOpen title="Scripts History" icon={History} badge={`${history.rows.length} SCRIPTS`}>
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
               <caption className="sr-only">Video scripts history</caption>
               <thead className="text-left text-xs font-semibold text-ink-muted">
@@ -295,6 +295,30 @@ export function ScriptSection({ latest, history, canAdd, onRefresh, refreshing }
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="divide-y divide-line xl:hidden">
+            {history.rows.map((s) => (
+              <div key={s.id} className="p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <code className="rounded bg-brand-50 px-2 py-0.5 text-xs text-[#10A450]">#{s.scriptId || s.id}</code>
+                  <StatusPill status={s.status} />
+                </div>
+                <p className="mt-1.5 text-ink">{truncate(s.topic || "N/A", 60)}</p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                  <CardField label="Created" value={formatStamp(s.createdAt)} />
+                  <CardField label="Type" value={VIDEO_TYPE_LABELS[s.videoType] ?? s.videoType} />
+                  <CardField label="Duration" value={`${s.duration}s`} />
+                  <CardField label="Style" value={capitalize(s.style)} />
+                  <CardField label="Language" value={capitalize(s.language)} />
+                </dl>
+                <Button size="xs" variant="outline" className="mt-2" onClick={() => view(s.id)} loading={viewing === s.id}>
+                  <Eye className="size-3.5" aria-hidden />
+                  View
+                </Button>
+              </div>
+            ))}
+            {!history.rows.length && <p className="px-3 py-10 text-center text-sm text-ink-muted">No scripts generated yet</p>}
           </div>
         </Collapsible>
       </div>
