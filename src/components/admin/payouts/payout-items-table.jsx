@@ -91,7 +91,7 @@ const COLUMNS = [
     group: "financial", key: "customerPaymentType", label: "Customer Payment Status", width: 130,
     render: (r) => (r.customerPaymentType ? <Badge tone={r.customerPaymentType === "Prepaid" ? "success" : "info"}>{r.customerPaymentType}</Badge> : <span className="text-ink-muted">—</span>),
   },
-  { group: "financial", key: "advanceAmount", label: "Payment Mode - Advance", width: 130, ...money("advanceAmount") },
+  { group: "financial", key: "advanceAmount", label: "Payment Advance", width: 130, ...money("advanceAmount") },
   { group: "financial", key: "prepaidPartialDiscount", label: "Prepaid / Partial Discount", width: 130, ...money("prepaidPartialDiscount") },
   { group: "financial", key: "shippingCharges", label: "Shipping Charges", width: 120, ...money("shippingCharges") },
   { group: "financial", key: "codHandlingCharges", label: "COD Handling Charges", width: 130, ...money("codHandlingCharges") },

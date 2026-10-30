@@ -28,7 +28,7 @@ const COLUMNS = [
   ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross Amount"], ["unitNrv", "Single Qty NRV"], ["totalNrv", "Total NRV"],
   ["bsa", "BSA"], ["serviceExcl", "Service Charge (Excl. GST)"], ["serviceGst", "Service GST (18%)"], ["serviceIncl", "Service Charge (Incl. GST)"],
   ["status", "Status"], ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
-  ["customerPaymentType", "Customer Payment Status"], ["advanceAmount", "Payment Mode - Advance"], ["prepaidPartialDiscount", "Prepaid / Partial Discount"],
+  ["customerPaymentType", "Customer Payment Status"], ["advanceAmount", "Payment Advance"], ["prepaidPartialDiscount", "Prepaid / Partial Discount"],
   ["shippingCharges", "Shipping Charges"], ["codHandlingCharges", "COD Handling Charges"], ["totalShippingCharges", "Total Shipping Charges"],
   ["razorpayPaymentId", "Razorpay Payment ID"], ["razorpayCharges", "Razorpay Charges"],
   ["contributionTarget", "Target Contribution"], ["contributionTargetPct", "Target Contribution %"],
