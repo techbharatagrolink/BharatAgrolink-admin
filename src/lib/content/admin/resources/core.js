@@ -80,7 +80,6 @@ export const coreResources = {
       { key: "deliveryDate", label: "Delivered", type: "datetime", sortable: true },
       { key: "rtoDate", label: "RTO date", type: "datetime", sortable: true },
       { key: "prepaidDiscount", label: "Prepaid discount", type: "currency", sortable: true },
-      { key: "advanceAmount", label: "Advance", type: "currency", sortable: true },
       // Vendor Payout customer payment columns, whole-order amounts (the sum of the payout's per-SKU parts).
       { key: "paymentAdvance", label: "Payment Advance", type: "currency" },
       { key: "paymentStatus", label: "Payment Status", type: "status" },
