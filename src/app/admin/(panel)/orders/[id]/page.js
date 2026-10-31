@@ -62,7 +62,17 @@ export default async function OrderDetailPage({ params, searchParams }) {
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 space-y-4">
           <Card>
-            <CardHeader title="Customer" actions={customer && can(user, "customers") ? <Link href={`/admin/customers/${customer.id}`} className="text-[13px] font-medium text-brand-700 hover:underline">Profile</Link> : null} />
+            <CardHeader
+              title="Customer"
+              actions={
+                customer ? (
+                  <span className="flex gap-3">
+                    <Link href={`/admin/crm/customer-360/${encodeURIComponent(customer.id)}`} className="text-[13px] font-medium text-brand-700 hover:underline">Customer 360</Link>
+                    {can(user, "customers") && <Link href={`/admin/customers/${customer.id}`} className="text-[13px] font-medium text-brand-700 hover:underline">Profile</Link>}
+                  </span>
+                ) : null
+              }
+            />
             <CardBody>
               <DescriptionList
                 columns={1}
