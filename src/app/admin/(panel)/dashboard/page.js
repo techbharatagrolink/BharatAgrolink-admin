@@ -38,7 +38,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { checkPermission } from "@/lib/auth/session";
-import { can } from "@/lib/auth/permissions";
+import { can, canPage } from "@/lib/auth/permissions";
 import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { getFixedExpenses } from "@/lib/services/admin/fixed-expenses";
 import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
@@ -86,9 +86,32 @@ export default async function MainDashboardPage({ searchParams }) {
   const fixedShort = fixed ? new Date(`${fixed.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
   const showFinance = can(user, "finance") || can(user, "payouts");
   const showOrders = can(user, "orders");
+  // Every "Overview · Business Performance" row in Roles & Permissions (Sales/Orders/Shipping/
+  // Product & Location/Customer/Payment/Charts Overview) gates its own dashboard section,
+  // independent of the generic "orders" resource permission above (which only controls a couple
+  // of inner stat-card links) and independent of "finance"/"finance.expenses" (Finance & report /
+  // Fixed expenses, which already had their own gate before this).
+  const showSales = canPage(user, "#dashboard_sales_overview");
+  const showOrdersOverview = canPage(user, "#dashboard_orders_overview");
+  const showShipping = canPage(user, "#dashboard_logistics_overview");
+  const showMarketplace = canPage(user, "#dashboard_products_overview");
+  const showCustomers = canPage(user, "#dashboard_customers_overview");
+  const showPayments = canPage(user, "#dashboard_payments_overview");
+  const showCharts = canPage(user, "#dashboard_charts_overview");
   const vs = d.filters.compare ? "vs previous period" : undefined;
   const card = (slug) => dashboardFilterHref(`/admin/dashboard/cards/${slug}`, params);
-  const sectionIds = ["sales", "orders", "shipping", "marketplace", "customers", ...(showFinance ? ["finance"] : []), "payments", "charts", ...(fixed ? ["fixed"] : [])];
+  const sectionIds = [
+    ...(showSales ? ["sales"] : []),
+    ...(showOrdersOverview ? ["orders"] : []),
+    ...(showShipping ? ["shipping"] : []),
+    ...(showMarketplace ? ["marketplace"] : []),
+    ...(showCustomers ? ["customers"] : []),
+    ...(showFinance ? ["finance"] : []),
+    ...(showPayments ? ["payments"] : []),
+    ...(showCharts ? ["charts"] : []),
+    ...(fixed ? ["fixed"] : []),
+  ];
+  const indexOf = (id) => sectionIds.indexOf(id) + 1;
 
   return (
     <>
@@ -96,7 +119,8 @@ export default async function MainDashboardPage({ searchParams }) {
       <DashboardFilters values={d.filters.values} options={d.filters.options} label={d.filters.label} />
 
       <DashboardAccordion sections={sectionIds} defaultOpen={["sales"]}>
-      <DashboardSection id="sales" index={1} title="Sales overview" summary={`${inr(sales.totalRevenue)} total revenue · ${inr(sales.salesB2C)} B2C · ${inr(sales.salesB2B)} B2B`}>
+      {showSales && (
+      <DashboardSection id="sales" index={indexOf("sales")} title="Sales overview" summary={`${inr(sales.totalRevenue)} total revenue · ${inr(sales.salesB2C)} B2C · ${inr(sales.salesB2B)} B2B`}>
         <Grid>
           <StatCard label="Total sales (B2C)" value={inr(sales.salesB2C)} delta={deltas.salesB2C} hint={vs ?? "Live sales value"} icon={ShoppingCart} href={card("total-sales-b2c")} />
           <StatCard label="Total sales (B2B)" value={inr(sales.salesB2B)} delta={deltas.salesB2B} hint={`${formatNumber(sales.b2bCount)} B2B orders`} icon={Building2} tone="info" href={card("total-sales-b2b")} />
@@ -109,8 +133,10 @@ export default async function MainDashboardPage({ searchParams }) {
           {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
         </Grid>
       </DashboardSection>
+      )}
 
-      <DashboardSection id="orders" index={2} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
+      {showOrdersOverview && (
+      <DashboardSection id="orders" index={indexOf("orders")} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
         <Grid>
           <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={card("total-orders")} />
           <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint="Accepted by vendors" icon={CheckCircle2} href={card("accepted-orders")} />
@@ -131,8 +157,10 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Repeat customer %" value={`${orders.repeatCustomerPct}%`} hint="Customers who ordered again" icon={Users} tone="info" href={card("repeat-customers")} />
         </Grid>
       </DashboardSection>
+      )}
 
-      <DashboardSection id="shipping" index={3} title="Shipping & courier analytics" summary={`${formatNumber(shipping.couriers.reduce((a, c) => a + c.shipments, 0))} shipments · ${shipping.avgDays} days average delivery`}>
+      {showShipping && (
+      <DashboardSection id="shipping" index={indexOf("shipping")} title="Shipping & courier analytics" summary={`${formatNumber(shipping.couriers.reduce((a, c) => a + c.shipments, 0))} shipments · ${shipping.avgDays} days average delivery`}>
         <Grid className="lg:grid-cols-5 2xl:grid-cols-5">
           {shipping.couriers.map((c) => (
             <StatCard key={c.name} label={`${c.name} shipments`} value={formatNumber(c.shipments)} hint="Courier count" icon={Truck} tone="info" href={c.name === "Delhivery" ? card("delhivery") : c.name === "Shiprocket" ? card("shiprocket") : "/admin/shipping"} />
@@ -141,8 +169,10 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Average shipping fee" value={formatINR(shipping.avgAmount)} hint={`${formatNumber(shipping.feeOrders)} orders paid a fee`} icon={IndianRupee} tone="neutral" />
         </Grid>
       </DashboardSection>
+      )}
 
-      <DashboardSection id="marketplace" index={4} title="Marketplace, product & location" summary={`${formatNumber(marketplace.sellers)} sellers · ${formatNumber(marketplace.totalSku)} SKUs${marketplace.topLocation ? ` · top city ${marketplace.topLocation.city}` : ""}`}>
+      {showMarketplace && (
+      <DashboardSection id="marketplace" index={indexOf("marketplace")} title="Marketplace, product & location" summary={`${formatNumber(marketplace.sellers)} sellers · ${formatNumber(marketplace.totalSku)} SKUs${marketplace.topLocation ? ` · top city ${marketplace.topLocation.city}` : ""}`}>
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
           <StatCard label="Sellers" value={formatNumber(marketplace.sellers)} hint={`${formatNumber(marketplace.pendingSellers)} pending verification`} icon={Store} href="/admin/vendors" />
           <StatCard label="Total SKUs" value={formatNumber(marketplace.totalSku)} hint={`${formatNumber(marketplace.liveSku)} live, incl. variations`} icon={Boxes} tone="info" href="/admin/products" />
@@ -150,8 +180,10 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Top location (orders)" value={formatNumber(marketplace.topLocation?.orders ?? 0)} hint={marketplace.topLocation ? `${marketplace.topLocation.city}, ${marketplace.topLocation.state}${marketplace.topLocation.pincode ? ` · ${marketplace.topLocation.pincode}` : ""}` : "No orders in this period"} icon={MapPin} tone="danger" href={card("top-locations")} />
         </Grid>
       </DashboardSection>
+      )}
 
-      <DashboardSection id="customers" index={5} title="Customer & visitor analytics" summary={`${formatNumber(customers.ordering)} ordering customers · ${formatNumber(customers.registrations)} new registrations`}>
+      {showCustomers && (
+      <DashboardSection id="customers" index={indexOf("customers")} title="Customer & visitor analytics" summary={`${formatNumber(customers.ordering)} ordering customers · ${formatNumber(customers.registrations)} new registrations`}>
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
           <StatCard label="Unique visitors" value={formatNumber(customers.uniqueVisitors)} delta={customers.uniqueVisitorsPct} hint={customers.visitorsCompareLabel || "Buyers and new accounts"} icon={Eye} tone="neutral" href={card("unique-visitors")} />
           <StatCard label="New registrations" value={formatNumber(customers.registrations)} delta={customers.registrationsPct} hint="Signed up in this period" icon={UserPlus} tone="info" href="/admin/customers" />
@@ -159,9 +191,10 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Ordering customers" value={formatNumber(customers.ordering)} hint="Placed at least one order" icon={ShoppingCart} tone="brand" href={card("ordering-customers")} />
         </Grid>
       </DashboardSection>
+      )}
 
       {showFinance && (
-        <DashboardSection id="finance" index={6} title="Finance & report" summary={`${finance.contributionPct}% contribution margin · net ${inr(finance.netProfit)}`} action={<Link href="/admin/dashboards/finance" className="text-[13px] font-medium text-brand-700 hover:underline">Open finance dashboard</Link>}>
+        <DashboardSection id="finance" index={indexOf("finance")} title="Finance & report" summary={`${finance.contributionPct}% contribution margin · net ${inr(finance.netProfit)}`} action={<Link href="/admin/dashboards/finance" className="text-[13px] font-medium text-brand-700 hover:underline">Open finance dashboard</Link>}>
           <Grid className="lg:grid-cols-5 2xl:grid-cols-5">
             <StatCard label="Contribution margin" value={`${finance.contributionPct}%`} hint={`${inr(finance.contribution)} on delivered revenue`} icon={TrendingUp} tone={finance.contribution >= 0 ? "brand" : "danger"} />
             <StatCard label="GMV (order value)" value={inr(finance.gmv)} delta={deltas.gmv} hint={vs ?? "Delivered customer-paid value"} icon={CircleDollarSign} tone="info" />
@@ -172,7 +205,8 @@ export default async function MainDashboardPage({ searchParams }) {
         </DashboardSection>
       )}
 
-      <DashboardSection id="payments" index={showFinance ? 7 : 6} title="Payment mode analytics" note="delivered orders" summary={d.paymentModes.map((m) => `${m.mode} ${m.pct}%`).join(" · ")}>
+      {showPayments && (
+      <DashboardSection id="payments" index={indexOf("payments")} title="Payment mode analytics" note="delivered orders" summary={d.paymentModes.map((m) => `${m.mode} ${m.pct}%`).join(" · ")}>
         <Grid className="sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-3">
           {d.paymentModes.map((m) => (
             <StatCard
@@ -188,8 +222,10 @@ export default async function MainDashboardPage({ searchParams }) {
           ))}
         </Grid>
       </DashboardSection>
+      )}
 
-      <DashboardSection id="charts" index={showFinance ? 8 : 7} title="Reports & charts" summary="Sales trend, alerts, status mix, revenue mix, top categories and vendors">
+      {showCharts && (
+      <DashboardSection id="charts" index={indexOf("charts")} title="Reports & charts" summary="Sales trend, alerts, status mix, revenue mix, top categories and vendors">
         <div className="grid gap-4 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader title="Sales and orders" description="Delivered sales (₹) and orders placed" />
@@ -224,11 +260,12 @@ export default async function MainDashboardPage({ searchParams }) {
           </Card>
         </div>
       </DashboardSection>
+      )}
 
       {fixed && (
         <DashboardSection
           id="fixed"
-          index={showFinance ? 9 : 8}
+          index={indexOf("fixed")}
           title="Fixed expenses"
           note={fixedMonth}
           summary={`${formatINR(fixed.kpis.total)} total · ${formatINR(fixed.kpis.baseRecurring)} recurring · ${formatINR(fixed.kpis.monthAdjustments)} adjustments`}
