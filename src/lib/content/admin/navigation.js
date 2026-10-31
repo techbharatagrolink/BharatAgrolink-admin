@@ -37,6 +37,9 @@ export const navigation = [
           { key: "biz-orders", label: "Orders Overview", href: "/admin/dashboard#dashboard_orders_overview", page: "#dashboard_orders_overview", permission: "dashboard.main" },
           { key: "biz-shipping", label: "Shipping Overview", href: "/admin/dashboard#dashboard_logistics_overview", page: "#dashboard_logistics_overview", permission: "dashboard.main" },
           { key: "biz-products", label: "Product & Location Overview", href: "/admin/dashboard#dashboard_products_overview", page: "#dashboard_products_overview", permission: "dashboard.main" },
+          { key: "biz-customers", label: "Customer & Visitor Overview", href: "/admin/dashboard#dashboard_customers_overview", page: "#dashboard_customers_overview", permission: "dashboard.main" },
+          { key: "biz-payments", label: "Payment Mode Overview", href: "/admin/dashboard#dashboard_payments_overview", page: "#dashboard_payments_overview", permission: "dashboard.main" },
+          { key: "biz-charts", label: "Reports & Charts Overview", href: "/admin/dashboard#dashboard_charts_overview", page: "#dashboard_charts_overview", permission: "dashboard.main" },
         ],
       },
       {
