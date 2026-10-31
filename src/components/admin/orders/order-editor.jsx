@@ -81,25 +81,58 @@ function AddressForm({ id: formId, initial, onSubmit }) {
   );
 }
 
+const paymentInput = (payment) => ({ mode: payment.mode, paymentId: payment.paymentId, advanceAmount: Number(payment.advanceAmount) || 0 });
+
+/** edit_order.php payment correction, edited in a dialog from the order page's Update Payment. */
+export function OrderPaymentDialog({ orderId, payment, open, onClose }) {
+  const { pending, save } = useSave();
+  const formId = useId();
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Update payment"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={pending}>Cancel</Button>
+          <Button type="submit" form={formId} variant="primary" loading={pending}>Update Payment</Button>
+        </>
+      }
+    >
+      <PaymentForm id={formId} initial={payment} className="sm:grid-cols-2" onSubmit={(value) => save(() => updateOrderPaymentAction(orderId, paymentInput(value)), onClose)} />
+    </Dialog>
+  );
+}
+
+function PaymentForm({ id: formId, initial, className, onSubmit }) {
+  const [payment, setPayment] = useState({
+    mode: ["cod", "prepaid", "partial"].includes(initial.mode) ? initial.mode : "cod",
+    paymentId: initial.paymentId || "",
+    advanceAmount: initial.advanceAmount || "",
+  });
+  const set = (key) => (event) => setPayment((current) => ({ ...current, [key]: event.target.value }));
+  return (
+    <form id={formId} className={`grid gap-3 ${className}`} onSubmit={(event) => { event.preventDefault(); onSubmit(payment); }}>
+      <Field label="Mode">{({ id }) => <Select id={id} value={payment.mode} onChange={set("mode")} options={[{ value: "cod", label: "COD" }, { value: "prepaid", label: "Prepaid" }, { value: "partial", label: "Partial" }]} />}</Field>
+      <Field label="Advance amount">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={payment.advanceAmount} onChange={set("advanceAmount")} />}</Field>
+      <Field label="Payment ID" className="sm:col-span-full">{({ id }) => <Input id={id} value={payment.paymentId} onChange={set("paymentId")} />}</Field>
+    </form>
+  );
+}
+
 /** edit_order.php: payment correction, AWB and per-line shipping. The delivery address is OrderAddressDialog. */
 export function OrderEditor({ orderId, editor, lines, focus = "" }) {
   const { pending, save } = useSave();
-  const [payment, setPayment] = useState({
-    mode: ["cod", "prepaid", "partial"].includes(editor.payment.mode) ? editor.payment.mode : "cod",
-    paymentId: editor.payment.paymentId || "",
-    advanceAmount: editor.payment.advanceAmount || "",
-  });
+  const paymentFormId = useId();
   const [awb, setAwb] = useState("");
 
   return (
     <div className="space-y-6">
-      {(!focus || focus === "payment") && <form className="grid gap-3 sm:grid-cols-3" onSubmit={(event) => { event.preventDefault(); save(() => updateOrderPaymentAction(orderId, { mode: payment.mode, paymentId: payment.paymentId, advanceAmount: Number(payment.advanceAmount) || 0 })); }}>
-        <h3 className="sm:col-span-3 text-sm font-semibold text-ink">Payment</h3>
-        <Field label="Mode">{({ id }) => <Select id={id} value={payment.mode} onChange={(event) => setPayment((current) => ({ ...current, mode: event.target.value }))} options={[{ value: "cod", label: "COD" }, { value: "prepaid", label: "Prepaid" }, { value: "partial", label: "Partial" }]} />}</Field>
-        <Field label="Payment ID">{({ id }) => <Input id={id} value={payment.paymentId} onChange={(event) => setPayment((current) => ({ ...current, paymentId: event.target.value }))} />}</Field>
-        <Field label="Advance amount">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={payment.advanceAmount} onChange={(event) => setPayment((current) => ({ ...current, advanceAmount: event.target.value }))} />}</Field>
-        <div className="sm:col-span-3 flex justify-end"><Button type="submit" variant="primary" loading={pending}>Update Payment</Button></div>
-      </form>}
+      {(!focus || focus === "payment") && <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-ink">Payment</h3>
+        <PaymentForm id={paymentFormId} initial={editor.payment} className="sm:grid-cols-3" onSubmit={(value) => save(() => updateOrderPaymentAction(orderId, paymentInput(value)))} />
+        <div className="flex justify-end"><Button type="submit" form={paymentFormId} variant="primary" loading={pending}>Update Payment</Button></div>
+      </div>}
 
       {!focus && <form className="flex flex-wrap items-end gap-3 border-t border-line pt-4" onSubmit={(event) => { event.preventDefault(); save(() => updateOrderAwbAction(orderId, { awb })); }}>
         <Field label="Manual AWB" className="min-w-56 flex-1">{({ id }) => <Input id={id} value={awb} onChange={(event) => setAwb(event.target.value)} required />}</Field>
