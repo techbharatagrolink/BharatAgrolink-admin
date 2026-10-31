@@ -443,6 +443,12 @@ export async function createManualOrder(input, user) {
   }
   if (!resolved.length) return { ok: false, message: "Add at least one product." };
   const salesman = input.salesman && s.salesTeam.some((m) => m.name === input.salesman) ? input.salesman : null;
+  const shipping = input.shipping || {};
+  const shipName = String(shipping.name || "").trim() || customer.name;
+  const shipMobile = String(shipping.phone || "").trim() || customer.mobile;
+  const shipCity = String(shipping.city || "").trim() || customer.city;
+  const shipState = String(shipping.state || "").trim() || customer.state;
+  const shipPincode = String(shipping.pincode || "").trim() || customer.pincode;
 
   await mockLatency(250);
   const subtotal = round2(resolved.reduce((a, r) => a + r.product.display * r.qty, 0));
@@ -457,7 +463,7 @@ export async function createManualOrder(input, user) {
     const price = round2(product.display * qty);
     const taxable = round2((price * 100) / (100 + product.gstPercent));
     const gst = round2(price - taxable);
-    const intra = vendor.state === customer.state;
+    const intra = vendor.state === shipState;
     const stockBefore = product.stock;
     product.stock -= qty;
     product.stockStatus = stockStatus(product.stock);
@@ -466,12 +472,12 @@ export async function createManualOrder(input, user) {
       id: nextLineId++, orderId, productId: product.id, productName: product.name, sku: product.sku, vendorId: vendor.id, vendor: vendor.name, qty, price, taxable, gst,
       gstPercent: product.gstPercent, cgst: intra ? round2(gst / 2) : 0, sgst: intra ? round2(gst / 2) : 0, igst: intra ? 0 : gst, tcs: round2(taxable * 0.01), tds: round2(taxable * 0.01),
       nrv: product.nrv * qty, commission: round2((taxable * product.commissionPercent) / 100), status: "Placed", sellerInvoice: null, platformInvoice: null, courier: null, awb: null,
-      weightKg: round2(product.weightKg * qty), createdAt, statusDate: createdAt, deliveryDate: null, returnLastDate: null, paymentMode, customerId: customer.id, customer: customer.name,
-      city: customer.city, state: customer.state, pincode: customer.pincode, zone: "rest_of_india",
+      weightKg: round2(product.weightKg * qty), createdAt, statusDate: createdAt, deliveryDate: null, returnLastDate: null, paymentMode, customerId: customer.id, customer: shipName,
+      city: shipCity, state: shipState, pincode: shipPincode, zone: "rest_of_india",
     };
   });
   const order = {
-    id: orderId, customerId: customer.id, customer: customer.name, mobile: customer.mobile, city: customer.city, state: customer.state, pincode: customer.pincode,
+    id: orderId, customerId: customer.id, customer: shipName, mobile: shipMobile, city: shipCity, state: shipState, pincode: shipPincode,
     channel: "Manual (Admin)", paymentMode, paymentId: null, advance: paymentMode === "Partial" ? Math.round(subtotal * (subtotal >= 10000 ? 0.15 : 0.1)) : 0,
     status: "Placed", items: lines.length, vendors: new Set(lines.map((l) => l.vendorId)).size, subtotal, shippingFee, handling, discount: 0,
     total: round2(subtotal + shippingFee + handling), couponCode: null, salesman, platformInvoice: null, createdAt,
