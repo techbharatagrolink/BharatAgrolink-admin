@@ -124,7 +124,7 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint="Cancelled sub-orders" icon={Ban} tone="danger" href={card("cancelled-orders")} />
           <StatCard label="Cancellation rate" value={`${orders.cancellationRate}%`} hint="Of all orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
           <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint="Returned to origin" icon={RotateCcw} tone="danger" href={card("rto-orders")} />
-          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of delivered orders plus RTO, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
+          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of all orders, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
           <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
           <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" href={card("new-orders")} />
           <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} href={card("repeat-orders")} />
