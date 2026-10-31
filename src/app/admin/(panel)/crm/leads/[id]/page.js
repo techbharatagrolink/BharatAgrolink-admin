@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
@@ -74,6 +75,13 @@ export default async function LeadDetailPage({ params }) {
             <StatusBadge status={lead.priority} />
             {lead.overdue && <Badge tone="danger">Follow-up overdue</Badge>}
           </>
+        }
+        actions={
+          lead.mobile ? (
+            <Link href={`/admin/crm/customer-360/by-mobile?mobile=${encodeURIComponent(lead.mobile)}`} className="inline-flex h-9 items-center rounded-lg border border-line-strong px-3 text-sm font-medium text-brand-700 hover:bg-surface-muted">
+              Customer 360
+            </Link>
+          ) : null
         }
       />
       <div className="grid gap-4 xl:grid-cols-3">

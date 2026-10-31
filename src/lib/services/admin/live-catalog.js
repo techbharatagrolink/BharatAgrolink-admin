@@ -302,6 +302,7 @@ export function isLiveAdminPath(pathname) {
   if (path.startsWith("/admin/dashboard/cards/")) return true;
   if (/^\/admin\/orders\/(?!new$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/crm\/leads\/\d+$/.test(path)) return true;
+  if (/^\/admin\/crm\/customer-360\/[^/]+$/.test(path)) return true;
   if (/^\/admin\/products\/(?!new$|import$|pending$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/vendors\/(?!verification$|scores$|reports$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/vendors\/(?!verification$|scores$|reports$)[^/]+\/bank$/.test(path)) return true;

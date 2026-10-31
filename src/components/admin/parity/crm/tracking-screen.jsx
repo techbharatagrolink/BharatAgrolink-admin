@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, RefreshCw } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
@@ -18,6 +19,18 @@ import { exportTrackingAction, trackingCustomersAction } from "@/lib/actions/adm
 import { UrlInput } from "./url-input";
 
 const productHref = `${site.url.replace(/\/$/, "")}/product/{product_url}`;
+const CUSTOMER_360_HREF = "/admin/crm/customer-360/{c360_id}";
+
+/** Customer name, linked to Customer 360 when the visitor is an existing customer with orders. */
+function CustomerName({ row }) {
+  const name = row.customer_name || "Guest Visitor";
+  if (!row.c360_id) return name;
+  return (
+    <Link href={`/admin/crm/customer-360/${encodeURIComponent(row.c360_id)}`} className="text-brand-700 hover:underline" title="Open Customer 360">
+      {name}
+    </Link>
+  );
+}
 
 const VIEWS = {
   activity: {
@@ -27,7 +40,8 @@ const VIEWS = {
     file: "customer_search_and_clicks",
     columns: [
       { key: "activity_type", label: "Activity", type: "status", sortable: true },
-      { key: "customer_name", label: "Customer", emphasis: true, sortable: true },
+      // Linked only for existing customers with orders (c360_id from the API); leads-only and guests stay plain text.
+      { key: "customer_name", label: "Customer", emphasis: true, sortable: true, href: CUSTOMER_360_HREF },
       { key: "phone", label: "Mobile Number", sortable: true },
       { key: "email", label: "Email", hidden: true },
       { key: "customer_type", label: "Type", type: "status", sortable: true },
@@ -175,7 +189,9 @@ function CustomersDialog({ target, sources, onClose }) {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2 font-medium text-ink">{r.customer_name || "Guest Visitor"}</td>
+                    <td className="px-3 py-2 font-medium text-ink">
+                      <CustomerName row={r} />
+                    </td>
                     <td className="px-3 py-2">{r.phone || "-"}</td>
                     <td className="px-3 py-2">
                       <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
@@ -205,7 +221,9 @@ function CustomersDialog({ target, sources, onClose }) {
             {rows.map((r, i) => (
               <div key={i} className="rounded-lg border border-line p-3 text-[13px]">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-ink">{r.customer_name || "Guest Visitor"}</p>
+                  <p className="font-medium text-ink">
+                    <CustomerName row={r} />
+                  </p>
                   <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
                 </div>
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
@@ -303,6 +321,7 @@ export function TrackingScreen({ view, data, sources }) {
       <DataTable
         id={`crm-tracking-${view}`}
         key={view}
+        rowKey="key"
         columns={columns}
         data={data}
         onExport={(params) => exportTrackingAction({ ...params, view })}

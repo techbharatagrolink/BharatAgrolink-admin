@@ -56,6 +56,8 @@ export const getCustomerReport = (mobile, user) => attempt(() => get("customer-r
 export const getTracking = (query, user) => get("tracking", user, query);
 export const exportTracking = (query, user) => attempt(() => get("tracking/export", user, query));
 export const getTrackingCustomers = (query, user) => attempt(() => get("tracking/customers", user, query));
+/** Customer 360 by `user` (user_unique_id) or `mobile`; the API returns the limited or full tier for this admin. */
+export const getCustomer360 = (query, user) => get("customer-360", user, query);
 
 export const getMyPerformance = (query, user) => get("my-performance", user, query);
 export const getTeamPerformance = (user) => get("team-performance", user);
