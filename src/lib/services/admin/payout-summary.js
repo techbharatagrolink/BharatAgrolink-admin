@@ -7,6 +7,7 @@ import { can } from "@/lib/auth/permissions";
  *   GET /api/admin/payouts?page&pageSize&q&status&sort&cycleMonth&cycle&orderIds
  *   GET /api/admin/payouts/export?...   (same filters, up to 5000 rows)
  *   GET /api/admin/payouts/items-export?...&payoutIds   (.xlsx of the vendors' items, proxied by /admin/payouts/items-export)
+ *   GET /api/admin/payouts/items-view?...&payoutIds     (the same items as JSON, a page at a time)
  *   GET /api/admin/payouts/cycles       (cycles that have payout items)
  * Read only: payout cycles are viewed and selected here, never shifted.
  */
@@ -46,6 +47,14 @@ export async function getPayoutSummary(searchParams, user) {
     api("admin/payouts/cycles", { token: user.token }).catch(() => ({ data: [] })),
   ]);
   return { ...list, cycles: Array.isArray(cycles.data) ? cycles.data : [] };
+}
+
+/** "View items": the items Export items would download, one page at a time (same filters, plus payoutIds). */
+export async function listPayoutVendorItems(searchParams, user) {
+  const { sort: _sort, ...query } = payoutQuery(searchParams);
+  const payoutIds = String(one(searchParams.payoutIds) ?? "").split(",").map((s) => s.trim()).filter((s) => /^\d+$/.test(s)).slice(0, 500).join(",");
+  const list = await api("admin/payouts/items-view", { token: user.token, query: strip({ ...query, payoutIds }) });
+  return { ...list.data, query: { ...query, payoutIds } };
 }
 
 export async function exportPayoutSummary(searchParams, user) {

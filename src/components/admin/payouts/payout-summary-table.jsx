@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarRange, Download, FileSpreadsheet, FileText, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarRange, ChevronLeft, ChevronRight, Download, Eye, FileSpreadsheet, FileText, X } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
+import { SearchInput, SelectFilter } from "@/components/data-table/filter-bar";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Input, Select } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatNumber } from "@/lib/format";
@@ -17,8 +19,8 @@ const monthLabel = (ym) => {
   return y && m ? `${MONTHS[m - 1]} ${y}` : ym;
 };
 const HALVES = [
-  { value: "first", label: "First Cycle (1–15)" },
-  { value: "second", label: "Second Cycle (16–Month End)" },
+  { value: "first", label: "1st cycle (1–15)" },
+  { value: "second", label: "2nd cycle (16–end)" },
 ];
 const STATE_TONE = { Running: "success", Closed: "neutral", Upcoming: "info" };
 
@@ -44,10 +46,11 @@ const ROW_ACTIONS = [
   { id: "vendor", label: "Open vendor", href: "/admin/vendors/{sellerId}" },
 ];
 
-const STATUS_FILTER = { key: "status", label: "Status", options: ["Pending", "Paid", "On Hold"] };
+export const STATUS_FILTER = { key: "status", label: "Status", options: ["Pending", "Paid", "On Hold"] };
 
 /* PHP Export with vendors ticked: their items (same columns as the items page export). */
 const BULK_ACTIONS = [
+  { id: "view-items", label: "View items", kind: "form", view: true },
   { id: "export-items-xlsx", label: "Export items (Excel)", kind: "form", format: "xlsx" },
   { id: "export-items-csv", label: "Export items (CSV)", kind: "form", format: "csv" },
 ];
@@ -56,7 +59,7 @@ const FORMATS = [
   { value: "csv", label: "CSV (.csv)", icon: FileText },
 ];
 const SUMMARY_EXPORT_FILTERS = ["q", "status", "sort", "cycleMonth", "cycle", "orderIds"];
-const ITEM_EXPORT_FILTERS = ["q", "status", "cycleMonth", "cycle", "orderIds"];
+export const ITEM_EXPORT_FILTERS = ["q", "status", "cycleMonth", "cycle", "orderIds"];
 
 /** A download URL carrying the page's current filters, so every export matches what the table shows. */
 function exportHref(path, filters, searchParams, format, payoutIds = []) {
@@ -68,7 +71,7 @@ function exportHref(path, filters, searchParams, format, payoutIds = []) {
 }
 
 /** Export button that asks Excel or CSV, for the page's current filters. Disabled while new filters are still loading. */
-function ExportMenu({ label, title, path, filters }) {
+export function ExportMenu({ label, title, path, filters, payoutIds = [] }) {
   const { searchParams, pending } = useQueryState();
   return (
     <Popover
@@ -83,7 +86,7 @@ function ExportMenu({ label, title, path, filters }) {
       <ul className="p-1">
         {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
           <li key={value}>
-            <a href={exportHref(path, filters, searchParams, value)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
+            <a href={exportHref(path, filters, searchParams, value, payoutIds)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
               <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
             </a>
           </li>
@@ -93,8 +96,17 @@ function ExportMenu({ label, title, path, filters }) {
   );
 }
 
+/** The items Export items would download, on screen instead (same filters, plus ticked vendors). */
+function viewItemsHref(searchParams, payoutIds = []) {
+  const out = new URLSearchParams();
+  for (const key of ITEM_EXPORT_FILTERS) if (searchParams.get(key)) out.set(key, searchParams.get(key));
+  if (payoutIds.length) out.set("payoutIds", payoutIds.join(","));
+  const qs = out.toString();
+  return qs ? `/admin/payouts/vendor-items?${qs}` : "/admin/payouts/vendor-items";
+}
+
 /** PHP "Order ID (comma-separated)": only vendors with an item of those orders. */
-function OrderIdsFilter() {
+export function OrderIdsFilter() {
   const { get, setParams } = useQueryState();
   const applied = get("orderIds");
   const [value, setValue] = useState(applied);
@@ -102,8 +114,9 @@ function OrderIdsFilter() {
   return (
     <Input
       aria-label="Order IDs"
-      className="w-64"
-      placeholder="Order ID(s), comma separated"
+      title="Order ID(s), comma separated"
+      className="w-36"
+      placeholder="Order ID(s)"
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
@@ -117,35 +130,108 @@ function OrderIdsFilter() {
   );
 }
 
-function CycleSelector({ cycles }) {
+/**
+ * Calendar month picker: one year at a time with all twelve months, back to last year at least.
+ * Months that have payout items carry a dot; months after the newest cycle cannot be picked.
+ */
+function MonthPicker({ value, cycles, onChange }) {
+  const withItems = new Set(cycles.map((c) => c.month));
+  const newest = [...withItems].sort().at(-1) ?? "";
+  const [year, setYear] = useState(null);
+  const yearOf = (ym) => Number(String(ym).slice(0, 4)) || null;
+  const known = [...withItems, value].map(yearOf).filter(Boolean);
+  const open = (toggle) => {
+    const top = known.length ? Math.max(...known) : new Date().getFullYear();
+    setYear(yearOf(value) ?? yearOf(newest) ?? top);
+    toggle();
+  };
+  const maxYear = known.length ? Math.max(...known) : year;
+  const minYear = Math.min(...known, (maxYear ?? year) - 1);
+  return (
+    <Popover
+      label="Cycle month: choose month"
+      align="left"
+      panelClassName="w-64"
+      trigger={({ toggle, props }) => (
+        <Button size="sm" onClick={() => open(toggle)} className="w-36 justify-start font-normal" {...props}>
+          <CalendarRange className="size-4 text-ink-muted" aria-hidden />
+          <span className="truncate">{value ? monthLabel(value) : "Month: all"}</span>
+        </Button>
+      )}
+    >
+      <div className="p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <Button size="icon-sm" variant="ghost" onClick={() => setYear((y) => y - 1)} disabled={year <= minYear} aria-label="Previous year">
+            <ChevronLeft className="size-4" aria-hidden />
+          </Button>
+          <span className="text-sm font-semibold text-ink tabular">{year}</span>
+          <Button size="icon-sm" variant="ghost" onClick={() => setYear((y) => y + 1)} disabled={maxYear != null && year >= maxYear} aria-label="Next year">
+            <ChevronRight className="size-4" aria-hidden />
+          </Button>
+        </div>
+        <ul className="grid grid-cols-3 gap-1.5">
+          {MONTHS.map((name, i) => {
+            const ym = `${year}-${String(i + 1).padStart(2, "0")}`;
+            const active = ym === value;
+            return (
+              <li key={name}>
+                <button
+                  type="button"
+                  data-close
+                  disabled={Boolean(newest) && ym > newest}
+                  aria-pressed={active}
+                  onClick={() => onChange(active ? "" : ym)}
+                  className={cn(
+                    "relative w-full rounded-md border px-2 py-1.5 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                    active ? "border-brand-600 bg-brand-50 font-semibold text-brand-700" : "border-line text-ink hover:border-brand-200 hover:bg-surface-muted",
+                  )}
+                >
+                  {name}
+                  {withItems.has(ym) && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-brand-600" aria-label="has payout items" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {value && (
+          <button type="button" data-close onClick={() => onChange("")} className="mt-2 w-full rounded-md px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
+            All months
+          </button>
+        )}
+      </div>
+    </Popover>
+  );
+}
+
+export function CycleSelector({ cycles }) {
   const { get, setParams } = useQueryState();
   const month = get("cycleMonth");
   const half = get("cycle");
-  const months = [...new Set(cycles.map((c) => c.month))];
-  if (month && !months.includes(month)) months.unshift(month);
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <div className="relative">
-        <CalendarRange className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-        <Select
-          aria-label="Cycle month"
-          className="w-44 [&_select]:pl-8"
-          value={month}
-          placeholder="Cycle month: all"
-          options={months.map((m) => ({ value: m, label: monthLabel(m) }))}
-          onChange={(e) => setParams({ cycleMonth: e.target.value, cycle: e.target.value ? half : "" })}
-        />
-      </div>
+    <>
+      <MonthPicker value={month} cycles={cycles} onChange={(m) => setParams({ cycleMonth: m, cycle: m ? half : "" })} />
       <Select
         aria-label="Cycle"
-        className="w-56"
+        className="w-40"
         value={half}
-        placeholder="All cycles in month"
+        placeholder="All cycles"
         options={HALVES}
         disabled={!month}
         onChange={(e) => setParams({ cycle: e.target.value })}
       />
-    </div>
+    </>
+  );
+}
+
+/** Search, status, cycle month, cycle and order IDs, sized to sit on one line with the table's buttons. */
+export function PayoutFilters({ cycles }) {
+  return (
+    <>
+      <SearchInput placeholder="Search vendor name or ID" className="w-48" />
+      <SelectFilter name="status" label={STATUS_FILTER.label} options={STATUS_FILTER.options} className="w-32" />
+      <CycleSelector cycles={cycles} />
+      <OrderIdsFilter />
+    </>
   );
 }
 
@@ -201,6 +287,7 @@ function CycleStrip({ cycles }) {
 }
 
 export function PayoutSummaryTable({ data, cycles }) {
+  const router = useRouter();
   const { searchParams } = useQueryState();
   const rows = data.rows.map((r) => ({ ...r, view: "View" }));
   const t = data.totals ?? {};
@@ -238,20 +325,24 @@ export function PayoutSummaryTable({ data, cycles }) {
         id="vendor-payouts"
         columns={COLUMNS}
         data={{ ...data, rows }}
-        search="Search vendor name or vendor ID"
-        filters={[STATUS_FILTER]}
         inlineToolbar
         toolbarEnd={<ExportMenu label="Export" title="These vendor rows with the current filters" path="/admin/payouts/summary-export" filters={SUMMARY_EXPORT_FILTERS} />}
         toolbar={
           <>
-            <CycleSelector cycles={cycles} />
-            <OrderIdsFilter />
+            <PayoutFilters cycles={cycles} />
+            <ButtonLink href={viewItemsHref(searchParams)} size="sm" title="Items of every vendor matching these filters, on screen">
+              <Eye className="size-4" aria-hidden /> View items
+            </ButtonLink>
             <ExportMenu label="Export items" title="Items of every vendor matching these filters (status, cycle, order IDs)" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} />
           </>
         }
         rowActions={ROW_ACTIONS}
         bulkActions={BULK_ACTIONS}
         onCustomAction={(action, ids, _rows, clear) => {
+          if (action.view) {
+            router.push(viewItemsHref(searchParams, ids));
+            return;
+          }
           if (!action.format) return;
           window.location.href = exportHref("/admin/payouts/items-export", ITEM_EXPORT_FILTERS, searchParams, action.format, ids);
           clear();
