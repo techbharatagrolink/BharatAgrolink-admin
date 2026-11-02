@@ -5,7 +5,7 @@ import { HBarList } from "@/components/charts/charts";
 import { BarChart, DonutChart, LineChart } from "@/components/charts/interactive";
 
 const rupees = (v) => `₹ ${formatNumber(Math.round(Number(v) || 0))}`;
-const rupees2 = (v) => `₹ ${(Number(v) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const rupees2 = (v) => `₹ ${(Number(v) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function trendText(trends, key, hasWindow) {
   if (!hasWindow) return null;

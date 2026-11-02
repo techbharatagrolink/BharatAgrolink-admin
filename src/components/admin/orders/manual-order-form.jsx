@@ -249,8 +249,8 @@ export function ManualOrderForm({ leadCode = "" }) {
     if (paymentMode !== "prepaid" && paymentMode !== "partial" && quote.total > 0 && quote.total < quote.minimumOrderValue) return `Minimum order value is ₹${quote.minimumOrderValue}.`;
     if (paymentMode === "partial") {
       const amount = Number(advance) || 0;
-      if (amount < quote.minimumAdvance) return `Partial advance must be at least Rs. ${quote.minimumAdvance.toFixed(2)}.`;
-      if (amount > quote.total) return `Partial advance cannot be more than Rs. ${quote.total.toFixed(2)}.`;
+      if (amount < quote.minimumAdvance) return `Partial advance must be at least Rs. ${Math.round(quote.minimumAdvance)}.`;
+      if (amount > quote.total) return `Partial advance cannot be more than Rs. ${Math.round(quote.total)}.`;
       if (amount > quote.minimumAdvance && !advanceNote.trim()) return "Add a note when the advance is above 10%.";
     }
     return "";
