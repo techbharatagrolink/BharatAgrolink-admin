@@ -88,11 +88,13 @@ export function formatRelative(value, now = Date.now()) {
   return `${Math.round(abs / 1440)} d ${suffix}`;
 }
 
-export function maskMobile(value) {
+export function formatMobile(value) {
   if (!value) return "—";
-  const digits = String(value).replace(/\D/g, "");
-  if (digits.length < 4) return "••••";
-  return `${"•".repeat(Math.max(digits.length - 4, 2))}${digits.slice(-4)}`;
+  return String(value);
+}
+
+export function maskMobile(value) {
+  return formatMobile(value);
 }
 
 export function maskEmail(value) {

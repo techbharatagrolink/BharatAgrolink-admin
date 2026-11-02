@@ -17,10 +17,14 @@ export function can(user, permission, action = "view") {
   return Array.isArray(granted) && granted.includes(action);
 }
 
-/** PHP grant key for an admin_menus link: its file name with query or #anchor, as the API's pageKey. */
+/**
+ * PHP grant key for an admin_menus link: its file name with query or #anchor, as the API's pageKey.
+ * '#dashboard_*' anchors (the Main Dashboard's Sales/Orders/Shipping/Product & Location Overview
+ * sections) keep their own distinct key rather than collapsing into "dashboard.php", so each one
+ * is gated by its own Roles & Permissions checkbox instead of all sharing the page-level grant.
+ */
 export function pageKey(link) {
   const value = String(link ?? "").trim();
-  if (value.startsWith("#dashboard_")) return "dashboard.php";
   return value.split("/").pop();
 }
 
