@@ -11,7 +11,7 @@ export function formatStamp(value, { time = true } = {}) {
   return `${date}, ${String(hour % 12 || 12).padStart(2, "0")}:${m[5]} ${hour < 12 ? "AM" : "PM"}`;
 }
 
-export const rupees = (v, digits = 2) => `₹${(Number(v) || 0).toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+export const rupees = (v, digits = 0) => `₹${(Number(v) || 0).toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 
 /** "+12.5%" / "-3%" like the PHP dashboards print their change figures. */
 export const signed = (v, suffix = "%") => `${Number(v) >= 0 ? "+" : ""}${Number(v) || 0}${suffix}`;

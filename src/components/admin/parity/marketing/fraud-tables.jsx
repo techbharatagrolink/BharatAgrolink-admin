@@ -44,7 +44,7 @@ const TOP_COLUMNS = [
   { key: "cancelledCount", label: "Cancelled", align: "right", className: () => "font-semibold text-[#ea580c]", render: (r) => formatNumber(r.cancelledCount) },
   { key: "pendingCount", label: "Pending", align: "right", className: () => "font-semibold text-[#f59e0b]", render: (r) => formatNumber(r.pendingCount) },
   { key: "deliveryRate", label: "Delivery Rate", align: "right", className: (r) => deliveryTone(r.deliveryRate), render: (r) => pct(r.deliveryRate), filterValue: (r) => pct(r.deliveryRate) },
-  { key: "totalAmount", label: "Total Amount", align: "right", render: (r) => `₹${(Number(r.totalAmount) || 0).toLocaleString("en-IN")}` },
+  { key: "totalAmount", label: "Total Amount", align: "right", render: (r) => `₹${(Number(r.totalAmount) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}` },
   lastOrderColumn,
 ];
 

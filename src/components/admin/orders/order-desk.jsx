@@ -47,6 +47,10 @@ function money(value) {
   return formatINR(Number(value) || 0);
 }
 
+function whole(value) {
+  return String(Math.round(Number(value) || 0));
+}
+
 /** edit_order.php summary: COD shipping is shown as ₹79, prepaid/partial use the stored fee. */
 function shippingCharge(order) {
   return String(order.paymentMode || "").toLowerCase() === "cod" ? 79 : Number(order.shippingFee) || 0;
@@ -316,12 +320,12 @@ function LineCard({ line, onPreview }) {
             <CardField label="Invoice no." value={line.invoice} copy />
             <CardField label="Qty" value={line.qty} />
             <CardField label="Tax" value={line.gstPercent} />
-            <CardField label="Price" value={Number(line.unitPrice || 0).toFixed(2)} />
-            <CardField label="Selling price" value={Number(line.sellingPrice || 0).toFixed(2)} />
-            <CardField label="SGST" value={Number(line.sgst || 0).toFixed(2)} />
-            <CardField label="CGST" value={Number(line.cgst || 0).toFixed(2)} />
-            <CardField label="IGST" value={Number(line.igst || 0).toFixed(2)} />
-            <CardField label="Vendor NRV" value={`${Number(line.vendorNrv || 0).toFixed(2)}${qty > 1 ? ` (Total ${Number(line.vendorNrvTotal || 0).toFixed(2)})` : ""}`} />
+            <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
+            <CardField label="Selling price" value={whole(Number(line.sellingPrice || 0))} />
+            <CardField label="SGST" value={whole(Number(line.sgst || 0))} />
+            <CardField label="CGST" value={whole(Number(line.cgst || 0))} />
+            <CardField label="IGST" value={whole(Number(line.igst || 0))} />
+            <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
           </dl>
           <div className="mt-2.5 flex items-center justify-end gap-2 border-t border-dashed border-line pt-2 text-ink-muted">
             Line total incl. GST
@@ -503,17 +507,17 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
     });
 
   const summaryRows = [
-    { label: "Total selling price", value: selling.toFixed(2) },
+    { label: "Total selling price", value: whole(selling) },
     { label: "Discount", value: Number(order.discount) > 0 ? money(order.discount) : "—" },
-    { label: "Shipping charges", value: shipping.toFixed(2) },
-    { label: "CGST", value: tax("cgst").toFixed(2) },
-    { label: "SGST", value: tax("sgst").toFixed(2) },
-    { label: "IGST", value: tax("igst").toFixed(2) },
-    { label: "Gross total", value: gross.toFixed(2), strong: true },
+    { label: "Shipping charges", value: whole(shipping) },
+    { label: "CGST", value: whole(tax("cgst")) },
+    { label: "SGST", value: whole(tax("sgst")) },
+    { label: "IGST", value: whole(tax("igst")) },
+    { label: "Gross total", value: whole(gross), strong: true },
     { label: "Partial", value: order.partial ? "Yes" : "No" },
-    { label: "Advance", value: Number(order.advance || 0).toFixed(2) },
-    discountRate > 0 && { label: mode === "partial" ? "Partial discount 1%" : "Prepaid discount 3%", value: discountRate.toFixed(2) },
-    Number(order.walletUsed) > 0 && { label: "CN wallet used", value: `-${Number(order.walletUsed).toFixed(2)}` },
+    { label: "Advance", value: whole(Number(order.advance || 0)) },
+    discountRate > 0 && { label: mode === "partial" ? "Partial discount 1%" : "Prepaid discount 3%", value: whole(discountRate) },
+    Number(order.walletUsed) > 0 && { label: "CN wallet used", value: `-${whole(Number(order.walletUsed))}` },
   ].filter(Boolean);
 
   return (
