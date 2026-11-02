@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/toast";
 import { DELIVERED_COLUMNS, PER_PAGE, deliveredCsv, downloadText } from "./delivered-config";
 
 const DEFAULT_ON = DELIVERED_COLUMNS.filter((c) => c.on).map((c) => c.key);
-const money = (v) => `₹ ${(Number(v) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (v) => `₹ ${(Number(v) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function display(column, value) {
   if (value == null || value === "") return "—";

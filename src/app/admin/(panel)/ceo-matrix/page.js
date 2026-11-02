@@ -29,7 +29,7 @@ const STATUS_TONES = {
   ops_issue: "bg-info-bg text-info-ink",
 };
 const INDICATOR = { green: "bg-[#10b981]", red: "bg-[#ef4444]", yellow: "bg-[#f59e0b]", "yellow/red": "bg-[#f59e0b]" };
-const inr = (v) => `₹${(Number(v) || 0).toLocaleString("en-IN")}`;
+const inr = (v) => `₹${(Number(v) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 function Arrow({ dir }) {
   return <span className={cn("text-xl font-bold", dir === "up" ? "text-[#10b981]" : "text-[#ef4444]")}>{dir === "up" ? "↑" : "↓"}</span>;
