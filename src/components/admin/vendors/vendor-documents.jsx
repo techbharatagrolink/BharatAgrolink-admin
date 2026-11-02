@@ -64,7 +64,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
   const [pending, startTransition] = useTransition();
   const [rejecting, setRejecting] = useState(null); // { kind: 'seller' | 'license', id, title }
   const [deleting, setDeleting] = useState(null); // { id, title }
-  const [uploading, setUploading] = useState(false);
+  const [uploadType, setUploadType] = useState(null); // null = closed; "" = open with no type pre-picked; a doc type = open, pre-picked
   const fileInput = useRef(null);
   const [fileTarget, setFileTarget] = useState(null);
 
@@ -120,7 +120,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
         description="Documents the seller uploaded in the seller panel, plus business registration documents, regulatory licenses and other documents. None is required to approve the seller."
         actions={
           canEdit && licenseDocuments ? (
-            <Button size="sm" variant="primary" onClick={() => setUploading(true)}>
+            <Button size="sm" variant="primary" onClick={() => setUploadType("")}>
               <Upload className="size-4" aria-hidden />
               Upload document
             </Button>
@@ -199,7 +199,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
                 {group.documents.map((doc) => (
                   <li key={doc.type} className="px-3 py-2.5">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className="text-sm font-medium text-ink">{doc.title}</p>
+                      <p className="min-w-0 flex-1 text-sm font-medium text-ink">{doc.title}</p>
                       {doc.applicable ? null : <Badge tone="neutral">No longer applies</Badge>}
                       {doc.matchedCategories.map((c) => (
                         <Badge key={c} tone="warning">
@@ -207,6 +207,12 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
                         </Badge>
                       ))}
                       {doc.uploads.length ? null : <StatusBadge status="Not Uploaded" />}
+                      {!doc.uploads.length && canEdit ? (
+                        <Button size="xs" variant="secondary" onClick={() => setUploadType(doc.type)} disabled={pending}>
+                          <Upload className="size-3.5" aria-hidden />
+                          Upload
+                        </Button>
+                      ) : null}
                     </div>
                     {doc.uploads.length ? (
                       <ul className="mt-2 space-y-2">
@@ -260,8 +266,14 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
           loading={pending}
         />
       ) : null}
-      {uploading && licenseDocuments ? (
-        <UploadDialog vendorId={vendorId} groups={licenseDocuments.groups} onClose={() => setUploading(false)} onDone={() => router.refresh()} />
+      {uploadType !== null && licenseDocuments ? (
+        <UploadDialog
+          vendorId={vendorId}
+          groups={licenseDocuments.groups}
+          initialType={uploadType}
+          onClose={() => setUploadType(null)}
+          onDone={() => router.refresh()}
+        />
       ) : null}
     </Card>
   );
@@ -316,10 +328,10 @@ function LicenseUpload({ doc, upload, canEdit, busy, onApprove, onReject, onDele
   );
 }
 
-function UploadDialog({ vendorId, groups, onClose, onDone }) {
+function UploadDialog({ vendorId, groups, initialType = "", onClose, onDone }) {
   const { notify } = useToast();
   const [saving, startSaving] = useTransition();
-  const [type, setType] = useState("");
+  const [type, setType] = useState(initialType);
   const [error, setError] = useState("");
   const docs = groups.flatMap((group) => group.documents.map((doc) => ({ ...doc, groupTitle: group.title })));
   const doc = docs.find((d) => d.type === type);
