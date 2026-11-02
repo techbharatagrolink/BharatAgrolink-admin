@@ -53,7 +53,6 @@ const COLUMNS = [
     group: "basic", key: "cycleMovement", label: "Cycle Movement", filter: { key: "cycleMovement", type: "text" }, width: 220,
     render: (r) => (
       <span className="flex min-w-0 flex-col gap-0.5">
-        {r.shifted && !r.paymentStopped && <Badge tone="info" className="self-start">Shifted</Badge>}
         <span className={cn("text-xs whitespace-normal", r.paymentStopped ? "font-semibold text-danger-ink" : "text-ink-soft")} title={r.shifted && r.shiftedAt ? `Shifted ${formatDateTime(r.shiftedAt)}${r.shiftedBy ? ` by ${r.shiftedBy}` : ""}` : undefined}>
           {r.cycleMovement || <span className="text-ink-muted">—</span>}
         </span>
