@@ -17,7 +17,7 @@ const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "co
 
 const COLUMNS = [
   ["sr", "Sr No"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer Name"], ["customerState", "Customer State"],
-  ["invoice", "Invoice ID"], ["awb", "AWB No"], ["productId", "Product ID"], ["product", "Product Name"], ["sku", "SKU"],
+  ["invoice", "Invoice ID"], ["balInvoice", "Bharat Agrolink Invoice"], ["awb", "AWB No"], ["productId", "Product ID"], ["product", "Product Name"], ["sku", "SKU"],
   ["paymentGateway", "Payment Gateway"], ["manageHref", "Order Manage"], ["customerInvoiceHref", "Customer Invoice"], ["vendorInvoiceHref", "Vendor Invoice"],
   ["vendor", "Vendor Name"], ["vendorState", "Vendor State"], ["vendorGst", "Vendor GST Number"], ["vendorGstState", "Vendor GST State Code"],
   ["courier", "Delivery Service"], ["deliveryCharge", "Delivery Service Charges"], ["qty", "Quantity (QTY)"], ["price", "Product Price (Display Price)"],
@@ -52,7 +52,7 @@ const SHORT_LABEL = { customerPaymentType: "Payment", contributionAchieved: "Ach
 
 /** Column groups (grid header groups, mobile card sections): [title, key columns, the rest]. Every column is always shown. */
 const GROUPS = [
-  ["Order & customer", ["customer", "deliveredAt"], ["id", "invoice", "awb", "customerState", "status", "paymentStatus", "createdAt", "manageHref", "customerInvoiceHref", "vendorInvoiceHref"]],
+  ["Order & customer", ["customer", "deliveredAt"], ["id", "invoice", "balInvoice", "awb", "customerState", "status", "paymentStatus", "createdAt", "manageHref", "customerInvoiceHref", "vendorInvoiceHref"]],
   ["Product & vendor", ["product", "sku"], ["productId", "vendor", "vendorState", "vendorGst", "vendorGstState"]],
   ["Price & tax", ["qty", "gross"], ["price", "taxable", "discount", "cgst", "sgst", "igst"]],
   ["Customer payment", ["customerPaymentType"], ["paymentMode", "advance", "advanceAmount", "prepaidPartialDiscount", "paymentGateway", "razorpayPaymentId", "razorpayCharges"]],
@@ -62,7 +62,7 @@ const GROUPS = [
   ["Contribution", ["contributionAchieved", "contributionAchievedPct"], ["contributionTarget", "contributionTargetPct", "contributionAchievable", "contributionAchievablePct", "contributionAchievableVariance", "contributionAchievedVariance", "contributionBreakdown"]],
   ["Pricing & tax (product)", ["costMargin", "costMarginPct"], ["costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costTakeRatePct", "costFactorsTotal", "costCourier", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costAdjustedMarginPct", "costTcsBalance", "costSellerPayout", "costFactors"]],
 ];
-const WIDTH = { product: 240, contributionBreakdown: 380, costFactors: 320, customer: 170, vendor: 170, courier: 170 };
+const WIDTH = { balInvoice: 170, product: 240, contributionBreakdown: 380, costFactors: 320, customer: 170, vendor: 170, courier: 170 };
 const TEXT_TIP = new Set(["product", "contributionBreakdown", "costFactors", "courier", "vendor"]);
 
 const gridTheme = themeQuartz.withParams({
