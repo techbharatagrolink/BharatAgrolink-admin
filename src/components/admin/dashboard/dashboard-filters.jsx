@@ -16,18 +16,43 @@ const query = (values) => {
   return qs ? `?${qs}` : "";
 };
 
+// "YYYY-MM" -> { first: "YYYY-MM-01", last: "YYYY-MM-<last day>" }, used to turn a month
+// picker value into the existing from/to range (same one every card already filters on).
+function monthRange(monthValue) {
+  const [y, m] = monthValue.split("-").map(Number);
+  const first = `${monthValue}-01`;
+  const last = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+  return { first, last };
+}
+
 export function DashboardFilters({ values, options, label }) {
   const router = useRouter();
   const pathname = usePathname();
   const [draft, setDraft] = useState(values);
   const [lastValues, setLastValues] = useState(values);
   const [expanded, setExpanded] = useState(false);
+  const [rangeMode, setRangeMode] = useState("month");
   if (lastValues !== values) {
     setLastValues(values);
     setDraft(values);
   }
 
   const set = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
+  // Editing a date directly means the month pickers no longer match, so drop that selection.
+  const setDate = (key, value) => setDraft((d) => ({ ...d, [key]: value, monthFrom: "", monthTo: "" }));
+  // "Select multiple months" = a From month -> To month span (the API only understands one
+  // contiguous from/to range, so disjoint months aren't representable). Picking just "From
+  // month" behaves as a single month; adding "To month" extends it into a range.
+  const setMonthRange = (key, value) => {
+    setDraft((d) => {
+      const monthFrom = key === "monthFrom" ? value : d.monthFrom;
+      const monthTo = key === "monthTo" ? value : d.monthTo;
+      if (!monthFrom) return { ...d, monthFrom: "", monthTo: "", from: "", to: "" };
+      const { first } = monthRange(monthFrom);
+      const { last } = monthRange(monthTo || monthFrom);
+      return { ...d, monthFrom, monthTo, from: first, to: last };
+    });
+  };
   const sticky = { vendor: values.vendor, type: values.type, season: values.season, cycle: values.cycle };
   const dateError = draft.from && draft.to && draft.to < draft.from ? "End date is before start date." : (draft.from && !draft.to) || (!draft.from && draft.to) ? "Choose both dates." : null;
   const extraCount = ["fy", "season", "cycle", "type"].filter((k) => draft[k] && !(k === "type" && draft[k] === "all")).length;
@@ -36,7 +61,8 @@ export function DashboardFilters({ values, options, label }) {
     event.preventDefault();
     if (dateError) return;
     const custom = draft.from && draft.to;
-    const next = { ...draft, preset: custom || draft.fy ? "" : draft.preset, fy: custom ? "" : draft.fy };
+    const { monthFrom, monthTo, ...rest } = draft;
+    const next = { ...rest, preset: custom || draft.fy ? "" : draft.preset, fy: custom ? "" : draft.fy };
     startRouteProgress();
     router.push(`${pathname}${query(next)}`, { scroll: false });
   };
@@ -48,17 +74,45 @@ export function DashboardFilters({ values, options, label }) {
 
   return (
     <form onSubmit={apply} className="mb-4 rounded-xl border border-line bg-surface p-3 sm:p-4" aria-label="Dashboard filters">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1.7fr)_repeat(4,minmax(0,1fr))]">
         <Field label="Seller" className="col-span-2 md:col-span-1">
           {({ id }) => <Select id={id} value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} options={options.vendors} placeholder="All sellers" />}
         </Field>
         <fieldset className="col-span-2 min-w-0 md:col-span-2 xl:col-span-1">
-          <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">Date range</legend>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input type="date" aria-label="From date" value={draft.from} max={draft.to || undefined} onChange={(e) => set("from", e.target.value)} className="min-w-0" />
-            <span className="hidden shrink-0 text-xs text-ink-muted sm:inline">to</span>
-            <Input type="date" aria-label="To date" value={draft.to} min={draft.from || undefined} onChange={(e) => set("to", e.target.value)} className="min-w-0" />
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <legend className="text-[13px] font-medium text-ink-soft">Date range</legend>
+            <div className="inline-flex shrink-0 rounded-md border border-line-strong p-0.5">
+              {[
+                { value: "month", label: "Month" },
+                { value: "date", label: "Custom" },
+              ].map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setRangeMode(m.value)}
+                  className={cn(
+                    "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
+                    rangeMode === m.value ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink",
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
           </div>
+          {rangeMode === "month" ? (
+            <div className="flex items-center gap-2">
+              <Input type="month" aria-label="From month" value={draft.monthFrom || ""} max={draft.monthTo || undefined} onChange={(e) => setMonthRange("monthFrom", e.target.value)} className="min-w-0" />
+              <span className="shrink-0 text-xs text-ink-muted">to</span>
+              <Input type="month" aria-label="To month" value={draft.monthTo || ""} min={draft.monthFrom || undefined} onChange={(e) => setMonthRange("monthTo", e.target.value)} className="min-w-0" disabled={!draft.monthFrom} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Input type="date" aria-label="From date" value={draft.from} max={draft.to || undefined} onChange={(e) => setDate("from", e.target.value)} className="min-w-0" />
+              <span className="shrink-0 text-xs text-ink-muted">to</span>
+              <Input type="date" aria-label="To date" value={draft.to} min={draft.from || undefined} onChange={(e) => setDate("to", e.target.value)} className="min-w-0" />
+            </div>
+          )}
           {dateError && <p className="mt-1 text-xs text-danger-ink" role="alert">{dateError}</p>}
         </fieldset>
         <div className={cn("col-span-2 grid grid-cols-2 gap-3 md:col-span-3 md:grid-cols-4 xl:col-span-4", !expanded && "hidden md:grid")}>
