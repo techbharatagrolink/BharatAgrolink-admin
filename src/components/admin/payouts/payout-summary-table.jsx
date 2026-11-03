@@ -37,11 +37,11 @@ const COLUMNS = [
   { key: "pendingBsa", label: "Pending BSA", type: "currency", sortable: true },
   { key: "pendingItems", label: "Pending items", type: "number", hidden: true },
   { key: "status", label: "Status", type: "status", sortable: true },
-  { key: "view", label: "Action", href: "/admin/payouts/{id}" },
+  { key: "view", label: "Action", href: "{viewHref}" },
 ];
 
 const ROW_ACTIONS = [
-  { id: "open", label: "View payout", href: "/admin/payouts/{id}" },
+  { id: "open", label: "View payout", href: "{viewHref}" },
   { id: "items", label: "View payout items", href: "/admin/payouts/items?vendorId={vendorId}" },
   { id: "vendor", label: "Open vendor", href: "/admin/vendors/{sellerId}" },
 ];
@@ -94,6 +94,17 @@ export function ExportMenu({ label, title, path, filters, payoutIds = [] }) {
       </ul>
     </Popover>
   );
+}
+
+/** The summary filters as the payout detail page reads them (its status filter is f_status), so View opens the same slice. */
+function detailFilters(searchParams) {
+  const out = new URLSearchParams();
+  for (const key of ["cycleMonth", "cycle", "orderIds"]) if (searchParams.get(key)) out.set(key, searchParams.get(key));
+  if (searchParams.get("status")) out.set("f_status", searchParams.get("status"));
+  // The whole summary state rides along, so the detail page's "Payout summary" link returns to it
+  if (searchParams.toString()) out.set("back", searchParams.toString());
+  const qs = out.toString();
+  return qs ? `?${qs}` : "";
 }
 
 /** The items Export items would download, on screen instead (same filters, plus ticked vendors). */
@@ -289,7 +300,8 @@ function CycleStrip({ cycles }) {
 export function PayoutSummaryTable({ data, cycles }) {
   const router = useRouter();
   const { searchParams } = useQueryState();
-  const rows = data.rows.map((r) => ({ ...r, view: "View" }));
+  const detailQuery = detailFilters(searchParams);
+  const rows = data.rows.map((r) => ({ ...r, view: "View", viewHref: `/admin/payouts/${encodeURIComponent(r.id)}${detailQuery}` }));
   const t = data.totals ?? {};
   const counts = data.tabCounts ?? {};
   const summary = (
