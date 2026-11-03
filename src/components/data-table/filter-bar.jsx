@@ -161,12 +161,12 @@ export function TextFilter({ name, label }) {
   );
 }
 
-export function SelectFilter({ name, label, options }) {
+export function SelectFilter({ name, label, options, className = "w-full sm:w-44" }) {
   const { get, setParams } = useQueryState();
   return (
     <Select
       aria-label={label}
-      className="w-full sm:w-44"
+      className={className}
       value={get(name)}
       placeholder={`${label}: all`}
       options={options}

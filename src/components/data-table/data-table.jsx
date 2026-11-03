@@ -207,7 +207,9 @@ export function DataTable({
       {(search || filters.length > 0 || dateRange || toolbar || onExport !== undefined) && (
         <div className={cn("flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start", inlineToolbar ? "xl:flex-wrap" : "xl:justify-between")}>
           {/* inlineToolbar: the toolbar sits right after the filters and "Clear filters" gets its own line */}
-          <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
+          {(search || filters.length > 0 || dateRange || !inlineToolbar) && (
+            <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
+          )}
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {toolbar}
             <Popover

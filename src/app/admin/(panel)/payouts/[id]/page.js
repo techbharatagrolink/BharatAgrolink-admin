@@ -12,6 +12,16 @@ import { PayoutItemsTable } from "@/components/admin/payouts/payout-items-table"
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
 
 const TITLE = "Vendor Payout Items";
+const SUMMARY_KEYS = ["q", "status", "sort", "page", "pageSize", "cycleMonth", "cycle", "orderIds"];
+
+/** The summary's filters, carried in ?back= by its View link, so going back keeps them. Only known keys pass. */
+function summaryHref(back) {
+  const from = new URLSearchParams(String(Array.isArray(back) ? back[0] : back ?? "").slice(0, 6000));
+  const out = new URLSearchParams();
+  for (const key of SUMMARY_KEYS) if (from.get(key)) out.set(key, from.get(key));
+  const qs = out.toString();
+  return qs ? `/admin/payouts?${qs}` : "/admin/payouts";
+}
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -40,7 +50,7 @@ export default async function PayoutDetailPage({ params, searchParams }) {
         description={`Payout ${payout.id} · ${payout.vendor}. Final seller Payout = Total NRV − TCS (1% of taxable). Cycles are filtered here, never shifted.`}
         actions={
           <>
-            <Link href="/admin/payouts" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+            <Link href={summaryHref(sp.back)} className={buttonClasses({ variant: "secondary", size: "sm" })}>
               <ArrowLeft className="size-4" aria-hidden /> Payout summary
             </Link>
             {payout.sellerId ? (
