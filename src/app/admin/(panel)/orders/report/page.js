@@ -54,11 +54,11 @@ export default async function OrderReportPage({ searchParams }) {
           <StatCard label="Total Revenue" value={formatINR(summary.gross)} />
           <StatCard label="Total Products Sold" value={formatNumber(summary.qty)} tone="info" />
           <StatCard label="Total Vendors" value={formatNumber(summary.vendors)} tone="warning" />
-          <StatCard label="Total Exclusive GST Amount" value={formatINR(summary.taxable)} />
-          <StatCard label="Total GST" value={formatINR(summary.gst)} hint="CGST + SGST + IGST" />
-          <StatCard label="CGST" value={formatINR(summary.cgst)} hint="Central GST" />
-          <StatCard label="SGST" value={formatINR(summary.sgst)} hint="State GST" />
-          <StatCard label="IGST" value={formatINR(summary.igst)} tone="info" hint="Integrated GST" />
+          {/* <StatCard label="Total Exclusive GST Amount" value={formatINR(summary.taxable)} /> */}
+          {/* <StatCard label="Total GST" value={formatINR(summary.gst)} hint="CGST + SGST + IGST" /> */}
+          {/* <StatCard label="CGST" value={formatINR(summary.cgst)} hint="Central GST" /> */}
+          {/* <StatCard label="SGST" value={formatINR(summary.sgst)} hint="State GST" /> */}
+          {/* <StatCard label="IGST" value={formatINR(summary.igst)} tone="info" hint="Integrated GST" /> */}
           <StatCard label="TCS" value={formatINR(summary.tcs)} tone="warning" hint="Tax collected" />
           <StatCard label="Total BSA" value={formatINR(summary.bsa)} hint="Vendor settlement base" />
           <StatCard label="Service Charge (Excl. GST)" value={formatINR(summary.serviceExcl)} hint="(Order − BSA − TCS) ÷ 1.18" />
