@@ -21,6 +21,11 @@ const STATUS_OPTIONS = [
   { value: "RTO", label: "RTO" },
   { value: "Rejected", label: "Rejected" },
 ];
+const PAYMENT_OPTIONS = [
+  { value: "partial", label: "Partial" },
+  { value: "prepaid", label: "Prepaid" },
+  { value: "cod", label: "COD" },
+];
 const WIDE = new Set(["product", "products", "email", "customer", "seller", "salesman", "agent"]);
 
 export async function generateMetadata({ params }) {
@@ -248,8 +253,25 @@ export default async function DashboardCardPage({ params, searchParams }) {
         rowKey="rowKey"
         columns={tableColumns(data.columns)}
         pageSizes={PAGE_SIZES}
-        search={{ placeholder: "Search order ID, customer, agent, seller, product..." }}
-        filters={slug === "total-sales-b2c" ? [{ key: "status", label: "Status", options: STATUS_OPTIONS }] : []}
+        columnFilters={true}
+        search="Search order ID, customer, agent, seller, product..."
+        filters={
+          slug === "total-sales-b2c"
+            ? [
+                { key: "status", label: "Status", options: STATUS_OPTIONS },
+                ...((data.salesmen || []).length > 0
+                  ? [{
+                      key: "agent",
+                      label: "Agent",
+                      options: (data.salesmen || [])
+                        .filter((s) => s.salesman && s.salesman !== "—")
+                        .map((s) => ({ value: s.salesman, label: s.salesman })),
+                    }]
+                  : []),
+                { key: "payment", label: "Payment", options: PAYMENT_OPTIONS },
+              ]
+            : []
+        }
         exportName={`dashboard-${slug}`}
         emptyTitle="No records in this period."
         emptyDescription="Try another period or status from the filters."
