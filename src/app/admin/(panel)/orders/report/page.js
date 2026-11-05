@@ -10,7 +10,7 @@ import { OrderReportTable } from "@/components/admin/orders/order-report-table";
 export const metadata = { title: "Order Reports" };
 
 const TITLE = "Finance Report — Orders";
-const DESCRIPTION = "Every order by default; use Status to narrow it to Delivered (or any other status). BSA / NRV / service charge are computed from product pricing regardless of status, so they're only a real settlement amount once a vendor payout item exists (normally once delivered). Blank override fields clear a manual value.";
+const DESCRIPTION = "Every order by default; use Status to narrow it to Delivered (or any other status). From / To / Month / Cycle filter by Delivery date by default, so a line with no delivery date never shows up under a date filter — switch \"Date filter on\" to Created date to find non-delivered orders by when they were placed. BSA / NRV / service charge are computed from product pricing regardless of status, so they're only a real settlement amount once a vendor payout item exists (normally once delivered). Blank override fields clear a manual value.";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const SIZES = new Set(["25", "50", "100", "200"]);
@@ -20,6 +20,7 @@ function readFilters(sp) {
   if (typeof sp?.orderId === "string" && sp.orderId.trim()) filters.orderId = sp.orderId.trim().slice(0, 80);
   if (typeof sp?.vendorId === "string" && sp.vendorId.trim()) filters.vendorId = sp.vendorId.trim().slice(0, 100);
   if (typeof sp?.status === "string" && sp.status.trim()) filters.status = sp.status.trim().slice(0, 60);
+  if (sp?.dateType === "created") filters.dateType = "created";
   if (DATE.test(sp?.from ?? "")) filters.from = sp.from;
   if (DATE.test(sp?.to ?? "")) filters.to = sp.to;
   if (sp?.cycle === "first" || sp?.cycle === "second") filters.cycle = sp.cycle;
@@ -45,6 +46,7 @@ export default async function OrderReportPage({ searchParams }) {
   const fields = [
     { name: "orderId", label: "Order ID", type: "search", placeholder: "Search Order ID" },
     { name: "status", label: "Status", type: "select", placeholder: "All statuses", options: result.statuses },
+    { name: "dateType", label: "Date filter on", type: "select", options: [{ value: "delivered", label: "Delivery date" }, { value: "created", label: "Created date" }], defaultValue: "delivered" },
     { name: "from", label: "From", type: "date" },
     { name: "to", label: "To", type: "date" },
     { name: "cycle", label: "Cycle", type: "select", placeholder: "All cycles", options: [{ value: "first", label: "First cycle (1–15)" }, { value: "second", label: "Second cycle (16–31)" }] },
