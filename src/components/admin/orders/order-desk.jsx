@@ -212,11 +212,30 @@ function CardField({ label, value, copy = false }) {
 }
 
 /** Saved Pricing & Tax snapshot for this order, one row per product line. */
+/* "₹40.20 · 8.1%" — an amount and its share of the unit display price */
+function moneyPct(amount, pct) {
+  if (amount == null) return null;
+  return pct == null ? formatINR(amount) : `${formatINR(amount)} · ${pct}%`;
+}
+
+const SOURCE_LABEL = {
+  shiprocket_settled: { label: "Shiprocket settled", tone: "brand" },
+  shiprocket_quote: { label: "Shiprocket quote", tone: "warning" },
+  delhivery_booking: { label: "Delhivery booking", tone: "warning" },
+  order_shipping: { label: "Order shipping", tone: "neutral" },
+  booking_estimate: { label: "Booking estimate", tone: "neutral" },
+};
+
+function ChargeSource({ source }) {
+  const s = SOURCE_LABEL[source] || SOURCE_LABEL.booking_estimate;
+  return <Badge tone={s.tone}>{s.label}</Badge>;
+}
+
 function OrderCostTable({ costs }) {
   if (!costs?.length) return null;
   return (
     <Panel icon={IndianRupee} title="Pricing & Tax at shipment" collapsible>
-      <p className="px-4 pt-3 text-xs text-ink-muted">Saved when the shipment was created. Prices are per unit. The courier charge is the parcel charge, and the difference is that charge minus shipping actual.</p>
+      <p className="px-4 pt-3 text-xs text-ink-muted">Prices are per unit; % is the share of the unit display price. The courier charge (freight without COD) and COD handling are the courier&apos;s settled bill when Shiprocket has billed it, else the booking charge — see Charge source. The difference is the courier charge minus shipping actual.</p>
       <ul className="space-y-3 p-3">
         {costs.map((cost) => (
           <li key={cost.id || `${cost.productId}:${cost.variantId}`} className="@container rounded-lg border border-line p-3 text-[12.5px]">
@@ -232,7 +251,10 @@ function OrderCostTable({ costs }) {
               <CardField label="Factors actual" value={cost.totalFactorActual == null ? null : formatINR(cost.totalFactorActual)} />
               <CardField label="Contribution margin" value={cost.contributionMargin == null ? null : `${formatINR(cost.contributionMargin)} · ${bpsText(cost.contributionMarginBps)}`} />
               <CardField label="Courier" value={cost.courierName} />
-              <CardField label="Courier charge" value={cost.courierCharge == null ? null : formatINR(cost.courierCharge)} />
+              <CardField label="Courier charge" value={moneyPct(cost.courierCharge, cost.courierChargePct)} />
+              <CardField label="COD handling" value={moneyPct(cost.courierCodCharge, cost.courierCodChargePct)} />
+              <CardField label="Total courier" value={moneyPct(cost.totalCourierCharge, cost.totalCourierChargePct)} />
+              <CardField label="Charge source" value={<ChargeSource source={cost.courierChargeSource} />} />
               <CardField label="Shipping actual" value={cost.shippingActual == null ? null : formatINR(cost.shippingActual)} />
               <CardField label="Difference" value={cost.shippingDifference == null ? null : formatINR(cost.shippingDifference)} />
               <CardField label="Adjusted margin" value={cost.adjustedContributionMargin == null ? null : `${formatINR(cost.adjustedContributionMargin)} · ${bpsText(cost.adjustedContributionMarginBps)}`} />

@@ -72,6 +72,12 @@ export async function saveVendorKycFiles(id, formData, user) {
   return data;
 }
 
+/** Clears one field of the "KYC documents" card (key: logo | pan | aadhaar | gst) — its own column only. */
+export async function clearVendorKycFile(id, key, user) {
+  const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/kyc-files/${encodeURIComponent(key)}`, { method: "DELETE", token: user.token });
+  return data;
+}
+
 /** Approve / reject / delete one of the seller panel's documents (sellerlogin column). */
 export async function reviewVendorSellerDocument(id, body, user) {
   const { data } = await api(`admin/vendors/${encodeURIComponent(id)}/kyc`, { method: "POST", token: user.token, body });

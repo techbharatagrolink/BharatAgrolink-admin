@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, FileText } from "lucide-react";
+import { ExternalLink, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { saveVendorKycAction } from "@/lib/actions/admin/vendors";
+import { clearVendorKycFileAction, saveVendorKycAction } from "@/lib/actions/admin/vendors";
 
 const FILES = [
   {
@@ -107,7 +108,22 @@ export function VendorKyc({ vendorId, documents = [], canEdit }) {
   const { notify } = useToast();
   const [docs, setDocs] = useState(documents);
   const [saving, startSaving] = useTransition();
+  const [removing, startRemoving] = useTransition();
+  const [toRemove, setToRemove] = useState(null); // { key, label }
   const byKey = new Map(docs.map((doc) => [doc.key, doc]));
+
+  function confirmRemove() {
+    const target = toRemove;
+    startRemoving(async () => {
+      const result = await clearVendorKycFileAction(vendorId, target.key);
+      notify({ message: result.message, tone: result.ok ? "success" : "error" });
+      if (result.ok) {
+        if (result.documents) setDocs(result.documents);
+        setToRemove(null);
+        router.refresh();
+      }
+    });
+  }
 
   function save(event) {
     event.preventDefault();
@@ -150,26 +166,42 @@ export function VendorKyc({ vendorId, documents = [], canEdit }) {
       />
       <CardBody>
         <form onSubmit={save} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {FILES.map((file) => (
-            <div key={file.key} className="min-w-0">
-              <p className="text-xs font-medium text-ink-muted">{file.label}</p>
-              <Preview doc={byKey.get(file.key)} />
-              {canEdit && (
-                <Field label={file.label} hint={file.hint} className="mt-2">
-                  {({ id, describedBy }) => (
-                    <Input
-                      id={id}
-                      type="file"
-                      name={file.name}
-                      accept={file.accept}
-                      aria-describedby={describedBy}
-                      className="h-auto py-1.5"
-                    />
-                  )}
-                </Field>
-              )}
-            </div>
-          ))}
+          {FILES.map((file) => {
+            const doc = byKey.get(file.key);
+            return (
+              <div key={file.key} className="min-w-0">
+                <p className="text-xs font-medium text-ink-muted">{file.label}</p>
+                <Preview doc={doc} />
+                {canEdit && doc?.url && (
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    className="mt-1.5"
+                    onClick={() => setToRemove({ key: file.key, label: file.label })}
+                    disabled={saving || removing}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                    Remove
+                  </Button>
+                )}
+                {canEdit && (
+                  <Field label={file.label} hint={file.hint} className="mt-2">
+                    {({ id, describedBy }) => (
+                      <Input
+                        id={id}
+                        type="file"
+                        name={file.name}
+                        accept={file.accept}
+                        aria-describedby={describedBy}
+                        className="h-auto py-1.5"
+                      />
+                    )}
+                  </Field>
+                )}
+              </div>
+            );
+          })}
           {canEdit && (
             <div className="sm:col-span-2 xl:col-span-4">
               <Button type="submit" loading={saving}>
@@ -179,6 +211,17 @@ export function VendorKyc({ vendorId, documents = [], canEdit }) {
           )}
         </form>
       </CardBody>
+      {toRemove ? (
+        <ConfirmDialog
+          open
+          onClose={() => setToRemove(null)}
+          onConfirm={confirmRemove}
+          title={`Remove ${toRemove.label}?`}
+          description="This clears the file from this card. If it was also uploaded as a seller document below, that copy is not affected and keeps showing there."
+          confirmLabel="Remove"
+          loading={removing}
+        />
+      ) : null}
     </Card>
   );
 }

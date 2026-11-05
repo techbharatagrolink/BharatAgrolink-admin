@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { assertPermission } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api";
 import {
+  clearVendorKycFile,
   deleteVendorLicenseDocument,
   lookupVendorIfsc,
   reviewVendorLicenseDocument,
@@ -14,6 +15,8 @@ import {
   uploadVendorSellerDocument,
   verifyVendorBank,
 } from "@/lib/services/admin/people";
+
+const KYC_FILE_KEYS = ["logo", "pan", "aadhaar", "gst"];
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -75,11 +78,11 @@ function documentFile(formData) {
   return { file };
 }
 
-/** Approve or reject one of the seller panel's documents (the KYC column on sellerlogin). */
+/** Approve, reject or delete one of the seller panel's documents (the KYC column on sellerlogin). */
 export async function reviewVendorSellerDocumentAction(id, column, action, reason = "") {
   const gate = await assertPermission("vendors", "edit");
   if (!gate.ok) return { ok: false, message: gate.message };
-  if (!["approve", "reject"].includes(action) || !/^company_[a-z0-9_]+$/.test(String(column))) return { ok: false, message: "Unknown document or action." };
+  if (!["approve", "reject", "delete"].includes(action) || !/^company_[a-z0-9_]+$/.test(String(column))) return { ok: false, message: "Unknown document or action." };
   if (action === "reject" && !String(reason).trim()) return { ok: false, message: "Enter the reason for rejecting this document." };
   try {
     const data = await reviewVendorSellerDocument(id, { column, action, reason: String(reason).trim() }, gate.user);
@@ -177,5 +180,19 @@ export async function saveVendorKycAction(id, formData) {
     return { ok: true, message: data.message, documents: data.documents };
   } catch (error) {
     return fail(error, "Could not save the KYC documents.");
+  }
+}
+
+/** Removes one field of the "KYC documents" card (its own column only — see clearVendorFile). */
+export async function clearVendorKycFileAction(id, key) {
+  const gate = await assertPermission("vendors", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message };
+  if (!KYC_FILE_KEYS.includes(key)) return { ok: false, message: "Unknown document." };
+  try {
+    const data = await clearVendorKycFile(id, key, gate.user);
+    revalidatePath(`/admin/vendors/${id}`);
+    return { ok: true, message: data.message, documents: data.documents };
+  } catch (error) {
+    return fail(error, "Could not remove the document.");
   }
 }

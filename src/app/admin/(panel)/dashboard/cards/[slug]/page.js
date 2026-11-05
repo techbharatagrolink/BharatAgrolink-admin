@@ -41,6 +41,7 @@ const TOTALS = {
   "pg-charges": (d) => [{ label: "PG charges", value: formatINR(d.sales.pgCharges) }],
   "prepaid-partial": (d) => [{ label: "Prepaid / partial", value: formatINR(d.sales.prepaidPartial) }],
   tcs: (d) => [{ label: "TCS", value: formatINR(d.sales.tcs) }],
+  "rto-charges": (d) => [{ label: "RTO charges", value: formatINR(d.sales.rtoCharges) }, { label: "RTO sub-orders", value: formatNumber(d.sales.rtoSubOrders) }],
   "total-orders": (d) => [{ label: "Total orders", value: formatNumber(d.orders.total), delta: d.deltas.totalOrders }],
   "accepted-orders": (d) => [{ label: "Accepted", value: formatNumber(d.orders.accepted) }],
   "rejected-orders": (d) => [{ label: "Rejected", value: formatNumber(d.orders.rejected) }],
@@ -48,9 +49,9 @@ const TOTALS = {
   shipped: (d) => [{ label: "Shipped", value: formatNumber(d.orders.shipped) }],
   "delivered-orders": (d) => [{ label: "Delivered", value: formatNumber(d.orders.delivered) }, { label: "Delivered gross", value: formatINR(d.orders.deliveredGross) }],
   "delivered-gross": (d) => [{ label: "Delivered gross", value: formatINR(d.orders.deliveredGross), delta: d.deltas.deliveredGross }, { label: "AOV (delivered)", value: formatINR(d.orders.aovDelivered) }],
-  "cancelled-orders": (d) => [{ label: "Cancelled", value: formatNumber(d.orders.cancelled) }, { label: "Cancellation rate", value: `${d.orders.cancellationRate}%` }],
-  "rto-orders": (d) => [{ label: "RTO orders", value: formatNumber(d.orders.rto) }, { label: "RTO rate", value: pctText(d.orders.rtoRate) }],
-  "rto-rate": (d) => [{ label: "RTO rate", value: pctText(d.orders.rtoRate) }, { label: "RTO orders", value: formatNumber(d.orders.rto) }],
+  "cancelled-orders": (d) => [{ label: "Cancelled sub-orders", value: formatNumber(d.orders.cancelled) }, { label: "Cancellation rate", value: pctText(d.orders.cancellationRate) }],
+  "rto-orders": (d) => [{ label: "RTO sub-orders", value: formatNumber(d.orders.rto) }, { label: "RTO rate", value: pctText(d.orders.rtoRate) }],
+  "rto-rate": (d) => [{ label: "RTO rate", value: pctText(d.orders.rtoRate) }, { label: "RTO sub-orders", value: formatNumber(d.orders.rto) }, { label: "All sub-orders", value: formatNumber(d.orders.subOrders) }],
   "new-orders": (d) => [{ label: "New order %", value: `${d.orders.newOrderPct}%` }],
   "repeat-orders": (d) => [{ label: "Repeat orders", value: formatNumber(d.orders.repeatOrders) }],
   "repeat-customers": (d) => [{ label: "Repeat customer %", value: `${d.orders.repeatCustomerPct}%` }],
@@ -95,6 +96,7 @@ function tableColumns(columns) {
     } else if (column.key === "status") next.type = "status";
     else if (column.kind === "money") next.type = "currency";
     else if (column.kind === "date") next.type = "datetime";
+    else if (column.kind === "percent") next.type = "percent";
     else if (column.align === "right") next.type = "number";
     return next;
   });
