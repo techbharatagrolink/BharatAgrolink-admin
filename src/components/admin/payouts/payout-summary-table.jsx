@@ -126,7 +126,7 @@ export function OrderIdsFilter() {
     <Input
       aria-label="Order IDs"
       title="Order ID(s), comma separated"
-      className="w-36"
+      className="w-full sm:w-36"
       placeholder="Order ID(s)"
       value={value}
       onChange={(e) => setValue(e.target.value)}
@@ -161,10 +161,9 @@ function MonthPicker({ value, cycles, onChange }) {
   return (
     <Popover
       label="Cycle month: choose month"
-      align="left"
       panelClassName="w-64"
       trigger={({ toggle, props }) => (
-        <Button size="sm" onClick={() => open(toggle)} className="w-36 justify-start font-normal" {...props}>
+        <Button size="sm" onClick={() => open(toggle)} className="w-full justify-start font-normal sm:w-36" {...props}>
           <CalendarRange className="size-4 text-ink-muted" aria-hidden />
           <span className="truncate">{value ? monthLabel(value) : "Month: all"}</span>
         </Button>
@@ -223,7 +222,7 @@ export function CycleSelector({ cycles }) {
       <MonthPicker value={month} cycles={cycles} onChange={(m) => setParams({ cycleMonth: m, cycle: m ? half : "" })} />
       <Select
         aria-label="Cycle"
-        className="w-40"
+        className="w-full sm:w-40"
         value={half}
         placeholder="All cycles"
         options={HALVES}
@@ -238,8 +237,8 @@ export function CycleSelector({ cycles }) {
 export function PayoutFilters({ cycles }) {
   return (
     <>
-      <SearchInput placeholder="Search vendor name or ID" className="w-48" />
-      <SelectFilter name="status" label={STATUS_FILTER.label} options={STATUS_FILTER.options} className="w-32" />
+      <SearchInput placeholder="Search vendor name or ID" className="w-full sm:w-48" />
+      <SelectFilter name="status" label={STATUS_FILTER.label} options={STATUS_FILTER.options} className="w-full sm:w-32" />
       <CycleSelector cycles={cycles} />
       <OrderIdsFilter />
     </>
@@ -262,19 +261,19 @@ function CycleStrip({ cycles }) {
           </button>
         )}
       </div>
-      <div className="overflow-x-auto scrollbar-thin">
+      <div className="overflow-x-auto scrollbar-thin overscroll-x-contain scroll-smooth [scroll-snap-type:x_proximity] sm:[scroll-snap-type:none]">
         <ul className="flex min-w-max gap-2 p-3">
           {cycles.map((c) => {
             const active = month === c.month && half === c.half;
             return (
-              <li key={c.index}>
+              <li key={c.index} className="w-40 shrink-0 [scroll-snap-align:start] sm:w-48 lg:w-52">
                 <button
                   type="button"
                   aria-pressed={active}
                   disabled={pending}
                   onClick={() => setParams(active ? { cycleMonth: "", cycle: "" } : { cycleMonth: c.month, cycle: c.half })}
                   className={cn(
-                    "w-52 rounded-lg border px-3 py-2 text-left transition-colors",
+                    "w-full rounded-lg border px-3 py-2 text-left transition-colors",
                     active ? "border-brand-600 bg-brand-50 ring-2 ring-brand-600/20" : "border-line hover:border-brand-200 hover:bg-surface-muted",
                   )}
                 >

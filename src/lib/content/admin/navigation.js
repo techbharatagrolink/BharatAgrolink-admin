@@ -451,6 +451,7 @@ export const navigation = [
           { key: "finance-hold-ledger", label: "Hold Ledger", href: "/admin/finance/hold-ledger", page: "hold_ledger.php", permission: "finance.holdLedger" },
           { key: "b2b-settlements", label: "B2B Settlements", href: "/admin/b2b/settlements", page: "b2b_orders/settlements.php", permission: "b2b.finance" },
           { key: "payouts-items", label: "Payout Items", href: "/admin/payouts/items", permission: "payouts" },
+          { key: "payouts-sync", label: "Payout Items Sync", href: "/admin/payouts/sync", permission: "payouts" },
           { key: "payouts-access", label: "Payout Access Settings", href: "/admin/payouts/access", permission: "payouts.access" },
           { key: "payouts-legacy", label: "Legacy Payments", href: "/admin/payouts/legacy", permission: "payouts" },
         ],
