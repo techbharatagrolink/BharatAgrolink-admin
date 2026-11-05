@@ -17,6 +17,7 @@ const COLUMNS = [
   { key: "invoiceNumber", label: "Seller Invoice", hidden: true },
   { key: "balInvoiceNumber", label: "Bharat Agrolink Invoice", hidden: true },
   { key: "status", label: "Payment Status", type: "status" },
+  { key: "currentOrderStatus", label: "Order Status Now", type: "status" },
   { key: "cycleLabel", label: "Cycle" },
   { key: "cycleMovement", label: "Cycle Movement", width: 220, wrap: true, hidden: true },
   { key: "qty", label: "Qty", type: "number" },

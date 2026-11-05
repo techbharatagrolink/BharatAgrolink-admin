@@ -6,12 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Notice } from "@/components/ui/page";
+import { Input, Select } from "@/components/ui/form";
 import { formatDateTime } from "@/lib/format";
-import { chargesSyncStatusAction, startChargesSyncAction } from "@/lib/actions/admin/charges-sync";
+import { chargesSyncRangeAction, chargesSyncStatusAction, startChargesSyncAction } from "@/lib/actions/admin/charges-sync";
 
 const POLL_MS = 3000;
-/* "Sync all": the order page snapshot last, after both couriers' freight is fresh */
+/* "Sync all": the order page snapshot last, after both couriers' freight is fresh. Uses each job's default window. */
 const SYNC_ALL = ["shiprocket", "delhivery", "order-cost"];
+
+const today = () => new Date().toISOString().slice(0, 10);
+const daysAgoIso = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+const RANGE_PRESETS = [
+  { value: "default", label: "Default window" },
+  { value: "30", label: "Last 30 days" },
+  { value: "60", label: "Last 60 days" },
+  { value: "90", label: "Last 90 days" },
+  { value: "180", label: "Last 180 days" },
+  { value: "all", label: "All time" },
+  { value: "custom", label: "Custom range" },
+];
 
 function triggerText(trigger) {
   if (!trigger) return "";
@@ -19,9 +32,50 @@ function triggerText(trigger) {
   return "manual";
 }
 
-function JobCard({ job, canRun, busy, onRun }) {
+/** Preset + optional custom From/To, so "Sync now" can widen a job past its hardcoded default window (e.g. to sync every order ever). */
+function RangePicker({ earliest, value, onChange }) {
+  const { preset, from, to } = value;
+  const invalid = preset === "custom" && (!from || !to || from > to);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Select
+        aria-label="Sync range"
+        className="w-40"
+        value={preset}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (next === "custom") onChange({ preset: next, from: from || earliest || daysAgoIso(90), to: to || today() });
+          else onChange({ preset: next, from: "", to: "" });
+        }}
+      >
+        {RANGE_PRESETS.map((p) => (
+          <option key={p.value} value={p.value}>{p.label}</option>
+        ))}
+      </Select>
+      {preset === "custom" && (
+        <>
+          <Input type="date" aria-label="From" className="w-36" value={from} max={to || today()} onChange={(e) => onChange({ preset, from: e.target.value, to })} />
+          <Input type="date" aria-label="To" className="w-36" value={to} min={from} max={today()} onChange={(e) => onChange({ preset, from, to: e.target.value })} />
+          {invalid && <span className="text-xs text-danger-ink">Pick a valid From–To range.</span>}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The {from, to} runChargesSyncJob should use, or undefined for the job's own default window. */
+function resolveRange(value, earliest) {
+  if (value.preset === "default") return undefined;
+  if (value.preset === "custom") return value.from && value.to && value.from <= value.to ? { from: value.from, to: value.to } : null;
+  if (value.preset === "all") return { from: earliest || daysAgoIso(365 * 3), to: today() };
+  return { from: daysAgoIso(Number(value.preset)), to: today() };
+}
+
+function JobCard({ job, canRun, busy, onRun, ranged, earliest }) {
   const last = job.lastRun;
   const running = job.running || busy;
+  const [range, setRange] = useState({ preset: "default", from: "", to: "" });
+  const resolved = resolveRange(range, earliest);
   return (
     <Card>
       <CardHeader
@@ -29,13 +83,14 @@ function JobCard({ job, canRun, busy, onRun }) {
         description={job.description}
         actions={
           canRun && (
-            <Button size="sm" variant="primary" loading={running} disabled={running || Boolean(job.blockedReason)} onClick={() => onRun(job.key)}>
+            <Button size="sm" variant="primary" loading={running} disabled={running || Boolean(job.blockedReason) || resolved === null} onClick={() => onRun(job.key, resolved)}>
               {!running && <RefreshCw className="size-3.5" aria-hidden />}
               {running ? "Syncing…" : "Sync now"}
             </Button>
           )
         }
       />
+      {canRun && ranged && <div className="border-t border-line px-4 py-2.5"><RangePicker earliest={earliest} value={range} onChange={setRange} /></div>}
       <CardBody className="space-y-3 text-sm">
         <dl className="grid gap-2 sm:grid-cols-3">
           <div>
@@ -91,8 +146,14 @@ export function ChargesSyncPanel({ initial = [], error = null, canRun = false })
   const [message, setMessage] = useState(error);
   const [starting, setStarting] = useState(() => new Set());
   const [syncingAll, setSyncingAll] = useState(false);
+  const [range, setRangeMeta] = useState({ rangedJobs: [], earliest: null });
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
+
+  useEffect(() => {
+    if (!canRun) return;
+    chargesSyncRangeAction().then((r) => r.ok && setRangeMeta(r.data));
+  }, [canRun]);
 
   const refresh = useCallback(async () => {
     const r = await chargesSyncStatusAction();
@@ -108,10 +169,10 @@ export function ChargesSyncPanel({ initial = [], error = null, canRun = false })
     return () => clearInterval(timer);
   }, [anyRunning, refresh]);
 
-  const start = async (key) => {
+  const start = async (key, jobRange) => {
     setMessage(null);
     setStarting((s) => new Set(s).add(key));
-    const r = await startChargesSyncAction(key);
+    const r = await startChargesSyncAction(key, jobRange);
     if (!r.ok) setMessage(r.message);
     await refresh();
     setStarting((s) => {
@@ -163,7 +224,7 @@ export function ChargesSyncPanel({ initial = [], error = null, canRun = false })
       )}
       <div className="grid gap-4 xl:grid-cols-2">
         {jobs.map((job) => (
-          <JobCard key={job.key} job={job} canRun={canRun} busy={starting.has(job.key)} onRun={start} />
+          <JobCard key={job.key} job={job} canRun={canRun} busy={starting.has(job.key)} onRun={start} ranged={range.rangedJobs.includes(job.key)} earliest={range.earliest} />
         ))}
       </div>
     </div>

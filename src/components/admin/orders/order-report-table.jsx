@@ -12,7 +12,7 @@ import { Popover } from "@/components/ui/popover";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
-import { exportOrderReportAction, saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
+import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
 const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
 const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
@@ -187,15 +187,6 @@ export function OrderReportExportMenu({ filters, columns }) {
   );
 }
 
-function download(filename, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 /** The orders_report.php grid (AG Grid): column groups that open to every finance column, CSV export, and the manual-override edit. */
 export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const router = useRouter();
@@ -203,7 +194,6 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const [line, setLine] = useState(null);
   const [form, setForm] = useState({});
   const [pending, startTransition] = useTransition();
-  const [exporting, setExporting] = useState(false);
   const { rows, total, page, pageCount } = report;
 
   const href = (next) => {
@@ -254,14 +244,6 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
         router.refresh();
       }
     });
-  };
-
-  const exportCsv = async () => {
-    setExporting(true);
-    const result = await exportOrderReportAction(filters);
-    setExporting(false);
-    if (!result.ok) return notify({ message: result.message, tone: "error" });
-    download(result.data.filename, result.data.csv);
   };
 
   return (

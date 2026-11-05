@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
@@ -10,7 +11,17 @@ import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { DataTable } from "@/components/data-table/data-table";
 
 const PAGE_SIZES = [20, 25, 50, 100];
-const WIDE = new Set(["product", "products", "email", "customer", "seller", "salesman"]);
+const STATUS_OPTIONS = [
+  { value: "Delivered", label: "Delivered" },
+  { value: "Shipped", label: "Shipped" },
+  { value: "In Transit", label: "In Transit" },
+  { value: "Manifested", label: "Manifested" },
+  { value: "Placed", label: "Placed" },
+  { value: "Cancelled", label: "Cancelled" },
+  { value: "RTO", label: "RTO" },
+  { value: "Rejected", label: "Rejected" },
+];
+const WIDE = new Set(["product", "products", "email", "customer", "seller", "salesman", "agent"]);
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -32,7 +43,16 @@ const modeTotals = (m) => (m ? [{ label: `${m.mode} share`, value: `${m.pct}%` }
 
 // Headline figures for each card, taken from the main dashboard so they match the card exactly.
 const TOTALS = {
-  "total-sales-b2c": (d) => [{ label: "Total sales (B2C)", value: formatINR(d.sales.salesB2C), delta: d.deltas.salesB2C }],
+  "total-sales-b2c": (d) => [
+    { label: "Total sales (B2C)", value: formatINR(d.sales.salesB2C), delta: d.deltas.salesB2C, hint: "Live sales value", tone: "brand" },
+    { label: "Total orders", value: formatNumber(d.orders.total), delta: d.deltas.totalOrders, hint: "Parent orders", tone: "neutral" },
+    { label: "Sub-orders", value: formatNumber(d.orders.subOrders), hint: "All sub-order items", tone: "info", status: "" },
+    { label: "Delivered", value: formatNumber(d.orders.delivered), hint: formatINR(d.orders.deliveredGross), tone: "success", status: "Delivered" },
+    { label: "Shipped", value: formatNumber(d.orders.shipped), hint: d.orders.shippedAmount ? formatINR(d.orders.shippedAmount) : `${pctText(d.orders.shippedPct)} of sub-orders`, tone: "info", status: "Shipped" },
+    { label: "Cancelled", value: formatNumber(d.orders.cancelled), hint: d.orders.cancelledAmount ? formatINR(d.orders.cancelledAmount) : pctText(d.orders.cancellationRate), tone: "danger", status: "Cancelled" },
+    { label: "RTO orders", value: formatNumber(d.orders.rto), hint: pctText(d.orders.rtoRate), tone: "warning", status: "RTO" },
+    { label: "RTO amount", value: formatINR(d.orders.rtoAmount || d.sales.rtoCharges || 0), hint: d.sales.rtoCharges ? `Freight: ${formatINR(d.sales.rtoCharges)}` : `${formatNumber(d.orders.rto)} RTO orders`, tone: "warning", status: "RTO" },
+  ],
   "total-sales-b2b": (d) => [{ label: "Total sales (B2B)", value: formatINR(d.sales.salesB2B), delta: d.deltas.salesB2B }],
   "total-revenue": (d) => [{ label: "Total revenue", value: formatINR(d.sales.totalRevenue), delta: d.deltas.totalRevenue }],
   "seller-payout": (d) => [{ label: "Seller payout", value: formatINR(d.sales.sellerPayout) }],
@@ -67,14 +87,26 @@ const TOTALS = {
   "cod-orders": (d) => modeTotals(mode(d, "COD")),
 };
 
-function cardTotals(slug, dashboard, recordCount) {
+function cardTotals(slug, dashboard, recordCount, query = {}) {
   let totals = [];
   try {
     totals = (dashboard && TOTALS[slug]?.(dashboard)) || [];
   } catch {
     totals = [];
   }
-  if (recordCount != null) totals = [...totals, { label: "Records", value: formatNumber(recordCount), hint: "Rows in this list" }];
+  if (slug === "total-sales-b2c") {
+    const curStatus = String(query?.status || "").trim().toLowerCase();
+    totals = totals.map((t) => {
+      if (t.status === undefined) return t;
+      const isActive = t.status ? curStatus === t.status.toLowerCase() : !curStatus;
+      return {
+        ...t,
+        href: dashboardFilterHref("/admin/dashboard/cards/total-sales-b2c", { ...query, status: t.status }),
+        active: isActive,
+      };
+    });
+  }
+  if (recordCount != null) totals = [...totals, { label: "Records", value: formatNumber(recordCount), hint: "Rows in this list", tone: "neutral" }];
   return totals;
 }
 
@@ -131,7 +163,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
     );
   }
 
-  const totals = cardTotals(slug, await dashboardPromise, data.total);
+  const totals = cardTotals(slug, await dashboardPromise, data.total, query);
   const allowOrders = can(user, "orders");
   const allowB2B = can(user, "b2b.orders");
 
@@ -143,10 +175,72 @@ export default async function DashboardCardPage({ params, searchParams }) {
         actions={<ButtonLink href={dashboardFilterHref("/admin/dashboard", query)} variant="secondary" size="sm">Back to dashboard</ButtonLink>}
       />
       {totals.length > 0 && (
-        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
           {totals.map((t) => (
-            <StatCard key={t.label} label={t.label} value={t.value} delta={t.delta} hint={t.hint ?? data.period} tone={t.label === "Records" ? "neutral" : "brand"} />
+            <StatCard key={t.label} label={t.label} value={t.value} delta={t.delta} hint={t.hint ?? data.period} href={t.href} tone={t.tone ?? (t.label === "Records" ? "neutral" : "brand")} className={t.active ? "ring-2 ring-brand-600 bg-brand-50/50" : undefined} />
           ))}
+        </div>
+      )}
+      {data.salesmen && data.salesmen.length > 0 && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5 bg-gray-50/70">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 tracking-tight">Sales person breakdown</h3>
+              <p className="text-xs text-gray-500">Orders and sales volume grouped by sales agent for {data.period}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {query?.q && (
+                <Link
+                  href={dashboardFilterHref("/admin/dashboard/cards/total-sales-b2c", { ...query, q: "" })}
+                  className="text-xs text-brand-700 hover:text-brand-900 font-medium underline mr-1"
+                >
+                  Clear filter ({query.q})
+                </Link>
+              )}
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
+                {data.salesmen.length} sales persons
+              </span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50/80 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                <tr>
+                  <th className="py-3 px-5 w-20 text-gray-400">S.No.</th>
+                  <th className="py-3 px-5">Sales person</th>
+                  <th className="py-3 px-5 text-right">Orders</th>
+                  <th className="py-3 px-5 text-right">Sales</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {data.salesmen.map((s) => {
+                  const isSelected = query?.q && String(query.q).toLowerCase() === s.salesman.toLowerCase();
+                  return (
+                    <tr
+                      key={s.salesman}
+                      className={`hover:bg-brand-50/40 transition-colors ${isSelected ? "bg-brand-50/70 font-semibold" : ""}`}
+                    >
+                      <td className="py-3 px-5 font-mono text-xs text-gray-400">{s.sno}</td>
+                      <td className="py-3 px-5 font-medium text-gray-900">
+                        <Link
+                          href={dashboardFilterHref("/admin/dashboard/cards/total-sales-b2c", {
+                            ...query,
+                            q: isSelected ? "" : s.salesman === "Unassigned" ? "" : s.salesman,
+                          })}
+                          className="hover:text-brand-700 hover:underline"
+                        >
+                          {s.salesman}
+                          {isSelected && <span className="ml-2 text-xs text-brand-600 font-normal">(filtering sub-orders)</span>}
+                        </Link>
+                      </td>
+                      <td className="py-3 px-5 text-right font-mono text-gray-700">{formatNumber(s.orders)}</td>
+                      <td className="py-3 px-5 text-right font-semibold text-gray-900 tabular-nums">{formatINR(s.revenue)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       <DataTable
@@ -154,8 +248,11 @@ export default async function DashboardCardPage({ params, searchParams }) {
         rowKey="rowKey"
         columns={tableColumns(data.columns)}
         pageSizes={PAGE_SIZES}
+        search={{ placeholder: "Search order ID, customer, agent, seller, product..." }}
+        filters={slug === "total-sales-b2c" ? [{ key: "status", label: "Status", options: STATUS_OPTIONS }] : []}
+        exportName={`dashboard-${slug}`}
         emptyTitle="No records in this period."
-        emptyDescription="Try another period from the dashboard filters."
+        emptyDescription="Try another period or status from the filters."
         data={{
           rows: (data.rows || []).map((row, index) => ({ ...row, rowKey: `${row.id ?? row.orderId ?? "row"}-${index}`, orderHref: orderHref(row, allowOrders, allowB2B) })),
           total: data.total,

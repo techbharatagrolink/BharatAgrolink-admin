@@ -17,7 +17,7 @@ export const PRESETS = [
   { value: "all", label: "All days" },
 ];
 
-const FILTER_KEYS = ["preset", "from", "to", "fy", "season", "cycle", "vendor", "type", "range"];
+const FILTER_KEYS = ["preset", "from", "to", "fy", "season", "cycle", "vendor", "type", "range", "q", "status"];
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 // Mirrors the API's query schema; anything else is a 400, so it is dropped here.
@@ -31,6 +31,8 @@ const VALID = {
   cycle: (v) => v.length <= 32,
   vendor: (v) => v.length <= 64,
   type: (v) => ["all", "b2c", "b2b"].includes(v),
+  q: (v) => v.length <= 100,
+  status: (v) => v.length <= 60,
 };
 
 function one(value) {

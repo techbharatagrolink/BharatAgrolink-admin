@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentAdmin } from "@/lib/auth/session";
-import { getChargesSync, startChargesSync } from "@/lib/services/admin/charges-sync";
+import { getChargesSync, getChargesSyncRange, startChargesSync } from "@/lib/services/admin/charges-sync";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
 
@@ -11,9 +11,15 @@ export async function chargesSyncStatusAction() {
   return getChargesSync(user);
 }
 
-export async function startChargesSyncAction(job) {
+export async function chargesSyncRangeAction() {
+  const user = await getCurrentAdmin();
+  if (!user) return expired;
+  return { ok: true, data: await getChargesSyncRange(user) };
+}
+
+export async function startChargesSyncAction(job, range) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   if (typeof job !== "string") return { ok: false, message: "Invalid request." };
-  return startChargesSync(job, user);
+  return startChargesSync(job, user, range);
 }
