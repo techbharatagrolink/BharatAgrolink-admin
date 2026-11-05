@@ -137,7 +137,7 @@ export default async function MainDashboardPage({ searchParams }) {
             <StatCard
               label="RTO charges"
               value={inr(sales.rtoCharges)}
-              hint={sales.rtoSubOrders == null ? "Courier freight × 2 per RTO sub-order" : `${formatNumber(sales.rtoSubOrders)} RTO sub-orders · freight × 2`}
+              hint={sales.rtoSubOrders == null ? "Courier freight per RTO sub-order" : `${formatNumber(sales.rtoSubOrders)} RTO sub-orders · freight × 1`}
               icon={RotateCcw}
               tone="danger"
               href={card("rto-charges")}

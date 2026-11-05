@@ -53,7 +53,7 @@ function JobCard({ job, canRun, busy, onRun }) {
                 <Badge tone="info">Running{job.runningSince ? ` since ${formatDateTime(job.runningSince)}` : ""}</Badge>
               ) : last ? (
                 <>
-                  <Badge tone={last.ok ? "success" : "danger"}>{last.ok ? "Done" : "Failed"}</Badge>
+                  <Badge tone={!last.ok ? "danger" : last.warning ? "warning" : "success"}>{!last.ok ? "Failed" : last.warning ? "Done, months skipped" : "Done"}</Badge>
                   <span className="text-xs text-ink-muted">{formatDateTime(last.finishedAt)} · {triggerText(last.trigger)}</span>
                 </>
               ) : (
@@ -64,8 +64,8 @@ function JobCard({ job, canRun, busy, onRun }) {
         </dl>
 
         {!running && last?.ok && last.summary && (
-          <p className="flex items-start gap-1.5 rounded-md bg-success-bg px-3 py-2 text-[13px] text-success-ink">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <p className={`flex items-start gap-1.5 rounded-md px-3 py-2 text-[13px] ${last.warning ? "bg-warning-bg text-warning-ink" : "bg-success-bg text-success-ink"}`}>
+            {last.warning ? <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden /> : <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
             {last.summary}
           </p>
         )}
