@@ -13,7 +13,7 @@ import { PayoutSummaryTable } from "./payout-summary-table";
  * Stats + table of the Vendor Payout Summary. Filters only rewrite the URL (ShallowQuery); the rows
  * for the new URL come from payoutSummaryListAction, so a filter click is one small request, not a page load.
  */
-function PayoutSummaryBody({ initialData, cycles }) {
+function PayoutSummaryBody({ initialData, cycles, exportColumns }) {
   const { searchParams } = useQueryState();
   const { notify } = useToast();
   const key = searchParams.toString();
@@ -63,7 +63,7 @@ function PayoutSummaryBody({ initialData, cycles }) {
           <StatCard label="Paid BSA" value={formatINR(t.paidBsa)} hint="Items marked paid" />
           <StatCard label="Pending BSA" value={formatINR(t.pendingBsa)} hint="Items still pending" tone="warning" />
         </StatGrid>
-        <PayoutSummaryTable data={data} cycles={cycles} />
+        <PayoutSummaryTable data={data} cycles={cycles} exportColumns={exportColumns} />
       </div>
     </div>
   );

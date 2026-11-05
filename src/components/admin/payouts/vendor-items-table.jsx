@@ -38,7 +38,7 @@ const ROW_ACTIONS = [
   { id: "order", label: "Open order", href: "/admin/orders/{orderId}" },
 ];
 
-export function VendorItemsTable({ data, cycles }) {
+export function VendorItemsTable({ data, cycles, exportColumns }) {
   const { searchParams } = useQueryState();
   const payoutIds = searchParams.get("payoutIds") || "";
   const back = new URLSearchParams();
@@ -85,7 +85,7 @@ export function VendorItemsTable({ data, cycles }) {
         toolbar={
           <>
             <PayoutFilters cycles={cycles} />
-            <ExportMenu label="Export items" title="These items as a sheet" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} payoutIds={payoutIds ? payoutIds.split(",") : []} />
+            <ExportMenu label="Export items" title="These items as a sheet" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} payoutIds={payoutIds ? payoutIds.split(",") : []} columns={exportColumns?.items} />
           </>
         }
         rowActions={ROW_ACTIONS}

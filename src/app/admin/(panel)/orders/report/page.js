@@ -1,6 +1,6 @@
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { getOrderReport, getOrderReportVendors } from "@/lib/services/admin/orders-report";
+import { getOrderReport, getOrderReportVendors, getOrderReportExportColumns } from "@/lib/services/admin/orders-report";
 import { formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
@@ -32,7 +32,10 @@ export default async function OrderReportPage({ searchParams }) {
   const { user, allowed } = await checkPermission("orders.transactions");
   if (!allowed) return (<><PageHeader title={TITLE} /><PermissionDenied module="order reports" /></>);
   const filters = readFilters(await searchParams);
-  const result = await Promise.all([getOrderReport(filters, user), getOrderReportVendors(user)]).then(([report, vendors]) => ({ report, vendors }), (error) => ({ error }));
+  const [result, exportColumns] = await Promise.all([
+    Promise.all([getOrderReport(filters, user), getOrderReportVendors(user)]).then(([report, vendors]) => ({ report, vendors }), (error) => ({ error })),
+    getOrderReportExportColumns(user),
+  ]);
   if (result.error) return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={result.error} what="the order report" /></>);
   const { summary } = result.report;
   const fields = [
@@ -67,7 +70,7 @@ export default async function OrderReportPage({ searchParams }) {
           <StatCard label="Total Shipping" value={formatINR(summary.shipping)} tone="info" hint="Shipping charges (Shiprocket)" />
         </StatGrid>
         <QueryFilters fields={fields} />
-        <OrderReportTable report={result.report} filters={filters} canEdit={can(user, "orders.transactions", "edit")} />
+        <OrderReportTable report={result.report} filters={filters} exportColumns={exportColumns} canEdit={can(user, "orders.transactions", "edit")} />
       </div>
     </>
   );

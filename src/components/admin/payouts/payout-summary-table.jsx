@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarRange, ChevronLeft, ChevronRight, Download, Eye, FileSpreadsheet, FileText, X } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
 import { SearchInput, SelectFilter } from "@/components/data-table/filter-bar";
 import { useQueryState } from "@/components/data-table/use-query-state";
-import { Input, Select } from "@/components/ui/form";
+import { Checkbox, Input, Select } from "@/components/ui/form";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
@@ -62,36 +62,71 @@ const SUMMARY_EXPORT_FILTERS = ["q", "status", "sort", "cycleMonth", "cycle", "o
 export const ITEM_EXPORT_FILTERS = ["q", "status", "cycleMonth", "cycle", "orderIds"];
 
 /** A download URL carrying the page's current filters, so every export matches what the table shows. */
-function exportHref(path, filters, searchParams, format, payoutIds = []) {
+function exportHref(path, filters, searchParams, format, payoutIds = [], columns = null) {
   const out = new URLSearchParams();
   for (const key of filters) if (searchParams.get(key)) out.set(key, searchParams.get(key));
   if (payoutIds.length) out.set("payoutIds", payoutIds.join(","));
+  if (columns && columns.length) out.set("columns", columns.join(","));
   out.set("format", format);
   return `${path}?${out.toString()}`;
 }
 
-/** Export button that asks Excel or CSV, for the page's current filters. Disabled while new filters are still loading. */
-export function ExportMenu({ label, title, path, filters, payoutIds = [] }) {
+/**
+ * Export button that asks Excel or CSV, for the page's current filters. When `columns` is given (every
+ * column's {value, label}), a "Columns" checklist sits above the format links so the file can leave some out;
+ * leaving every column ticked (or none) downloads every column, same as before this existed.
+ */
+export function ExportMenu({ label, title, path, filters, payoutIds = [], columns }) {
   const { searchParams, pending } = useQueryState();
+  const allKeys = useMemo(() => (columns ?? []).map((c) => c.value), [columns]);
+  const [picked, setPicked] = useState(null);
+  const known = useMemo(() => new Set(allKeys), [allKeys]);
+  const selected = useMemo(() => {
+    if (picked === null) return allKeys;
+    return picked.filter((k) => known.has(k));
+  }, [picked, allKeys, known]);
+  const toggle = (key) =>
+    setPicked((p) => {
+      const cur = p === null ? allKeys : p;
+      return cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+    });
+  const chosen = selected.length && selected.length < allKeys.length ? selected : null;
   return (
     <Popover
-      label={`${label}: choose format`}
-      panelClassName="w-44"
-      trigger={({ toggle, props }) => (
-        <Button size="sm" onClick={toggle} disabled={pending} title={title} {...props}>
+      label={`${label}: choose columns and format`}
+      panelClassName="w-60"
+      trigger={({ toggle: open, props }) => (
+        <Button size="sm" onClick={open} disabled={pending} title={title} {...props}>
           <Download className="size-4" aria-hidden /> {label}
         </Button>
       )}
     >
-      <ul className="p-1">
-        {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
-          <li key={value}>
-            <a href={exportHref(path, filters, searchParams, value, payoutIds)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
-              <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
-            </a>
-          </li>
-        ))}
-      </ul>
+      {columns && columns.length > 0 && (
+        <div className="max-h-64 space-y-1.5 overflow-y-auto border-b border-line p-3">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs font-semibold text-ink-muted">Columns</span>
+            <button type="button" onClick={() => setPicked(selected.length ? [] : allKeys)} className="text-xs font-medium text-brand-700 hover:underline">
+              {selected.length ? "Clear" : "Select all"}
+            </button>
+          </div>
+          {columns.map((c) => (
+            <Checkbox key={c.value} label={c.label} checked={selected.includes(c.value)} onChange={() => toggle(c.value)} className="flex" />
+          ))}
+        </div>
+      )}
+      {columns && columns.length > 0 && selected.length === 0 ? (
+        <p className="px-3.5 py-2.5 text-xs text-ink-muted">Tick at least one column to export.</p>
+      ) : (
+        <ul className="p-1">
+          {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
+            <li key={value}>
+              <a href={exportHref(path, filters, searchParams, value, payoutIds, chosen)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
+                <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </Popover>
   );
 }
@@ -296,7 +331,7 @@ function CycleStrip({ cycles }) {
   );
 }
 
-export function PayoutSummaryTable({ data, cycles }) {
+export function PayoutSummaryTable({ data, cycles, exportColumns }) {
   const router = useRouter();
   const { searchParams } = useQueryState();
   const detailQuery = detailFilters(searchParams);
@@ -337,14 +372,14 @@ export function PayoutSummaryTable({ data, cycles }) {
         columns={COLUMNS}
         data={{ ...data, rows }}
         inlineToolbar
-        toolbarEnd={<ExportMenu label="Export" title="These vendor rows with the current filters" path="/admin/payouts/summary-export" filters={SUMMARY_EXPORT_FILTERS} />}
+        toolbarEnd={<ExportMenu label="Export" title="These vendor rows with the current filters" path="/admin/payouts/summary-export" filters={SUMMARY_EXPORT_FILTERS} columns={exportColumns?.summary} />}
         toolbar={
           <>
             <PayoutFilters cycles={cycles} />
             <ButtonLink href={viewItemsHref(searchParams)} size="sm" title="Items of every vendor matching these filters, on screen">
               <Eye className="size-4" aria-hidden /> View items
             </ButtonLink>
-            <ExportMenu label="Export items" title="Items of every vendor matching these filters (status, cycle, order IDs)" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} />
+            <ExportMenu label="Export items" title="Items of every vendor matching these filters (status, cycle, order IDs)" path="/admin/payouts/items-export" filters={ITEM_EXPORT_FILTERS} columns={exportColumns?.items} />
           </>
         }
         rowActions={ROW_ACTIONS}

@@ -1,6 +1,6 @@
 import { checkPermission } from "@/lib/auth/session";
 import { api } from "@/lib/api";
-import { listPayoutVendorItems } from "@/lib/services/admin/payout-summary";
+import { listPayoutVendorItems, getPayoutExportColumns } from "@/lib/services/admin/payout-summary";
 import { PageHeader } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { VendorItemsTable } from "@/components/admin/payouts/vendor-items-table";
@@ -14,15 +14,16 @@ export default async function VendorPayoutItemsPage({ searchParams }) {
   const { user, allowed } = await checkPermission("payouts");
   if (!allowed) return (<><PageHeader title={TITLE} /><PermissionDenied module="vendor payouts" /></>);
   const sp = (await searchParams) ?? {};
-  const [result, cycles] = await Promise.all([
+  const [result, cycles, exportColumns] = await Promise.all([
     listPayoutVendorItems(sp, user).then((data) => ({ data }), (error) => ({ error })),
     api("admin/payouts/cycles", { token: user.token }).then((res) => (Array.isArray(res.data) ? res.data : []), () => []),
+    getPayoutExportColumns(user),
   ]);
   if (result.error) return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={result.error} what="payout items" /></>);
   return (
     <>
       <PageHeader title={TITLE} description={DESCRIPTION} />
-      <VendorItemsTable data={result.data} cycles={cycles} />
+      <VendorItemsTable data={result.data} cycles={cycles} exportColumns={exportColumns} />
     </>
   );
 }
