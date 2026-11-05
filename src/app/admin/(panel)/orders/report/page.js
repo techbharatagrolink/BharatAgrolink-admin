@@ -1,6 +1,6 @@
 import { checkPermission } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { getOrderReport, getOrderReportVendors, getOrderReportExportColumns } from "@/lib/services/admin/orders-report";
+import { getOrderReport, getOrderReportVendors, getOrderReportStatuses, getOrderReportExportColumns } from "@/lib/services/admin/orders-report";
 import { formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
@@ -9,8 +9,8 @@ import { OrderReportTable } from "@/components/admin/orders/order-report-table";
 
 export const metadata = { title: "Order Reports" };
 
-const TITLE = "Finance Report — Delivered Orders";
-const DESCRIPTION = "Financial analysis based on delivered items only. Blank override fields clear a manual value.";
+const TITLE = "Finance Report — Orders";
+const DESCRIPTION = "Every order by default; use Status to narrow it to Delivered (or any other status). BSA / NRV / service charge are computed from product pricing regardless of status, so they're only a real settlement amount once a vendor payout item exists (normally once delivered). Blank override fields clear a manual value.";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const SIZES = new Set(["25", "50", "100", "200"]);
@@ -19,6 +19,7 @@ function readFilters(sp) {
   const filters = {};
   if (typeof sp?.orderId === "string" && sp.orderId.trim()) filters.orderId = sp.orderId.trim().slice(0, 80);
   if (typeof sp?.vendorId === "string" && sp.vendorId.trim()) filters.vendorId = sp.vendorId.trim().slice(0, 100);
+  if (typeof sp?.status === "string" && sp.status.trim()) filters.status = sp.status.trim().slice(0, 60);
   if (DATE.test(sp?.from ?? "")) filters.from = sp.from;
   if (DATE.test(sp?.to ?? "")) filters.to = sp.to;
   if (sp?.cycle === "first" || sp?.cycle === "second") filters.cycle = sp.cycle;
@@ -33,13 +34,17 @@ export default async function OrderReportPage({ searchParams }) {
   if (!allowed) return (<><PageHeader title={TITLE} /><PermissionDenied module="order reports" /></>);
   const filters = readFilters(await searchParams);
   const [result, exportColumns] = await Promise.all([
-    Promise.all([getOrderReport(filters, user), getOrderReportVendors(user)]).then(([report, vendors]) => ({ report, vendors }), (error) => ({ error })),
+    Promise.all([getOrderReport(filters, user), getOrderReportVendors(user), getOrderReportStatuses(user)]).then(
+      ([report, vendors, statuses]) => ({ report, vendors, statuses }),
+      (error) => ({ error }),
+    ),
     getOrderReportExportColumns(user),
   ]);
   if (result.error) return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={result.error} what="the order report" /></>);
   const { summary } = result.report;
   const fields = [
     { name: "orderId", label: "Order ID", type: "search", placeholder: "Search Order ID" },
+    { name: "status", label: "Status", type: "select", placeholder: "All statuses", options: result.statuses },
     { name: "from", label: "From", type: "date" },
     { name: "to", label: "To", type: "date" },
     { name: "cycle", label: "Cycle", type: "select", placeholder: "All cycles", options: [{ value: "first", label: "First cycle (1–15)" }, { value: "second", label: "Second cycle (16–31)" }] },
@@ -53,7 +58,7 @@ export default async function OrderReportPage({ searchParams }) {
       <PageHeader title={TITLE} description={DESCRIPTION} />
       <div className="space-y-4">
         <StatGrid className="xl:grid-cols-5">
-          <StatCard label="Total Delivered Orders" value={formatNumber(summary.orders)} tone="info" />
+          <StatCard label="Total Orders" value={formatNumber(summary.orders)} tone="info" hint={filters.status ? `Status: ${filters.status}` : "Every status"} />
           <StatCard label="Total Revenue" value={formatINR(summary.gross)} />
           <StatCard label="Total Products Sold" value={formatNumber(summary.qty)} tone="info" />
           <StatCard label="Total Vendors" value={formatNumber(summary.vendors)} tone="warning" />

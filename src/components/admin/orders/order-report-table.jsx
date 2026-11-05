@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
@@ -108,7 +108,7 @@ function cell(row, key) {
   }
   if (key === "orderId") return <a href={row.manageHref || `/admin/orders/${row.orderId}`} className="font-medium text-brand-700 hover:underline">{value}</a>;
   if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
-  if (key === "status" || key === "paymentStatus") return <Badge tone={value === "Paid" || value === "Delivered" ? "success" : "warning"}>{value}</Badge>;
+  if (key === "status" || key === "paymentStatus") return <StatusBadge status={value} />;
   if (MONEY.has(key)) return value == null ? "—" : formatINR(value);
   if (PERCENT.has(key)) return value == null || value === "" ? "—" : `${Number(value).toFixed(2)}%`;
   if (key === "qty" || key === "sr") return formatNumber(value);
@@ -253,8 +253,8 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
       {/* </div> */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold text-ink">Order Details (Delivered Items Only)</h2>
-          <p className="text-xs text-ink-muted">{formatNumber(total)} delivered lines</p>
+          <h2 className="text-sm font-semibold text-ink">Order Details</h2>
+          <p className="text-xs text-ink-muted">{formatNumber(total)} order lines{filters?.status ? ` · Status: ${filters.status}` : ""}</p>
         </div>
         <OrderReportExportMenu filters={filters} columns={exportColumns} />
       </div>
@@ -267,12 +267,12 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
           getRowId={(params) => `${params.data.id}-${params.data.sku}`}
           tooltipShowDelay={300}
           suppressCellFocus
-          overlayNoRowsTemplate="No delivered lines match these filters."
+          overlayNoRowsTemplate="No order lines match these filters."
         />
       </div>
       <div className="space-y-3 bg-surface-muted/60 p-3 md:hidden">
         {rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-ink-muted">No delivered lines match these filters.</p>
+          <p className="py-8 text-center text-sm text-ink-muted">No order lines match these filters.</p>
         ) : rows.map((row) => (
           <article key={`${row.id}-${row.sku}`} className="rounded-lg border border-line bg-surface">
             <header className="flex items-start justify-between gap-3 border-b border-line px-3 py-2.5">

@@ -18,6 +18,7 @@ async function attempt(fn) {
 
 export const getOrderReport = (query, user) => api("admin/orders/report", { token: user.token, query }).then((res) => res.data);
 export const getOrderReportVendors = (user) => api("admin/orders/report/vendors", { token: user.token }).then((res) => res.data);
+export const getOrderReportStatuses = (user) => api("admin/orders/report/statuses", { token: user.token }).then((res) => res.data).catch(() => []);
 export const getOrderReportExportColumns = async (user) => {
   const { data } = await api("admin/orders/report/export/columns", { token: user.token }).catch(() => ({ data: [] }));
   return Array.isArray(data) ? data : [];
