@@ -56,6 +56,8 @@ export const metadata = { title: "Main Dashboard" };
 
 const inr = (v) => formatINR(v, { compact: true });
 const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
+/* "29.77% of sub-orders · shipped / in transit" for a status card */
+const subShare = (pct, text) => (pct == null ? text[0].toUpperCase() + text.slice(1) : `${pct}% of sub-orders · ${text}`);
 
 function Grid({ children, className }) {
   return <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
@@ -131,26 +133,36 @@ export default async function MainDashboardPage({ searchParams }) {
           {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="1% of gateway value, plus 18% GST" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
           <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint="3% prepaid / 1% partial" icon={HandCoins} tone="info" href={card("prepaid-partial")} />
           {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
+          {showFinance && (
+            <StatCard
+              label="RTO charges"
+              value={inr(sales.rtoCharges)}
+              hint={sales.rtoSubOrders == null ? "Courier freight × 2 per RTO sub-order" : `${formatNumber(sales.rtoSubOrders)} RTO sub-orders · freight × 2`}
+              icon={RotateCcw}
+              tone="danger"
+              href={card("rto-charges")}
+            />
+          )}
         </Grid>
       </DashboardSection>
       )}
 
       {showOrdersOverview && (
-      <DashboardSection id="orders" index={indexOf("orders")} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
+      <DashboardSection id="orders" index={indexOf("orders")} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.subOrders)} sub-orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
         <Grid>
           <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={card("total-orders")} />
-          <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint="Accepted by vendors" icon={CheckCircle2} href={card("accepted-orders")} />
-          <StatCard label="Rejected" value={formatNumber(orders.rejected)} hint="Rejected by vendors" icon={XCircle} tone="danger" href={card("rejected-orders")} />
-          <StatCard label="Sub-orders" value={formatNumber(orders.subOrders)} hint="One per vendor line" icon={Layers} tone="neutral" href={card("sub-orders")} />
-          <StatCard label="Processing" value={formatNumber(orders.processing)} hint="Open deliveries" icon={Package} tone="warning" href={showOrders ? "/admin/orders" : undefined} />
-          <StatCard label="Shipped" value={formatNumber(orders.shipped)} hint="Shipped / in transit" icon={Truck} tone="info" href={card("shipped")} />
-          <StatCard label="Delivered" value={formatNumber(orders.delivered)} hint="Delivered orders" icon={PackageCheck} href={card("delivered-orders")} />
+          <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint={subShare(orders.acceptedPct, "accepted by vendors")} icon={CheckCircle2} href={card("accepted-orders")} />
+          <StatCard label="Rejected" value={formatNumber(orders.rejected)} hint={subShare(orders.rejectedPct, "rejected by vendors")} icon={XCircle} tone="danger" href={card("rejected-orders")} />
+          <StatCard label="Sub-orders" value={formatNumber(orders.subOrders)} hint={`One per seller in an order · ${formatNumber(orders.total)} orders`} icon={Layers} tone="neutral" href={card("sub-orders")} />
+          <StatCard label="Processing" value={formatNumber(orders.processing)} hint={subShare(orders.processingPct, "not yet delivered")} icon={Package} tone="warning" href={showOrders ? "/admin/orders" : undefined} />
+          <StatCard label="Shipped" value={formatNumber(orders.shipped)} hint={subShare(orders.shippedPct, "shipped / in transit")} icon={Truck} tone="info" href={card("shipped")} />
+          <StatCard label="Delivered" value={formatNumber(orders.delivered)} hint={subShare(orders.deliveredPct, "delivered")} icon={PackageCheck} href={card("delivered-orders")} />
           <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />
           <StatCard label="AOV (delivered)" value={formatINR(orders.aovDelivered)} hint="Average delivered order value" icon={PieChart} tone="info" />
-          <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint="Cancelled sub-orders" icon={Ban} tone="danger" href={card("cancelled-orders")} />
-          <StatCard label="Cancellation rate" value={`${orders.cancellationRate}%`} hint="Of all orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
-          <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint="Returned to origin" icon={RotateCcw} tone="danger" href={card("rto-orders")} />
-          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="Of all orders, from the RTO ledger" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
+          <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint={subShare(orders.cancellationRate, "cancelled")} icon={Ban} tone="danger" href={card("cancelled-orders")} />
+          <StatCard label="Cancellation rate" value={pctText(orders.cancellationRate)} hint="Cancelled sub-orders ÷ all sub-orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
+          <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint={`RTO sub-orders${orders.rtoOrders != null ? ` · ${formatNumber(orders.rtoOrders)} orders` : ""}`} icon={RotateCcw} tone="danger" href={card("rto-orders")} />
+          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="RTO sub-orders ÷ all sub-orders" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
           <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
           <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" href={card("new-orders")} />
           <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} href={card("repeat-orders")} />
