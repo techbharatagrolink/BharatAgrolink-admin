@@ -11,10 +11,10 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { formatDate, formatINR, formatNumber } from "@/lib/format";
+import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
-const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
+const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
 const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
 
 const COLUMNS = [
@@ -30,7 +30,8 @@ const COLUMNS = [
   ["profitPct", "Profit %"], ["profitAmount", "Profit Amount"], ["otherCharges", "Other Charges"], ["gstOther", "GST on Other Charges"],
   ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross Amount"], ["unitNrv", "Single Qty NRV"], ["totalNrv", "Total NRV"],
   ["bsa", "BSA"], ["serviceExcl", "Service Charge (Excl. GST)"], ["serviceGst", "Service GST (18%)"], ["serviceIncl", "Service Charge (Incl. GST)"],
-  ["status", "Status"], ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
+  ["status", "Status"], ["rtoCharge", "RTO Charge (freight × 1)"], ["rtoStatus", "RTO Status"], ["rtoDate", "RTO Date"],
+  ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
   ["customerPaymentType", "Customer Payment Status"], ["advanceAmount", "Payment Advance"], ["prepaidPartialDiscount", "Prepaid / Partial Discount"],
   ["shippingCharges", "Shipping Charges"], ["codHandlingCharges", "COD Handling Charges"], ["totalShippingCharges", "Total Shipping Charges"],
   ["razorpayPaymentId", "Razorpay Payment ID"], ["razorpayCharges", "Razorpay Charges"],
@@ -56,6 +57,7 @@ const SHORT_LABEL = { customerPaymentType: "Payment", contributionAchieved: "Ach
 /** Column groups (grid header groups, mobile card sections): [title, key columns, the rest]. Every column is always shown. */
 const GROUPS = [
   ["Order & customer", ["customer", "deliveredAt"], ["id", "invoice", "balInvoice", "awb", "customerState", "status", "paymentStatus", "createdAt", "manageHref", "customerInvoiceHref", "vendorInvoiceHref"]],
+  ["RTO", ["rtoCharge", "rtoStatus"], ["rtoDate"]],
   ["Product & vendor", ["product", "sku"], ["productId", "vendor", "vendorState", "vendorGst", "vendorGstState"]],
   ["Price & tax", ["qty", "gross"], ["price", "taxable", "discount", "cgst", "sgst", "igst"]],
   ["Customer payment", ["customerPaymentType"], ["paymentMode", "advance", "advanceAmount", "prepaidPartialDiscount", "paymentGateway", "razorpayPaymentId", "razorpayCharges"]],
@@ -108,7 +110,8 @@ function cell(row, key) {
   }
   if (key === "orderId") return <a href={row.manageHref || `/admin/orders/${row.orderId}`} className="font-medium text-brand-700 hover:underline">{value}</a>;
   if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
-  if (key === "status" || key === "paymentStatus") return <StatusBadge status={value} />;
+  if (key === "rtoDate") return value ? formatDateTime(value) : "—";
+  if (key === "status" || key === "paymentStatus" || key === "rtoStatus") return value ? <StatusBadge status={value} /> : "—";
   if (MONEY.has(key)) return value == null ? "—" : formatINR(value);
   if (PERCENT.has(key)) return value == null || value === "" ? "—" : `${Number(value).toFixed(2)}%`;
   if (key === "qty" || key === "sr") return formatNumber(value);

@@ -75,6 +75,7 @@ export default async function OrderReportPage({ searchParams }) {
           <StatCard label="Service GST (18%)" value={formatINR(summary.serviceGst)} tone="info" hint="GST on service charge" />
           <StatCard label="Service Charge (Incl. GST)" value={formatINR(summary.serviceIncl)} hint="Excl. GST + service GST" />
           <StatCard label="Total Shipping" value={formatINR(summary.shipping)} tone="info" hint="Shipping charges (Shiprocket)" />
+          <StatCard label="RTO Charges" value={formatINR(summary.rtoCharges)} tone="warning" hint={`${formatNumber(summary.rtoSubOrders)} RTO sub-orders · freight × 1`} />
         </StatGrid>
         <QueryFilters fields={fields} />
         <OrderReportTable report={result.report} filters={filters} exportColumns={exportColumns} canEdit={can(user, "orders.transactions", "edit")} />
