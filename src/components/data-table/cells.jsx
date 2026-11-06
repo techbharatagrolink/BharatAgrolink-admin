@@ -205,7 +205,13 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
 
     content = href ? (
       external ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-brand-700 hover:underline inline-flex items-center gap-1"
+          title={column.key === "awb" ? "Open tracking in courier portal" : undefined}
+        >
           {text}
         </a>
       ) : (

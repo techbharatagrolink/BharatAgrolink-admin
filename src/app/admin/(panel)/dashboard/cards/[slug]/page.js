@@ -9,6 +9,7 @@ import { PageHeader, StatCard } from "@/components/ui/page";
 import { ButtonLink } from "@/components/ui/button";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { DataTable } from "@/components/data-table/data-table";
+import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters";
 
 const PAGE_SIZES = [20, 25, 50, 100];
 const STATUS_OPTIONS = [
@@ -130,6 +131,13 @@ function tableColumns(columns) {
       next.type = "mono";
       next.href = "{orderHref}";
       next.wrap = true;
+    } else if (column.key === "awb") {
+      next.type = "mono";
+      next.href = "{trackingUrl}";
+      next.wrap = true;
+    } else if (column.key === "customerMobile" || column.key === "altMobile") {
+      next.type = "mono";
+      next.wrap = false;
     } else if (column.key === "status") next.type = "status";
     else if (column.kind === "money") next.type = "currency";
     else if (column.kind === "date") next.type = "datetime";
@@ -154,8 +162,8 @@ export default async function DashboardCardPage({ params, searchParams }) {
   }
 
   let data;
-  // The main dashboard supplies the card's headline total; the card list still loads if it fails.
-  const dashboardPromise = TOTALS[slug] ? getMainDashboard(query, user).catch(() => null) : null;
+  // The main dashboard supplies the card's headline total and filter options; the card list still loads if it fails.
+  const dashboardPromise = getMainDashboard(query, user).catch(() => null);
   try {
     data = await getDashboardCard(slug, query, user);
   } catch (error) {
@@ -168,7 +176,8 @@ export default async function DashboardCardPage({ params, searchParams }) {
     );
   }
 
-  const totals = cardTotals(slug, await dashboardPromise, data.total, query);
+  const dashboard = await dashboardPromise;
+  const totals = cardTotals(slug, dashboard, data.total, query);
   const allowOrders = can(user, "orders");
   const allowB2B = can(user, "b2b.orders");
 
@@ -179,6 +188,9 @@ export default async function DashboardCardPage({ params, searchParams }) {
         description={data.period}
         actions={<ButtonLink href={dashboardFilterHref("/admin/dashboard", query)} variant="secondary" size="sm">Back to dashboard</ButtonLink>}
       />
+      {dashboard?.filters && (
+        <DashboardFilters values={dashboard.filters.values} options={dashboard.filters.options} label={dashboard.filters.label} />
+      )}
       {totals.length > 0 && (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
           {totals.map((t) => (
@@ -254,7 +266,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
         columns={tableColumns(data.columns)}
         pageSizes={PAGE_SIZES}
         columnFilters={true}
-        search="Search order ID, customer, agent, seller, product..."
+        search="Search order ID, customer, mobile, AWB, product, agent, seller..."
         filters={
           slug === "total-sales-b2c"
             ? [
