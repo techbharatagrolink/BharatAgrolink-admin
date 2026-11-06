@@ -334,6 +334,7 @@ export const navigation = [
         children: [
           { key: "shipping-shipments", label: "Shiprocket Orders", href: "/admin/shipping", page: "shiprocket_orders_report.php", permission: "shipping", badge: "pendingShipments" },
           { key: "shipping-delhivery", label: "Delhivery Orders", href: "/admin/shipping/delhivery", page: "shipment_order_delhivery.php", permission: "shipping.delhivery" },
+          { key: "shipping-charges-sync", label: "Courier Charges Sync", href: "/admin/shipping/charges-sync", permission: "shipping" },
           { key: "shipping-weight", label: "Weight Discrepancy", href: "/admin/shipping/weight-discrepancy", page: "weight_discrapancy.php", permission: "shipping.weight" },
           { key: "returns-all", label: "Return Shipments", href: "/admin/returns", page: "manage_returns.php", permission: "returns", badge: "pendingReturns" },
           { key: "orders-delivered", label: "Master Delivered Orders", href: "/admin/orders/delivered", page: "master_delivered_orders.php", permission: "orders.delivered" },
@@ -450,6 +451,7 @@ export const navigation = [
           { key: "finance-hold-ledger", label: "Hold Ledger", href: "/admin/finance/hold-ledger", page: "hold_ledger.php", permission: "finance.holdLedger" },
           { key: "b2b-settlements", label: "B2B Settlements", href: "/admin/b2b/settlements", page: "b2b_orders/settlements.php", permission: "b2b.finance" },
           { key: "payouts-items", label: "Payout Items", href: "/admin/payouts/items", permission: "payouts" },
+          { key: "payouts-sync", label: "Payout Items Sync", href: "/admin/payouts/sync", permission: "payouts" },
           { key: "payouts-access", label: "Payout Access Settings", href: "/admin/payouts/access", permission: "payouts.access" },
           { key: "payouts-legacy", label: "Legacy Payments", href: "/admin/payouts/legacy", permission: "payouts" },
         ],

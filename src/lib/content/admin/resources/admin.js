@@ -1,6 +1,6 @@
 const deleteAction = { id: "delete", label: "Delete", permission: "delete", tone: "danger", effect: { remove: true }, confirm: { title: "Delete permanently?", description: "This cannot be undone." } };
 const HOME_PRODUCT_SECTIONS = ["prod_section_1", "prod_section_2", "prod_section_3", ...Array.from({ length: 13 }, (_, i) => `prod_section_${i + 10}`)];
-const HOME_BANNER_IMAGE = "image/jpeg,image/png,image/webp,image/gif";
+const HOME_BANNER_IMAGE = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml";
 const editAction = { id: "edit", label: "Edit", kind: "form", permission: "edit" };
 const toggle = (field, on, off) => [
   { id: "enable", label: `Set ${on}`, permission: "edit", effect: { set: { [field]: on } }, when: { field, notIn: [on] } },

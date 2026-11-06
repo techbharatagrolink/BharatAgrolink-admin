@@ -210,7 +210,7 @@ export function DataTable({
           {(search || filters.length > 0 || dateRange || !inlineToolbar) && (
             <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
           )}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className={cn("flex min-w-0 flex-wrap items-center gap-2", !inlineToolbar && "shrink-0")}>
             {toolbar}
             <Popover
               label="Choose columns"

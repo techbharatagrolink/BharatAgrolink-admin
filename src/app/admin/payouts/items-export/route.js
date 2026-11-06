@@ -6,7 +6,7 @@ import { proxyFileDownload } from "@/lib/admin-file-proxy";
  * -> /admin/payouts/items-export (.xlsx, or .csv with format=csv). Without payoutIds every vendor
  * matching the filters is exported; status, cycle and order IDs also narrow the items.
  */
-const PARAMS = ["payoutIds", "q", "status", "cycleMonth", "cycle", "orderIds", "format"];
+const PARAMS = ["payoutIds", "q", "status", "cycleMonth", "cycle", "orderIds", "format", "columns"];
 
 export function GET(request) {
   return proxyFileDownload(request, "admin/payouts/items-export", PARAMS);

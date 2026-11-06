@@ -63,8 +63,8 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
   const { notify } = useToast();
   const [pending, startTransition] = useTransition();
   const [rejecting, setRejecting] = useState(null); // { kind: 'seller' | 'license', id, title }
-  const [deleting, setDeleting] = useState(null); // { id, title }
-  const [uploadType, setUploadType] = useState(null); // null = closed; "" = open with no type pre-picked; a doc type = open, pre-picked
+  const [deleting, setDeleting] = useState(null); // { kind: 'seller' | 'license', id, title }
+  const [uploading, setUploading] = useState(false);
   const fileInput = useRef(null);
   const [fileTarget, setFileTarget] = useState(null);
 
@@ -81,6 +81,13 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
 
   const approveSeller = (doc) => run(() => reviewVendorSellerDocumentAction(vendorId, doc.column, "approve"));
   const approveLicense = (upload) => run(() => reviewVendorLicenseDocumentAction(vendorId, upload.id, "approve"));
+
+  function confirmDelete(target) {
+    run(
+      () => (target.kind === "seller" ? reviewVendorSellerDocumentAction(vendorId, target.column, "delete") : deleteVendorLicenseDocumentAction(vendorId, target.id)),
+      () => setDeleting(null),
+    );
+  }
 
   // Takes the target as an argument: the React Compiler reads a callback's
   // dependencies during render, when `rejecting` is still null.
@@ -181,6 +188,17 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
                       <Upload className="size-3.5" aria-hidden />
                       {doc.file ? "Replace" : "Upload"}
                     </Button>
+                    {doc.file && doc.column ? (
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => setDeleting({ kind: "seller", column: doc.column, title: doc.title })}
+                        disabled={pending}
+                        aria-label={`Remove ${doc.title}`}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </Button>
+                    ) : null}
                   </div>
                 ) : null}
               </li>
@@ -225,7 +243,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
                             busy={pending}
                             onApprove={() => approveLicense(upload)}
                             onReject={() => setRejecting({ kind: "license", id: upload.id, title: upload.name || doc.title })}
-                            onDelete={() => setDeleting({ id: upload.id, title: upload.name || doc.title })}
+                            onDelete={() => setDeleting({ kind: "license", id: upload.id, title: upload.name || doc.title })}
                           />
                         ))}
                       </ul>
@@ -259,10 +277,14 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
         <ConfirmDialog
           open
           onClose={() => setDeleting(null)}
-          onConfirm={() => run(() => deleteVendorLicenseDocumentAction(vendorId, deleting.id), () => setDeleting(null))}
-          title={`Delete ${deleting.title}?`}
-          description="The file is removed from the seller's account. This cannot be undone."
-          confirmLabel="Delete"
+          onConfirm={() => confirmDelete(deleting)}
+          title={`Remove ${deleting.title}?`}
+          description={
+            deleting.kind === "seller"
+              ? "The file is removed and this document goes back to Not Uploaded. The seller can upload it again."
+              : "The file is removed from the seller's account. This cannot be undone."
+          }
+          confirmLabel="Remove"
           loading={pending}
         />
       ) : null}

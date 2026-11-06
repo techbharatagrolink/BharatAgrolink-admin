@@ -1,5 +1,5 @@
 import { checkPermission } from "@/lib/auth/session";
-import { getPayoutSummary } from "@/lib/services/admin/payout-summary";
+import { getPayoutSummary, getPayoutExportColumns } from "@/lib/services/admin/payout-summary";
 import { PageHeader } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { PayoutSummaryView } from "@/components/admin/payouts/payout-summary-view";
@@ -15,10 +15,11 @@ export default async function PayoutSummaryPage({ searchParams }) {
   const sp = await searchParams;
   const result = await getPayoutSummary(sp ?? {}, user).then((data) => ({ data }), (error) => ({ error }));
   if (result.error) return (<><PageHeader title={TITLE} description={DESCRIPTION} /><ApiUnavailable error={result.error} what="vendor payouts" /></>);
+  const exportColumns = await getPayoutExportColumns(user);
   return (
     <>
       <PageHeader title={TITLE} description={DESCRIPTION} />
-      <PayoutSummaryView initialData={result.data} cycles={result.data.cycles} />
+      <PayoutSummaryView initialData={result.data} cycles={result.data.cycles} exportColumns={exportColumns} />
     </>
   );
 }

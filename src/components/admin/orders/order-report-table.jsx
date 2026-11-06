@@ -4,15 +4,17 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Field, Input } from "@/components/ui/form";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Popover } from "@/components/ui/popover";
+import { Checkbox, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { formatDate, formatINR, formatNumber } from "@/lib/format";
-import { exportOrderReportAction, saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
+import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
+import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
-const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
+const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
 const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
 
 const COLUMNS = [
@@ -28,7 +30,8 @@ const COLUMNS = [
   ["profitPct", "Profit %"], ["profitAmount", "Profit Amount"], ["otherCharges", "Other Charges"], ["gstOther", "GST on Other Charges"],
   ["cgst", "CGST"], ["sgst", "SGST"], ["igst", "IGST"], ["gross", "Gross Amount"], ["unitNrv", "Single Qty NRV"], ["totalNrv", "Total NRV"],
   ["bsa", "BSA"], ["serviceExcl", "Service Charge (Excl. GST)"], ["serviceGst", "Service GST (18%)"], ["serviceIncl", "Service Charge (Incl. GST)"],
-  ["status", "Status"], ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
+  ["status", "Status"], ["rtoCharge", "RTO Charge (freight × 1)"], ["rtoStatus", "RTO Status"], ["rtoDate", "RTO Date"],
+  ["paymentStatus", "Payment Status"], ["paymentMode", "Payment Mode"], ["createdAt", "Order Created Date"], ["deliveredAt", "Delivery Date"],
   ["customerPaymentType", "Customer Payment Status"], ["advanceAmount", "Payment Advance"], ["prepaidPartialDiscount", "Prepaid / Partial Discount"],
   ["shippingCharges", "Shipping Charges"], ["codHandlingCharges", "COD Handling Charges"], ["totalShippingCharges", "Total Shipping Charges"],
   ["razorpayPaymentId", "Razorpay Payment ID"], ["razorpayCharges", "Razorpay Charges"],
@@ -54,6 +57,7 @@ const SHORT_LABEL = { customerPaymentType: "Payment", contributionAchieved: "Ach
 /** Column groups (grid header groups, mobile card sections): [title, key columns, the rest]. Every column is always shown. */
 const GROUPS = [
   ["Order & customer", ["customer", "deliveredAt"], ["id", "invoice", "balInvoice", "awb", "customerState", "status", "paymentStatus", "createdAt", "manageHref", "customerInvoiceHref", "vendorInvoiceHref"]],
+  ["RTO", ["rtoCharge", "rtoStatus"], ["rtoDate"]],
   ["Product & vendor", ["product", "sku"], ["productId", "vendor", "vendorState", "vendorGst", "vendorGstState"]],
   ["Price & tax", ["qty", "gross"], ["price", "taxable", "discount", "cgst", "sgst", "igst"]],
   ["Customer payment", ["customerPaymentType"], ["paymentMode", "advance", "advanceAmount", "prepaidPartialDiscount", "paymentGateway", "razorpayPaymentId", "razorpayCharges"]],
@@ -106,30 +110,93 @@ function cell(row, key) {
   }
   if (key === "orderId") return <a href={row.manageHref || `/admin/orders/${row.orderId}`} className="font-medium text-brand-700 hover:underline">{value}</a>;
   if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
-  if (key === "status" || key === "paymentStatus") return <Badge tone={value === "Paid" || value === "Delivered" ? "success" : "warning"}>{value}</Badge>;
+  if (key === "rtoDate") return value ? formatDateTime(value) : "—";
+  if (key === "status" || key === "paymentStatus" || key === "rtoStatus") return value ? <StatusBadge status={value} /> : "—";
   if (MONEY.has(key)) return value == null ? "—" : formatINR(value);
   if (PERCENT.has(key)) return value == null || value === "" ? "—" : `${Number(value).toFixed(2)}%`;
   if (key === "qty" || key === "sr") return formatNumber(value);
   return value || "—";
 }
 
-function download(filename, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+const FORMATS = [
+  { value: "xlsx", label: "Excel (.xlsx)", icon: FileSpreadsheet },
+  { value: "csv", label: "CSV (.csv)", icon: FileText },
+];
+
+function orderReportExportHref(filters, format, columns = null) {
+  const out = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters ?? {})) {
+    if (value && key !== "page" && key !== "pageSize") out.set(key, String(value));
+  }
+  if (columns && columns.length) out.set("columns", columns.join(","));
+  out.set("format", format);
+  return `/admin/orders/report-export?${out.toString()}`;
+}
+
+export function OrderReportExportMenu({ filters, columns }) {
+  const allColumns = useMemo(() => {
+    if (columns && columns.length) return columns;
+    return COLUMNS.map(([value, label]) => ({ value, label }));
+  }, [columns]);
+  const allKeys = useMemo(() => allColumns.map((c) => c.value), [allColumns]);
+  const [picked, setPicked] = useState(null);
+  const known = useMemo(() => new Set(allKeys), [allKeys]);
+  const selected = useMemo(() => {
+    if (picked === null) return allKeys;
+    return picked.filter((k) => known.has(k));
+  }, [picked, allKeys, known]);
+  const toggle = (key) =>
+    setPicked((p) => {
+      const cur = p === null ? allKeys : p;
+      return cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
+    });
+  const chosen = selected.length && selected.length < allKeys.length ? selected : null;
+
+  return (
+    <Popover
+      label="Export Order Report: choose columns and format"
+      panelClassName="w-64"
+      trigger={({ toggle: open, props }) => (
+        <Button size="sm" variant="primary" onClick={open} title="Export delivered order lines" {...props}>
+          <Download className="size-4" aria-hidden /> Export
+        </Button>
+      )}
+    >
+      <div className="max-h-64 space-y-1.5 overflow-y-auto border-b border-line p-3">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-muted">Columns</span>
+          <button type="button" onClick={() => setPicked(selected.length ? [] : allKeys)} className="text-xs font-medium text-brand-700 hover:underline">
+            {selected.length ? "Clear" : "Select all"}
+          </button>
+        </div>
+        {allColumns.map((c) => (
+          <Checkbox key={c.value} label={c.label} checked={selected.includes(c.value)} onChange={() => toggle(c.value)} className="flex" />
+        ))}
+      </div>
+      {selected.length === 0 ? (
+        <p className="px-3.5 py-2.5 text-xs text-ink-muted">Tick at least one column to export.</p>
+      ) : (
+        <ul className="p-1">
+          {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
+            <li key={value}>
+              <a href={orderReportExportHref(filters, value, chosen)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
+                <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Popover>
+  );
 }
 
 /** The orders_report.php grid (AG Grid): column groups that open to every finance column, CSV export, and the manual-override edit. */
-export function OrderReportTable({ report, filters, canEdit }) {
+export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const router = useRouter();
   const { notify } = useToast();
   const [line, setLine] = useState(null);
   const [form, setForm] = useState({});
   const [pending, startTransition] = useTransition();
-  const [exporting, setExporting] = useState(false);
   const { rows, total, page, pageCount } = report;
 
   const href = (next) => {
@@ -182,14 +249,6 @@ export function OrderReportTable({ report, filters, canEdit }) {
     });
   };
 
-  const exportCsv = async () => {
-    setExporting(true);
-    const result = await exportOrderReportAction(filters);
-    setExporting(false);
-    if (!result.ok) return notify({ message: result.message, tone: "error" });
-    download(result.data.filename, result.data.csv);
-  };
-
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
       {/* <div className="border-b border-danger-ink/20 bg-danger-bg px-4 py-2.5 text-sm font-medium text-danger-ink"> */}
@@ -197,10 +256,10 @@ export function OrderReportTable({ report, filters, canEdit }) {
       {/* </div> */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold text-ink">Order Details (Delivered Items Only)</h2>
-          <p className="text-xs text-ink-muted">{formatNumber(total)} delivered lines</p>
+          <h2 className="text-sm font-semibold text-ink">Order Details</h2>
+          <p className="text-xs text-ink-muted">{formatNumber(total)} order lines{filters?.status ? ` · Status: ${filters.status}` : ""}</p>
         </div>
-        <Button size="sm" variant="primary" onClick={exportCsv} loading={exporting}>Export CSV</Button>
+        <OrderReportExportMenu filters={filters} columns={exportColumns} />
       </div>
       <div className="hidden h-[70vh] md:block">
         <AgGridReact
@@ -211,12 +270,12 @@ export function OrderReportTable({ report, filters, canEdit }) {
           getRowId={(params) => `${params.data.id}-${params.data.sku}`}
           tooltipShowDelay={300}
           suppressCellFocus
-          overlayNoRowsTemplate="No delivered lines match these filters."
+          overlayNoRowsTemplate="No order lines match these filters."
         />
       </div>
       <div className="space-y-3 bg-surface-muted/60 p-3 md:hidden">
         {rows.length === 0 ? (
-          <p className="py-8 text-center text-sm text-ink-muted">No delivered lines match these filters.</p>
+          <p className="py-8 text-center text-sm text-ink-muted">No order lines match these filters.</p>
         ) : rows.map((row) => (
           <article key={`${row.id}-${row.sku}`} className="rounded-lg border border-line bg-surface">
             <header className="flex items-start justify-between gap-3 border-b border-line px-3 py-2.5">
