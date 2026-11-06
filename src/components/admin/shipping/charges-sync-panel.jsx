@@ -12,7 +12,7 @@ import { chargesSyncRangeAction, chargesSyncStatusAction, startChargesSyncAction
 
 const POLL_MS = 3000;
 /* "Sync all": the order page snapshot last, after both couriers' freight is fresh. Uses each job's default window. */
-const SYNC_ALL = ["shiprocket", "delhivery", "order-cost"];
+const SYNC_ALL = ["shiprocket", "delhivery", "order-cost", "razorpay"];
 
 const today = () => new Date().toISOString().slice(0, 10);
 const daysAgoIso = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -219,7 +219,7 @@ export function ChargesSyncPanel({ initial = [], error = null, canRun = false })
             {!syncingAll && <RefreshCw className="size-4" aria-hidden />}
             Sync all
           </Button>
-          <span className="text-xs text-ink-muted">Shiprocket, then Delhivery, then the order page charges.</span>
+          <span className="text-xs text-ink-muted">Shiprocket, then Delhivery, then the order page charges, then Razorpay charges.</span>
         </div>
       )}
       <div className="grid gap-4 xl:grid-cols-2">

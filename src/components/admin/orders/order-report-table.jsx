@@ -14,13 +14,13 @@ import { useToast } from "@/components/ui/toast";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
-const MONEY = new Set(["paymentGateway", "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
+const MONEY = new Set(["deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
 const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
 
 const COLUMNS = [
   ["sr", "Sr No"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer Name"], ["customerState", "Customer State"],
   ["invoice", "Invoice ID"], ["balInvoice", "Bharat Agrolink Invoice"], ["awb", "AWB No"], ["productId", "Product ID"], ["product", "Product Name"], ["sku", "SKU"],
-  ["paymentGateway", "Payment Gateway"], ["manageHref", "Order Manage"], ["customerInvoiceHref", "Customer Invoice"], ["vendorInvoiceHref", "Vendor Invoice"],
+  ["manageHref", "Order Manage"], ["customerInvoiceHref", "Customer Invoice"], ["vendorInvoiceHref", "Vendor Invoice"],
   ["vendor", "Vendor Name"], ["vendorState", "Vendor State"], ["vendorGst", "Vendor GST Number"], ["vendorGstState", "Vendor GST State Code"],
   ["courier", "Delivery Service"], ["deliveryCharge", "Delivery Service Charges"], ["qty", "Quantity (QTY)"], ["price", "Product Price (Display Price)"],
   ["taxable", "Taxable Amount (S.P.)"], ["discount", "Discount"], ["advance", "Advance Payment"], ["codShipping", "COD Shipping Charges"],
@@ -60,7 +60,7 @@ const GROUPS = [
   ["RTO", ["rtoCharge", "rtoStatus"], ["rtoDate"]],
   ["Product & vendor", ["product", "sku"], ["productId", "vendor", "vendorState", "vendorGst", "vendorGstState"]],
   ["Price & tax", ["qty", "gross"], ["price", "taxable", "discount", "cgst", "sgst", "igst"]],
-  ["Customer payment", ["customerPaymentType"], ["paymentMode", "advance", "advanceAmount", "prepaidPartialDiscount", "paymentGateway", "razorpayPaymentId", "razorpayCharges"]],
+  ["Customer payment", ["customerPaymentType"], ["paymentMode", "advance", "advanceAmount", "prepaidPartialDiscount", "razorpayPaymentId", "razorpayCharges"]],
   ["Shipping", ["totalShippingCharges"], ["courier", "deliveryCharge", "codShipping", "shippingCharges", "codHandlingCharges"]],
   // ["Commission & expenses", ["commission"], ["commissionPct", "gstOnCommission", "adPct", "adAmount", "officePct", "officeAmount", "profitPct", "profitAmount", "otherCharges", "gstOther"]],
   ["NRV & payout", ["totalNrv"], ["unitNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl"]],

@@ -129,8 +129,8 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard label="Total revenue" value={inr(sales.totalRevenue)} delta={deltas.totalRevenue} hint="Delivered B2C and B2B" icon={TrendingUp} href={card("total-revenue")} />
           {showFinance && <StatCard label="Seller payout" value={inr(sales.sellerPayout)} hint="BSA on delivered orders" icon={Wallet} tone="neutral" href={card("seller-payout")} />}
           {showFinance && <StatCard label="Platform revenue" value={inr(sales.platformRevenue)} hint="Commission, ex-GST" icon={Landmark} tone="brand" href={card("platform-revenue")} />}
-          <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Shipping + COD handling collected" icon={Truck} tone="info" href={card("shipping-charges")} />
-          {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="1% of gateway value, plus 18% GST" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
+          <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Courier freight + COD handling, once per AWB" icon={Truck} tone="info" href={card("shipping-charges")} />
+          {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="Actual Razorpay fee (excl. GST); estimate until Razorpay reports it" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
           <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint="3% prepaid / 1% partial" icon={HandCoins} tone="info" href={card("prepaid-partial")} />
           {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
           {showFinance && (

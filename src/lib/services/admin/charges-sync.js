@@ -7,7 +7,7 @@ import { canShip } from "@/lib/services/admin/shipping";
  *   POST /admin/shipping/charges-sync/:job   start one in the background (202)
  */
 
-export const CHARGE_SYNC_JOBS = ["shiprocket", "delhivery", "delhivery-ledger", "order-cost"];
+export const CHARGE_SYNC_JOBS = ["shiprocket", "delhivery", "delhivery-ledger", "order-cost", "razorpay"];
 
 const message = (error, fallback) => (error instanceof ApiError ? error.message : fallback);
 
