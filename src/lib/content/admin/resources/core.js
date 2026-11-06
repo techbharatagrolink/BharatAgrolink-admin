@@ -66,7 +66,7 @@ export const coreResources = {
       { key: "email", label: "Email", hidden: true },
       { key: "channel", label: "Channel" },
       { key: "paymentMode", label: "Payment", sub: "paymentId" },
-      { key: "platformInvoice", label: "Invoice" },
+      { key: "platformInvoice", label: "Invoice", hidden: true },
       { key: "items", label: "Lines", type: "number" },
       { key: "vendors", label: "Vendors", type: "number", hidden: true },
       { key: "total", label: "Total", type: "currency", sortable: true },
