@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
-import { can } from "@/lib/auth/permissions";
+import { can, canCard } from "@/lib/auth/permissions";
 import { ApiError } from "@/lib/api";
 import { dashboardFilterHref, getDashboardCard, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { formatINR, formatNumber } from "@/lib/format";
@@ -144,11 +144,11 @@ export default async function DashboardCardPage({ params, searchParams }) {
   if (!/^[a-z0-9-]{1,40}$/.test(slug || "")) notFound();
   const query = await searchParams;
   const { user, allowed } = await checkPermission("dashboard.main");
-  if (!allowed) {
+  if (!allowed || !canCard(user, slug)) {
     return (
       <>
         <PageHeader title={titleFromSlug(slug)} />
-        <PermissionDenied module="the main dashboard" />
+        <PermissionDenied module={!allowed ? "the main dashboard" : "this dashboard card"} />
       </>
     );
   }
