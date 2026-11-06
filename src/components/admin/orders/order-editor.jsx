@@ -1,12 +1,15 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, CreditCard, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { updateLineBoxAction, updateLineShippingAction, updateOrderAddressAction, updateOrderAwbAction, updateOrderPaymentAction } from "@/lib/actions/admin/orders";
+import { formatDateTime, formatINR } from "@/lib/format";
+import { lookupPaymentsAction, updateLineBoxAction, updateLineShippingAction, updateOrderAddressAction, updateOrderAwbAction, updateOrderPaymentAction } from "@/lib/actions/admin/orders";
 
 function useSave() {
   const router = useRouter();
@@ -81,7 +84,17 @@ function AddressForm({ id: formId, initial, onSubmit }) {
   );
 }
 
-const paymentInput = (payment) => ({ mode: payment.mode, paymentId: payment.paymentId, advanceAmount: Number(payment.advanceAmount) || 0 });
+const paymentInput = (payment) => {
+  const ids = String(payment.paymentId || "")
+    .split(/[\s,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return {
+    mode: payment.mode,
+    paymentId: ids.join(", "),
+    advanceAmount: Number(payment.advanceAmount) || 0,
+  };
+};
 
 /** edit_order.php payment correction, edited in a dialog from the order page's Update Payment. */
 export function OrderPaymentDialog({ orderId, payment, open, onClose }) {
@@ -92,6 +105,7 @@ export function OrderPaymentDialog({ orderId, payment, open, onClose }) {
       open={open}
       onClose={onClose}
       title="Update payment"
+      size="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={pending}>Cancel</Button>
@@ -110,12 +124,219 @@ function PaymentForm({ id: formId, initial, className, onSubmit }) {
     paymentId: initial.paymentId || "",
     advanceAmount: initial.advanceAmount || "",
   });
+  const [breakdown, setBreakdown] = useState([]);
+  const [mergedTotal, setMergedTotal] = useState(0);
+  const [loadingLookup, setLoadingLookup] = useState(false);
+
   const set = (key) => (event) => setPayment((current) => ({ ...current, [key]: event.target.value }));
+
+  // Debounced lookup of payment IDs
+  useEffect(() => {
+    const raw = String(payment.paymentId || "");
+    const ids = Array.from(new Set(raw.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean)));
+    if (ids.length === 0) {
+      setBreakdown([]);
+      setMergedTotal(0);
+      return;
+    }
+
+    let active = true;
+    setLoadingLookup(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await lookupPaymentsAction(ids);
+        if (!active) return;
+        if (res && Array.isArray(res.payments)) {
+          setBreakdown(res.payments);
+          const total = Number(res.totalAmount) || 0;
+          setMergedTotal(total);
+          // Auto-fill advance amount if partial and current advance is 0 or empty
+          if (payment.mode === "partial" && total > 0 && (!payment.advanceAmount || Number(payment.advanceAmount) === 0)) {
+            setPayment((p) => ({ ...p, advanceAmount: total }));
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (active) setLoadingLookup(false);
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [payment.paymentId, payment.mode]);
+
+  const removePaymentId = (pid) => {
+    const raw = String(payment.paymentId || "");
+    const remaining = raw
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter((id) => id && id !== pid);
+    setPayment((p) => ({ ...p, paymentId: remaining.join(" ") }));
+  };
+
   return (
     <form id={formId} className={`grid gap-3 ${className}`} onSubmit={(event) => { event.preventDefault(); onSubmit(payment); }}>
-      <Field label="Mode">{({ id }) => <Select id={id} value={payment.mode} onChange={set("mode")} options={[{ value: "cod", label: "COD" }, { value: "prepaid", label: "Prepaid" }, { value: "partial", label: "Partial" }]} />}</Field>
-      <Field label="Advance amount">{({ id }) => <Input id={id} type="number" min="0" step="0.01" value={payment.advanceAmount} onChange={set("advanceAmount")} />}</Field>
-      <Field label="Payment ID" className="sm:col-span-full">{({ id }) => <Input id={id} value={payment.paymentId} onChange={set("paymentId")} />}</Field>
+      <Field label="Mode">
+        {({ id }) => (
+          <Select
+            id={id}
+            value={payment.mode}
+            onChange={set("mode")}
+            options={[
+              { value: "cod", label: "COD" },
+              { value: "prepaid", label: "Prepaid" },
+              { value: "partial", label: "Partial" },
+            ]}
+          />
+        )}
+      </Field>
+      <Field label="Advance amount">
+        {({ id }) => (
+          <div>
+            <Input id={id} type="number" min="0" step="0.01" value={payment.advanceAmount} onChange={set("advanceAmount")} />
+            {mergedTotal > 0 && payment.mode === "partial" && Number(payment.advanceAmount) !== mergedTotal && (
+              <button
+                type="button"
+                onClick={() => setPayment((p) => ({ ...p, advanceAmount: mergedTotal }))}
+                className="mt-1 text-xs font-semibold text-brand-700 hover:text-brand-900 hover:underline cursor-pointer"
+              >
+                Set to merged total ({formatINR(mergedTotal)})
+              </button>
+            )}
+          </div>
+        )}
+      </Field>
+      <Field
+        label="Payment ID"
+        className="sm:col-span-full"
+        hint="Paste multiple payment IDs separated by space or comma (e.g. pay_TwVLi192kSKbeV pay_TwW08TOU8FMtCx)"
+      >
+        {({ id }) => (
+          <div className="space-y-1">
+            <div className="relative">
+              <Input
+                id={id}
+                value={payment.paymentId}
+                onChange={set("paymentId")}
+                placeholder="pay_TwVLi192kSKbeV pay_TwW08TOU8FMtCx"
+              />
+              {loadingLookup && (
+                <div className="absolute right-2.5 top-2.5">
+                  <Loader2 className="size-4 animate-spin text-ink-muted" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Field>
+
+      {/* Multi-payment breakdown list and merged total */}
+      {breakdown.length > 0 && (
+        <div className="sm:col-span-full space-y-2 rounded-lg border border-line bg-surface-muted/50 p-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-ink">
+            <span className="flex items-center gap-1.5">
+              <span>Payment Details ({breakdown.length})</span>
+              {loadingLookup && <Loader2 className="size-3 animate-spin text-ink-muted" />}
+            </span>
+            <span className="text-brand-700">Merged Total: {formatINR(mergedTotal)}</span>
+          </div>
+
+          <div className="space-y-2">
+            {breakdown.map((item) => (
+              <div
+                key={item.paymentId}
+                className="flex flex-col gap-1.5 rounded-md border border-line bg-surface p-2.5 text-xs shadow-2xs"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="font-mono font-medium text-ink truncate">{item.paymentId}</span>
+                    <Badge
+                      tone={
+                        item.status === "captured" || item.status === "Placed" || item.status === "Success" || item.status === "paid"
+                          ? "success"
+                          : item.found
+                            ? "info"
+                            : "neutral"
+                      }
+                      className="text-[10px]"
+                    >
+                      {item.status || "Unknown"}
+                    </Badge>
+                    {item.source && (
+                      <span className="text-[10px] text-ink-muted hidden sm:inline">
+                        ({item.source === "manual_order_payment_attempts" ? "attempt" : item.source})
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-bold text-sm text-ink tabular-nums">
+                      {formatINR(item.amount || 0)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removePaymentId(item.paymentId)}
+                      className="rounded p-1 text-ink-muted hover:bg-danger-bg hover:text-danger-ink cursor-pointer"
+                      title="Remove payment ID"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rich payment details: Method, VPA, RRN, Bank, Card, Date */}
+                {(item.method || item.vpa || item.rrn || item.bank || item.cardLast4 || item.createdAt) && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted border-t border-line/60 pt-1.5 mt-0.5">
+                    {item.method && (
+                      <span className="inline-flex items-center gap-1 font-semibold text-ink uppercase tracking-wide">
+                        <CreditCard className="size-3 text-ink-muted" />
+                        {item.method}
+                      </span>
+                    )}
+                    {item.vpa && (
+                      <span>VPA: <strong className="font-medium text-ink">{item.vpa}</strong></span>
+                    )}
+                    {item.rrn && (
+                      <span>RRN / UTR: <strong className="font-mono font-medium text-ink">{item.rrn}</strong></span>
+                    )}
+                    {item.cardLast4 && (
+                      <span>Card: <strong className="font-medium text-ink">{item.cardNetwork ? `${item.cardNetwork} ` : ''}•••• {item.cardLast4}</strong></span>
+                    )}
+                    {item.bank && (
+                      <span>Bank: <strong className="font-medium text-ink">{item.bank}</strong></span>
+                    )}
+                    {item.createdAt && (
+                      <span>Date: <span className="text-ink">{formatDateTime(item.createdAt)}</span></span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between rounded-md bg-brand-50 px-3 py-2 text-xs">
+            <div className="flex items-center gap-2 font-medium text-brand-900">
+              <CheckCircle2 className="size-4 text-brand-600" />
+              <span>
+                Merged Total ({breakdown.length} {breakdown.length === 1 ? "payment" : "payments"}):{" "}
+                <strong className="text-sm font-bold text-brand-700">{formatINR(mergedTotal)}</strong>
+              </span>
+            </div>
+            {payment.mode === "partial" && (
+              <button
+                type="button"
+                onClick={() => setPayment((p) => ({ ...p, advanceAmount: mergedTotal }))}
+                className="rounded bg-brand-600 px-2.5 py-1 font-semibold text-white hover:bg-brand-700 shadow-2xs cursor-pointer"
+              >
+                Apply as Advance ({formatINR(mergedTotal)})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </form>
   );
 }

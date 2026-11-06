@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  CreditCard,
   ExternalLink,
   FileText,
   Hash,
@@ -595,11 +596,105 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
             <dl className="grid gap-2.5 p-4 text-sm @md:grid-cols-2 @3xl:grid-cols-3">
               <InfoItem icon={Truck} label="Shipping type" value={firstTracked?.pickupType === "self" ? "Self Shipping" : "Ship By Bharat Agrolink"} />
               <InfoItem icon={Wallet} label="Payment method" value={mode ? <Badge tone="brand">{modeLabel(mode)}</Badge> : null} />
-              <InfoItem icon={Receipt} label="Payment TXN ID" value={order.paymentId} mono copy />
+              {Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length > 1 ? (
+                <div className="min-w-0 rounded-lg bg-surface-muted/60 px-3 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
+                    <Receipt className="size-3.5 text-brand-700" aria-hidden />
+                    Payment TXN IDs ({Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length})
+                  </dt>
+                  <dd className="mt-1 flex flex-wrap gap-1.5 text-ink">
+                    {Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).map((pid) => (
+                      <span key={pid} className="inline-flex items-center gap-1 rounded bg-surface px-1.5 py-0.5 font-mono text-xs border border-line">
+                        <span>{pid}</span>
+                        <CopyButton value={pid} label="payment ID" className="size-3.5 p-0" />
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              ) : (
+                <InfoItem icon={Receipt} label="Payment TXN ID" value={order.paymentId} mono copy />
+              )}
               <InfoItem icon={Truck} label="Courier name" value={firstTracked?.courier} />
               <InfoItem icon={Hash} label="AWB / waybill" value={firstTracked?.awb} mono copy />
               <InfoItem icon={CalendarClock} label="Expected delivery" value={firstTracked?.deliveryDate ? formatDateTime(firstTracked.deliveryDate) : null} />
             </dl>
+
+            {Array.isArray(order.payments) && order.payments.length > 0 && (
+              <div className="border-t border-line px-4 py-3 bg-surface-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                    <Receipt className="size-3.5 text-brand-700" aria-hidden />
+                    Payment Details ({order.payments.length})
+                  </span>
+                  {order.payments.length > 1 && (
+                    <span className="text-xs font-semibold text-brand-700">
+                      Total: {money(order.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {order.payments.map((p) => (
+                    <div
+                      key={p.paymentId}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-line bg-surface p-2.5 text-xs shadow-2xs"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-medium text-ink">{p.paymentId}</span>
+                          <CopyButton value={p.paymentId} label="payment ID" className="size-3.5 p-0" />
+                          <Badge
+                            tone={
+                              p.status === "captured" || p.status === "Placed" || p.status === "paid" || p.status === "Success"
+                                ? "success"
+                                : p.found
+                                  ? "info"
+                                  : "neutral"
+                            }
+                            className="text-[10px]"
+                          >
+                            {p.status}
+                          </Badge>
+                          {p.source && (
+                            <span className="text-[10px] text-ink-muted hidden sm:inline">
+                              ({p.source === "manual_order_payment_attempts" ? "attempt" : p.source})
+                            </span>
+                          )}
+                        </div>
+                        {(p.method || p.vpa || p.rrn || p.bank || p.cardLast4 || p.createdAt) && (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-muted">
+                            {p.method && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-ink uppercase tracking-wide">
+                                <CreditCard className="size-3 text-ink-muted" />
+                                {p.method}
+                              </span>
+                            )}
+                            {p.vpa && (
+                              <span>VPA: <strong className="font-medium text-ink">{p.vpa}</strong></span>
+                            )}
+                            {p.rrn && (
+                              <span>RRN / UTR: <strong className="font-mono font-medium text-ink">{p.rrn}</strong></span>
+                            )}
+                            {p.cardLast4 && (
+                              <span>Card: <strong className="font-medium text-ink">{p.cardNetwork ? `${p.cardNetwork} ` : ''}•••• {p.cardLast4}</strong></span>
+                            )}
+                            {p.bank && (
+                              <span>Bank: <strong className="font-medium text-ink">{p.bank}</strong></span>
+                            )}
+                            {p.createdAt && (
+                              <span>Date: <span className="text-ink">{formatDateTime(p.createdAt)}</span></span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="font-bold text-sm text-ink tabular-nums text-right shrink-0">
+                        {money(p.amount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {(firstTracked?.trackingUrl || canEdit) && (
               <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3">
                 {firstTracked?.trackingUrl && (

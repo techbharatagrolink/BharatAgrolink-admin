@@ -9,6 +9,7 @@ import {
   failManualPayment,
   lookupManualLead,
   lookupManualPincode,
+  lookupPayments,
   quoteManualOrder,
   searchManualCustomers,
   searchManualProducts,
@@ -46,6 +47,12 @@ export async function updateOrderPaymentAction(orderId, input) {
   const user = await getCurrentAdmin();
   if (!user) return expired;
   return saved(orderId, await updateOrderPayment(orderId, input, user));
+}
+
+export async function lookupPaymentsAction(paymentIds) {
+  const user = await getCurrentAdmin();
+  if (!user) return { payments: [], totalAmount: 0, count: 0 };
+  return lookupPayments(paymentIds, user);
 }
 
 export async function updateOrderAwbAction(orderId, input) {
