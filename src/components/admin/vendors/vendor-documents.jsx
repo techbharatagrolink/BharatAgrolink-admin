@@ -64,6 +64,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
   const [pending, startTransition] = useTransition();
   const [rejecting, setRejecting] = useState(null); // { kind: 'seller' | 'license', id, title }
   const [deleting, setDeleting] = useState(null); // { kind: 'seller' | 'license', id, title }
+  const [uploadType, setUploadType] = useState(null);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef(null);
   const [fileTarget, setFileTarget] = useState(null);

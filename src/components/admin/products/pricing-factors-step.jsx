@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
@@ -148,8 +149,10 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const requestId = useRef(0);
   const onDraftRef = useRef(onDraft);
   const onPricedRef = useRef(onPriced);
-  onDraftRef.current = onDraft;
-  onPricedRef.current = onPriced;
+  useEffect(() => {
+    onDraftRef.current = onDraft;
+    onPricedRef.current = onPriced;
+  }, [onDraft, onPriced]);
 
   const apply = useCallback((next) => {
     setPricing(next);
@@ -163,7 +166,9 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
 
   useEffect(() => {
     let live = true;
-    setLoadError("");
+    queueMicrotask(() => {
+      if (live) setLoadError("");
+    });
     const extra = parcelFields(parcel);
     const load = creating
       ? (Object.keys(extra).length ? previewDraftPricingAction(extra) : loadDraftPricingAction())
@@ -191,7 +196,9 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   useEffect(() => {
     if (!dirty || !draft) return undefined;
     const id = ++requestId.current;
-    setPreviewing(true);
+    queueMicrotask(() => {
+      setPreviewing(true);
+    });
     const timer = setTimeout(async () => {
       const res = creating ? await previewDraftPricingAction(body(draft)) : await previewProductPricingAction(productId, body(draft));
       if (id !== requestId.current) return;
@@ -300,6 +307,12 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                 {({ id }) => <input id={id} type="range" className="block h-8 w-full max-w-full min-w-0 accent-brand-600" min={minRate} max={maxRate} step="0.01" value={sliderRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}
               </Field>
               <Field label="Take rate %">{({ id }) => <Input id={id} inputMode="decimal" value={draft.takeRate} onChange={(e) => update({ takeRate: e.target.value })} disabled={!canEdit} />}</Field>
+              {Number(draft.takeRate) > 0 && Number(draft.takeRate) < 35 && (
+                <div className="col-span-full flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
+                  <AlertTriangle className="size-4 shrink-0 text-rose-600" />
+                  <span>RED ALERT: Take rate is {draft.takeRate}%, which is below the 35% minimum threshold!</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid min-w-0 gap-3 @md:grid-cols-2 @md:items-start">

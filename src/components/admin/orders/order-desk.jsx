@@ -3,6 +3,7 @@
 import { useCallback, useId, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   Ban,
   Boxes,
@@ -336,20 +337,60 @@ function LineCard({ line, onPreview }) {
             <Link href={`/admin/products/${line.productId}`} className="text-center font-bold text-brand-700 hover:underline @md:text-left">{line.productName}</Link>
             <span className="hidden shrink-0 @md:block"><StatusBadge status={line.status} /></span>
           </div>
-          <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-line pt-2.5 @md:mt-2 @md:gap-x-3 @md:gap-y-2 @md:border-0 @md:pt-0 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-6">
-            <CardField label="Product ID" value={line.productId} copy />
-            <CardField label="Vendor" value={line.vendor} />
-            <CardField label="SKU" value={line.sku} copy />
-            <CardField label="Invoice no." value={line.invoice} copy />
-            <CardField label="Qty" value={line.qty} />
-            <CardField label="Tax" value={line.gstPercent} />
-            <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
-            <CardField label="Selling price" value={whole(Number(line.sellingPrice || 0))} />
-            <CardField label="SGST" value={whole(Number(line.sgst || 0))} />
-            <CardField label="CGST" value={whole(Number(line.cgst || 0))} />
-            <CardField label="IGST" value={whole(Number(line.igst || 0))} />
-            <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
-          </dl>
+          {(() => {
+            const sp = Number(line.sellingPrice || 0);
+            const nrv = Number(line.vendorNrv || 0);
+            const takeRate = sp > 0 && nrv > 0 ? Math.round(((sp - nrv) / sp) * 10000) / 100 : null;
+            const isAlert = takeRate !== null && takeRate < 35;
+            let cm = null;
+            if (sp > 0 && nrv > 0) {
+              const gst = Number(line.gstPercent) || 18;
+              const netExGst = sp / (1 + gst / 100);
+              const tcs = Math.round(0.01 * netExGst * 100) / 100;
+              const netSc = ((sp - nrv - tcs) * 100) / 118;
+              const shipping = 70;
+              const cod = 30;
+              const pg = sp * 0.01;
+              cm = Math.round((netSc - (shipping + cod + pg)) * 100) / 100;
+            }
+            return (
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-line pt-2.5 @md:mt-2 @md:gap-x-3 @md:gap-y-2 @md:border-0 @md:pt-0 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-6">
+                <CardField label="Product ID" value={line.productId} copy />
+                <CardField label="Vendor" value={line.vendor} />
+                <CardField label="SKU" value={line.sku} copy />
+                <CardField label="Invoice no." value={line.invoice} copy />
+                <CardField label="Qty" value={line.qty} />
+                <CardField label="Tax" value={line.gstPercent} />
+                <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
+                <CardField label="Selling price" value={whole(Number(line.sellingPrice || 0))} />
+                <CardField label="SGST" value={whole(Number(line.sgst || 0))} />
+                <CardField label="CGST" value={whole(Number(line.cgst || 0))} />
+                <CardField label="IGST" value={whole(Number(line.igst || 0))} />
+                <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
+                <CardField
+                  label="Take rate"
+                  value={
+                    takeRate !== null ? (
+                      <span className={`inline-flex items-center gap-1 font-semibold text-xs tabular px-1.5 py-0.5 rounded ${isAlert ? "bg-rose-100 text-rose-800 border border-rose-300 font-bold" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                        {isAlert && <AlertTriangle className="size-3 text-rose-600 shrink-0" />}
+                        {takeRate}% {isAlert ? "(Alert < 35%)" : ""}
+                      </span>
+                    ) : "—"
+                  }
+                />
+                {cm !== null && (
+                  <CardField
+                    label="Est. CM"
+                    value={
+                      <span className={`font-semibold text-xs tabular ${cm < 0 ? "text-rose-600 font-bold" : "text-emerald-700"}`}>
+                        {formatINR(cm)}
+                      </span>
+                    }
+                  />
+                )}
+              </dl>
+            );
+          })()}
           <div className="mt-2.5 flex items-center justify-end gap-2 border-t border-dashed border-line pt-2 text-ink-muted">
             Line total incl. GST
             <span className="text-[13px] font-semibold text-ink tabular">{money(lineTotal)}</span>
