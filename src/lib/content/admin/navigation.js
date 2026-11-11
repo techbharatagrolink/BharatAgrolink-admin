@@ -51,6 +51,13 @@ export const navigation = [
           { key: "reports", label: "Reports", href: "/admin/reports", permission: "reports" },
         ],
       },
+      {
+        key: "geo-data",
+        label: "Geographical Data",
+        icon: "MapPin",
+        // Next-only screen (pincode_mapping database), open to every admin: add it to the sidebar from Menu Master with this link
+        children: [{ key: "geo-pincode-mapping", label: "Pincode Mapping", href: "/admin/sales/geographical-data" }],
+      },
     ],
   },
   {
