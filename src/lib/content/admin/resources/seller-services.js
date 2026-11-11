@@ -11,7 +11,7 @@ export const sellerServiceResources = {
     description: "Charge for each seller service: % of NRV or a fixed ₹ per unit. Added to the seller's product listing price (NRV + charges) only while the seller's service is Active. Does not change the NRV pricing calculator, payouts or website prices.",
     permission: "sellerServices",
     collection: "sellerServiceCharges",
-    api: "GET / PUT /api/admin/seller-services/charges",
+    api: "GET / POST / PUT /api/admin/seller-services/charges",
     search: "Search service",
     searchFields: ["name", "code"],
     filterFields: ["category", "chargeType", "status"],
@@ -22,13 +22,29 @@ export const sellerServiceResources = {
       { key: "charge", label: "Charge" },
       { key: "chargeType", label: "Type" },
       { key: "activeSellers", label: "Active sellers", type: "number" },
+      { key: "notActiveSellers", label: "Not active", type: "number" },
       { key: "status", label: "Offered", type: "status" },
       { key: "updatedAt", label: "Updated", type: "date", sortable: true },
       { key: "updatedBy", label: "By" },
     ],
-    rowActions: [{ id: "edit", label: "Edit charge", kind: "form", permission: "edit", sensitive: true }],
+    // Click a service to see which sellers have it (and switch them on or off) in the requests list.
+    rowHref: "/admin/seller-services/requests?service={name}",
+    rowActions: [
+      { id: "edit", label: "Edit charge", kind: "form", permission: "edit", sensitive: true },
+      { id: "sellers", label: "View sellers", href: "/admin/seller-services/requests?service={name}" },
+      {
+        id: "activateAll",
+        label: "Activate for all sellers",
+        permission: "edit",
+        when: { field: "status", in: ["Active"] },
+        confirm: { title: "Activate this service for every seller?", description: "Every seller gets the service as Active, including sellers who ended or were rejected. Its charge is added to the listing price of products that select it.", confirmLabel: "Activate for all" },
+      },
+    ],
     form: {
       fields: [
+        { name: "name", label: "Service name", type: "text", required: true, only: "new", maxLength: 120 },
+        { name: "serviceCode", label: "Service code", type: "text", required: true, only: "new", maxLength: 40, help: "Lowercase with hyphens, e.g. soil-testing. Cannot be changed later." },
+        { name: "category", label: "Category", type: "text", required: true, only: "new", maxLength: 40 },
         { name: "chargeType", label: "Charge type", type: "select", options: ["% of NRV", "₹ per unit"], required: true },
         { name: "chargeValue", label: "Charge (% or ₹ per unit)", type: "number", required: true, min: 0, step: "0.01" },
         { name: "status", label: "Offered to sellers", type: "select", options: ["Active", "Inactive"], required: true },
@@ -46,6 +62,10 @@ export const sellerServiceResources = {
     search: "Search seller or service",
     searchFields: ["seller", "sellerCode", "service"],
     filterFields: ["status", "category"],
+    filters: [
+      { key: "service", label: "Service", optionsFrom: "lookup:seller-services" },
+      { key: "category", label: "Category", options: ["Logistics", "Marketing", "Catalog Support", "Agronomist Support", "B2B Support"] },
+    ],
     tabs: { field: "status", values: ["Active", "Requested", "Ended", "Rejected"] },
     defaultSort: "requestedAt:desc",
     dateField: "requestedAt",
@@ -58,6 +78,9 @@ export const sellerServiceResources = {
       { key: "requestedAt", label: "Requested", type: "date", sortable: true },
       { key: "decidedAt", label: "Decided", type: "date", sortable: true },
       { key: "note", label: "Note" },
+    ],
+    bulkActions: [
+      { id: "approve", label: "Activate selected", permission: "edit", confirm: { title: "Activate the {count} selected sellers?", description: "Sellers who already have the service Active are skipped.", confirmLabel: "Activate" } },
     ],
     rowActions: [
       {
