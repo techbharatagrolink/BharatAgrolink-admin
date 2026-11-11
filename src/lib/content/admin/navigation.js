@@ -123,7 +123,7 @@ export const navigation = [
         ],
       },
       {
-        // Own section for seller services: charges (% of NRV / ₹ per unit) and requests.
+        // Own section for seller services: charges (% of sale price / ₹ per unit) and requests.
         // Next-only screens: add them to the sidebar with Menu Master (Opens route).
         key: "seller-services",
         label: "Seller Services",

@@ -8,7 +8,7 @@
 export const sellerServiceResources = {
   "sellerServices.charges": {
     title: "Seller Service Charges",
-    description: "Charge for each seller service: % of NRV or a fixed ₹ per unit. Added to the seller's product listing price (NRV + charges) only while the seller's service is Active. Does not change the NRV pricing calculator, payouts or website prices.",
+    description: "Charge for each seller service: % of sale price or a fixed ₹ per unit. Added to the seller's product listing price (NRV + charges) only while the seller's service is Active. Does not change the NRV pricing calculator, payouts or website prices.",
     permission: "sellerServices",
     collection: "sellerServiceCharges",
     api: "GET / POST / PUT /api/admin/seller-services/charges",
@@ -45,7 +45,7 @@ export const sellerServiceResources = {
         { name: "name", label: "Service name", type: "text", required: true, only: "new", maxLength: 120 },
         { name: "serviceCode", label: "Service code", type: "text", required: true, only: "new", maxLength: 40, help: "Lowercase with hyphens, e.g. soil-testing. Cannot be changed later." },
         { name: "category", label: "Category", type: "text", required: true, only: "new", maxLength: 40 },
-        { name: "chargeType", label: "Charge type", type: "select", options: ["% of NRV", "₹ per unit"], required: true },
+        { name: "chargeType", label: "Charge type", type: "select", options: ["% of sale price", "₹ per unit"], required: true },
         { name: "chargeValue", label: "Charge (% or ₹ per unit)", type: "number", required: true, min: 0, step: "0.01" },
         { name: "status", label: "Offered to sellers", type: "select", options: ["Active", "Inactive"], required: true },
         { name: "notes", label: "Notes", type: "textarea", maxLength: 500 },
