@@ -323,7 +323,12 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
 
       <div className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-4">
         <Field label="MRP (₹)" required>{({ id }) => <Input id={id} inputMode="decimal" value={draft.mrp} onChange={(e) => update({ mrp: e.target.value })} disabled={!canEdit} />}</Field>
-        <Field label="NRV (₹)" required hint="What the seller receives. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
+        <div className="space-y-3">
+          <Field label="NRV (₹)" required hint="What the seller receives, before services. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
+          {draft.serviceBasis === "NRV" && Number(result.serviceDeduction) > 0 ? (
+          <Field label="NRV after services (₹)" hint={`${money(draft.nrv)} − services ${money(result.serviceDeduction)}. The sale price does not change.`}>{({ id }) => <Input id={id} value={result.nrvToSeller ?? ""} readOnly aria-readonly="true" className="font-semibold" />}</Field>
+          ) : null}
+        </div>
         <Field label="GST %" required hint={isVariant ? "Set on the base product." : undefined}>{({ id }) => <Select id={id} value={draft.gstPercent} onChange={(e) => update({ gstPercent: e.target.value })} placeholder="Select" options={GST_OPTIONS} disabled={!canEdit || isVariant} />}</Field>
         <Field label="HSN Code" required hint={isVariant ? "Set on the base product." : "GST is not derived from HSN; check both."}>{({ id }) => <Input id={id} value={draft.hsn} onChange={(e) => update({ hsn: e.target.value })} disabled={!canEdit || isVariant} />}</Field>
       </div>
