@@ -196,7 +196,7 @@ function leavesOf(nodes, prefix = "") {
   for (const node of nodes) {
     const label = prefix ? `${prefix} › ${node.name}` : node.name;
     const link = norm(node.link);
-    if (link && (!link.startsWith("#") || link.startsWith("#dashboard_"))) out.push(toLeaf(node, label));
+    if (link && (!link.startsWith("#") || (link.startsWith("#dashboard_") && !link.startsWith("#dashboard_card_")))) out.push(toLeaf(node, label));
     if (node.children?.length) out.push(...leavesOf(node.children, label));
   }
   return out;

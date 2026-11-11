@@ -118,6 +118,8 @@ export default async function ProductDetailPage({ params, searchParams }) {
     return <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} pricingFactors={pricingFactors} canEditPricing={canPage(user, "manage_product.php", "edit")} />;
   }
 
+  const isTakeRateAlert = p.takeRate != null && Number(p.takeRate) > 0 && Number(p.takeRate) < 35;
+
   return (
     <>
       <PageHeader
@@ -127,6 +129,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
           <>
             <StatusBadge status={p.status} />
             <StatusBadge status={p.stockStatus} />
+            {isTakeRateAlert && <Badge tone="danger">Take rate alert (&lt;35%)</Badge>}
             {p.toxicity && <Badge tone="danger">Toxicity: {p.toxicity.replace("_", " ")}</Badge>}
           </>
         }
@@ -140,9 +143,19 @@ export default async function ProductDetailPage({ params, searchParams }) {
 
       <StatGrid>
         <StatCard label="Display price" value={formatINR(p.display)} hint={`MRP ${formatINR(p.mrp)}`} />
+        <StatCard
+          label="Take rate"
+          value={p.takeRate ? `${p.takeRate}%` : "—"}
+          hint={isTakeRateAlert ? "RED ALERT: Below 35% target!" : "Target >= 35%"}
+          tone={isTakeRateAlert ? "danger" : "brand"}
+        />
+        <StatCard
+          label="Contribution margin"
+          value={formatINR(p.contributionMargin || 0)}
+          hint="Est. net margin"
+          tone={(p.contributionMargin || 0) < 0 ? "danger" : "info"}
+        />
         <StatCard label="Stock" value={formatNumber(p.stock)} hint={p.stockStatus} tone={p.stock === 0 ? "danger" : p.stock < 50 ? "warning" : "brand"} />
-        <StatCard label="Delivered units" value={formatNumber(sales.deliveredUnits)} hint={formatINR(sales.deliveredValue)} tone="info" />
-        <StatCard label="Returns" value={formatNumber(sales.returns)} hint={`${formatNumber(sales.lines)} order lines`} tone="neutral" />
       </StatGrid>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
@@ -188,6 +201,23 @@ export default async function ProductDetailPage({ params, searchParams }) {
                   { label: "Updated", value: formatDateTime(p.updatedAt) },
                 ]}
               />
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Seller Services" description="Services picked by seller for this product" />
+            <CardBody>
+              {p.services?.length ? (
+                <ul className="space-y-1.5">
+                  {p.services.map((s, idx) => (
+                    <li key={idx} className="flex items-center justify-between rounded-lg border border-line bg-surface-muted/50 p-2 text-xs">
+                      <span className="font-medium text-ink">{s.name}</span>
+                      <span className="text-ink-muted">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-ink-muted">No services selected by seller.</p>
+              )}
             </CardBody>
           </Card>
           <Card>

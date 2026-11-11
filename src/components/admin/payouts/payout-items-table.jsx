@@ -59,6 +59,17 @@ const COLUMNS = [
       </span>
     ),
   },
+  {
+    group: "basic", key: "currentOrderStatus", label: "Order Status Now", width: 150,
+    render: (r) =>
+      r.orderStatusChanged ? (
+        <span title="This payout item's order is no longer Delivered — vendor_payout_items is a snapshot from when it was created, so a later cancellation/RTO/return doesn't remove or adjust it here.">
+          <Badge tone="warning" dot>{r.currentOrderStatus || "Order deleted"}</Badge>
+        </span>
+      ) : (
+        <span className="text-ink-muted">Delivered</span>
+      ),
+  },
   { group: "basic", key: "productName", label: "Product name", filter: { key: "product", type: "text" }, width: 260, render: (r) => <span className="block whitespace-normal" title={r.productId}>{r.productName}</span> },
   { group: "basic", key: "productSku", label: "Product SKU", filter: { key: "productSku", type: "text" }, width: 220, render: (r) => <span className="block font-mono text-xs break-all whitespace-normal">{r.productSku || "—"}</span> },
   { group: "basic", key: "variantId", label: "Variant ID", filter: { key: "variantId", type: "text" }, width: 90 },
@@ -70,7 +81,7 @@ const COLUMNS = [
   { group: "financial", key: "qty", label: "Qty", filter: { key: "qty", type: "number" }, width: 70, align: "right" },
   { group: "financial", key: "cycleLabel", label: "Cycle", width: 190 },
   { group: "financial", key: "gross", label: "Total Order value", filter: { key: "gross", type: "number", hint: "≥" }, width: 130, ...money("gross") },
-  { group: "financial", key: "taxable", label: "Seller Amount (Exclusive GST)", filter: { key: "taxable", type: "number", hint: "≥" }, width: 150, ...money("taxable") },
+  { group: "financial", key: "taxable", label: "Taxable Value", filter: { key: "taxable", type: "number", hint: "≥" }, width: 150, ...money("taxable") },
   { group: "financial", key: "totalGst", label: "Total GST", width: 110, ...money("totalGst") },
   { group: "financial", key: "cgst", label: "CGST", filter: { key: "cgst", type: "number", hint: "≥" }, width: 100, ...money("cgst") },
   { group: "financial", key: "sgst", label: "SGST", filter: { key: "sgst", type: "number", hint: "≥" }, width: 100, ...money("sgst") },

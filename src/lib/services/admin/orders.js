@@ -110,6 +110,7 @@ function adaptOrder(data, user) {
       couponValue: data.totals?.couponValue || 0,
       platformInvoice: data.invoices?.[0]?.invoiceNumber || "",
       paymentId: data.payment?.paymentId || "",
+      payments: Array.isArray(data.payment?.payments) ? data.payment.payments : [],
       salesman: data.salesAgent?.name || "",
       customer: data.address?.name || "",
       mobile: data.address?.mobile || "",
@@ -120,10 +121,10 @@ function adaptOrder(data, user) {
     customer: data.customer?.userId ? { id: data.customer.userId, orders: "—" } : null,
     groups: [...byVendor.values()],
     totals: {
-      taxable: sum((item) => item.tax?.taxable),
-      cgst: sum((item) => item.tax?.cgst),
-      sgst: sum((item) => item.tax?.sgst),
-      igst: sum((item) => item.tax?.igst),
+      taxable: sum((item) => item.tax?.taxable * item.qty),
+      cgst: sum((item) => item.tax?.cgst * item.qty),
+      sgst: sum((item) => item.tax?.sgst * item.qty),
+      igst: sum((item) => item.tax?.igst * item.qty),
       tcs: 0,
       nrv: 0,
       commission: 0,
@@ -240,6 +241,19 @@ export async function updateOrderAddress(orderId, body, user) {
 
 export async function updateOrderPayment(orderId, body, user) {
   return putOrder(`admin/orders/${encodeURIComponent(orderId)}/payment`, body, user, "Could not update the payment.");
+}
+
+export async function lookupPayments(paymentIds, user) {
+  try {
+    const { data } = await api("admin/orders/lookup-payments", {
+      method: "POST",
+      token: user?.token,
+      body: { paymentIds },
+    });
+    return data || { payments: [], totalAmount: 0, count: 0 };
+  } catch (error) {
+    return { payments: [], totalAmount: 0, count: 0 };
+  }
 }
 
 export async function updateOrderAwb(orderId, body, user) {

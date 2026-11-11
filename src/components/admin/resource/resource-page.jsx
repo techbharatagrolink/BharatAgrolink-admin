@@ -72,7 +72,7 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
     <>
       <PageHeader title={resource.title} description={resource.description} actions={headerActions} />
       {data.unavailable ? <Notice tone="warning">{data.unavailable}</Notice> : null}
-      {children}
+      {typeof children === "function" ? children(data) : children}
       {tabs && <LinkTabs tabs={tabs} active={activeTab} />}
       <ResourceTable
         resourceKey={resourceKey}

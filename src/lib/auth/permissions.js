@@ -29,6 +29,47 @@ export function pageKey(link) {
 }
 
 /** Whether the role grants `action` on a PHP menu link (header.php's rule for showing a menu item). */
+export const SALES_CARD_SLUGS = [
+  "total-sales-b2c",
+  "total-sales-b2b",
+  "total-revenue",
+  "seller-payout",
+  "platform-revenue",
+  "shipping-charges",
+  "pg-charges",
+  "prepaid-partial",
+  "tcs",
+  "rto-charges",
+];
+
+const FINANCE_CARDS = new Set(["seller-payout", "platform-revenue", "pg-charges", "tcs", "rto-charges"]);
+
+export function cardPermissionKey(slug) {
+  return `#dashboard_card_${String(slug || "").replace(/-/g, "_")}`;
+}
+
+/** Whether the user's role grants viewing a specific dashboard card (e.g. 'total-sales-b2c'). */
+export function canCard(user, slug) {
+  if (!user || !user.role) return false;
+  if (user.role.superAdmin) return true;
+
+  const key = cardPermissionKey(slug);
+  if (canPage(user, key, "view")) return true;
+
+  // If this role has ANY specific sales card permission configured, then cards not granted are hidden
+  const hasAnySpecificCard = SALES_CARD_SLUGS.some((s) => canPage(user, cardPermissionKey(s), "view"));
+  if (hasAnySpecificCard) return false;
+
+  // Backward compatibility: role hasn't configured specific cards yet, check section and finance
+  const hasSection = canPage(user, "#dashboard_sales_overview", "view");
+  if (!hasSection) return false;
+
+  if (FINANCE_CARDS.has(slug)) {
+    return can(user, "finance") || can(user, "payouts");
+  }
+  return true;
+}
+
 export function canPage(user, page, action = "view") {
   if (!user || !user.role) return false;
   if (user.role.superAdmin) return true;

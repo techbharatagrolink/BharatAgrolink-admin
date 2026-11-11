@@ -46,7 +46,7 @@ export const sellerServiceResources = {
     search: "Search seller or service",
     searchFields: ["seller", "sellerCode", "service"],
     filterFields: ["status", "category"],
-    tabs: { field: "status", values: ["Requested", "Active", "Rejected", "Ended"] },
+    tabs: { field: "status", values: ["Active", "Requested", "Ended", "Rejected"] },
     defaultSort: "requestedAt:desc",
     dateField: "requestedAt",
     columns: [
@@ -62,14 +62,14 @@ export const sellerServiceResources = {
     rowActions: [
       {
         id: "approve",
-        label: "Approve (make Active)",
+        label: "Activate (make Active)",
         permission: "edit",
         effect: { set: { status: "Active", note: "" } },
-        when: { field: "status", in: ["Requested", "Ended", "Rejected"] },
-        confirm: { title: "Make this service Active?", description: "Its charge is added to the seller's product listing price from now on." },
+        when: { field: "status", in: ["Requested", "Ended", "Rejected", "Inactive"] },
+        confirm: { title: "Make this service Active for this seller?", description: "Its charge is added to the seller's product listing price from now on." },
       },
       { id: "reject", label: "Reject", permission: "edit", tone: "danger", effect: { set: { status: "Rejected" } }, when: { field: "status", in: ["Requested"] }, confirm: { title: "Reject this request?", requireReason: true } },
-      { id: "end", label: "End service", permission: "edit", tone: "danger", effect: { set: { status: "Ended" } }, when: { field: "status", in: ["Active"] }, confirm: { title: "End this service?", description: "Its charge stops being added to the seller's listing price.", requireReason: true } },
+      { id: "end", label: "Inactivate / End service", permission: "edit", tone: "danger", effect: { set: { status: "Ended" } }, when: { field: "status", in: ["Active"] }, confirm: { title: "Inactivate this service for this seller?", description: "This service will become inactive for this seller and stop being added to their listing price.", requireReason: true } },
     ],
   },
 };

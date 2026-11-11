@@ -38,7 +38,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { checkPermission } from "@/lib/auth/session";
-import { can, canPage } from "@/lib/auth/permissions";
+import { can, canCard, canPage, SALES_CARD_SLUGS } from "@/lib/auth/permissions";
 import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { getFixedExpenses } from "@/lib/services/admin/fixed-expenses";
 import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
@@ -93,7 +93,10 @@ export default async function MainDashboardPage({ searchParams }) {
   // independent of the generic "orders" resource permission above (which only controls a couple
   // of inner stat-card links) and independent of "finance"/"finance.expenses" (Finance & report /
   // Fixed expenses, which already had their own gate before this).
-  const showSales = canPage(user, "#dashboard_sales_overview");
+  // Card-level permissions: if individual cards in Sales Overview are configured,
+  // showSales is true if at least one card is visible to the role.
+  const anySalesCardVisible = SALES_CARD_SLUGS.some((slug) => canCard(user, slug));
+  const showSales = anySalesCardVisible;
   const showOrdersOverview = canPage(user, "#dashboard_orders_overview");
   const showShipping = canPage(user, "#dashboard_logistics_overview");
   const showMarketplace = canPage(user, "#dashboard_products_overview");
@@ -102,6 +105,12 @@ export default async function MainDashboardPage({ searchParams }) {
   const showCharts = canPage(user, "#dashboard_charts_overview");
   const vs = d.filters.compare ? "vs previous period" : undefined;
   const card = (slug) => dashboardFilterHref(`/admin/dashboard/cards/${slug}`, params);
+
+  const salesSummaryParts = [];
+  if (canCard(user, "total-revenue")) salesSummaryParts.push(`${inr(sales.totalRevenue)} total revenue`);
+  if (canCard(user, "total-sales-b2c")) salesSummaryParts.push(`${inr(sales.salesB2C)} B2C`);
+  if (canCard(user, "total-sales-b2b")) salesSummaryParts.push(`${inr(sales.salesB2B)} B2B`);
+  const salesSummary = salesSummaryParts.join(" · ") || "Sales overview";
   const sectionIds = [
     ...(showSales ? ["sales"] : []),
     ...(showOrdersOverview ? ["orders"] : []),
@@ -122,18 +131,18 @@ export default async function MainDashboardPage({ searchParams }) {
 
       <DashboardAccordion sections={sectionIds} defaultOpen={["sales"]}>
       {showSales && (
-      <DashboardSection id="sales" index={indexOf("sales")} title="Sales overview" summary={`${inr(sales.totalRevenue)} total revenue · ${inr(sales.salesB2C)} B2C · ${inr(sales.salesB2B)} B2B`}>
+      <DashboardSection id="sales" index={indexOf("sales")} title="Sales overview" summary={salesSummary}>
         <Grid>
-          <StatCard label="Total sales (B2C)" value={inr(sales.salesB2C)} delta={deltas.salesB2C} hint={vs ?? "Live sales value"} icon={ShoppingCart} href={card("total-sales-b2c")} />
-          <StatCard label="Total sales (B2B)" value={inr(sales.salesB2B)} delta={deltas.salesB2B} hint={`${formatNumber(sales.b2bCount)} B2B orders`} icon={Building2} tone="info" href={card("total-sales-b2b")} />
-          <StatCard label="Total revenue" value={inr(sales.totalRevenue)} delta={deltas.totalRevenue} hint="Delivered B2C and B2B" icon={TrendingUp} href={card("total-revenue")} />
-          {showFinance && <StatCard label="Seller payout" value={inr(sales.sellerPayout)} hint="BSA on delivered orders" icon={Wallet} tone="neutral" href={card("seller-payout")} />}
-          {showFinance && <StatCard label="Platform revenue" value={inr(sales.platformRevenue)} hint="Commission, ex-GST" icon={Landmark} tone="brand" href={card("platform-revenue")} />}
-          <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Shipping + COD handling collected" icon={Truck} tone="info" href={card("shipping-charges")} />
-          {showFinance && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="1% of gateway value, plus 18% GST" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
-          <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint="3% prepaid / 1% partial" icon={HandCoins} tone="info" href={card("prepaid-partial")} />
-          {showFinance && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
-          {showFinance && (
+          {canCard(user, "total-sales-b2c") && <StatCard label="Total sales (B2C)" value={inr(sales.salesB2C)} delta={deltas.salesB2C} hint={vs ?? "Live sales value"} icon={ShoppingCart} href={card("total-sales-b2c")} />}
+          {canCard(user, "total-sales-b2b") && <StatCard label="Total sales (B2B)" value={inr(sales.salesB2B)} delta={deltas.salesB2B} hint={`${formatNumber(sales.b2bCount)} B2B orders`} icon={Building2} tone="info" href={card("total-sales-b2b")} />}
+          {canCard(user, "total-revenue") && <StatCard label="Total revenue" value={inr(sales.totalRevenue)} delta={deltas.totalRevenue} hint="Delivered B2C and B2B" icon={TrendingUp} href={card("total-revenue")} />}
+          {canCard(user, "seller-payout") && <StatCard label="Seller payout" value={inr(sales.sellerPayout)} hint="BSA on delivered orders" icon={Wallet} tone="neutral" href={card("seller-payout")} />}
+          {canCard(user, "platform-revenue") && <StatCard label="Platform revenue" value={inr(sales.platformRevenue)} hint="Commission, ex-GST" icon={Landmark} tone="brand" href={card("platform-revenue")} />}
+          {canCard(user, "shipping-charges") && <StatCard label="Shipping charges" value={inr(sales.shippingCharges)} hint="Courier freight + COD handling, once per AWB" icon={Truck} tone="info" href={card("shipping-charges")} />}
+          {canCard(user, "pg-charges") && <StatCard label="PG charges" value={inr(sales.pgCharges)} hint="Actual Razorpay fee (excl. GST); estimate until Razorpay reports it" icon={CreditCard} tone="warning" href={card("pg-charges")} />}
+          {canCard(user, "prepaid-partial") && <StatCard label="Prepaid / partial" value={inr(sales.prepaidPartial)} hint="3% prepaid / 1% partial" icon={HandCoins} tone="info" href={card("prepaid-partial")} />}
+          {canCard(user, "tcs") && <StatCard label="TCS" value={inr(sales.tcs)} hint="1% on delivered taxable value" icon={Receipt} tone="danger" href={card("tcs")} />}
+          {canCard(user, "rto-charges") && (
             <StatCard
               label="RTO charges"
               value={inr(sales.rtoCharges)}

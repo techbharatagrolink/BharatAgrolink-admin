@@ -49,6 +49,12 @@ export async function getPayoutSummary(searchParams, user) {
   return { ...list, cycles: Array.isArray(cycles.data) ? cycles.data : [] };
 }
 
+/** { summary, items }: the columns each export (Export, Export items) can include, for the "choose columns" picker. */
+export async function getPayoutExportColumns(user) {
+  const { data } = await api("admin/payouts/export/columns", { token: user.token }).catch(() => ({ data: { summary: [], items: [] } }));
+  return { summary: Array.isArray(data?.summary) ? data.summary : [], items: Array.isArray(data?.items) ? data.items : [] };
+}
+
 /** "View items": the items Export items would download, one page at a time (same filters, plus payoutIds). */
 export async function listPayoutVendorItems(searchParams, user) {
   const { sort: _sort, ...query } = payoutQuery(searchParams);

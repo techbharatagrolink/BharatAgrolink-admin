@@ -3,6 +3,7 @@
 import { useCallback, useId, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   Ban,
   Boxes,
@@ -10,6 +11,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  CreditCard,
   ExternalLink,
   FileText,
   Hash,
@@ -308,7 +310,7 @@ function InfoItem({ icon: Icon, label, value, mono = false, copy = false }) {
 /** One product line. Narrow cards stack (image centred, status at its right); wide cards put the image beside the details. */
 function LineCard({ line, onPreview }) {
   const qty = Number(line.qty) || 0;
-  const lineTotal = (Number(line.sellingPrice || 0) + Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0)) * qty;
+  const lineTotal = (Number(line.taxable || 0) + Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0)) * qty;
   return (
     <li className="@container">
       <div className="rounded-lg border border-line p-3 text-[12.5px] transition hover:border-brand-600/40 hover:shadow-md motion-reduce:transition-none @md:flex @md:gap-3">
@@ -335,20 +337,61 @@ function LineCard({ line, onPreview }) {
             <Link href={`/admin/products/${line.productId}`} className="text-center font-bold text-brand-700 hover:underline @md:text-left">{line.productName}</Link>
             <span className="hidden shrink-0 @md:block"><StatusBadge status={line.status} /></span>
           </div>
-          <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-line pt-2.5 @md:mt-2 @md:gap-x-3 @md:gap-y-2 @md:border-0 @md:pt-0 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-6">
-            <CardField label="Product ID" value={line.productId} copy />
-            <CardField label="Vendor" value={line.vendor} />
-            <CardField label="SKU" value={line.sku} copy />
-            <CardField label="Invoice no." value={line.invoice} copy />
-            <CardField label="Qty" value={line.qty} />
-            <CardField label="Tax" value={line.gstPercent} />
-            <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
-            <CardField label="Selling price" value={whole(Number(line.sellingPrice || 0))} />
-            <CardField label="SGST" value={whole(Number(line.sgst || 0))} />
-            <CardField label="CGST" value={whole(Number(line.cgst || 0))} />
-            <CardField label="IGST" value={whole(Number(line.igst || 0))} />
-            <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
-          </dl>
+          {(() => {
+            const sp = Number(line.sellingPrice || 0);
+            const nrv = Number(line.vendorNrv || 0);
+            const takeRate = sp > 0 && nrv > 0 ? Math.round(((sp - nrv) / sp) * 10000) / 100 : null;
+            const isAlert = takeRate !== null && takeRate < 35;
+            let cm = null;
+            if (sp > 0 && nrv > 0) {
+              const gst = Number(line.gstPercent) || 18;
+              const netExGst = sp / (1 + gst / 100);
+              const tcs = Math.round(0.01 * netExGst * 100) / 100;
+              const netSc = ((sp - nrv - tcs) * 100) / 118;
+              const shipping = 70;
+              const cod = 30;
+              const pg = sp * 0.01;
+              cm = Math.round((netSc - (shipping + cod + pg)) * 100) / 100;
+            }
+            return (
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-line pt-2.5 @md:mt-2 @md:gap-x-3 @md:gap-y-2 @md:border-0 @md:pt-0 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-6">
+                <CardField label="Product ID" value={line.productId} copy />
+                <CardField label="Vendor" value={line.vendor} />
+                <CardField label="SKU" value={line.sku} copy />
+                <CardField label="Invoice no." value={line.invoice} copy />
+                <CardField label="Qty" value={line.qty} />
+                <CardField label="Tax" value={line.gstPercent} />
+                <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
+                <CardField label="Taxable value" value={money(Number(line.taxable || 0))} />
+                <CardField label="SGST" value={money(Number(line.sgst || 0))} />
+                <CardField label="CGST" value={money(Number(line.cgst || 0))} />
+                <CardField label="IGST" value={money(Number(line.igst || 0))} />
+                <CardField label="Total GST" value={money(Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0))} />
+                <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
+                <CardField
+                  label="Take rate"
+                  value={
+                    takeRate !== null ? (
+                      <span className={`inline-flex items-center gap-1 font-semibold text-xs tabular px-1.5 py-0.5 rounded ${isAlert ? "bg-rose-100 text-rose-800 border border-rose-300 font-bold" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                        {isAlert && <AlertTriangle className="size-3 text-rose-600 shrink-0" />}
+                        {takeRate}% {isAlert ? "(Alert < 35%)" : ""}
+                      </span>
+                    ) : "—"
+                  }
+                />
+                {cm !== null && (
+                  <CardField
+                    label="Est. CM"
+                    value={
+                      <span className={`font-semibold text-xs tabular ${cm < 0 ? "text-rose-600 font-bold" : "text-emerald-700"}`}>
+                        {formatINR(cm)}
+                      </span>
+                    }
+                  />
+                )}
+              </dl>
+            );
+          })()}
           <div className="mt-2.5 flex items-center justify-end gap-2 border-t border-dashed border-line pt-2 text-ink-muted">
             Line total incl. GST
             <span className="text-[13px] font-semibold text-ink tabular">{money(lineTotal)}</span>
@@ -449,7 +492,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
   const closePreview = useCallback(() => setPreview(null), []);
   const shipping = shippingCharge(order);
   const discountRate = prepaidDiscount(order);
-  const selling = lines.reduce((sum, line) => sum + Number(line.sellingPrice || 0) * Number(line.qty || 0), 0);
+  const selling = lines.reduce((sum, line) => sum + Number(line.taxable || 0) * Number(line.qty || 0), 0);
   const tax = (key) => lines.reduce((sum, line) => sum + Number(line[key] || 0) * Number(line.qty || 0), 0);
   const gross = Math.round((selling + tax("cgst") + tax("sgst") + tax("igst")) * 100) / 100;
   const grand = grandTotal(order, shipping);
@@ -529,13 +572,14 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
     });
 
   const summaryRows = [
-    { label: "Total selling price", value: whole(selling) },
+    { label: "Taxable value", value: money(selling) },
     { label: "Discount", value: Number(order.discount) > 0 ? money(order.discount) : "—" },
     { label: "Shipping charges", value: whole(shipping) },
-    { label: "CGST", value: whole(tax("cgst")) },
-    { label: "SGST", value: whole(tax("sgst")) },
-    { label: "IGST", value: whole(tax("igst")) },
-    { label: "Gross total", value: whole(gross), strong: true },
+    { label: "CGST", value: money(tax("cgst")) },
+    { label: "SGST", value: money(tax("sgst")) },
+    { label: "IGST", value: money(tax("igst")) },
+    { label: "Total GST", value: money(tax("cgst") + tax("sgst") + tax("igst")) },
+    { label: "Gross total", value: money(gross), strong: true },
     { label: "Partial", value: order.partial ? "Yes" : "No" },
     { label: "Advance", value: whole(Number(order.advance || 0)) },
     discountRate > 0 && { label: mode === "partial" ? "Partial discount 1%" : "Prepaid discount 3%", value: whole(discountRate) },
@@ -595,11 +639,105 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
             <dl className="grid gap-2.5 p-4 text-sm @md:grid-cols-2 @3xl:grid-cols-3">
               <InfoItem icon={Truck} label="Shipping type" value={firstTracked?.pickupType === "self" ? "Self Shipping" : "Ship By Bharat Agrolink"} />
               <InfoItem icon={Wallet} label="Payment method" value={mode ? <Badge tone="brand">{modeLabel(mode)}</Badge> : null} />
-              <InfoItem icon={Receipt} label="Payment TXN ID" value={order.paymentId} mono copy />
+              {Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length > 1 ? (
+                <div className="min-w-0 rounded-lg bg-surface-muted/60 px-3 py-2.5">
+                  <dt className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
+                    <Receipt className="size-3.5 text-brand-700" aria-hidden />
+                    Payment TXN IDs ({Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length})
+                  </dt>
+                  <dd className="mt-1 flex flex-wrap gap-1.5 text-ink">
+                    {Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).map((pid) => (
+                      <span key={pid} className="inline-flex items-center gap-1 rounded bg-surface px-1.5 py-0.5 font-mono text-xs border border-line">
+                        <span>{pid}</span>
+                        <CopyButton value={pid} label="payment ID" className="size-3.5 p-0" />
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              ) : (
+                <InfoItem icon={Receipt} label="Payment TXN ID" value={order.paymentId} mono copy />
+              )}
               <InfoItem icon={Truck} label="Courier name" value={firstTracked?.courier} />
               <InfoItem icon={Hash} label="AWB / waybill" value={firstTracked?.awb} mono copy />
               <InfoItem icon={CalendarClock} label="Expected delivery" value={firstTracked?.deliveryDate ? formatDateTime(firstTracked.deliveryDate) : null} />
             </dl>
+
+            {Array.isArray(order.payments) && order.payments.length > 0 && (
+              <div className="border-t border-line px-4 py-3 bg-surface-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                    <Receipt className="size-3.5 text-brand-700" aria-hidden />
+                    Payment Details ({order.payments.length})
+                  </span>
+                  {order.payments.length > 1 && (
+                    <span className="text-xs font-semibold text-brand-700">
+                      Total: {money(order.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {order.payments.map((p) => (
+                    <div
+                      key={p.paymentId}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-line bg-surface p-2.5 text-xs shadow-2xs"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-medium text-ink">{p.paymentId}</span>
+                          <CopyButton value={p.paymentId} label="payment ID" className="size-3.5 p-0" />
+                          <Badge
+                            tone={
+                              p.status === "captured" || p.status === "Placed" || p.status === "paid" || p.status === "Success"
+                                ? "success"
+                                : p.found
+                                  ? "info"
+                                  : "neutral"
+                            }
+                            className="text-[10px]"
+                          >
+                            {p.status}
+                          </Badge>
+                          {p.source && (
+                            <span className="text-[10px] text-ink-muted hidden sm:inline">
+                              ({p.source === "manual_order_payment_attempts" ? "attempt" : p.source})
+                            </span>
+                          )}
+                        </div>
+                        {(p.method || p.vpa || p.rrn || p.bank || p.cardLast4 || p.createdAt) && (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-muted">
+                            {p.method && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-ink uppercase tracking-wide">
+                                <CreditCard className="size-3 text-ink-muted" />
+                                {p.method}
+                              </span>
+                            )}
+                            {p.vpa && (
+                              <span>VPA: <strong className="font-medium text-ink">{p.vpa}</strong></span>
+                            )}
+                            {p.rrn && (
+                              <span>RRN / UTR: <strong className="font-mono font-medium text-ink">{p.rrn}</strong></span>
+                            )}
+                            {p.cardLast4 && (
+                              <span>Card: <strong className="font-medium text-ink">{p.cardNetwork ? `${p.cardNetwork} ` : ''}•••• {p.cardLast4}</strong></span>
+                            )}
+                            {p.bank && (
+                              <span>Bank: <strong className="font-medium text-ink">{p.bank}</strong></span>
+                            )}
+                            {p.createdAt && (
+                              <span>Date: <span className="text-ink">{formatDateTime(p.createdAt)}</span></span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="font-bold text-sm text-ink tabular-nums text-right shrink-0">
+                        {money(p.amount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {(firstTracked?.trackingUrl || canEdit) && (
               <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3">
                 {firstTracked?.trackingUrl && (

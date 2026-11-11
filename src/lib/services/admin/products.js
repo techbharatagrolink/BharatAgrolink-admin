@@ -80,6 +80,27 @@ export function calculatePricing(input) {
 }
 
 /** Calculator screen: figures come from POST /admin/pricing/calculate. Listing contribution stays local. */
+export async function getProductsSummary(user) {
+  if (user?.token) {
+    try {
+      const { data } = await api("admin/products/summary", { token: user.token });
+      return data;
+    } catch {
+      // fallback to store
+    }
+  }
+  const s = getStore();
+  const listed = s.products ?? [];
+  return {
+    total: listed.length,
+    active: listed.filter((p) => [1, "Active"].includes(p.statusCode ?? p.status)).length,
+    takeRateAlert: listed.filter((p) => (Number(p.takeRate) || 0) < 35).length,
+    negativeMargin: listed.filter((p) => (Number(p.contributionMargin) || 0) < 0 || p.verdict === "loss").length,
+    outOfStock: listed.filter((p) => p.stockStatus === "Out of Stock" || Number(p.stock) <= 0).length,
+    inStockOnWebsite: listed.filter((p) => [1, "Active"].includes(p.statusCode ?? p.status) && (p.stockStatus === "In Stock" || Number(p.stock) > 0)).length,
+  };
+}
+
 export async function calculatePricingLive(input, user) {
   const local = calculatePricing(input);
   if (!local.ok || !user?.token) return local;

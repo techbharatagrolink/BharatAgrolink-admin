@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
@@ -538,7 +539,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <Field label="URL Key">{({ id }) => <Input id={id} value={form.webUrl} readOnly />}</Field>
               <div className="sm:col-span-2">
                 <h3 className="text-sm font-semibold text-ink">Search engine meta</h3>
-                <p className="text-xs text-ink-muted">What shows up in Google results and the browser tab for this product's page.</p>
+                <p className="text-xs text-ink-muted">What shows up in Google results and the browser tab for this product&apos;s page.</p>
               </div>
               <Field label="Meta title">{({ id }) => <Input id={id} value={form.metaTitle} onChange={set("metaTitle")} placeholder={form.name || "Defaults to the product name"} />}</Field>
               <Field label="Meta keywords">{({ id }) => <Input id={id} value={form.metaKeywords} onChange={set("metaKeywords")} placeholder="Comma-separated" />}</Field>
@@ -572,6 +573,76 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
             <p className="mt-2 text-lg font-semibold text-ink">{form.salePrice ? formatINR(form.salePrice) : form.mrp ? formatINR(form.mrp) : "—"}</p>
             <p className="text-xs text-ink-muted">{hasStock ? `${stockStatus} · Qty ${form.stock}` : "Out of Stock"}</p>
           </div>
+
+          {/* Seller Selected Services */}
+          <div className="rounded-xl border border-line bg-surface p-3">
+            <p className="text-xs font-semibold text-ink-muted">Seller Selected Services</p>
+            {product.services?.length ? (
+              <ul className="mt-2 space-y-1.5">
+                {product.services.map((s, idx) => (
+                  <li key={idx} className="flex items-center justify-between text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1">
+                    <span className="font-medium text-ink">{s.name}</span>
+                    <span className="text-muted text-[11px]">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-xs text-ink-muted">No services selected by seller.</p>
+            )}
+          </div>
+
+          {/* Economics & Take Rate Alert */}
+          {(() => {
+            const display = Number(form.salePrice) || Number(product.display) || 0;
+            const nrv = Number(form.nrv) || Number(product.nrv) || 0;
+            let takeRate = Number(product.takeRate);
+            if ((!takeRate || Number.isNaN(takeRate)) && display > 0 && nrv > 0) {
+              takeRate = Math.round(((display - nrv) / display) * 10000) / 100;
+            }
+            const isAlert = !Number.isNaN(takeRate) && takeRate > 0 && takeRate < 35;
+            const cm = Number(product.contributionMargin) || 0;
+            return (
+              <div className="rounded-xl border border-line bg-surface p-3 space-y-2">
+                <p className="text-xs font-semibold text-ink-muted">Economics & Margins</p>
+                {takeRate > 0 ? (
+                  isAlert ? (
+                    <div className="flex items-start gap-1.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                      <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">RED ALERT: Take Rate {takeRate}%</span>
+                        <p className="text-[11px] text-rose-700 font-normal">Below 35% minimum threshold!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                      Take Rate: {takeRate}% (Healthy)
+                    </div>
+                  )
+                ) : null}
+                <div className="text-xs space-y-1 pt-1 border-t border-line text-ink-soft">
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">Contribution Margin</span>
+                    <span className={`font-semibold tabular ${cm < 0 ? "text-rose-600 font-bold" : "text-emerald-700"}`}>
+                      {formatINR(cm)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">Shipping Cost</span>
+                    <span className="tabular">{formatINR(product.shippingCost || 70)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">COD Handling</span>
+                    <span className="tabular">{formatINR(product.codHandling || 30)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">TCS (1%)</span>
+                    <span className="tabular">{formatINR(product.tcs || Math.round(display * 0.01))}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Listing Readiness</p>
             <p className="mt-1 text-2xl font-semibold text-ink">{readyPct}%</p>

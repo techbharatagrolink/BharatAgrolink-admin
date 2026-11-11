@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { Clock } from "lucide-react";
-import { MessageSquare } from "lucide-react";
+import { AlertTriangle, Clock, MessageSquare } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusDot } from "./status-dot-select";
@@ -38,7 +37,24 @@ export function formatCellValue(column, row) {
     case "number":
       return formatNumber(value);
     case "percent":
+    case "takeRate":
       return formatPercent(value);
+    case "contributionMargin":
+      return formatINR(value);
+    case "services": {
+      const list = Array.isArray(value) ? value : (typeof value === "string" && value ? value.split(", ") : []);
+      return list.map((item) => (typeof item === "string" ? item : item?.name || "")).join(", ");
+    }
+    case "weightVariance": {
+      const v = Number(row.varianceKg ?? 0);
+      const pct = Number(row.variancePct ?? 0);
+      const sign = v > 0 ? "+" : "";
+      return `${sign}${v.toFixed(2)} kg (${sign}${pct.toFixed(1)}%)`;
+    }
+    case "suggestedWeight": {
+      const s = Number(row.suggestedWeightKg ?? 0);
+      return s >= 1 ? `${s.toFixed(2)} kg` : `${Math.round(s * 1000)}g`;
+    }
     case "date":
       return formatDate(value);
     case "datetime":
@@ -194,6 +210,119 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
     );
   else if (column.type === "status") content = <StatusBadge status={value} label={column.labels?.[value]} />;
   else if (column.type === "boolean") content = <StatusBadge status={Boolean(value)} label={value ? column.trueLabel || "Yes" : column.falseLabel || "No"} />;
+  else if (column.type === "takeRate") {
+    const num = Number(value);
+    const hasValue = value != null && value !== "" && !Number.isNaN(num);
+    const isAlert = hasValue && num < 35;
+    content = hasValue ? (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold tabular",
+          isAlert
+            ? "bg-rose-100 text-rose-800 border border-rose-300 shadow-sm"
+            : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+        )}
+        title={isAlert ? "Take rate is below 35%! Margin risk alert." : "Healthy take rate"}
+      >
+        {isAlert && <AlertTriangle className="size-3.5 text-rose-600 shrink-0" aria-label="Take rate below 35% alert" />}
+        {formatPercent(num)}
+        {isAlert && <span className="text-[10px] uppercase font-bold tracking-wider text-rose-700 bg-rose-200/80 px-1 py-0.2 rounded">Low</span>}
+      </span>
+    ) : (
+      <span className="text-ink-muted">—</span>
+    );
+  } else if (column.type === "contributionMargin") {
+    const num = Number(value);
+    const hasValue = value != null && value !== "" && !Number.isNaN(num);
+    const isLoss = hasValue && num < 0;
+    const isWarning = hasValue && num >= 0 && num < 50;
+    content = hasValue ? (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold tabular",
+          isLoss
+            ? "bg-rose-50 text-rose-700 border border-rose-200"
+            : isWarning
+            ? "bg-amber-50 text-amber-700 border border-amber-200"
+            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+        )}
+        title={isLoss ? "Loss-making margin!" : isWarning ? "Below target margin" : "Healthy margin"}
+      >
+        {formatINR(num)}
+      </span>
+    ) : (
+      <span className="text-ink-muted">—</span>
+    );
+  } else if (column.type === "services") {
+    const list = Array.isArray(value) ? value : (typeof value === "string" && value.trim() ? value.split(", ") : []);
+    content = list.length ? (
+      <div className="flex flex-wrap gap-1 max-w-[260px]">
+        {list.map((item, idx) => {
+          const name = typeof item === "string" ? item : item?.name || item?.code || "";
+          return (
+            <span
+              key={idx}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200"
+            >
+              {name}
+            </span>
+          );
+        })}
+      </div>
+    ) : (
+      <span className="text-ink-muted text-xs">None</span>
+    );
+  } else if (column.type === "weightVariance") {
+    const vKg = Number(row.varianceKg ?? 0);
+    const pct = Number(row.variancePct ?? 0);
+    const hasValue = row.varianceKg != null && !Number.isNaN(vKg);
+    const isAlert = hasValue && (vKg >= 0.5 || pct >= 30);
+    const isWarning = hasValue && vKg > 0 && !isAlert;
+    const sign = vKg > 0 ? "+" : "";
+    content = hasValue ? (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold tabular",
+          isAlert
+            ? "bg-rose-100 text-rose-800 border border-rose-300 shadow-sm"
+            : isWarning
+            ? "bg-amber-100 text-amber-800 border border-amber-300"
+            : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+        )}
+        title={`Declared: ${row.declaredKg ?? 0} kg | Charged: ${row.chargedKg ?? 0} kg | Variance: ${sign}${vKg} kg (${sign}${pct}%)`}
+      >
+        {isAlert && <AlertTriangle className="size-3.5 text-rose-600 shrink-0" aria-label="High weight discrepancy alert" />}
+        {sign}{vKg.toFixed(2)} kg
+        <span
+          className={cn(
+            "text-[10px] uppercase font-bold tracking-wider px-1 py-0.5 rounded",
+            isAlert ? "text-rose-700 bg-rose-200/80" : isWarning ? "text-amber-700 bg-amber-200/80" : "text-emerald-700 bg-emerald-200/80"
+          )}
+        >
+          {sign}{pct.toFixed(0)}%
+        </span>
+      </span>
+    ) : (
+      <span className="text-ink-muted">—</span>
+    );
+  } else if (column.type === "suggestedWeight") {
+    const sKg = Number(row.suggestedWeightKg ?? 0);
+    const catalogWeight = row.currentCatalogWeight ? Number(row.currentCatalogWeight) : null;
+    const catalogLabel = catalogWeight ? (catalogWeight >= 1000 ? `${(catalogWeight / 1000).toFixed(2)} kg` : `${catalogWeight}g`) : null;
+    content = (
+      <div className="flex flex-col min-w-0">
+        <span className="font-semibold text-ink tabular flex items-center gap-1 text-xs">
+          {sKg >= 1 ? `${sKg.toFixed(2)} kg` : `${Math.round(sKg * 1000)}g`}
+          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-1 py-0.2 rounded">
+            Courier
+          </span>
+        </span>
+        <span className="text-[11px] text-ink-muted truncate">
+          Catalog: {catalogLabel ? <strong className="font-medium text-ink-soft">{catalogLabel}</strong> : "—"}
+        </span>
+      </div>
+    );
+  }
   else {
     const text = formatCellValue(column, row);
     const href = resolveHref(column.href, row);
@@ -205,7 +334,13 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
 
     content = href ? (
       external ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-brand-700 hover:underline inline-flex items-center gap-1"
+          title={column.key === "awb" ? "Open tracking in courier portal" : undefined}
+        >
           {text}
         </a>
       ) : (

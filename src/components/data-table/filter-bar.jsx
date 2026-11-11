@@ -264,7 +264,7 @@ export function ClearFiltersButton({ className }) {
 export function FilterBar({ search, filters = [], dateRange, children, className, hideClear = false }) {
   return (
     <div className={cn("flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center", className)}>
-      {search && <SearchInput placeholder={search} className="lg:w-72" />}
+      {search && <SearchInput placeholder={typeof search === "object" && search ? search.placeholder : search} className="lg:w-72" />}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
         {filters.map((f) =>
           f.type === "text" ? (
