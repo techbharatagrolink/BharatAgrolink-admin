@@ -11,6 +11,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
 import { LeadActivityForm } from "@/components/admin/workflows/lead-activity-form";
 import { LeadRecordPanels } from "@/components/admin/crm/lead-record-panels";
+import { LeadEngagementCard } from "@/components/admin/crm/lead-engagement-card";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -116,6 +117,7 @@ export default async function LeadDetailPage({ params }) {
             </CardBody>
           </Card>
           <AgronomistCard card={data.agronomist} />
+          <LeadEngagementCard engagement={data.engagement} mobile={lead.mobile} />
           <LeadRecordPanels leadId={lead.id} mobile={lead.mobile} chat={chat} attachments={attachments} canEdit={canEdit} />
           <Card>
             <CardHeader title="Call history" description={`${data.activities.length} logged activities`} />
