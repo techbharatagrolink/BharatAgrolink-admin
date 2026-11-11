@@ -292,6 +292,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/shipping/minimums",
   "/admin/finance/expense-limits",
   "/admin/pricing",
+  "/admin/sales/geographical-data",
   ...parityLivePaths,
   ...portLivePaths,
 ]);
