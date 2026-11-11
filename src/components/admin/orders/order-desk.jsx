@@ -310,7 +310,7 @@ function InfoItem({ icon: Icon, label, value, mono = false, copy = false }) {
 /** One product line. Narrow cards stack (image centred, status at its right); wide cards put the image beside the details. */
 function LineCard({ line, onPreview }) {
   const qty = Number(line.qty) || 0;
-  const lineTotal = (Number(line.sellingPrice || 0) + Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0)) * qty;
+  const lineTotal = (Number(line.taxable || 0) + Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0)) * qty;
   return (
     <li className="@container">
       <div className="rounded-lg border border-line p-3 text-[12.5px] transition hover:border-brand-600/40 hover:shadow-md motion-reduce:transition-none @md:flex @md:gap-3">
@@ -362,10 +362,11 @@ function LineCard({ line, onPreview }) {
                 <CardField label="Qty" value={line.qty} />
                 <CardField label="Tax" value={line.gstPercent} />
                 <CardField label="Price" value={whole(Number(line.unitPrice || 0))} />
-                <CardField label="Selling price" value={whole(Number(line.sellingPrice || 0))} />
-                <CardField label="SGST" value={whole(Number(line.sgst || 0))} />
-                <CardField label="CGST" value={whole(Number(line.cgst || 0))} />
-                <CardField label="IGST" value={whole(Number(line.igst || 0))} />
+                <CardField label="Taxable value" value={money(Number(line.taxable || 0))} />
+                <CardField label="SGST" value={money(Number(line.sgst || 0))} />
+                <CardField label="CGST" value={money(Number(line.cgst || 0))} />
+                <CardField label="IGST" value={money(Number(line.igst || 0))} />
+                <CardField label="Total GST" value={money(Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0))} />
                 <CardField label="Vendor NRV" value={`${whole(Number(line.vendorNrv || 0))}${qty > 1 ? ` (Total ${whole(Number(line.vendorNrvTotal || 0))})` : ""}`} />
                 <CardField
                   label="Take rate"
@@ -491,7 +492,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
   const closePreview = useCallback(() => setPreview(null), []);
   const shipping = shippingCharge(order);
   const discountRate = prepaidDiscount(order);
-  const selling = lines.reduce((sum, line) => sum + Number(line.sellingPrice || 0) * Number(line.qty || 0), 0);
+  const selling = lines.reduce((sum, line) => sum + Number(line.taxable || 0) * Number(line.qty || 0), 0);
   const tax = (key) => lines.reduce((sum, line) => sum + Number(line[key] || 0) * Number(line.qty || 0), 0);
   const gross = Math.round((selling + tax("cgst") + tax("sgst") + tax("igst")) * 100) / 100;
   const grand = grandTotal(order, shipping);
@@ -571,13 +572,14 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
     });
 
   const summaryRows = [
-    { label: "Total selling price", value: whole(selling) },
+    { label: "Taxable value", value: money(selling) },
     { label: "Discount", value: Number(order.discount) > 0 ? money(order.discount) : "—" },
     { label: "Shipping charges", value: whole(shipping) },
-    { label: "CGST", value: whole(tax("cgst")) },
-    { label: "SGST", value: whole(tax("sgst")) },
-    { label: "IGST", value: whole(tax("igst")) },
-    { label: "Gross total", value: whole(gross), strong: true },
+    { label: "CGST", value: money(tax("cgst")) },
+    { label: "SGST", value: money(tax("sgst")) },
+    { label: "IGST", value: money(tax("igst")) },
+    { label: "Total GST", value: money(tax("cgst") + tax("sgst") + tax("igst")) },
+    { label: "Gross total", value: money(gross), strong: true },
     { label: "Partial", value: order.partial ? "Yes" : "No" },
     { label: "Advance", value: whole(Number(order.advance || 0)) },
     discountRate > 0 && { label: mode === "partial" ? "Partial discount 1%" : "Prepaid discount 3%", value: whole(discountRate) },

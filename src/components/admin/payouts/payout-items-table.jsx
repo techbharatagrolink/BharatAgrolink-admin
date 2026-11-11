@@ -81,7 +81,7 @@ const COLUMNS = [
   { group: "financial", key: "qty", label: "Qty", filter: { key: "qty", type: "number" }, width: 70, align: "right" },
   { group: "financial", key: "cycleLabel", label: "Cycle", width: 190 },
   { group: "financial", key: "gross", label: "Total Order value", filter: { key: "gross", type: "number", hint: "≥" }, width: 130, ...money("gross") },
-  { group: "financial", key: "taxable", label: "Seller Amount (Exclusive GST)", filter: { key: "taxable", type: "number", hint: "≥" }, width: 150, ...money("taxable") },
+  { group: "financial", key: "taxable", label: "Taxable Value", filter: { key: "taxable", type: "number", hint: "≥" }, width: 150, ...money("taxable") },
   { group: "financial", key: "totalGst", label: "Total GST", width: 110, ...money("totalGst") },
   { group: "financial", key: "cgst", label: "CGST", filter: { key: "cgst", type: "number", hint: "≥" }, width: 100, ...money("cgst") },
   { group: "financial", key: "sgst", label: "SGST", filter: { key: "sgst", type: "number", hint: "≥" }, width: 100, ...money("sgst") },

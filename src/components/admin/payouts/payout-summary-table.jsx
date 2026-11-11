@@ -31,7 +31,11 @@ const COLUMNS = [
   { key: "orders", label: "Orders", type: "number", sortable: true },
   { key: "items", label: "Items", type: "number", hidden: true },
   { key: "gross", label: "Gross Amount", type: "currency", sortable: true },
-  { key: "taxable", label: "Taxable", type: "currency", sortable: true },
+  { key: "taxable", label: "Taxable Value", type: "currency", sortable: true },
+  { key: "totalGst", label: "Total GST", type: "currency", sortable: true },
+  { key: "cgst", label: "CGST", type: "currency" },
+  { key: "sgst", label: "SGST", type: "currency" },
+  { key: "igst", label: "IGST", type: "currency" },
   { key: "net", label: "Net Amount", type: "currency", sortable: true },
   { key: "paidBsa", label: "Paid BSA", type: "currency", sortable: true },
   { key: "pendingBsa", label: "Pending BSA", type: "currency", sortable: true },
@@ -348,6 +352,9 @@ export function PayoutSummaryTable({ data, cycles, exportColumns }) {
       </span>
       <span>
         Taxable <b className="text-ink">{formatINR(t.taxable)}</b>
+      </span>
+      <span>
+        GST <b className="text-ink">{formatINR(t.totalGst)}</b> (CGST {formatINR(t.cgst)} · SGST {formatINR(t.sgst)} · IGST {formatINR(t.igst)})
       </span>
       <span>
         Net <b className="text-ink">{formatINR(t.net)}</b>
