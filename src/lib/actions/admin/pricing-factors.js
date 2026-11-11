@@ -44,6 +44,8 @@ function pricingBody(input = {}) {
       notes: text(f.notes ?? "", 500),
     }));
   }
+  if (Array.isArray(input.serviceCodes)) body.serviceCodes = input.serviceCodes.slice(0, 50).map((c) => text(c, 40));
+  if (input.serviceBasis === "NRV" || input.serviceBasis === "ORDER_VALUE") body.serviceBasis = input.serviceBasis;
   if (input.reason) body.reason = text(input.reason, 500);
   return body;
 }

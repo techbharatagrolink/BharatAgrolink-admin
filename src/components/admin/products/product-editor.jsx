@@ -115,6 +115,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
     setForm((current) => ({ ...current, stock, stockStatus: Number(current.stock) > 0 ? current.stockStatus : "In Stock" }));
   };
   const pricingDraft = useRef(null);
+  const [liveServices, setLiveServices] = useState(null);
+  const onServices = useCallback((list) => setLiveServices(list), []);
   const onPricingDraft = useCallback((next) => { pricingDraft.current = next; }, []);
   const onPriced = useCallback((priced) => setForm((current) => ({
     ...current,
@@ -126,7 +128,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
   })), []);
   const pricingParcel = useMemo(() => ({
     // The pricing preview's weightKg is a true kilogram override; the Shipping step's field is grams.
-    ...(creating ? { weightKg: form.weightKg === "" || form.weightKg == null ? form.weightKg : Number(form.weightKg) / 1000, vendorId: form.vendorId } : {}),
+    weightKg: form.weightKg === "" || form.weightKg == null ? form.weightKg : Number(form.weightKg) / 1000,
+    ...(creating ? { vendorId: form.vendorId } : {}),
     lengthCm: form.lengthCm,
     widthCm: form.widthCm,
     heightCm: form.heightCm,
@@ -409,7 +412,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           )}
 
           {step === "pricing" && pricingFactors && (
-            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} parcel={pricingParcel} />
+            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} onServices={onServices} parcel={pricingParcel} />
           )}
 
           {step === "pricing" && !pricingFactors && (
@@ -577,9 +580,9 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           {/* Seller Selected Services */}
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Seller Selected Services</p>
-            {product.services?.length ? (
+            {(liveServices ?? product.services)?.length ? (
               <ul className="mt-2 space-y-1.5">
-                {product.services.map((s, idx) => (
+                {(liveServices ?? product.services).map((s, idx) => (
                   <li key={idx} className="flex items-center justify-between text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1">
                     <span className="font-medium text-ink">{s.name}</span>
                     <span className="text-muted text-[11px]">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
@@ -587,7 +590,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-xs text-ink-muted">No services selected by seller.</p>
+              <p className="mt-1 text-xs text-ink-muted">No services selected.</p>
             )}
           </div>
 
