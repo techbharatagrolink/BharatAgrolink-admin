@@ -323,12 +323,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
 
       <div className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-4">
         <Field label="MRP (₹)" required>{({ id }) => <Input id={id} inputMode="decimal" value={draft.mrp} onChange={(e) => update({ mrp: e.target.value })} disabled={!canEdit} />}</Field>
-        <div className="space-y-3">
-          <Field label="NRV (₹)" required hint="What the seller receives, before services. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
-          {draft.serviceBasis === "NRV" && Number(result.serviceDeduction) > 0 ? (
-          <Field label="NRV after services (₹)" hint={`${money(draft.nrv)} − services ${money(result.serviceDeduction)}. The sale price does not change.`}>{({ id }) => <Input id={id} value={result.nrvToSeller ?? ""} readOnly aria-readonly="true" className="font-semibold" />}</Field>
-          ) : null}
-        </div>
+        <Field label="NRV (₹)" required hint="What the seller receives, before services. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
         <Field label="GST %" required hint={isVariant ? "Set on the base product." : undefined}>{({ id }) => <Select id={id} value={draft.gstPercent} onChange={(e) => update({ gstPercent: e.target.value })} placeholder="Select" options={GST_OPTIONS} disabled={!canEdit || isVariant} />}</Field>
         <Field label="HSN Code" required hint={isVariant ? "Set on the base product." : "GST is not derived from HSN; check both."}>{({ id }) => <Input id={id} value={draft.hsn} onChange={(e) => update({ hsn: e.target.value })} disabled={!canEdit || isVariant} />}</Field>
       </div>
@@ -425,9 +420,15 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             <p className="rounded-lg border border-dashed border-line p-3 text-xs text-ink-muted">Choose a seller in step 2 (Seller &amp; Variants) to select their services here.</p>
           )}
           <div className="flex w-full min-w-0 flex-col gap-2 rounded-lg bg-surface-muted p-3 @md:flex-row @md:items-end @md:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs text-ink-muted">Display price (customer pays, incl. GST)</p>
-              <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
+            <div className="flex min-w-0 flex-wrap items-end gap-x-8 gap-y-2">
+              <div className="min-w-0">
+                <p className="text-xs text-ink-muted">Display price (customer pays, incl. GST)</p>
+                <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
+              </div>
+              <div className="min-w-0" data-testid="nrv-to-seller">
+                <p className="text-xs text-ink-muted">{Number(result.serviceDeduction) > 0 ? `NRV after services (${money(draft.nrv)} − ${money(result.serviceDeduction)})` : "NRV to seller"}</p>
+                <p className="text-2xl font-semibold break-words tabular-nums text-ink">{money(result.nrvToSeller ?? draft.nrv)}</p>
+              </div>
             </div>
             <div className="min-w-0 text-xs text-ink-muted @md:max-w-64 @md:text-right">
               <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of the order value (display price)</p>
