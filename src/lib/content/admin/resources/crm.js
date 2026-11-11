@@ -20,8 +20,8 @@ export const crmResources = {
         key: "source",
         label: "Source",
         type: "multi",
-        // channels first; "WhatsApp (AiSensy)" and "Bulk Enquiry" cover every value they were saved under
-        options: ["Krishi Salahkar (AI)", "Krishi Assistant", "WhatsApp (AiSensy)", "Bulk Enquiry", "Meta", "ORGANIC", "Engagement", "Delivered", "IMPORTED", "CRM", "Model Login", "new-landing-page form", "Manual Customer", "AI Call (VAPI)", "Missed Call", "CSV Import"],
+        // channels first; "WhatsApp (AiSensy)", "Bulk Enquiry" and "Engagement" (also Cart Tracking + Recently Viewed) cover every value they were saved under
+        options: ["Krishi Salahkar (AI)", "Krishi Assistant", "WhatsApp (AiSensy)", "Bulk Enquiry", "Meta", "ORGANIC", "Engagement", "Cart Tracking", "Recently Viewed", "Delivered", "IMPORTED", "CRM", "Model Login", "new-landing-page form", "Manual Customer", "AI Call (VAPI)", "Missed Call", "CSV Import"],
       },
       { key: "assignedTo", label: "Executive", options: execs },
     ],
