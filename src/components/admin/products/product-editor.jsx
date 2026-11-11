@@ -117,6 +117,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
   const pricingDraft = useRef(null);
   const [liveServices, setLiveServices] = useState(null);
   const onServices = useCallback((list) => setLiveServices(list), []);
+  const [live, setLive] = useState(null);
+  const onLive = useCallback((next) => setLive(next), []);
   const onPricingDraft = useCallback((next) => { pricingDraft.current = next; }, []);
   const onPriced = useCallback((priced) => setForm((current) => ({
     ...current,
@@ -412,7 +414,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           )}
 
           {step === "pricing" && pricingFactors && (
-            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} onServices={onServices} parcel={pricingParcel} />
+            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} onServices={onServices} onLive={onLive} parcel={pricingParcel} />
           )}
 
           {step === "pricing" && !pricingFactors && (
@@ -598,12 +600,13 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           {(() => {
             const display = Number(form.salePrice) || Number(product.display) || 0;
             const nrv = Number(form.nrv) || Number(product.nrv) || 0;
-            let takeRate = Number(product.takeRate);
+            let takeRate = live ? Number(live.takeRate) : Number(product.takeRate);
             if ((!takeRate || Number.isNaN(takeRate)) && display > 0 && nrv > 0) {
               takeRate = Math.round(((display - nrv) / display) * 10000) / 100;
             }
             const isAlert = !Number.isNaN(takeRate) && takeRate > 0 && takeRate < 35;
-            const cm = Number(product.contributionMargin) || 0;
+            const cm = live ? Number(live.margin) || 0 : Number(product.contributionMargin) || 0;
+            const serviceChargePct = live?.serviceChargeBps != null ? `${(live.serviceChargeBps / 100).toFixed(2)}%` : null;
             return (
               <div className="rounded-xl border border-line bg-surface p-3 space-y-2">
                 <p className="text-xs font-semibold text-ink-muted">Economics & Margins</p>
@@ -623,6 +626,12 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                   )
                 ) : null}
                 <div className="text-xs space-y-1 pt-1 border-t border-line text-ink-soft">
+                  {serviceChargePct ? (
+                    <div className="flex justify-between">
+                      <span className="text-ink-muted">Service charge of order value</span>
+                      <span className="font-semibold tabular">{serviceChargePct}</span>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between">
                     <span className="text-ink-muted">Contribution Margin</span>
                     <span className={`font-semibold tabular ${cm < 0 ? "text-rose-600 font-bold" : "text-emerald-700"}`}>
@@ -631,15 +640,15 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">Shipping Cost</span>
-                    <span className="tabular">{formatINR(product.shippingCost || 70)}</span>
+                    <span className="tabular">{formatINR(live?.shipping != null ? Number(live.shipping) : product.shippingCost || 70)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">COD Handling</span>
-                    <span className="tabular">{formatINR(product.codHandling || 30)}</span>
+                    <span className="tabular">{formatINR(live?.cod != null ? Number(live.cod) : product.codHandling || 30)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">TCS (1%)</span>
-                    <span className="tabular">{formatINR(product.tcs || Math.round(display * 0.01))}</span>
+                    <span className="tabular">{formatINR(live?.tcs != null ? Number(live.tcs) : product.tcs || Math.round(display * 0.01))}</span>
                   </div>
                 </div>
               </div>

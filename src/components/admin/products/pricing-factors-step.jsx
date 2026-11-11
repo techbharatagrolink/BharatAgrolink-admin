@@ -24,12 +24,6 @@ function pctToBps(value) {
 }
 const bpsToPct = (bps) => (bps == null ? "—" : `${(bps < 0 ? "-" : "")}${Math.floor(Math.abs(bps) / 100)}.${String(Math.abs(bps) % 100).padStart(2, "0")}%`);
 const trimRate = (rate) => (rate == null ? "" : String(rate).replace(/(\.\d*?[1-9])0+$|\.0+$/, "$1"));
-/** 1 − NRV / display price as a percent: it rises when services are added on top. */
-function overallRate(displayPrice, nrv) {
-  const dp = Number(displayPrice);
-  const n = Number(nrv);
-  return dp > 0 && n > 0 ? `${(((dp - n) / dp) * 100).toFixed(2)}%` : "—";
-}
 const money = (value) => (value == null ? "—" : formatINR(value));
 
 /** "131.38" - "148.07" on the API's 2-decimal strings, in integer paise. */
@@ -143,7 +137,7 @@ function parcelFields(parcel) {
 }
 
 /** Step 3 "Pricing & Tax" with PRICING_FACTORS_V1: take rate -> display price -> service charge -> cost factors. */
-export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft, onServices, initialVariantId = 0, onSaved, parcel = null }) {
+export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft, onServices, onLive, initialVariantId = 0, onSaved, parcel = null }) {
   const { notify } = useToast();
   const [variantId, setVariantId] = useState(() => Number(initialVariantId) || 0);
   const [pricing, setPricing] = useState(null);
@@ -158,11 +152,30 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const onDraftRef = useRef(onDraft);
   const onPricedRef = useRef(onPriced);
   const onServicesRef = useRef(onServices);
+  const onLiveRef = useRef(onLive);
   useEffect(() => {
     onDraftRef.current = onDraft;
     onPricedRef.current = onPriced;
     onServicesRef.current = onServices;
-  }, [onDraft, onPriced, onServices]);
+    onLiveRef.current = onLive;
+  }, [onDraft, onPriced, onServices, onLive]);
+
+  // The editor sidebar (Economics & Margins) shows the same live figures as the summary here.
+  useEffect(() => {
+    if (!pricing || variantId !== 0) return;
+    const live = preview?.result ?? pricing.result;
+    if (!live?.displayPrice) return;
+    const actual = (code) => live.factors?.find((f) => f.code === code)?.actualAmount ?? null;
+    onLiveRef.current?.({
+      takeRate: draft?.mode === "FROM_ACTUALS" ? live.takeRate : draft?.takeRate,
+      serviceChargeBps: live.scPctOfDpBps,
+      displayPrice: live.displayPrice,
+      margin: live.platformMargin,
+      shipping: actual("SHIPPING"),
+      cod: actual("PG_COD"),
+      tcs: live.tcs,
+    });
+  }, [pricing, preview, draft, variantId]);
 
   // Keep the editor sidebar's "Seller Selected Services" card in step with the ticked services.
   useEffect(() => {
@@ -349,7 +362,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             <div className="space-y-2 rounded-lg border border-line p-3" data-testid="seller-services">
               <div>
                 <p className="text-sm font-medium text-ink">Seller services</p>
-                <p className="text-xs text-ink-muted">Each selected service adds its charge on top of NRV ÷ (1 − take rate). Services are not part of the take-rate amount the cost factors are measured on.</p>
+                <p className="text-xs text-ink-muted">Each selected service is added to the NRV before the take rate is applied: (NRV + services) ÷ (1 − take rate). The service charge stays the take rate % of the display price and grows with it.</p>
               </div>
               {isVariant ? (
                 <p className="text-xs text-ink-muted">Services are chosen on the base product and apply to every variation.</p>
@@ -377,7 +390,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                 <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-2 text-xs" disabled={!canEdit}>
                   <legend className="sr-only">Percentage service charges are worked out on</legend>
                   <span className="font-medium text-ink">% charges are worked out on</span>
-                  {[["ORDER_VALUE", "Sale price", "Price before services: NRV ÷ (1 − take rate)"], ["NRV", "NRV", "What the seller receives"]].map(([value, label, hint]) => (
+                  {[["ORDER_VALUE", "Sale price", "% of the final sale price (display price)"], ["NRV", "NRV", "What the seller receives"]].map(([value, label, hint]) => (
                     <label key={value} title={hint} className="flex cursor-pointer items-center gap-1.5">
                       <input type="radio" name="service-basis" className="accent-brand-600" value={value} checked={draft.serviceBasis === value} onChange={() => update({ serviceBasis: value })} />
                       <span className="text-ink">{label}</span>
@@ -389,7 +402,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
               <div className="grid gap-x-4 gap-y-0.5 border-t border-line pt-2 text-xs @md:grid-cols-3">
                 <SummaryRow label="Services on top" value={`+${money(result.serviceAmount ?? "0.00")}`} strong />
                 <SummaryRow label="Take-rate amount (100% base)" hint="Display price − NRV − services" value={money(result.takeAmount)} />
-                <SummaryRow label="Take rate incl. services" hint="1 − NRV ÷ display price" value={overallRate(result.displayPrice, draft.nrv)} strong />
+                <SummaryRow label="Service charge % of order value" hint={`Stays the take rate (${trimRate(draft.takeRate) || "—"}%) of the display price`} value={bpsToPct(result.scPctOfDpBps)} strong />
               </div>
             </div>
           ) : (
@@ -401,7 +414,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
               <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
             </div>
             <div className="min-w-0 text-xs text-ink-muted @md:max-w-64 @md:text-right">
-              <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of display price</p>
+              <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of the order value (display price)</p>
               {result.limits?.maxTakeRate && <p>Max take rate under MRP: {result.limits.maxTakeRate}%</p>}
             </div>
           </div>
