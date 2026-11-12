@@ -176,6 +176,18 @@ export async function getProductsWithServices(user) {
   };
 }
 
+/**
+ * Existing-products profitability audit: every Active, priced product whose contribution
+ * margin verdict is "loss" or "below_floor" (below the live pricing_config target — see
+ * the VERDICT_SQL fix this session). `verdict`/`contributionMargin` are already correct
+ * fields on the products list row, so this just filters the same scan — no extra per-product
+ * fetches needed.
+ */
+export async function getProfitabilityAuditCandidates(user) {
+  const scan = await scanProductRows(user);
+  return { ...scan, rows: scan.rows.filter((p) => p.verdict === "loss" || p.verdict === "below_floor") };
+}
+
 export async function calculatePricingLive(input, user) {
   const local = calculatePricing(input);
   if (!local.ok || !user?.token) return local;

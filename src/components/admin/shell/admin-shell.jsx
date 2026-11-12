@@ -7,6 +7,7 @@ import { isLiveAdminPath } from "@/lib/services/admin/live-catalog";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { useProfitabilityAlerts } from "./use-profitability-alerts";
 
 const TABLET_QUERY = "(max-width: 1023px)";
 
@@ -44,6 +45,7 @@ function saveRail(value) {
 }
 
 export function AdminShell({ user, navigation, badges, notifications, children }) {
+  useProfitabilityAlerts();
   const pathname = usePathname();
   const showGap = !isLiveAdminPath(pathname) && pathname !== "/admin/not-ported";
   const isTablet = useSyncExternalStore(subscribe, () => window.matchMedia(TABLET_QUERY).matches, () => false);

@@ -134,6 +134,8 @@ export const coreResources = {
     defaultSort: "updatedAt:desc",
     rowHref: "/admin/products/{id}",
     exportable: true,
+    // Funnel filter in every column header (not S.No. or the product image).
+    columnFilters: true,
     headerActions: [
       { label: "Bulk import", href: "/admin/products/import", permission: "products.import", action: "add" },
       { label: "Add product", href: "/admin/products/new", action: "add", primary: true },

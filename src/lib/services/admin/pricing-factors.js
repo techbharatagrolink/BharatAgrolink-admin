@@ -38,6 +38,36 @@ export async function pricingFactorsEnabled(user) {
   }
 }
 
+/** Verdict snapshot for every Active, priced product — polled by the background alert hook. */
+export async function getProfitabilityAlerts(user) {
+  try {
+    const { data } = await api("admin/pricing/profitability-alerts", { token: user.token });
+    return { ok: true, products: data?.products ?? [] };
+  } catch (error) {
+    return { ok: false, products: [], message: error instanceof ApiError ? error.message : "Could not load profitability alerts." };
+  }
+}
+
+/** Per-vendor contribution totals and verdict counts, priced Active products only. */
+export async function getVendorProfitability(user, { limit } = {}) {
+  try {
+    const { data } = await api("admin/pricing/vendor-profitability", { token: user.token, query: limit ? { limit } : undefined });
+    return { ok: true, rows: data?.rows ?? [] };
+  } catch (error) {
+    return { ok: false, rows: [], message: error instanceof ApiError ? error.message : "Could not load the vendor profitability report." };
+  }
+}
+
+/** Revenue split: Base (take rate) vs Sales-service vs Marketing-service vs Other, priced Active products only. */
+export async function getServiceRevenueAllocation(user) {
+  try {
+    const { data } = await api("admin/pricing/service-revenue", { token: user.token });
+    return { ok: true, allocation: data?.allocation ?? [] };
+  } catch (error) {
+    return { ok: false, allocation: [], message: error instanceof ApiError ? error.message : "Could not load the service revenue split." };
+  }
+}
+
 export async function getProductPricingFactors(id, variantId, user) {
   try {
     const { data } = await api(productPath(id), { token: user.token, query: variantId ? { variantId } : undefined });
