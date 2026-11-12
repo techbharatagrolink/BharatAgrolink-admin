@@ -24,12 +24,6 @@ function pctToBps(value) {
 }
 const bpsToPct = (bps) => (bps == null ? "—" : `${(bps < 0 ? "-" : "")}${Math.floor(Math.abs(bps) / 100)}.${String(Math.abs(bps) % 100).padStart(2, "0")}%`);
 const trimRate = (rate) => (rate == null ? "" : String(rate).replace(/(\.\d*?[1-9])0+$|\.0+$/, "$1"));
-/** 1 − NRV / display price as a percent: it rises when services are added on top. */
-function overallRate(displayPrice, nrv) {
-  const dp = Number(displayPrice);
-  const n = Number(nrv);
-  return dp > 0 && n > 0 ? `${(((dp - n) / dp) * 100).toFixed(2)}%` : "—";
-}
 const money = (value) => (value == null ? "—" : formatINR(value));
 
 /** "131.38" - "148.07" on the API's 2-decimal strings, in integer paise. */
@@ -85,7 +79,7 @@ function draftFrom(pricing) {
     gstPercent: pricing.input.gstPercent == null ? "" : String(pricing.input.gstPercent),
     hsn: pricing.input.hsn ?? "",
     serviceCodes: pricing.services?.selected ?? [],
-    serviceBasis: pricing.services?.basis ?? "NRV",
+    serviceBasis: pricing.services?.basis ?? "ORDER_VALUE",
     factors: (pricing.result.factors || []).map((f) => ({ code: f.code, overridden: f.overridden, actual: f.overridden ? f.actualAmount : "", notes: f.notes || "" })),
   };
 }
@@ -143,7 +137,7 @@ function parcelFields(parcel) {
 }
 
 /** Step 3 "Pricing & Tax" with PRICING_FACTORS_V1: take rate -> display price -> service charge -> cost factors. */
-export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft, onServices, initialVariantId = 0, onSaved, parcel = null }) {
+export function PricingFactorsStep({ productId, canEdit, onPriced, creating = false, onDraft, onServices, onLive, initialVariantId = 0, onSaved, parcel = null }) {
   const { notify } = useToast();
   const [variantId, setVariantId] = useState(() => Number(initialVariantId) || 0);
   const [pricing, setPricing] = useState(null);
@@ -158,11 +152,30 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const onDraftRef = useRef(onDraft);
   const onPricedRef = useRef(onPriced);
   const onServicesRef = useRef(onServices);
+  const onLiveRef = useRef(onLive);
   useEffect(() => {
     onDraftRef.current = onDraft;
     onPricedRef.current = onPriced;
     onServicesRef.current = onServices;
-  }, [onDraft, onPriced, onServices]);
+    onLiveRef.current = onLive;
+  }, [onDraft, onPriced, onServices, onLive]);
+
+  // The editor sidebar (Economics & Margins) shows the same live figures as the summary here.
+  useEffect(() => {
+    if (!pricing || variantId !== 0) return;
+    const live = preview?.result ?? pricing.result;
+    if (!live?.displayPrice) return;
+    const actual = (code) => live.factors?.find((f) => f.code === code)?.actualAmount ?? null;
+    onLiveRef.current?.({
+      takeRate: draft?.mode === "FROM_ACTUALS" ? live.takeRate : draft?.takeRate,
+      serviceChargeBps: live.scPctOfDpBps,
+      displayPrice: live.displayPrice,
+      margin: live.platformMargin,
+      shipping: actual("SHIPPING"),
+      cod: actual("PG_COD"),
+      tcs: live.tcs,
+    });
+  }, [pricing, preview, draft, variantId]);
 
   // Keep the editor sidebar's "Seller Selected Services" card in step with the ticked services.
   useEffect(() => {
@@ -247,6 +260,8 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   if (!pricing || !draft) return <p className="text-sm text-ink-muted">Loading pricing…</p>;
 
   const result = preview?.result ?? pricing.result;
+  // Per-service amounts and charge text follow the live preview (the basis radio changes them).
+  const servicesInfo = preview?.services ?? pricing.services;
   const resultFactors = new Map((result.factors || []).map((f) => [f.code, f]));
   const config = pricing.config;
   const isVariant = variantId !== 0;
@@ -308,7 +323,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
 
       <div className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-4">
         <Field label="MRP (₹)" required>{({ id }) => <Input id={id} inputMode="decimal" value={draft.mrp} onChange={(e) => update({ mrp: e.target.value })} disabled={!canEdit} />}</Field>
-        <Field label="NRV (₹)" required hint="What the seller receives. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
+        <Field label="NRV (₹)" required hint="What the seller receives, before services. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
         <Field label="GST %" required hint={isVariant ? "Set on the base product." : undefined}>{({ id }) => <Select id={id} value={draft.gstPercent} onChange={(e) => update({ gstPercent: e.target.value })} placeholder="Select" options={GST_OPTIONS} disabled={!canEdit || isVariant} />}</Field>
         <Field label="HSN Code" required hint={isVariant ? "Set on the base product." : "GST is not derived from HSN; check both."}>{({ id }) => <Input id={id} value={draft.hsn} onChange={(e) => update({ hsn: e.target.value })} disabled={!canEdit || isVariant} />}</Field>
       </div>
@@ -347,24 +362,31 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             <div className="space-y-2 rounded-lg border border-line p-3" data-testid="seller-services">
               <div>
                 <p className="text-sm font-medium text-ink">Seller services</p>
-                <p className="text-xs text-ink-muted">Each selected service adds its charge on top of NRV ÷ (1 − take rate). Services are not part of the take-rate amount the cost factors are measured on.</p>
+                <p className="text-xs text-ink-muted">A % service is always a % of the sale price. Sale price: the service is added on top, so the display price rises and the service charge stays the take rate %. NRV: the display price stays the same and the services are taken out of the seller&apos;s NRV.</p>
               </div>
               {isVariant ? (
                 <p className="text-xs text-ink-muted">Services are chosen on the base product and apply to every variation.</p>
-              ) : (pricing.services?.available?.length ?? 0) === 0 ? (
+              ) : (servicesInfo?.available?.length ?? 0) === 0 ? (
                 <p className="text-xs text-ink-muted">This seller has no Active services to select.</p>
               ) : (
                 <ul className="grid gap-1.5 @lg:grid-cols-2">
-                  {pricing.services.available.map((s) => {
+                  {servicesInfo.available.map((s) => {
                     const checked = draft.serviceCodes.includes(s.code);
+                    // Follows the radio at once: the % text and the amount are worked out here from the chosen basis
+                    // (NRV, or the display price shown below); the server's totals follow a moment later.
+                    const percent = s.chargeType !== "FIXED_PER_UNIT";
+                    const baseAmount = Number(result.displayPrice);
+                    const shownValue = Number.isInteger(Number(s.chargeValue)) ? String(Number(s.chargeValue)) : Number(s.chargeValue).toFixed(2);
+                    const chargeText = percent ? `${shownValue}% of sale price` : s.chargeText;
+                    const amount = percent ? (Number.isFinite(baseAmount) && baseAmount > 0 ? ((baseAmount * Number(s.chargeValue)) / 100).toFixed(2) : null) : s.amount;
                     return (
                       <li key={s.code}>
                         <label className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-xs ${checked ? "border-brand-600 bg-brand-50" : "border-line"} ${canEdit ? "" : "cursor-not-allowed opacity-70"}`}>
                           <span className="flex min-w-0 items-center gap-2">
                             <input type="checkbox" className="accent-brand-600" checked={checked} disabled={!canEdit} onChange={() => toggleService(s.code)} />
-                            <span className="min-w-0"><span className="block truncate font-medium text-ink">{s.name}</span><span className="block text-[11px] text-ink-muted">{s.category} · {s.chargeText}</span></span>
+                            <span className="min-w-0"><span className="block truncate font-medium text-ink">{s.name}</span><span className="block text-[11px] text-ink-muted">{s.category} · {chargeText}</span></span>
                           </span>
-                          <span className="shrink-0 tabular-nums text-ink">{s.amount == null ? "—" : `+${money(s.amount)}`}</span>
+                          <span className="shrink-0 tabular-nums text-ink">{amount == null ? "—" : `${draft.serviceBasis === "NRV" ? "−" : "+"}${money(amount)}`}</span>
                         </label>
                       </li>
                     );
@@ -374,8 +396,8 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
               {!isVariant && (
                 <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-2 text-xs" disabled={!canEdit}>
                   <legend className="sr-only">Percentage service charges are worked out on</legend>
-                  <span className="font-medium text-ink">% charges are worked out on</span>
-                  {[["NRV", "NRV", "What the seller receives"], ["ORDER_VALUE", "Order value", "Price before services: NRV ÷ (1 − take rate)"]].map(([value, label, hint]) => (
+                  <span className="font-medium text-ink">Services are charged</span>
+                  {[["ORDER_VALUE", "Sale price", "Added on top of the sale price"], ["NRV", "NRV", "Taken out of the seller's NRV; the sale price stays the same"]].map(([value, label, hint]) => (
                     <label key={value} title={hint} className="flex cursor-pointer items-center gap-1.5">
                       <input type="radio" name="service-basis" className="accent-brand-600" value={value} checked={draft.serviceBasis === value} onChange={() => update({ serviceBasis: value })} />
                       <span className="text-ink">{label}</span>
@@ -384,23 +406,32 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                   <span className="text-ink-muted">Fixed ₹ per unit charges are not affected.</span>
                 </fieldset>
               )}
-              <div className="grid gap-x-4 gap-y-0.5 border-t border-line pt-2 text-xs @md:grid-cols-4">
-                <SummaryRow label="Price before services" hint="NRV ÷ (1 − take rate)" value={money(subtractMoney(result.displayPrice, result.serviceAmount ?? "0.00"))} />
-                <SummaryRow label="Services on top" value={`+${money(result.serviceAmount ?? "0.00")}`} strong />
+              <div className="grid gap-x-4 gap-y-0.5 border-t border-line pt-2 text-xs @md:grid-cols-3">
+                {draft.serviceBasis === "NRV" ? (
+                  <SummaryRow label="Services taken from NRV" hint="The sale price does not change" value={`−${money(result.serviceDeduction ?? "0.00")}`} strong />
+                ) : (
+                  <SummaryRow label="Services on top" value={`+${money(result.serviceAmount ?? "0.00")}`} strong />
+                )}
                 <SummaryRow label="Take-rate amount (100% base)" hint="Display price − NRV − services" value={money(result.takeAmount)} />
-                <SummaryRow label="Take rate incl. services" hint="1 − NRV ÷ display price" value={overallRate(result.displayPrice, draft.nrv)} strong />
+                <SummaryRow label="Service charge % of order value" hint={`Stays the take rate (${trimRate(draft.takeRate) || "—"}%) of the display price`} value={bpsToPct(result.scPctOfDpBps)} strong />
               </div>
             </div>
           ) : (
             <p className="rounded-lg border border-dashed border-line p-3 text-xs text-ink-muted">Choose a seller in step 2 (Seller &amp; Variants) to select their services here.</p>
           )}
           <div className="flex w-full min-w-0 flex-col gap-2 rounded-lg bg-surface-muted p-3 @md:flex-row @md:items-end @md:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs text-ink-muted">Display price (customer pays, incl. GST)</p>
-              <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
+            <div className="flex min-w-0 flex-wrap items-end gap-x-8 gap-y-2">
+              <div className="min-w-0">
+                <p className="text-xs text-ink-muted">Display price (customer pays, incl. GST)</p>
+                <p className="text-2xl font-semibold break-words tabular-nums text-ink" data-testid="display-price">{money(result.displayPrice)}</p>
+              </div>
+              <div className="min-w-0" data-testid="nrv-to-seller">
+                <p className="text-xs text-ink-muted">{Number(result.serviceDeduction) > 0 ? `NRV after services (${money(draft.nrv)} − ${money(result.serviceDeduction)})` : "NRV to seller"}</p>
+                <p className="text-2xl font-semibold break-words tabular-nums text-ink">{money(result.nrvToSeller ?? draft.nrv)}</p>
+              </div>
             </div>
             <div className="min-w-0 text-xs text-ink-muted @md:max-w-64 @md:text-right">
-              <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of display price</p>
+              <p>Service charge is {bpsToPct(result.scPctOfDpBps)} of the order value (display price)</p>
               {result.limits?.maxTakeRate && <p>Max take rate under MRP: {result.limits.maxTakeRate}%</p>}
             </div>
           </div>
@@ -507,11 +538,12 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
           <div className="rounded-lg border border-line p-3" data-testid="pricing-summary">
             <p className="mb-1 text-xs font-semibold text-ink-muted">Summary</p>
             <SummaryRow label="Display price" value={money(result.displayPrice)} strong />
-            <SummaryRow label="Taxable value" hint="Display price ÷ (1 + GST)" value={money(result.taxableValue)} />
+            <SummaryRow label="GST value" hint="Display price × GST %" value={money(subtractMoney(result.displayPrice, result.taxableValue))} />
+            <SummaryRow label="Taxable value" hint="Display price − GST value" value={money(result.taxableValue)} />
             <SummaryRow label="TCS" hint={`${bpsToPct(config.tcsBps)} of taxable value`} value={money(result.tcs)} />
-            <SummaryRow label="NRV to seller" value={money(draft.nrv)} />
+            <SummaryRow label="NRV to seller" hint={Number(result.serviceDeduction) > 0 ? `${money(draft.nrv)} − services ${money(result.serviceDeduction)}` : undefined} value={money(result.nrvToSeller ?? draft.nrv)} />
             {Number(result.serviceAmount) > 0 && <SummaryRow label="Seller services (on top)" value={money(result.serviceAmount)} />}
-            <SummaryRow label="Service charge" hint="Display price − NRV − TCS" value={money(result.serviceCharge)} strong />
+            <SummaryRow label="Service charge" hint="Display price − NRV − seller services" value={money(result.serviceCharge)} strong />
             <SummaryRow label="GST on service charge" value={money(result.scGst)} />
             <SummaryRow label="Net service charge" value={money(result.netServiceCharge)} strong />
             <SummaryRow label="Cost factors (actual)" value={money(result.totalFactorActual)} />

@@ -117,6 +117,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
   const pricingDraft = useRef(null);
   const [liveServices, setLiveServices] = useState(null);
   const onServices = useCallback((list) => setLiveServices(list), []);
+  const [live, setLive] = useState(null);
+  const onLive = useCallback((next) => setLive(next), []);
   const onPricingDraft = useCallback((next) => { pricingDraft.current = next; }, []);
   const onPriced = useCallback((priced) => setForm((current) => ({
     ...current,
@@ -412,7 +414,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           )}
 
           {step === "pricing" && pricingFactors && (
-            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} onServices={onServices} parcel={pricingParcel} />
+            <PricingFactorsStep productId={creating ? undefined : product.id} canEdit={creating || canEditPricing} creating={creating} onPriced={onPriced} onDraft={onPricingDraft} onServices={onServices} onLive={onLive} parcel={pricingParcel} />
           )}
 
           {step === "pricing" && !pricingFactors && (
@@ -581,14 +583,26 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Seller Selected Services</p>
             {(liveServices ?? product.services)?.length ? (
-              <ul className="mt-2 space-y-1.5">
-                {(liveServices ?? product.services).map((s, idx) => (
-                  <li key={idx} className="flex items-center justify-between text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1">
-                    <span className="font-medium text-ink">{s.name}</span>
-                    <span className="text-muted text-[11px]">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-line text-left text-[11px] text-ink-muted">
+                      <th scope="col" className="py-1 pr-2 font-medium">Service</th>
+                      <th scope="col" className="py-1 pr-2 font-medium">Category</th>
+                      <th scope="col" className="py-1 text-right font-medium">Charge</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {(liveServices ?? product.services).map((s, idx) => (
+                      <tr key={s.code ?? idx}>
+                        <td className="py-1.5 pr-2 font-medium text-ink">{s.name}</td>
+                        <td className="py-1.5 pr-2 text-ink-muted">{s.category || "—"}</td>
+                        <td className="py-1.5 text-right tabular-nums text-ink">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="mt-1 text-xs text-ink-muted">No services selected.</p>
             )}
@@ -598,12 +612,13 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           {(() => {
             const display = Number(form.salePrice) || Number(product.display) || 0;
             const nrv = Number(form.nrv) || Number(product.nrv) || 0;
-            let takeRate = Number(product.takeRate);
+            let takeRate = live ? Number(live.takeRate) : Number(product.takeRate);
             if ((!takeRate || Number.isNaN(takeRate)) && display > 0 && nrv > 0) {
               takeRate = Math.round(((display - nrv) / display) * 10000) / 100;
             }
             const isAlert = !Number.isNaN(takeRate) && takeRate > 0 && takeRate < 35;
-            const cm = Number(product.contributionMargin) || 0;
+            const cm = live ? Number(live.margin) || 0 : Number(product.contributionMargin) || 0;
+            const serviceChargePct = live?.serviceChargeBps != null ? `${(live.serviceChargeBps / 100).toFixed(2)}%` : null;
             return (
               <div className="rounded-xl border border-line bg-surface p-3 space-y-2">
                 <p className="text-xs font-semibold text-ink-muted">Economics & Margins</p>
@@ -623,6 +638,12 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                   )
                 ) : null}
                 <div className="text-xs space-y-1 pt-1 border-t border-line text-ink-soft">
+                  {serviceChargePct ? (
+                    <div className="flex justify-between">
+                      <span className="text-ink-muted">Service charge of order value</span>
+                      <span className="font-semibold tabular">{serviceChargePct}</span>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between">
                     <span className="text-ink-muted">Contribution Margin</span>
                     <span className={`font-semibold tabular ${cm < 0 ? "text-rose-600 font-bold" : "text-emerald-700"}`}>
@@ -631,15 +652,15 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">Shipping Cost</span>
-                    <span className="tabular">{formatINR(product.shippingCost || 70)}</span>
+                    <span className="tabular">{formatINR(live?.shipping != null ? Number(live.shipping) : product.shippingCost || 70)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">COD Handling</span>
-                    <span className="tabular">{formatINR(product.codHandling || 30)}</span>
+                    <span className="tabular">{formatINR(live?.cod != null ? Number(live.cod) : product.codHandling || 30)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-ink-muted">TCS (1%)</span>
-                    <span className="tabular">{formatINR(product.tcs || Math.round(display * 0.01))}</span>
+                    <span className="tabular">{formatINR(live?.tcs != null ? Number(live.tcs) : product.tcs || Math.round(display * 0.01))}</span>
                   </div>
                 </div>
               </div>

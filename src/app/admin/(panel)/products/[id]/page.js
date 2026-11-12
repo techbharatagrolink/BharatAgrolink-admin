@@ -207,14 +207,26 @@ export default async function ProductDetailPage({ params, searchParams }) {
             <CardHeader title="Seller Services" description="Services picked by seller for this product" />
             <CardBody>
               {p.services?.length ? (
-                <ul className="space-y-1.5">
-                  {p.services.map((s, idx) => (
-                    <li key={idx} className="flex items-center justify-between rounded-lg border border-line bg-surface-muted/50 p-2 text-xs">
-                      <span className="font-medium text-ink">{s.name}</span>
-                      <span className="text-ink-muted">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-line text-left text-[11px] text-ink-muted">
+                        <th scope="col" className="py-1 pr-2 font-medium">Service</th>
+                        <th scope="col" className="py-1 pr-2 font-medium">Category</th>
+                        <th scope="col" className="py-1 text-right font-medium">Charge</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {p.services.map((s, idx) => (
+                        <tr key={s.code ?? idx}>
+                          <td className="py-1.5 pr-2 font-medium text-ink">{s.name}</td>
+                          <td className="py-1.5 pr-2 text-ink-muted">{s.category || "—"}</td>
+                          <td className="py-1.5 text-right tabular-nums text-ink">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className="text-xs text-ink-muted">No services selected by seller.</p>
               )}

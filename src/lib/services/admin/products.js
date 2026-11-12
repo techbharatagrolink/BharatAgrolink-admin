@@ -101,6 +101,40 @@ export async function getProductsSummary(user) {
   };
 }
 
+const SERVICES_PAGE_SIZE = 100;
+const SERVICES_SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
+
+/**
+ * Sales-facing report: every product with at least one seller-selected service, for
+ * promoting those listings. There is no "has services" filter on the admin API, so this
+ * scans the live products list (newest-updated first) up to a page cap and filters locally.
+ */
+export async function getProductsWithServices(user) {
+  if (!user?.token) return { rows: [], scanned: 0, totalCatalog: 0, truncated: false };
+  try {
+    const query = { pageSize: SERVICES_PAGE_SIZE, sort: "updatedAt:desc" };
+    const { data: first } = await api("admin/lists/products", { token: user.token, query: { ...query, page: 1 } });
+    const pageCount = Math.max(1, Number(first?.pageCount) || 1);
+    const pagesToScan = Math.min(pageCount, SERVICES_SCAN_PAGE_CAP);
+    const rest = await Promise.all(
+      Array.from({ length: pagesToScan - 1 }, (_, i) => i + 2).map((page) =>
+        api("admin/lists/products", { token: user.token, query: { ...query, page } })
+          .then((res) => res.data?.rows ?? [])
+          .catch(() => []),
+      ),
+    );
+    const scannedRows = [...(first?.rows ?? []), ...rest.flat()];
+    return {
+      rows: scannedRows.filter((p) => Array.isArray(p.services) && p.services.length > 0),
+      scanned: scannedRows.length,
+      totalCatalog: first?.total ?? scannedRows.length,
+      truncated: pageCount > SERVICES_SCAN_PAGE_CAP,
+    };
+  } catch (error) {
+    return { rows: [], scanned: 0, totalCatalog: 0, truncated: false, message: error instanceof ApiError ? error.message : "Could not load products from the admin API." };
+  }
+}
+
 export async function calculatePricingLive(input, user) {
   const local = calculatePricing(input);
   if (!local.ok || !user?.token) return local;
