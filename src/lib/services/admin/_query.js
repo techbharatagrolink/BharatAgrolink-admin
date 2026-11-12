@@ -14,6 +14,25 @@ export async function mockLatency(ms = 120) {
   if (process.env.NODE_ENV !== "production") await sleep(ms);
 }
 
+/**
+ * Runs `fn` over `items` with at most `limit` in flight at once. Report-style scans that
+ * fan out one request per row (e.g. fetching each product's pricing) must throttle this
+ * way — firing them all via Promise.all saturates the admin API's rate limiter and takes
+ * down the whole session (even unrelated requests start 429ing) until it cools down.
+ */
+export async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let index = 0;
+  async function worker() {
+    while (index < items.length) {
+      const current = index++;
+      results[current] = await fn(items[current], current);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
+  return results;
+}
+
 export function parseListParams(searchParams = {}) {
   const get = (key) => {
     const value = searchParams[key];

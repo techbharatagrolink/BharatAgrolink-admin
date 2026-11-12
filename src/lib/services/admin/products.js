@@ -5,8 +5,9 @@ import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
 import { api, apiForm, ApiError } from "@/lib/api";
-import { mockLatency } from "./_query";
+import { mapLimit, mockLatency } from "./_query";
 import { STOCK_STATUSES } from "@/lib/content/admin/stock";
+import { getProductPricingFactors } from "./pricing-factors";
 
 function liveError(error, fallback) {
   if (!(error instanceof ApiError)) return { ok: false, message: fallback };
@@ -101,38 +102,71 @@ export async function getProductsSummary(user) {
   };
 }
 
-const SERVICES_PAGE_SIZE = 100;
-const SERVICES_SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
+const SCAN_PAGE_SIZE = 100;
+const SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
+const SCAN_CONCURRENCY = 4; // the admin API rate-limits a session that fires too many requests at once
 
 /**
- * Sales-facing report: every product with at least one seller-selected service, for
- * promoting those listings. There is no "has services" filter on the admin API, so this
- * scans the live products list (newest-updated first) up to a page cap and filters locally.
+ * Shared by the admin-only report pages below: there is no server-side filter for
+ * "has services" or "take rate above X" on the admin API, so these scan the live
+ * products list (newest-updated first) up to a page cap and filter locally.
  */
-export async function getProductsWithServices(user) {
+export async function scanProductRows(user) {
   if (!user?.token) return { rows: [], scanned: 0, totalCatalog: 0, truncated: false };
   try {
-    const query = { pageSize: SERVICES_PAGE_SIZE, sort: "updatedAt:desc" };
+    const query = { pageSize: SCAN_PAGE_SIZE, sort: "updatedAt:desc" };
     const { data: first } = await api("admin/lists/products", { token: user.token, query: { ...query, page: 1 } });
     const pageCount = Math.max(1, Number(first?.pageCount) || 1);
-    const pagesToScan = Math.min(pageCount, SERVICES_SCAN_PAGE_CAP);
-    const rest = await Promise.all(
-      Array.from({ length: pagesToScan - 1 }, (_, i) => i + 2).map((page) =>
+    const pagesToScan = Math.min(pageCount, SCAN_PAGE_CAP);
+    const rest = await mapLimit(
+      Array.from({ length: pagesToScan - 1 }, (_, i) => i + 2),
+      SCAN_CONCURRENCY,
+      (page) =>
         api("admin/lists/products", { token: user.token, query: { ...query, page } })
           .then((res) => res.data?.rows ?? [])
           .catch(() => []),
-      ),
     );
-    const scannedRows = [...(first?.rows ?? []), ...rest.flat()];
+    const rows = [...(first?.rows ?? []), ...rest.flat()];
     return {
-      rows: scannedRows.filter((p) => Array.isArray(p.services) && p.services.length > 0),
-      scanned: scannedRows.length,
-      totalCatalog: first?.total ?? scannedRows.length,
-      truncated: pageCount > SERVICES_SCAN_PAGE_CAP,
+      rows,
+      scanned: rows.length,
+      totalCatalog: first?.total ?? rows.length,
+      truncated: pageCount > SCAN_PAGE_CAP,
     };
   } catch (error) {
     return { rows: [], scanned: 0, totalCatalog: 0, truncated: false, message: error instanceof ApiError ? error.message : "Could not load products from the admin API." };
   }
+}
+
+const SERVICES_DETAIL_CAP = 200;
+
+/**
+ * Sales-facing report: every product with at least one seller-selected service, for
+ * promoting those listings.
+ *
+ * The products list (`admin/lists/products`) embeds a `services` array per row, but its
+ * item shape doesn't match the Pricing & Tax tab's (names/charges came back as
+ * `undefined` in the UI). The per-product pricing endpoint's `services.available` /
+ * `services.selected` is the shape already proven correct there, so each candidate row
+ * is re-fetched from that endpoint and its `services` replaced before it's returned.
+ */
+export async function getProductsWithServices(user) {
+  const scan = await scanProductRows(user);
+  const withServices = scan.rows.filter((p) => Array.isArray(p.services) && p.services.length > 0);
+  const candidates = withServices.slice(0, SERVICES_DETAIL_CAP);
+  const detailed = await mapLimit(candidates, SCAN_CONCURRENCY, async (p) => {
+    const loaded = await getProductPricingFactors(p.id, 0, user);
+    if (!loaded.ok) return null;
+    const available = loaded.pricing.services?.available ?? [];
+    const selected = loaded.pricing.services?.selected ?? [];
+    const services = available.filter((s) => selected.includes(s.code));
+    return services.length ? { ...p, services } : null;
+  });
+  return {
+    ...scan,
+    rows: detailed.filter(Boolean),
+    truncated: scan.truncated || withServices.length > SERVICES_DETAIL_CAP,
+  };
 }
 
 export async function calculatePricingLive(input, user) {

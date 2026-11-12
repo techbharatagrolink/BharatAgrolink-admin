@@ -92,6 +92,7 @@ export const navigation = [
           { key: "products-with-services", label: "Products with Services", href: "/admin/products/with-services", permission: "products" },
           { key: "pricing-cost-config", label: "Cost & Margin Management", href: "/admin/pricing/cost-config", page: "product_cost_management.php", permission: "pricing.costConfig" },
           { key: "pricing-cost-management", label: "Cost Management", href: "/admin/pricing/cost-management", permission: "products" },
+          { key: "pricing-take-rate-services", label: "Take-Rate Service Rule", href: "/admin/pricing/take-rate-services", permission: "products" },
           { key: "products-pending", label: "Pending Products", href: "/admin/products/pending", page: "pending_products.php", permission: "products.approval", badge: "pendingProducts" },
           { key: "products-import", label: "Bulk Import / Update", href: "/admin/products/import", permission: "products.import" },
           { key: "products-inventory", label: "Inventory", href: "/admin/inventory", permission: "products", badge: "outOfStock" },
@@ -166,7 +167,10 @@ export const navigation = [
         key: "mktg-dashboard",
         label: "Marketing Dashboard",
         icon: "Megaphone",
-        children: [{ key: "marketing", label: "Marketing Management", href: "/admin/marketing", page: "social_media_dashboard.php", permission: "marketing" }],
+        children: [
+          { key: "marketing", label: "Marketing Management", href: "/admin/marketing", page: "social_media_dashboard.php", permission: "marketing" },
+          { key: "marketing-products-with-services", label: "Products with Marketing Services", href: "/admin/marketing/products-with-services", permission: "products" },
+        ],
       },
       {
         key: "spend-budget",

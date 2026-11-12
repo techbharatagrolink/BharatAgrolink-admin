@@ -226,6 +226,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/pricing/commission",
   "/admin/pricing/cost-config",
   "/admin/pricing/cost-management",
+  "/admin/pricing/take-rate-services",
   "/admin/seller-services/charges",
   "/admin/seller-services/requests",
   "/admin/crm",
