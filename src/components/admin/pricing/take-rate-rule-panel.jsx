@@ -8,12 +8,14 @@ import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/form";
+import { sleep } from "@/lib/utils";
+
+const APPLY_PACE_MS = 250; // each save is already its own request; space them out so a big batch doesn't trip the admin API's rate limiter
 
 const STATUS_LABEL = {
   "blocked-seller-inactive": "Seller hasn't activated the service",
   "blocked-price-change": "Would change price / NRV",
   "blocked-actuals-mode": "Rebuild-from-actuals mode",
-  "blocked-missing-hsn": "No HSN code set",
   "blocked-preview-failed": "Preview failed",
   "blocked-load-failed": "Could not load pricing",
   "already-applied": "Already applied",
@@ -73,7 +75,8 @@ export function TakeRateRulePanel({ rows, canApply }) {
     startTransition(async () => {
       let okCount = 0;
       let failCount = 0;
-      for (const id of ids) {
+      for (const [i, id] of ids.entries()) {
+        if (i > 0) await sleep(APPLY_PACE_MS);
         const res = await applyTakeRateRuleAction(id, reason);
         if (res.ok) okCount += 1;
         else failCount += 1;
@@ -191,14 +194,6 @@ export function TakeRateRulePanel({ rows, canApply }) {
                               </Link>
                             </span>
                           ))}
-                        </>
-                      )}
-                      {r.status === "blocked-missing-hsn" && (
-                        <>
-                          {" — "}
-                          <Link href={`/admin/products/${r.id}`} className="text-brand-700 hover:underline">
-                            add an HSN code on this product
-                          </Link>
                         </>
                       )}
                       {r.status === "blocked-price-change" && (

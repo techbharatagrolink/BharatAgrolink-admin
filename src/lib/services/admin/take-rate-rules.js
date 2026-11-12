@@ -1,7 +1,7 @@
 import "server-only";
 import { scanProductRows } from "./products";
 import { getProductPricingFactors, previewProductPricingFactors, saveProductPricingFactors } from "./pricing-factors";
-import { mapLimit } from "./_query";
+import { mapLimit, withRetry } from "./_query";
 
 /**
  * Take-rate service rule (sales request): products priced well above the ~35% target
@@ -20,7 +20,8 @@ const REQUIRED_SERVICE_NAMES = {
   tier2: ["sales pitch", "marketing"],
 };
 const MAX_CANDIDATES = 200; // same cap as the generic bulk-action limit elsewhere in this app
-const SCAN_CONCURRENCY = 4; // each candidate does a GET + a preview POST; higher than this trips the admin API's rate limiter
+const SCAN_CONCURRENCY = 2; // each candidate does a GET + a preview POST; the admin API drops connections outright if pushed harder
+const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just how many are in flight
 
 function tierFor(takeRate) {
   if (!Number.isFinite(takeRate)) return null;
@@ -69,10 +70,6 @@ export function buildCandidate(pricing) {
   const tier = tierFor(takeRate);
   if (!tier) return { status: "not-applicable", takeRate };
 
-  // The save endpoint rejects a missing HSN (the preview endpoint doesn't catch this),
-  // so this is checked up front rather than surfacing as a save failure after Apply.
-  if (!String(pricing.input.hsn || "").trim()) return { status: "blocked-missing-hsn", tier, takeRate };
-
   const available = pricing.services?.available ?? [];
   const selectedCodes = pricing.services?.selected ?? [];
   const requiredNames = REQUIRED_SERVICE_NAMES[tier];
@@ -102,7 +99,7 @@ export function buildCandidate(pricing) {
 
 /** Runs the candidate's body through preview and only calls it "ready" if price/NRV/MRP hold still. */
 async function gateCandidate(id, pricing, candidate, user) {
-  const preview = await previewProductPricingFactors(id, candidate.body, user);
+  const preview = await withRetry(() => previewProductPricingFactors(id, candidate.body, user));
   if (!preview.ok) return { ...candidate, status: "blocked-preview-failed", previewMessage: preview.message };
   const next = preview.pricing;
   const unchanged = sameAmount(next.result?.displayPrice, candidate.currentDisplayPrice) && sameAmount(next.input?.nrv, candidate.currentNrv) && sameAmount(next.input?.mrp, candidate.currentMrp);
@@ -122,13 +119,18 @@ export async function scanTakeRateRuleCandidates(user) {
 
   const allCandidates = scan.rows.filter((p) => tierFor(Number(p.takeRate)) != null);
   const listCandidates = allCandidates.slice(0, MAX_CANDIDATES);
-  const rows = await mapLimit(listCandidates, SCAN_CONCURRENCY, async (p) => {
-    const loaded = await getProductPricingFactors(p.id, 0, user);
-    if (!loaded.ok) return { id: p.id, name: p.name, sku: p.sku, vendor: p.vendor, category: p.category, status: "blocked-load-failed", loadMessage: loaded.message };
-    const candidate = buildCandidate(loaded.pricing);
-    const resolved = candidate.status === "candidate" ? await gateCandidate(p.id, loaded.pricing, candidate, user) : candidate;
-    return { id: p.id, name: p.name, sku: p.sku, vendor: p.vendor, category: p.category, ...resolved };
-  });
+  const rows = await mapLimit(
+    listCandidates,
+    SCAN_CONCURRENCY,
+    async (p) => {
+      const loaded = await withRetry(() => getProductPricingFactors(p.id, 0, user));
+      if (!loaded.ok) return { id: p.id, name: p.name, sku: p.sku, vendor: p.vendor, category: p.category, status: "blocked-load-failed", loadMessage: loaded.message };
+      const candidate = buildCandidate(loaded.pricing);
+      const resolved = candidate.status === "candidate" ? await gateCandidate(p.id, loaded.pricing, candidate, user) : candidate;
+      return { id: p.id, name: p.name, sku: p.sku, vendor: p.vendor, category: p.category, ...resolved };
+    },
+    { minIntervalMs: SCAN_MIN_INTERVAL_MS },
+  );
 
   return {
     rows: rows.filter((r) => r.status !== "not-applicable"),
@@ -140,14 +142,13 @@ export async function scanTakeRateRuleCandidates(user) {
 
 /** Re-derives the candidate fresh (in case anything changed since the scan) and only saves if it's still "ready". */
 export async function applyTakeRateRule(id, reason, user) {
-  const loaded = await getProductPricingFactors(id, 0, user);
+  const loaded = await withRetry(() => getProductPricingFactors(id, 0, user));
   if (!loaded.ok) return { ok: false, message: loaded.message };
   const candidate = buildCandidate(loaded.pricing);
-  if (candidate.status === "blocked-missing-hsn") return { ok: false, message: "This product has no HSN code set. Add one in the product's Pricing & Tax tab, then re-run the scan." };
   if (candidate.status !== "candidate") return { ok: false, message: `This product is no longer a candidate (status: ${candidate.status}).` };
   const gated = await gateCandidate(id, loaded.pricing, candidate, user);
   if (gated.status !== "ready") return { ok: false, message: gated.status === "blocked-price-change" ? "Applying this would change the display price, MRP or NRV, so it was not saved." : (gated.previewMessage || "This product is not ready to apply.") };
-  const saved = await saveProductPricingFactors(id, { ...candidate.body, reason }, user);
+  const saved = await withRetry(() => saveProductPricingFactors(id, { ...candidate.body, reason }, user));
   if (!saved.ok) return { ok: false, message: saved.message };
   return { ok: true, message: `Take rate set to ${candidate.proposedTakeRate}% and ${candidate.addingServiceNames.join(" + ")} selected.` };
 }

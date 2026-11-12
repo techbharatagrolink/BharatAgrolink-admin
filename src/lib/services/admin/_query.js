@@ -15,22 +15,48 @@ export async function mockLatency(ms = 120) {
 }
 
 /**
- * Runs `fn` over `items` with at most `limit` in flight at once. Report-style scans that
- * fan out one request per row (e.g. fetching each product's pricing) must throttle this
- * way — firing them all via Promise.all saturates the admin API's rate limiter and takes
- * down the whole session (even unrelated requests start 429ing) until it cools down.
+ * Runs `fn` over `items` with at most `limit` in flight at once, and — when
+ * `minIntervalMs` is set — never starts two calls (across all lanes combined) closer
+ * together than that. Report-style scans that fan out one request per row (e.g.
+ * fetching each product's pricing) must throttle this way: firing them all via
+ * Promise.all saturates the admin API's rate limiter, which then drops connections
+ * outright for a while (even unrelated requests start failing) until it cools down.
+ * Capping concurrency alone isn't enough — a limiter counts requests over *time*, not
+ * how many are in flight at once — so `minIntervalMs` paces the actual dispatch rate.
  */
-export async function mapLimit(items, limit, fn) {
+export async function mapLimit(items, limit, fn, { minIntervalMs = 0 } = {}) {
   const results = new Array(items.length);
   let index = 0;
+  let nextAt = 0;
   async function worker() {
     while (index < items.length) {
       const current = index++;
+      if (minIntervalMs) {
+        const wait = Math.max(0, nextAt - Date.now());
+        nextAt = Math.max(Date.now(), nextAt) + minIntervalMs;
+        if (wait) await sleep(wait);
+      }
       results[current] = await fn(items[current], current);
     }
   }
   await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
   return results;
+}
+
+/**
+ * Retries an async call that reports failure as `{ ok: false }` rather than throwing
+ * (every pricing-factors service function does this). Used around single requests inside
+ * a `mapLimit` scan so one transient rate-limit/network blip doesn't permanently mark a
+ * row as failed.
+ */
+export async function withRetry(fn, { attempts = 3, baseDelayMs = 600 } = {}) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    last = await fn();
+    if (last.ok) return last;
+    if (i < attempts - 1) await sleep(baseDelayMs * 2 ** i);
+  }
+  return last;
 }
 
 export function parseListParams(searchParams = {}) {

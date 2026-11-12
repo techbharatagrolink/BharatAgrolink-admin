@@ -5,7 +5,7 @@ import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
 import { api, apiForm, ApiError } from "@/lib/api";
-import { mapLimit, mockLatency } from "./_query";
+import { mapLimit, mockLatency, withRetry } from "./_query";
 import { STOCK_STATUSES } from "@/lib/content/admin/stock";
 import { getProductPricingFactors } from "./pricing-factors";
 
@@ -104,7 +104,8 @@ export async function getProductsSummary(user) {
 
 const SCAN_PAGE_SIZE = 100;
 const SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
-const SCAN_CONCURRENCY = 4; // the admin API rate-limits a session that fires too many requests at once
+const SCAN_CONCURRENCY = 2; // the admin API drops connections outright if pushed harder
+const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just how many are in flight
 
 /**
  * Shared by the admin-only report pages below: there is no server-side filter for
@@ -125,6 +126,7 @@ export async function scanProductRows(user) {
         api("admin/lists/products", { token: user.token, query: { ...query, page } })
           .then((res) => res.data?.rows ?? [])
           .catch(() => []),
+      { minIntervalMs: SCAN_MIN_INTERVAL_MS },
     );
     const rows = [...(first?.rows ?? []), ...rest.flat()];
     return {
@@ -154,14 +156,19 @@ export async function getProductsWithServices(user) {
   const scan = await scanProductRows(user);
   const withServices = scan.rows.filter((p) => Array.isArray(p.services) && p.services.length > 0);
   const candidates = withServices.slice(0, SERVICES_DETAIL_CAP);
-  const detailed = await mapLimit(candidates, SCAN_CONCURRENCY, async (p) => {
-    const loaded = await getProductPricingFactors(p.id, 0, user);
-    if (!loaded.ok) return null;
-    const available = loaded.pricing.services?.available ?? [];
-    const selected = loaded.pricing.services?.selected ?? [];
-    const services = available.filter((s) => selected.includes(s.code));
-    return services.length ? { ...p, services } : null;
-  });
+  const detailed = await mapLimit(
+    candidates,
+    SCAN_CONCURRENCY,
+    async (p) => {
+      const loaded = await withRetry(() => getProductPricingFactors(p.id, 0, user));
+      if (!loaded.ok) return null;
+      const available = loaded.pricing.services?.available ?? [];
+      const selected = loaded.pricing.services?.selected ?? [];
+      const services = available.filter((s) => selected.includes(s.code));
+      return services.length ? { ...p, services } : null;
+    },
+    { minIntervalMs: SCAN_MIN_INTERVAL_MS },
+  );
   return {
     ...scan,
     rows: detailed.filter(Boolean),
