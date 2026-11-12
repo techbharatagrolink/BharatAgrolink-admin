@@ -60,11 +60,9 @@ export default async function GeographicalDataPage({ searchParams }) {
     ? null
     : kind !== "villages"
       ? null
-      : data.totalUnknown
-        ? "The village table has about 6 lakh rows and is indexed only by pincode, so this filter is paged without a total and can take a few seconds. Filter by pincode for the fastest results."
-        : data.totalIsEstimate
-          ? "About 6 lakh villages (approximate count). Search a 6-digit pincode, or pick a state and district."
-          : null;
+      : data.totalIsEstimate
+        ? "About 6 lakh villages (approximate count). Search the start of a village or sub-district name, a district or state name, or a 6-digit pincode."
+        : null;
 
   return (
     <>

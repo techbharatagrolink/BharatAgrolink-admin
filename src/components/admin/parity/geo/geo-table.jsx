@@ -49,7 +49,7 @@ const COLUMNS = {
 const SEARCH = {
   blocks: "Search block / district, or a 6-digit pincode",
   urban: "Search local body, or a 6-digit pincode",
-  villages: "Search village / sub-district, or a 6-digit pincode",
+  villages: "Village / sub-district name (starts with), district, or 6-digit pincode",
 };
 
 const opts = (list) => list.map((v) => ({ value: v, label: v }));
@@ -77,12 +77,16 @@ function GeoFilters({ kind, options }) {
   );
 }
 
+/** "516172,516173,..." has no spaces, so it cannot wrap and spills into the next column; ", " lets it wrap. */
+const spaced = (list) => (typeof list === "string" ? list.split(",").map((s) => s.trim()).filter(Boolean).join(", ") : list);
+
 export function GeoTable({ kind, data, options }) {
+  const shown = kind === "blocks" ? { ...data, rows: data.rows.map((r) => ({ ...r, subpincode: spaced(r.subpincode) })) } : data;
   return (
     <DataTable
       id={`geo-${kind}`}
       columns={COLUMNS[kind]}
-      data={data}
+      data={shown}
       search={SEARCH[kind]}
       toolbar={<GeoFilters kind={kind} options={options} />}
       onExport={(params) => exportGeoAction(kind, params)}
