@@ -26,8 +26,8 @@ export default async function ProductsDashboardPage() {
         <StatCard label="Live" value={formatNumber(d.stats.live)} />
         <StatCard label="Pending approval" value={formatNumber(d.stats.pending)} tone="warning" href="/admin/products/pending" />
         <StatCard label="Rejected / draft" value={formatNumber(d.stats.rejected)} tone="neutral" />
-        <StatCard label="Low stock (1–9)" value={formatNumber(d.stats.lowStock)} tone="warning" href="/admin/inventory?stockStatus=Low+Stock" />
-        <StatCard label="Out of stock" value={formatNumber(d.stats.outOfStock)} tone="danger" href="/admin/inventory?stockStatus=Out+of+Stock" />
+        <StatCard label="Low stock (1–9)" value={formatNumber(d.stats.lowStock)} tone="warning" href="/admin/inventory/stock?status=LOW_STOCK" />
+        <StatCard label="Out of stock" value={formatNumber(d.stats.outOfStock)} tone="danger" href="/admin/inventory/stock?status=OUT_OF_STOCK" />
         <StatCard label="Loss-making listings" value={formatNumber(d.stats.lossMaking)} tone="danger" href="/admin/products?verdict=loss" />
       </StatGrid>
       <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">

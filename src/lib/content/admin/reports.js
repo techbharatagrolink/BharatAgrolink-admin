@@ -20,8 +20,8 @@ export const reportGroups = [
     group: "Catalog & inventory",
     reports: [
       { key: "products", title: "Product report", description: "Listings with pricing, stock and economics verdict.", href: "/admin/products", permission: "products" },
-      { key: "inventory", title: "Stock report", description: "Out-of-stock, low-stock and in-stock listings by vendor.", href: "/admin/inventory", permission: "products" },
-      { key: "stock-history", title: "Stock movements", description: "Every stock change with source and reason.", href: "/admin/inventory/history", permission: "products" },
+      { key: "inventory", title: "Stock report", description: "Out-of-stock, low-stock and in-stock listings by vendor.", href: "/admin/inventory/stock", permission: "inventory" },
+      { key: "stock-history", title: "Stock movements", description: "Every stock change with source and reason.", href: "/admin/inventory/history", permission: "inventory" },
     ],
   },
   {
