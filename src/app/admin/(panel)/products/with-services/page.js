@@ -6,26 +6,50 @@ import { Notice, PageHeader } from "@/components/ui/page";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Products with Seller Services" };
+
+const BASE_HREF = "/admin/products/with-services";
+
+function chargeText(s) {
+  return s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`;
+}
+
+/** One entry per distinct service, with how many of the scanned products have it selected. */
+function groupByService(rows) {
+  const map = new Map();
+  for (const p of rows) {
+    for (const s of p.services ?? []) {
+      const key = String(s.code ?? s.name);
+      if (!map.has(key)) map.set(key, { key, name: s.name, category: s.category, chargeType: s.chargeType, chargeValue: s.chargeValue, count: 0 });
+      map.get(key).count += 1;
+    }
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
+}
 
 function ServiceBadges({ services }) {
   return (
     <div className="flex flex-wrap gap-1 max-w-[320px]">
       {services.map((s, idx) => (
-        <span
+        <Link
           key={s.code ?? idx}
-          className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200"
-          title={s.category || undefined}
+          href={`${BASE_HREF}?service=${encodeURIComponent(String(s.code ?? s.name))}`}
+          title={s.category ? `Filter by ${s.category}` : "Filter by this service"}
+          className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300"
         >
-          {s.name} ({s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`})
-        </span>
+          {s.name} ({chargeText(s)})
+        </Link>
       ))}
     </div>
   );
 }
 
-export default async function ProductsWithServicesPage() {
+export default async function ProductsWithServicesPage({ searchParams }) {
+  const params = await searchParams;
+  const selected = params?.service ? String(params.service) : "";
+
   const { allowed, user } = await checkPermission("products");
   if (!allowed) {
     return (
@@ -37,6 +61,9 @@ export default async function ProductsWithServicesPage() {
   }
 
   const { rows, scanned, totalCatalog, truncated, message } = await getProductsWithServices(user);
+  const serviceGroups = groupByService(rows);
+  const selectedGroup = serviceGroups.find((g) => g.key === selected);
+  const filteredRows = selectedGroup ? rows.filter((p) => (p.services ?? []).some((s) => String(s.code ?? s.name) === selected)) : rows;
 
   return (
     <>
@@ -58,12 +85,56 @@ export default async function ProductsWithServicesPage() {
           for the full catalog.
         </Notice>
       )}
+
+      {serviceGroups.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader title="By service" description="Click a service to see only the products that have it selected." />
+          <CardBody>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <Link
+                href={BASE_HREF}
+                className={cn(
+                  "rounded-xl border p-3 transition-colors hover:border-brand-200 hover:bg-surface-muted",
+                  !selectedGroup ? "border-brand-600 bg-brand-50" : "border-line",
+                )}
+              >
+                <p className="text-sm font-semibold text-ink">All services</p>
+                <p className="mt-1.5 text-xl font-semibold tabular text-ink">{rows.length}</p>
+                <p className="text-[11px] text-ink-muted">products</p>
+              </Link>
+              {serviceGroups.map((g) => (
+                <Link
+                  key={g.key}
+                  href={`${BASE_HREF}?service=${encodeURIComponent(g.key)}`}
+                  className={cn(
+                    "rounded-xl border p-3 transition-colors hover:border-brand-200 hover:bg-surface-muted",
+                    selectedGroup?.key === g.key ? "border-brand-600 bg-brand-50" : "border-line",
+                  )}
+                >
+                  <p className="truncate text-sm font-semibold text-ink">{g.name}</p>
+                  {g.category && <p className="truncate text-xs text-ink-muted">{g.category}</p>}
+                  <p className="mt-1.5 text-xl font-semibold tabular text-ink">{g.count}</p>
+                  <p className="text-[11px] text-ink-muted">product{g.count === 1 ? "" : "s"} · {chargeText(g)}</p>
+                </Link>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       <Card>
         <CardHeader
-          title={`${formatNumber(rows.length)} product${rows.length === 1 ? "" : "s"}`}
+          title={`${formatNumber(filteredRows.length)} product${filteredRows.length === 1 ? "" : "s"}${selectedGroup ? ` with “${selectedGroup.name}”` : ""}`}
           description="Scanned from the live products list."
+          actions={
+            selectedGroup ? (
+              <Link href={BASE_HREF} className="text-xs font-medium text-brand-700 hover:underline">
+                Clear filter
+              </Link>
+            ) : null
+          }
         />
-        {rows.length ? (
+        {filteredRows.length ? (
           <>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
@@ -78,7 +149,7 @@ export default async function ProductsWithServicesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {rows.map((p) => (
+                  {filteredRows.map((p) => (
                     <tr key={p.id} className="align-top hover:bg-surface-muted/60">
                       <td className="px-4 py-2.5">
                         <Link href={`/admin/products/${p.id}`} className="font-medium text-brand-700 hover:underline">
@@ -99,7 +170,7 @@ export default async function ProductsWithServicesPage() {
               </table>
             </div>
             <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
-              {rows.map((p) => (
+              {filteredRows.map((p) => (
                 <li key={p.id} className="rounded-xl border border-line p-3">
                   <div className="flex items-center justify-between gap-2">
                     <Link href={`/admin/products/${p.id}`} className="font-medium text-brand-700 hover:underline">
