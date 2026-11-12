@@ -583,14 +583,26 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Seller Selected Services</p>
             {(liveServices ?? product.services)?.length ? (
-              <ul className="mt-2 space-y-1.5">
-                {(liveServices ?? product.services).map((s, idx) => (
-                  <li key={idx} className="flex items-center justify-between text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1">
-                    <span className="font-medium text-ink">{s.name}</span>
-                    <span className="text-muted text-[11px]">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-line text-left text-[11px] text-ink-muted">
+                      <th scope="col" className="py-1 pr-2 font-medium">Service</th>
+                      <th scope="col" className="py-1 pr-2 font-medium">Category</th>
+                      <th scope="col" className="py-1 text-right font-medium">Charge</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {(liveServices ?? product.services).map((s, idx) => (
+                      <tr key={s.code ?? idx}>
+                        <td className="py-1.5 pr-2 font-medium text-ink">{s.name}</td>
+                        <td className="py-1.5 pr-2 text-ink-muted">{s.category || "—"}</td>
+                        <td className="py-1.5 text-right tabular-nums text-ink">{s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="mt-1 text-xs text-ink-muted">No services selected.</p>
             )}

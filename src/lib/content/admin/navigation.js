@@ -82,6 +82,7 @@ export const navigation = [
         children: [
           { key: "products-new", label: "Add Product", href: "/admin/products/new", page: "add_product.php", permission: "products", action: "add" },
           { key: "products-all", label: "Manage Product", href: "/admin/products", page: "manage_product.php", permission: "products" },
+          { key: "products-with-services", label: "Products with Services", href: "/admin/products/with-services", permission: "products" },
           { key: "pricing-cost-config", label: "Cost & Margin Management", href: "/admin/pricing/cost-config", page: "product_cost_management.php", permission: "pricing.costConfig" },
           { key: "pricing-cost-management", label: "Cost Management", href: "/admin/pricing/cost-management", permission: "products" },
           { key: "products-pending", label: "Pending Products", href: "/admin/products/pending", page: "pending_products.php", permission: "products.approval", badge: "pendingProducts" },
