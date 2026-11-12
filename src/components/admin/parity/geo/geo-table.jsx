@@ -49,7 +49,7 @@ const COLUMNS = {
 const SEARCH = {
   blocks: "Search block / district, or a 6-digit pincode",
   urban: "Search local body, or a 6-digit pincode",
-  villages: "Search village / sub-district, or a 6-digit pincode",
+  villages: "Village / sub-district name (starts with), district, or 6-digit pincode",
 };
 
 const opts = (list) => list.map((v) => ({ value: v, label: v }));
