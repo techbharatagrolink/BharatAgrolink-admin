@@ -1,0 +1,93 @@
+"use client";
+
+import { DataTable } from "@/components/data-table/data-table";
+import { useQueryState } from "@/components/data-table/use-query-state";
+import { Select } from "@/components/ui/form";
+import { exportGeoAction } from "@/lib/actions/admin/parity/geo";
+import { UrlInput } from "@/components/admin/parity/crm/url-input";
+
+const long = (key, label) => ({ key, label, wrap: true, width: 320 });
+const PROFILE = [
+  long("soil", "Soil"),
+  long("water", "Water"),
+  long("wind", "Wind"),
+  long("climate", "Climate"),
+  long("weather", "Weather"),
+  long("cropSeason", "Crop season"),
+  long("crops", "Crops"),
+  long("cropDiseases", "Crop diseases"),
+];
+
+const COLUMNS = {
+  blocks: [
+    { key: "stateName", label: "State", sub: "stateCode" },
+    { key: "districtName", label: "District", sub: "districtCode" },
+    { key: "blockName", label: "Block", sub: "blockCode", emphasis: true },
+    { key: "blockNameLocal", label: "Block (local)" },
+    { key: "blockVersion", label: "Block version" },
+    { key: "pincode", label: "Pincode", type: "mono" },
+    { key: "subpincode", label: "Sub-pincodes", wrap: true, width: 260 },
+    ...PROFILE,
+  ],
+  urban: [
+    { key: "stateName", label: "State", sub: "stateCode" },
+    { key: "localbodyName", label: "Local body", sub: "localbodyCode", emphasis: true },
+    { key: "localbodyType", label: "Type" },
+    { key: "pincode", label: "Pincode", type: "mono" },
+    ...PROFILE,
+  ],
+  villages: [
+    { key: "stateName", label: "State", sub: "stateCode" },
+    { key: "districtName", label: "District", sub: "districtCode" },
+    { key: "subdistrictName", label: "Sub-district", sub: "subdistrictCode" },
+    { key: "villageName", label: "Village", sub: "villageCode", emphasis: true },
+    { key: "pincode", label: "Pincode", type: "mono" },
+    ...PROFILE,
+  ],
+};
+
+const SEARCH = {
+  blocks: "Search block / district, or a 6-digit pincode",
+  urban: "Search local body, or a 6-digit pincode",
+  villages: "Search village / sub-district, or a 6-digit pincode",
+};
+
+const opts = (list) => list.map((v) => ({ value: v, label: v }));
+
+/** State and district (or local body type) dropdowns; a new state clears the district. */
+function GeoFilters({ kind, options }) {
+  const { get, setParams } = useQueryState();
+  return (
+    <>
+      <Select aria-label="State" className="w-full sm:w-48" value={get("state")} placeholder="State: all" options={opts(options.states)} onChange={(e) => setParams({ state: e.target.value, district: "" })} />
+      {kind !== "urban" && (
+        <Select
+          aria-label="District"
+          className="w-full sm:w-48"
+          value={get("district")}
+          placeholder={get("state") ? "District: all" : "Pick a state first"}
+          options={opts(options.districts)}
+          disabled={!get("state")}
+          onChange={(e) => setParams({ district: e.target.value })}
+        />
+      )}
+      {kind === "urban" && <Select aria-label="Type" className="w-full sm:w-48" value={get("type")} placeholder="Type: all" options={opts(options.types)} onChange={(e) => setParams({ type: e.target.value })} />}
+      <UrlInput name="pincode" label="Pincode" placeholder="Pincode" className="h-8 w-28" />
+    </>
+  );
+}
+
+export function GeoTable({ kind, data, options }) {
+  return (
+    <DataTable
+      id={`geo-${kind}`}
+      columns={COLUMNS[kind]}
+      data={data}
+      search={SEARCH[kind]}
+      toolbar={<GeoFilters kind={kind} options={options} />}
+      onExport={(params) => exportGeoAction(kind, params)}
+      exportName={`geographical-${kind}`}
+      emptyTitle="No records found"
+    />
+  );
+}
