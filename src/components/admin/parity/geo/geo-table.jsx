@@ -1,22 +1,61 @@
 "use client";
 
-import { DataTable } from "@/components/data-table/data-table";
+import { DataTable, download, toCsv } from "@/components/data-table/data-table";
+import { useToast } from "@/components/ui/toast";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Select } from "@/components/ui/form";
 import { exportGeoAction } from "@/lib/actions/admin/parity/geo";
 import { UrlInput } from "@/components/admin/parity/crm/url-input";
 
-const long = (key, label) => ({ key, label, wrap: true, width: 320 });
+const long = (key, label, width = 320) => ({ key, label, wrap: true, width });
 const PROFILE = [
   long("soil", "Soil"),
-  long("water", "Water"),
-  long("wind", "Wind"),
-  long("climate", "Climate"),
-  long("weather", "Weather"),
-  long("cropSeason", "Crop season"),
+  long("water", "Water", 220),
+  long("wind", "Wind", 220),
+  long("climate", "Climate", 180),
+  long("weather", "Weather", 260),
+  long("cropSeason", "Crop season", 140),
   long("crops", "Crops"),
   long("cropDiseases", "Crop diseases"),
 ];
+
+/*
+ * The profile columns are long sentences, parts joined by " · ". The table shows the short form; the database and
+ * Export keep the full text. Anything that does not match the expected shape is shown unchanged.
+ */
+const parts = (v) => v.split(" · ").map((s) => s.trim()).filter(Boolean);
+const noTags = (v) => v.replace(/\s*\[[^\]]*\]/g, "").replace(/\s*\((?:live|state-level)[^)]*\)/gi, "").trim();
+const SHORT = {
+  // "Alluvial soil (likely) · Clay loam: ... [SoilGrids 0-5cm]" -> without the [source] / estimate tags
+  soil: (v) => noTags(v),
+  // "Moderate water · ~1119 mm rain/yr, wettest Sep, ..." -> "Moderate water · ~1119 mm rain/yr"
+  water: (v) => {
+    const [level, rain] = parts(noTags(v));
+    return rain ? `${level} · ${rain.split(",")[0].trim()}` : level;
+  },
+  // "Now 8.3 km/h from NE, gusts 23.4 km/h (live, ...) · yearly avg ..." -> "Now 8.3 km/h from NE, gusts 23.4 km/h"
+  wind: (v) => noTags(parts(v)[0]),
+  // "Subtropical Very humid (high rainfall) · rain ..." -> "Subtropical Very humid"
+  climate: (v) => parts(v)[0].replace(/\s*\([^)]*\)/g, "").trim(),
+  // "25.9°C now (today max 26.0°C / min 16.8°C) · ... (live, updated ...)" -> without any (...) part
+  weather: (v) => v.replace(/\s*\([^)]*\)/g, "").trim(),
+  // "Current season (Oct 2026): Rabi | Kharif (...): ..." -> "Rabi"
+  cropSeason: (v) => v.match(/^Current season[^:]*:\s*([^|]+)/i)?.[1].trim() || v,
+};
+
+function shorten(row) {
+  const out = { ...row };
+  for (const [key, fn] of Object.entries(SHORT)) {
+    if (typeof row[key] === "string" && row[key]) {
+      try {
+        out[key] = fn(row[key]) || row[key];
+      } catch {
+        out[key] = row[key];
+      }
+    }
+  }
+  return out;
+}
 
 const COLUMNS = {
   blocks: [
@@ -102,13 +141,34 @@ function GeoFilters({ kind, options }) {
 /** "516172,516173,..." has no spaces, so it cannot wrap and spills into the next column; ", " lets it wrap. */
 const spaced = (list) => (typeof list === "string" ? list.split(",").map((s) => s.trim()).filter(Boolean).join(", ") : list);
 
+const SELECTED_EXPORT = [{ id: "export-selected", label: "Export selected", kind: "form" }];
+
 export function GeoTable({ kind, data, options }) {
-  const shown = kind === "blocks" ? { ...data, rows: data.rows.map((r) => ({ ...r, subpincode: spaced(r.subpincode) })) } : data;
+  const { notify } = useToast();
+  // the tables have no primary key (s_no repeats), so a row is keyed by its place on this page
+  const offset = (data.page - 1) * data.pageSize;
+  const raw = data.rows.map((r, i) => ({ ...r, rowId: String(offset + i + 1) }));
+  const shown = { ...data, rows: raw.map((r) => (kind === "blocks" ? { ...shorten(r), subpincode: spaced(r.subpincode) } : shorten(r))) };
+
+  // "Export selected": the ticked rows of this page, with the full text like the normal Export
+  const exportSelected = (_action, ids, _rows, done) => {
+    const picked = raw.filter((r) => ids.includes(r.rowId));
+    if (picked.length === 0) return notify({ message: "Tick rows on this page to export them.", tone: "error" });
+    download(`geographical-${kind}-selected-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(COLUMNS[kind], picked));
+    notify({ message: `Exported ${picked.length} selected rows.` });
+    done();
+  };
+  // Block (local) is filled for only some states (~2000 of ~7900 blocks): hide it when this page has none
+  const blank = (v) => v == null || String(v).trim() === "";
+  const columns = COLUMNS[kind].filter((c) => c.key !== "blockNameLocal" || shown.rows.some((r) => !blank(r.blockNameLocal)));
   return (
     <DataTable
       id={`geo-${kind}`}
-      columns={COLUMNS[kind]}
+      columns={columns}
       data={shown}
+      rowKey="rowId"
+      bulkActions={SELECTED_EXPORT}
+      onCustomAction={exportSelected}
       search={SEARCH[kind]}
       toolbar={<GeoFilters kind={kind} options={options} />}
       onExport={(params) => exportGeoAction(kind, params)}
