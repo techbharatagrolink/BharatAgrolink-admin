@@ -171,7 +171,7 @@ export function MovementTable({ movements, showProduct = true }) {
 
 /** Latest movements as a compact list (overview). */
 export function MovementList({ movements }) {
-  if (!movements?.length) return <EmptyState title="No movements yet" />;
+  if (!movements?.length) return <EmptyState title="No stock changes yet" description="Nothing has been added, reduced, ordered or returned since the stock was imported." />;
   return (
     <ul className="divide-y divide-line">
       {movements.map((m) => (
@@ -239,14 +239,14 @@ export function StockFilters({ filters, categories = [], sellers = [] }) {
 }
 
 /** Previous / next links for a paged list (meta from the API: page, totalPages, total). */
-export function Pager({ meta, href }) {
+export function Pager({ meta, href, unit = "SKUs" }) {
   const page = meta?.page ?? 1;
   const totalPages = meta?.totalPages ?? 1;
   if (totalPages <= 1) return null;
   return (
     <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
       <span>
-        Page {page} of {totalPages} · {qty(meta.total)} SKUs
+        Page {page} of {totalPages} · {qty(meta.total)} {unit}
       </span>
       <span className="flex gap-2">
         {page > 1 && (

@@ -24,7 +24,7 @@ export default async function InventoryOverviewPage() {
   const [summary, alerts, moves, sellers, shortfalls] = await Promise.all([
     loadStock(user, "summary"),
     loadStock(user, "alerts"),
-    loadStock(user, "movements", { limit: 8 }),
+    loadStock(user, "movements", { limit: 8, changesOnly: "1" }),
     loadStock(user, "sellers"),
     loadStock(user, "shortfalls"),
   ]);

@@ -68,6 +68,39 @@ export const MOVEMENT_TYPES = {
   RETURN_DAMAGED: "Return (damaged, not restocked)",
 };
 
+/** Activity log (who changed what): action codes of stock movements and settings / record changes. */
+export const ACTIVITY_ACTIONS = {
+  ...MOVEMENT_TYPES,
+  OPENING: "Stock set up",
+  UPDATE_STOCK_SETTINGS: "Alert levels / safety stock changed",
+  CLOSE_STOCK_RECORD: "Stock record closed",
+  REOPEN_STOCK_RECORD: "Stock record reopened",
+  RESOLVE_SHORTFALL: "Short order resolved",
+  DAILY_RECONCILIATION: "Daily stock check",
+};
+
+export const ACTOR_OPTIONS = [
+  { value: "people", label: "Admins + sellers" },
+  { value: "admin", label: "Admins" },
+  { value: "seller", label: "Sellers" },
+  { value: "customer", label: "Customer orders" },
+  { value: "system", label: "System (imports, expiry)" },
+  { value: "all", label: "Everyone" },
+];
+
+export const ACTOR_LABEL = { admin: "Admin", seller: "Seller", customer: "Customer", system: "System" };
+
+/** Settings field names of the audit log, in words. */
+export const SETTING_LABELS = {
+  low_stock_threshold: "Low stock at",
+  critical_threshold: "Critical at",
+  safety_stock_qty: "Safety stock",
+  status: "Status",
+  onHandQty: "On hand",
+  resolution: "Outcome",
+  note: "Note",
+};
+
 export const NOT_CONFIGURED_REASONS = {
   STOCK_NOT_SET_UP: "Stock never entered",
   NO_PACK_SIZES: "No pack sizes added yet",

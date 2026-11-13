@@ -37,17 +37,28 @@ export default async function InventoryExceptionsPage() {
   const shortfalls = data.shortfalls ?? [];
   const pending = data.outbox?.PENDING?.count ?? 0;
   const failed = data.outbox?.FAILED?.count ?? 0;
+  const notes = data.notifications ?? {};
+  const failedNotes = data.failedNotifications ?? [];
+  const daily = data.lastDailyCheck;
 
   return (
     <>
       {header}
-      <StatGrid className="xl:grid-cols-5">
+      <StatGrid className="xl:grid-cols-7">
         <StatCard label="Short orders to call" value={qty(shortfalls.length)} tone={shortfalls.length ? "danger" : "neutral"} hint="Paid, but stock ran out" />
         <StatCard label="Reconciliation" value={rec.ok ? "OK" : "Mismatch"} tone={rec.ok ? "brand" : "danger"} hint={`Checked ${formatDateTime(rec.generatedAt)}`} />
         <StatCard label="Stuck reservations" value={qty(data.stuckReservations.length)} tone={data.stuckReservations.length ? "danger" : "neutral"} hint="Unpaid holds past expiry" />
         <StatCard label="Events waiting" value={qty(pending)} tone={pending > 100 ? "warning" : "neutral"} hint={data.outbox?.PENDING?.oldest ? `Oldest ${formatDateTime(data.outbox.PENDING.oldest)}` : "Live-update queue"} />
-        <StatCard label="Failed events" value={qty(failed)} tone={failed ? "danger" : "neutral"} className="col-span-2 md:col-span-1" />
+        <StatCard label="Failed events" value={qty(failed)} tone={failed ? "danger" : "neutral"} />
+        <StatCard
+          label="Alert messages"
+          value={qty(notes.SENT ?? 0)}
+          hint={`sent · ${qty(notes.PENDING ?? 0)} waiting · ${qty(notes.SKIPPED ?? 0)} skipped`}
+          tone="neutral"
+        />
+        <StatCard label="Failed alert messages" value={qty(notes.FAILED ?? 0)} tone={notes.FAILED ? "danger" : "neutral"} hint={daily ? `Daily check ${formatDateTime(daily.at)}` : "Daily check not run yet"} />
       </StatGrid>
+      {daily && <p className="mt-2 text-xs text-ink-muted">Last daily stock check: {formatDateTime(daily.at)}: {daily.summary}</p>}
 
       <Card className="mt-4">
         <CardHeader
@@ -141,6 +152,23 @@ export default async function InventoryExceptionsPage() {
               </li>
             ))}
           </ul>
+        </Card>
+      )}
+
+      {failedNotes.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader title="Failed alert messages" description="Stock alert emails / SMS / WhatsApp that could not be delivered after every retry. The in-app alert still shows to the seller." />
+          <MiniTable
+            columns={[
+              { key: "updated_at", label: "Last try", render: (r) => <span className="text-xs whitespace-nowrap">{formatDateTime(r.updated_at)}</span> },
+              { key: "channel", label: "Channel" },
+              { key: "event_type", label: "Alert", render: (r) => String(r.event_type).replace(/_/g, " ").toLowerCase() },
+              { key: "sku", label: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
+              { key: "attempt_count", label: "Tries", align: "right" },
+              { key: "error_message", label: "Error", render: (r) => <span className="text-xs text-danger-ink">{r.error_message}</span> },
+            ]}
+            rows={failedNotes}
+          />
         </Card>
       )}
     </>

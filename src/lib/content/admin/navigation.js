@@ -110,6 +110,7 @@ export const navigation = [
           { key: "inventory-exceptions", label: "Short Orders & Exceptions", href: "/admin/inventory/exceptions", page: "inventory_management.php", permission: "inventory", icon: "PhoneCall", badge: "shortOrders" },
           { key: "inventory-setup", label: "Stock Not Set Up", href: "/admin/inventory/setup", page: "inventory_management.php", permission: "inventory", icon: "ClipboardList" },
           { key: "inventory-bulk", label: "Bulk Stock Update", href: "/admin/inventory/bulk", page: "inventory_management.php", permission: "inventory", icon: "FileUp" },
+          { key: "inventory-activity", label: "Activity Log", href: "/admin/inventory/activity", page: "inventory_management.php", permission: "inventory", icon: "ShieldCheck" },
         ],
       },
       {
