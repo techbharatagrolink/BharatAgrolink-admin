@@ -54,24 +54,46 @@ const SEARCH = {
 
 const opts = (list) => list.map((v) => ({ value: v, label: v }));
 
-/** State and district (or local body type) dropdowns; a new state clears the district. */
+/* The tab's own place dropdown: Block (blocks), City (urban local body) or Sub-district (villages). */
+const PLACE = {
+  blocks: { key: "block", label: "Block", needs: "district" },
+  urban: { key: "city", label: "City", needs: "state" },
+  villages: { key: "subdistrict", label: "Sub-district", needs: "district" },
+};
+
+/**
+ * State › District › Block / City / Sub-district dropdowns (picking a parent clears what is under it), urban Type,
+ * a Village name box (villages) and a Pincode box. Every filter is in the URL, so Export and a copied link use them.
+ */
 function GeoFilters({ kind, options }) {
   const { get, setParams } = useQueryState();
+  const place = PLACE[kind];
+  const placeReady = place.needs === "state" ? Boolean(get("state")) : Boolean(get("district"));
   return (
     <>
-      <Select aria-label="State" className="w-full sm:w-48" value={get("state")} placeholder="State: all" options={opts(options.states)} onChange={(e) => setParams({ state: e.target.value, district: "" })} />
+      <Select aria-label="State" className="w-full sm:w-44" value={get("state")} placeholder="State: all" options={opts(options.states)} onChange={(e) => setParams({ state: e.target.value, district: "", [place.key]: "" })} />
       {kind !== "urban" && (
         <Select
           aria-label="District"
-          className="w-full sm:w-48"
+          className="w-full sm:w-44"
           value={get("district")}
           placeholder={get("state") ? "District: all" : "Pick a state first"}
           options={opts(options.districts)}
           disabled={!get("state")}
-          onChange={(e) => setParams({ district: e.target.value })}
+          onChange={(e) => setParams({ district: e.target.value, [place.key]: "" })}
         />
       )}
-      {kind === "urban" && <Select aria-label="Type" className="w-full sm:w-48" value={get("type")} placeholder="Type: all" options={opts(options.types)} onChange={(e) => setParams({ type: e.target.value })} />}
+      <Select
+        aria-label={place.label}
+        className="w-full sm:w-44"
+        value={get(place.key)}
+        placeholder={placeReady ? `${place.label}: all` : `${place.label}: pick a ${place.needs} first`}
+        options={opts(options.places ?? [])}
+        disabled={!placeReady}
+        onChange={(e) => setParams({ [place.key]: e.target.value })}
+      />
+      {kind === "urban" && <Select aria-label="Type" className="w-full sm:w-44" value={get("type")} placeholder="Type: all" options={opts(options.types)} onChange={(e) => setParams({ type: e.target.value })} />}
+      {kind === "villages" && <UrlInput name="village" label="Village" placeholder="Village name" className="h-8 w-36" />}
       <UrlInput name="pincode" label="Pincode" placeholder="Pincode" className="h-8 w-28" />
     </>
   );
