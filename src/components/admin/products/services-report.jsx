@@ -3,14 +3,14 @@ import { formatINR, formatNumber } from "@/lib/format";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { site } from "@/lib/site";
+import { storefrontUrl } from "@/lib/site";
 
 /** The live customer-facing listing — this report exists so sales can pitch what's already there. */
 function storeUrl(slug) {
-  return slug ? `${site.url.replace(/\/$/, "")}/product/${slug}` : null;
+  return slug ? `${storefrontUrl.replace(/\/$/, "")}/product/${slug}` : null;
 }
 
-function ProductCell({ p }) {
+function ProductCell({ p, v }) {
   const href = storeUrl(p.slug);
   return (
     <div className="min-w-0">
@@ -21,14 +21,29 @@ function ProductCell({ p }) {
       ) : (
         <span className="font-medium text-ink">{p.name}</span>
       )}
+      {v && <Badge tone="info" className="ml-1.5">{v.label || `Variant #${v.id}`}</Badge>}
       <div className="text-xs text-ink-muted">
-        {p.sku} ·{" "}
+        {v ? v.sku : p.sku} ·{" "}
         <Link href={`/admin/products/${p.id}`} className="hover:underline">
           Edit
         </Link>
       </div>
     </div>
   );
+}
+
+/**
+ * Services are chosen on the base product and apply to every variant (not per-variant), but
+ * display price and stock aren't — so a product with variants becomes one row per variant here
+ * (each with its own price/stock, the same services), instead of hiding that behind a single
+ * base-product row. A product with no variants is still just the one row.
+ */
+function toDisplayRows(rows) {
+  return rows.flatMap((p) => {
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    if (!variants.length) return [{ key: p.id, p, v: null }];
+    return variants.map((v) => ({ key: `${p.id}:${v.id}`, p, v }));
+  });
 }
 
 /**
@@ -130,11 +145,13 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
 }
 
 export function ProductsServicesTable({ rows, baseHref, description, selectedName, emptyMessage }) {
+  const displayRows = toDisplayRows(rows);
+  const variantRowCount = displayRows.filter((r) => r.v).length;
   return (
     <Card>
       <CardHeader
         title={`${formatNumber(rows.length)} product${rows.length === 1 ? "" : "s"}${selectedName ? ` with “${selectedName}”` : ""}`}
-        description={description || "Scanned from the live products list."}
+        description={`${description || "Scanned from the live products list."}${variantRowCount ? ` ${formatNumber(variantRowCount)} shown by variant, each with its own price and stock.` : ""}`}
         actions={
           selectedName ? (
             <Link href={baseHref} className="text-xs font-medium text-brand-700 hover:underline">
@@ -143,7 +160,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
           ) : null
         }
       />
-      {rows.length ? (
+      {displayRows.length ? (
         <>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
@@ -158,38 +175,41 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {rows.map((p) => (
-                  <tr key={p.id} className="align-top hover:bg-surface-muted/60">
+                {displayRows.map(({ key, p, v }) => (
+                  <tr key={key} className="align-top hover:bg-surface-muted/60">
                     <td className="px-4 py-2.5">
-                      <ProductCell p={p} />
+                      <ProductCell p={p} v={v} />
                     </td>
                     <td className="px-4 py-2.5 text-ink-soft">{p.vendor}</td>
                     <td className="px-4 py-2.5 text-ink-soft">{p.category}</td>
                     <td className="px-4 py-2.5">
                       <ServiceBadges services={p.services} baseHref={baseHref} />
                     </td>
-                    <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(p.display)}</td>
-                    <td className="px-4 py-2.5 text-right tabular">{formatNumber(p.stock)}</td>
+                    <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(v ? v.display : p.display)}</td>
+                    <td className="px-4 py-2.5 text-right tabular">{formatNumber(v ? v.stock : p.stock)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
-            {rows.map((p) => (
-              <li key={p.id} className="rounded-xl border border-line p-3">
+            {displayRows.map(({ key, p, v }) => (
+              <li key={key} className="rounded-xl border border-line p-3">
                 <div className="flex items-center justify-between gap-2">
-                  {storeUrl(p.slug) ? (
-                    <a href={storeUrl(p.slug)} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline" title="Open on the live site">
-                      {p.name}
-                    </a>
-                  ) : (
-                    <span className="font-medium text-ink">{p.name}</span>
-                  )}
+                  <div className="min-w-0">
+                    {storeUrl(p.slug) ? (
+                      <a href={storeUrl(p.slug)} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline" title="Open on the live site">
+                        {p.name}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-ink">{p.name}</span>
+                    )}
+                    {v && <Badge tone="info" className="ml-1.5">{v.label || `Variant #${v.id}`}</Badge>}
+                  </div>
                   <Badge tone="brand">{p.services.length} service{p.services.length === 1 ? "" : "s"}</Badge>
                 </div>
                 <p className="text-xs text-ink-muted">
-                  {p.sku} · {p.vendor} · {p.category} ·{" "}
+                  {v ? v.sku : p.sku} · {p.vendor} · {p.category} ·{" "}
                   <Link href={`/admin/products/${p.id}`} className="hover:underline">
                     Edit
                   </Link>
@@ -198,8 +218,8 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                   <ServiceBadges services={p.services} baseHref={baseHref} />
                 </div>
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[13px]">
-                  <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(p.display)}</dd></div>
-                  <div><dt className="text-xs text-ink-muted">Stock</dt><dd className="text-ink-soft">{formatNumber(p.stock)}</dd></div>
+                  <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(v ? v.display : p.display)}</dd></div>
+                  <div><dt className="text-xs text-ink-muted">Stock</dt><dd className="text-ink-soft">{formatNumber(v ? v.stock : p.stock)}</dd></div>
                 </dl>
               </li>
             ))}

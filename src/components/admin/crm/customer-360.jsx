@@ -6,7 +6,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { DescriptionList, ProgressBar, StatCard, StatGrid, Timeline } from "@/components/ui/page";
 import { formatDate, formatDateTime, formatINR, formatNumber, formatPercent } from "@/lib/format";
-import { site } from "@/lib/site";
+import { storefrontUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * tickets, reviews, wallet, logins or per-order profit, so those sections simply do not render.
  */
 
-const storeUrl = (slug) => (slug ? `${site.url.replace(/\/$/, "")}/product/${slug}` : null);
+const storeUrl = (slug) => (slug ? `${storefrontUrl.replace(/\/$/, "")}/product/${slug}` : null);
 const ago = (days) => (days == null ? "—" : days === 0 ? "today" : `${days} day${days === 1 ? "" : "s"} ago`);
 const SOURCE_LABELS = {
   search_page: "Search Page",

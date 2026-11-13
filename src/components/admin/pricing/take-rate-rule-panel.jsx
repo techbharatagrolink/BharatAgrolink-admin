@@ -18,13 +18,18 @@ const STATUS_LABEL = {
   "already-applied": "Already applied",
 };
 
+/** A base row and a variant row of the same product share `id`, so selection/React keys use this instead. */
+const rowKey = (r) => `${r.id}:${r.variantId || 0}`;
+
 function RowMeta({ row }) {
+  const meta = [row.sku, row.vendor, row.category].filter(Boolean).join(" · ");
   return (
     <div className="min-w-0">
       <Link href={`/admin/products/${row.id}`} className="font-medium text-brand-700 hover:underline">
         {row.name}
       </Link>
-      <p className="text-xs text-ink-muted">{row.sku} · {row.vendor} · {row.category}</p>
+      {row.variantId ? <Badge tone="info" className="ml-1.5">Variant #{row.variantId}</Badge> : null}
+      {meta && <p className="text-xs text-ink-muted">{meta}</p>}
     </div>
   );
 }
@@ -41,8 +46,11 @@ function csvCell(value) {
 
 /** Before-state snapshot so an Apply run has a record to revert from by hand if needed. */
 function downloadBeforeStateCsv(rows) {
-  const header = ["Product ID", "Name", "SKU", "Vendor", "Category", "Status", "Tier", "Current take rate %", "Proposed take rate %", "Services being added"];
-  const lines = [header, ...rows.map((r) => [r.id, r.name, r.sku, r.vendor, r.category, r.status, r.tier ?? "", r.takeRate ?? "", r.proposedTakeRate ?? "", (r.addingServiceNames ?? []).join(" + ")])];
+  const header = ["Product ID", "Variant ID", "Name", "SKU", "Vendor", "Category", "Status", "Tier", "Current take rate %", "Proposed take rate %", "Services being added"];
+  const lines = [
+    header,
+    ...rows.map((r) => [r.id, r.variantId || "", r.name, r.sku, r.vendor, r.category, r.status, r.tier ?? "", r.takeRate ?? "", r.proposedTakeRate ?? "", (r.addingServiceNames ?? []).join(" + ")]),
+  ];
   const csv = lines.map((line) => line.map(csvCell).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -62,15 +70,17 @@ export function TakeRateRulePanel({ rows, canApply }) {
 
   const ready = useMemo(() => rows.filter((r) => r.status === "ready"), [rows]);
   const blocked = useMemo(() => rows.filter((r) => r.status !== "ready"), [rows]);
+  const byKey = useMemo(() => new Map(rows.map((r) => [rowKey(r), r])), [rows]);
 
-  const toggle = (id) => setSelected((cur) => { const next = new Set(cur); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  const toggleAll = () => setSelected((cur) => (cur.size === ready.length ? new Set() : new Set(ready.map((r) => r.id))));
+  const toggle = (key) => setSelected((cur) => { const next = new Set(cur); next.has(key) ? next.delete(key) : next.add(key); return next; });
+  const toggleAll = () => setSelected((cur) => (cur.size === ready.length ? new Set() : new Set(ready.map(rowKey))));
 
   const apply = () => {
-    const ids = [...selected];
-    if (!ids.length || !reason.trim()) return;
+    const keys = [...selected];
+    if (!keys.length || !reason.trim()) return;
     startTransition(async () => {
-      const batch = await applyTakeRateRuleBatchAction(ids, reason);
+      const items = keys.map((key) => { const r = byKey.get(key); return { id: r.id, variantId: r.variantId || 0 }; });
+      const batch = await applyTakeRateRuleBatchAction(items, reason);
       if (!batch.ok) {
         notify({ message: batch.message, tone: "error" });
         return;
@@ -120,10 +130,10 @@ export function TakeRateRulePanel({ rows, canApply }) {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {ready.map((r) => (
-                    <tr key={r.id} className="align-top hover:bg-surface-muted/60">
+                    <tr key={rowKey(r)} className="align-top hover:bg-surface-muted/60">
                       {canApply && (
                         <td className="px-4 py-2.5">
-                          <input type="checkbox" className="accent-brand-600" checked={selected.has(r.id)} onChange={() => toggle(r.id)} />
+                          <input type="checkbox" className="accent-brand-600" checked={selected.has(rowKey(r))} onChange={() => toggle(rowKey(r))} />
                         </td>
                       )}
                       <td className="px-4 py-2.5"><RowMeta row={r} /></td>
@@ -131,7 +141,10 @@ export function TakeRateRulePanel({ rows, canApply }) {
                       <td className="px-4 py-2.5 text-right tabular">
                         {r.takeRate}% <span className="text-ink-muted">→</span> <span className="font-medium text-ink">{r.proposedTakeRate}%</span>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-soft">{r.addingServiceNames.join(" + ")}</td>
+                      <td className="px-4 py-2.5 text-ink-soft">
+                        {r.addingServiceNames.join(" + ")}
+                        {r.variantId ? <span className="block text-xs text-ink-muted">service added on the base product; take rate changes on this variant only</span> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -173,7 +186,7 @@ export function TakeRateRulePanel({ rows, canApply }) {
               </thead>
               <tbody className="divide-y divide-line">
                 {blocked.map((r) => (
-                  <tr key={r.id} className="align-top hover:bg-surface-muted/60">
+                  <tr key={rowKey(r)} className="align-top hover:bg-surface-muted/60">
                     <td className="px-4 py-2.5"><RowMeta row={r} /></td>
                     <td className="px-4 py-2.5"><TierBadge tier={r.tier} /></td>
                     <td className="px-4 py-2.5 text-right tabular">{r.takeRate != null ? `${r.takeRate}%` : "—"}</td>

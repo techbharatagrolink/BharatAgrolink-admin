@@ -48,6 +48,16 @@ export async function getProfitabilityAlerts(user) {
   }
 }
 
+/** Variants (not base products — those are already in the products list) priced above 40% take rate. */
+export async function getHighTakeRateVariants(user) {
+  try {
+    const { data } = await api("admin/pricing/high-take-rate-variants", { token: user.token });
+    return { ok: true, variants: data?.variants ?? [] };
+  } catch (error) {
+    return { ok: false, variants: [], message: error instanceof ApiError ? error.message : "Could not load variant take rates." };
+  }
+}
+
 /** Per-vendor contribution totals and verdict counts, priced Active products only. */
 export async function getVendorProfitability(user, { limit } = {}) {
   try {

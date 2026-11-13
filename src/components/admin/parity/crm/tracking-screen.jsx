@@ -13,12 +13,12 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/form";
 import { Notice } from "@/components/ui/page";
 import { formatDateTime, formatNumber } from "@/lib/format";
-import { site } from "@/lib/site";
+import { storefrontUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { exportTrackingAction, trackingCustomersAction } from "@/lib/actions/admin/parity/crm";
 import { UrlInput } from "./url-input";
 
-const productHref = `${site.url.replace(/\/$/, "")}/product/{product_url}`;
+const productHref = `${storefrontUrl.replace(/\/$/, "")}/product/{product_url}`;
 const CUSTOMER_360_HREF = "/admin/crm/customer-360/{c360_id}";
 
 /** Customer name, linked to Customer 360 when the visitor is an existing customer with orders. */

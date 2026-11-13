@@ -19,18 +19,23 @@ export default async function TakeRateServicesPage() {
     );
   }
 
-  const { rows, scanned, totalCatalog, truncated, message } = await scanTakeRateRuleCandidatesAction();
+  const { rows, scanned, totalCatalog, truncated, message, variantNote } = await scanTakeRateRuleCandidatesAction();
   const canApply = canPage(user, "manage_product.php", "edit");
 
   return (
     <>
       <PageHeader
         title="Take-Rate Service Rule"
-        description="Products above 40% take rate get 'sales pitch'; above 45% get 'sales pitch' + 'Marketing' too, dropping take rate 5pts per service added. Every row below is checked against a live price preview first — MRP, NRV and display price never move."
+        description="Products above 40% take rate get 'sales pitch'; above 45% get 'sales pitch' + 'Marketing' too, dropping take rate 5pts per service added. Checked at both the base product and variant level — a variant can qualify even when its base doesn't. Every row below is checked against a live price preview first — MRP, NRV and display price never move."
       />
       {message && (
         <Notice tone="danger" className="mb-4">
           {message}
+        </Notice>
+      )}
+      {variantNote && (
+        <Notice tone="warning" className="mb-4">
+          Could not load variant-level take rates this time ({variantNote}) — base products are still shown below.
         </Notice>
       )}
       {truncated && (
