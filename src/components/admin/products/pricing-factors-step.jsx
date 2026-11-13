@@ -219,7 +219,9 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
     mrp: d.mrp,
     nrv: d.nrv,
     ...(variantId === 0 ? { gstPercent: d.gstPercent, hsn: d.hsn } : {}),
-    ...(variantId === 0 ? { serviceCodes: d.serviceCodes, serviceBasis: d.serviceBasis } : {}),
+    // Each variation has its own service pick; the charge basis stays a base-product setting.
+    serviceCodes: d.serviceCodes,
+    ...(variantId === 0 ? { serviceBasis: d.serviceBasis } : {}),
     factors: d.factors,
     ...parcelFields(parcel),
   }), [variantId, parcel]);
@@ -364,9 +366,8 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                 <p className="text-sm font-medium text-ink">Seller services</p>
                 <p className="text-xs text-ink-muted">A % service is always a % of the sale price. Sale price: the service is added on top, so the display price rises and the service charge stays the take rate %. NRV: the display price stays the same and the services are taken out of the seller&apos;s NRV.</p>
               </div>
-              {isVariant ? (
-                <p className="text-xs text-ink-muted">Services are chosen on the base product and apply to every variation.</p>
-              ) : (servicesInfo?.available?.length ?? 0) === 0 ? (
+              {isVariant && <p className="text-xs text-ink-muted">Services ticked here apply to this variation only.</p>}
+              {(servicesInfo?.available?.length ?? 0) === 0 ? (
                 <p className="text-xs text-ink-muted">This seller has no Active services to select.</p>
               ) : (
                 <ul className="grid gap-1.5 @lg:grid-cols-2">

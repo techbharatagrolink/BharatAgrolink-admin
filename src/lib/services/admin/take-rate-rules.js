@@ -7,27 +7,25 @@ import { mapLimit, withRetry } from "./_query";
  * Take-rate service rule (sales request): products priced well above the ~35% target
  * should pick up paid seller services instead of just sitting on excess margin.
  *   > 40% take rate -> "sales pitch" selected
- *   > 45% take rate -> "sales pitch" + "Marketing" selected, take rate drops 5pts per
- *                      service newly added (so 45% -> 35% once both are on)
- * MRP, NRV and display price must never move as a side effect, so every candidate is
- * run through the pricing API's own preview endpoint before it's offered as "Ready" —
- * nothing here assumes how the backend's NRV/take-rate formula behaves.
+ *   > 45% take rate -> "sales pitch" + "Marketing" selected
+ * The take rate is then lowered by exactly what the added services charge, so MRP, NRV and
+ * display price never move. Every candidate is run through the pricing API's own preview
+ * endpoint before it's offered as "Ready" — the proposed rate is only a first guess until the
+ * preview confirms the price is unchanged.
  *
- * Variants have their own take rate (a variant can qualify even when its base doesn't),
- * but services are selected on the base product only and apply to every variant — so a
- * variant candidate that's missing a service needs TWO saves: one to the base (add the
- * service, nothing else changes there) and one to the variant itself (the reduced take
- * rate). Both are preview-gated independently before anything is offered as "Ready".
+ * The base product and each variant are judged on their OWN take rate and get their OWN
+ * service pick (product_service_charges.variant_id, backend migration 2026-11-13-001): a
+ * variant over 40% gets the service even when its base doesn't, and the reverse.
  */
 
-const TAKE_RATE_DROP_PER_SERVICE = 5;
 const REQUIRED_SERVICE_NAMES = {
   tier1: ["sales pitch"],
   tier2: ["sales pitch", "marketing"],
 };
 const MAX_CANDIDATES = 200; // same cap as the generic bulk-action limit elsewhere in this app
-const SCAN_CONCURRENCY = 2; // each candidate does a GET + a preview POST; the admin API drops connections outright if pushed harder
+const SCAN_CONCURRENCY = 2; // each candidate does a GET + preview POSTs; the admin API drops connections outright if pushed harder
 const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just how many are in flight
+const SOLVE_STEPS = 16; // bisection previews when the first guess misses the price by rounding
 // Every apply writes to product_service_charges via a DELETE-then-INSERT — concurrent saves
 // landing close together deadlock each other there (seen live: ER_LOCK_DEADLOCK). The reads/
 // previews can still run a little ahead of each other, but the actual saves must be serialized.
@@ -53,7 +51,23 @@ function sameAmount(a, b) {
   return Math.abs(x - y) < 0.01;
 }
 
-/** variantId 0 (base): take rate + services together, same save as the manual editor. Non-base: take rate only — the backend ignores gstPercent/hsn/serviceCodes for a variant row. */
+/** Rupees of service charge inside display price `dp` for `codes` (0 on the NRV basis: those come out of the seller's NRV). */
+function serviceRupees(pricing, codes, dp) {
+  if ((pricing.services?.basis ?? "ORDER_VALUE") === "NRV") return 0;
+  return (pricing.services?.available ?? [])
+    .filter((s) => codes.includes(s.code))
+    .reduce((sum, s) => sum + (s.chargeType === "FIXED_PER_UNIT" ? Number(s.chargeValue) : (dp * Number(s.chargeValue)) / 100), 0);
+}
+
+/** The take rate that keeps display price `dp` once `codes` are selected (first guess, confirmed by preview). */
+function takeRateKeepingPrice(pricing, codes, dp) {
+  const nrv = Number(pricing.input.nrv);
+  return ((dp - nrv - serviceRupees(pricing, codes, dp)) / dp) * 100;
+}
+
+const roundRate = (n) => Number(n.toFixed(6));
+
+/** One save body for the base product (variantId 0) or a variant — services are per row. The backend ignores gstPercent/hsn for a variant row. */
 function pricingBodyFor(pricing, { takeRate, serviceCodes, variantId }) {
   const body = {
     variantId,
@@ -61,24 +75,19 @@ function pricingBodyFor(pricing, { takeRate, serviceCodes, variantId }) {
     takeRate: String(takeRate),
     mrp: pricing.input.mrp,
     nrv: pricing.input.nrv,
+    serviceCodes,
     factors: (pricing.result.factors || []).map((f) => ({ code: f.code, overridden: f.overridden, actual: f.overridden ? f.actualAmount : null, notes: f.notes || "" })),
   };
   if (variantId === 0) {
     body.gstPercent = pricing.input.gstPercent;
     body.hsn = pricing.input.hsn;
-    body.serviceCodes = serviceCodes;
     body.serviceBasis = pricing.services?.basis ?? "ORDER_VALUE";
   }
   return body;
 }
 
-/**
- * Pure classification from a loaded pricing record (no network). Exported for the apply
- * step to re-derive the exact same candidate right before saving. `basePricing` is the
- * base product's own loaded record — required when `variantId` isn't 0 and the rule turns
- * out to need a service added (services live on the base only).
- */
-export function buildCandidate(pricing, { variantId = 0, basePricing = null } = {}) {
+/** Pure classification from a loaded pricing record (no network). Exported for the apply step to re-derive the exact same candidate right before saving. */
+export function buildCandidate(pricing, { variantId = 0 } = {}) {
   if (pricing.input.mode !== "TAKE_RATE") {
     const liveTakeRate = Number(pricing.result?.takeRate);
     return { status: "blocked-actuals-mode", takeRate: Number.isFinite(liveTakeRate) ? liveTakeRate : undefined };
@@ -89,8 +98,7 @@ export function buildCandidate(pricing, { variantId = 0, basePricing = null } = 
 
   const available = pricing.services?.available ?? [];
   const selectedCodes = pricing.services?.selected ?? [];
-  const requiredNames = REQUIRED_SERVICE_NAMES[tier];
-  const resolved = requiredNames.map((name) => ({ name, service: findServiceByName(available, name) }));
+  const resolved = REQUIRED_SERVICE_NAMES[tier].map((name) => ({ name, service: findServiceByName(available, name) }));
   const notActive = resolved.filter((r) => !r.service);
   if (notActive.length) {
     return { status: "blocked-seller-inactive", tier, takeRate, missingServiceNames: notActive.map((r) => r.name) };
@@ -99,76 +107,73 @@ export function buildCandidate(pricing, { variantId = 0, basePricing = null } = 
   const missing = resolved.filter((r) => !selectedCodes.includes(r.service.code));
   if (!missing.length) return { status: "already-applied", tier, takeRate };
 
-  const proposedTakeRate = Math.max(0, takeRate - TAKE_RATE_DROP_PER_SERVICE * missing.length);
   const proposedServiceCodes = [...selectedCodes, ...missing.map((r) => r.service.code)];
-
-  let serviceBody = null;
-  if (variantId !== 0) {
-    if (!basePricing) return { status: "blocked-load-failed", tier, takeRate, loadMessage: "Could not load the base product's pricing to add the service." };
-    // Base's own take rate is left exactly as it is — only its service selection changes.
-    serviceBody = pricingBodyFor(basePricing, { takeRate: basePricing.input.takeRate, serviceCodes: proposedServiceCodes, variantId: 0 });
-  }
+  const dp = Number(pricing.result.displayPrice);
+  const guess = Number.isFinite(dp) && dp > 0 ? takeRateKeepingPrice(pricing, proposedServiceCodes, dp) : NaN;
+  if (!(guess > 0 && guess < 100)) return { status: "blocked-preview-failed", tier, takeRate, previewMessage: "Could not work out a take rate that keeps the price." };
+  const proposedTakeRate = roundRate(guess);
 
   return {
     status: "candidate",
     tier,
     takeRate,
     proposedTakeRate,
-    addingServiceNames: missing.map((r) => r.name),
+    proposedServiceCodes,
+    addingServiceNames: missing.map((r) => r.service.name || r.name),
     body: pricingBodyFor(pricing, { takeRate: proposedTakeRate, serviceCodes: proposedServiceCodes, variantId }),
-    serviceBody,
     currentDisplayPrice: pricing.result.displayPrice,
     currentNrv: pricing.input.nrv,
     currentMrp: pricing.input.mrp,
-    baseDisplayPrice: basePricing?.result?.displayPrice,
-    baseNrv: basePricing?.input?.nrv,
-    baseMrp: basePricing?.input?.mrp,
   };
 }
 
-async function previewUnchanged(id, body, baseline, user) {
+async function previewOf(id, body, user) {
   const preview = await withRetry(() => previewProductPricingFactors(id, body, user));
-  if (!preview.ok) return { ok: false, failed: true, message: preview.message };
-  const next = preview.pricing;
-  const unchanged = sameAmount(next.result?.displayPrice, baseline.displayPrice) && sameAmount(next.input?.nrv, baseline.nrv) && sameAmount(next.input?.mrp, baseline.mrp);
-  if (!unchanged) return { ok: false, priceChanged: true, displayPrice: next.result?.displayPrice, nrv: next.input?.nrv, mrp: next.input?.mrp };
-  return { ok: true };
+  if (!preview.ok) return { ok: false, message: preview.message };
+  return { ok: true, pricing: preview.pricing };
 }
 
-/** Previews the service-add (if any) and the take-rate change, and only calls it "ready" if BOTH leave price/NRV/MRP untouched. */
+/**
+ * Confirms the proposed take rate against the live preview; when rounding makes the first guess
+ * miss the display price, bisects around it until the preview lands on the same price. "Ready"
+ * only if price, NRV and MRP all come back unchanged.
+ */
 async function gateCandidate(id, candidate, user) {
-  if (candidate.serviceBody) {
-    const svc = await previewUnchanged(id, candidate.serviceBody, { displayPrice: candidate.baseDisplayPrice, nrv: candidate.baseNrv, mrp: candidate.baseMrp }, user);
-    if (!svc.ok) {
-      return svc.priceChanged
-        ? { ...candidate, status: "blocked-price-change", previewDisplayPrice: svc.displayPrice, previewNrv: svc.nrv, previewMrp: svc.mrp }
-        : { ...candidate, status: "blocked-preview-failed", previewMessage: svc.message };
+  const target = Number(candidate.currentDisplayPrice);
+  const withRate = (rate) => ({ ...candidate.body, takeRate: String(roundRate(rate)) });
+  let rate = candidate.proposedTakeRate;
+  let res = await previewOf(id, withRate(rate), user);
+  if (!res.ok) return { ...candidate, status: "blocked-preview-failed", previewMessage: res.message };
+  if (!sameAmount(res.pricing.result?.displayPrice, target)) {
+    let lo = Math.max(0, rate - 2);
+    let hi = Math.min(99.9, rate + 2);
+    for (let step = 0; step < SOLVE_STEPS && res.ok && !sameAmount(res.pricing.result?.displayPrice, target); step++) {
+      if (Number(res.pricing.result?.displayPrice) < target) lo = rate;
+      else hi = rate;
+      rate = (lo + hi) / 2;
+      res = await previewOf(id, withRate(rate), user);
     }
+    if (!res.ok) return { ...candidate, status: "blocked-preview-failed", previewMessage: res.message };
   }
-  const main = await previewUnchanged(id, candidate.body, { displayPrice: candidate.currentDisplayPrice, nrv: candidate.currentNrv, mrp: candidate.currentMrp }, user);
-  if (!main.ok) {
-    return main.priceChanged
-      ? { ...candidate, status: "blocked-price-change", previewDisplayPrice: main.displayPrice, previewNrv: main.nrv, previewMrp: main.mrp }
-      : { ...candidate, status: "blocked-preview-failed", previewMessage: main.message };
+  const next = res.pricing;
+  const unchanged = sameAmount(next.result?.displayPrice, target) && sameAmount(next.input?.nrv, candidate.currentNrv) && sameAmount(next.input?.mrp, candidate.currentMrp);
+  if (!unchanged) {
+    return { ...candidate, status: "blocked-price-change", previewDisplayPrice: next.result?.displayPrice, previewNrv: next.input?.nrv, previewMrp: next.input?.mrp };
   }
-  return { ...candidate, status: "ready" };
+  const proposedTakeRate = roundRate(rate);
+  return { ...candidate, status: "ready", proposedTakeRate, body: withRate(proposedTakeRate) };
 }
 
 async function loadAndClassify(id, variantId, user) {
   const loaded = await withRetry(() => getProductPricingFactors(id, variantId, user));
   if (!loaded.ok) return { candidate: null, status: "blocked-load-failed", loadMessage: loaded.message };
-  let basePricing = null;
-  if (variantId !== 0) {
-    const baseLoaded = await withRetry(() => getProductPricingFactors(id, 0, user));
-    if (baseLoaded.ok) basePricing = baseLoaded.pricing;
-  }
-  const candidate = buildCandidate(loaded.pricing, { variantId, basePricing });
+  const candidate = buildCandidate(loaded.pricing, { variantId });
   const resolved = candidate.status === "candidate" ? await gateCandidate(id, candidate, user) : candidate;
   return { candidate: resolved };
 }
 
 /**
- * Dry-run scan: every base product or variant whose stored take rate is > 40%, classified
+ * Dry-run scan: every base product or variant whose take rate is > 40%, classified
  * into ready / already-applied / blocked-* so an admin can review before anything is saved.
  */
 export async function scanTakeRateRuleCandidates(user) {
@@ -188,7 +193,8 @@ export async function scanTakeRateRuleCandidates(user) {
   );
 
   const variantsResult = await getHighTakeRateVariants(user);
-  const variantList = (variantsResult.ok ? variantsResult.variants : []).slice(0, MAX_CANDIDATES);
+  const allVariants = variantsResult.ok ? variantsResult.variants : [];
+  const variantList = allVariants.slice(0, MAX_CANDIDATES);
   const variantRows = await mapLimit(
     variantList,
     SCAN_CONCURRENCY,
@@ -204,7 +210,7 @@ export async function scanTakeRateRuleCandidates(user) {
     rows,
     scanned: scan.scanned,
     totalCatalog: scan.totalCatalog,
-    truncated: scan.truncated || allCandidates.length > MAX_CANDIDATES || variantList.length >= MAX_CANDIDATES,
+    truncated: scan.truncated || allCandidates.length > MAX_CANDIDATES || allVariants.length > MAX_CANDIDATES,
     variantNote: variantsResult.ok ? null : variantsResult.message,
   };
 }
@@ -220,13 +226,8 @@ export async function applyTakeRateRule(id, reason, user, variantId = 0) {
   }
   // product_service_charges writes (any save carrying serviceCodes) are the deadlock-prone ones —
   // worth a few more, longer-spaced retries than the general default before giving up.
-  const saveRetryOptions = { attempts: 5, baseDelayMs: 800 };
-  if (candidate.serviceBody) {
-    const savedService = await withRetry(() => saveProductPricingFactors(id, { ...candidate.serviceBody, reason }, user), saveRetryOptions);
-    if (!savedService.ok) return { ok: false, message: `Could not add the service to the base product: ${savedService.message}` };
-  }
-  const saved = await withRetry(() => saveProductPricingFactors(id, { ...candidate.body, reason }, user), saveRetryOptions);
-  if (!saved.ok) return { ok: false, message: candidate.serviceBody ? `Service added, but the take-rate save failed: ${saved.message}` : saved.message };
+  const saved = await withRetry(() => saveProductPricingFactors(id, { ...candidate.body, reason }, user), { attempts: 5, baseDelayMs: 800 });
+  if (!saved.ok) return { ok: false, message: saved.message };
   return { ok: true, message: `Take rate set to ${candidate.proposedTakeRate}% and ${candidate.addingServiceNames.join(" + ")} selected.` };
 }
 

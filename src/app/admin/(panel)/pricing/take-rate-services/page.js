@@ -26,7 +26,7 @@ export default async function TakeRateServicesPage() {
     <>
       <PageHeader
         title="Take-Rate Service Rule"
-        description="Products above 40% take rate get 'sales pitch'; above 45% get 'sales pitch' + 'Marketing' too, dropping take rate 5pts per service added. Checked at both the base product and variant level — a variant can qualify even when its base doesn't. Every row below is checked against a live price preview first — MRP, NRV and display price never move."
+        description="Products above 40% take rate get 'sales pitch'; above 45% get 'sales pitch' + 'Marketing' too, and the take rate drops by exactly what the services charge. The base product and each variant are judged on their own take rate and get their own services. Every row below is checked against a live price preview first — MRP, NRV and display price never move."
       />
       {message && (
         <Notice tone="danger" className="mb-4">

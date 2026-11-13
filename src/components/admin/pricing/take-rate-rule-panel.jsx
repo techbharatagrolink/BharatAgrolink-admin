@@ -44,6 +44,43 @@ function csvCell(value) {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+const PAGE_SIZE = 25;
+
+function Pager({ page, setPage, total }) {
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (pageCount <= 1) return null;
+  const from = total ? page * PAGE_SIZE + 1 : 0;
+  const to = Math.min(total, (page + 1) * PAGE_SIZE);
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-2.5 text-xs text-ink-muted">
+      <span>
+        {from}–{to} of {total}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+          className="rounded border border-line px-2 py-1 font-medium text-ink-soft hover:bg-surface-muted disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span>
+          Page {page + 1} of {pageCount}
+        </span>
+        <button
+          type="button"
+          onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+          disabled={page >= pageCount - 1}
+          className="rounded border border-line px-2 py-1 font-medium text-ink-soft hover:bg-surface-muted disabled:opacity-40"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Before-state snapshot so an Apply run has a record to revert from by hand if needed. */
 function downloadBeforeStateCsv(rows) {
   const header = ["Product ID", "Variant ID", "Name", "SKU", "Vendor", "Category", "Status", "Tier", "Current take rate %", "Proposed take rate %", "Services being added"];
@@ -67,10 +104,14 @@ export function TakeRateRulePanel({ rows, canApply }) {
   const [selected, setSelected] = useState(() => new Set());
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
+  const [readyPage, setReadyPage] = useState(0);
+  const [blockedPage, setBlockedPage] = useState(0);
 
   const ready = useMemo(() => rows.filter((r) => r.status === "ready"), [rows]);
   const blocked = useMemo(() => rows.filter((r) => r.status !== "ready"), [rows]);
   const byKey = useMemo(() => new Map(rows.map((r) => [rowKey(r), r])), [rows]);
+  const readyShown = useMemo(() => ready.slice(readyPage * PAGE_SIZE, readyPage * PAGE_SIZE + PAGE_SIZE), [ready, readyPage]);
+  const blockedShown = useMemo(() => blocked.slice(blockedPage * PAGE_SIZE, blockedPage * PAGE_SIZE + PAGE_SIZE), [blocked, blockedPage]);
 
   const toggle = (key) => setSelected((cur) => { const next = new Set(cur); next.has(key) ? next.delete(key) : next.add(key); return next; });
   const toggleAll = () => setSelected((cur) => (cur.size === ready.length ? new Set() : new Set(ready.map(rowKey))));
@@ -129,7 +170,7 @@ export function TakeRateRulePanel({ rows, canApply }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {ready.map((r) => (
+                  {readyShown.map((r) => (
                     <tr key={rowKey(r)} className="align-top hover:bg-surface-muted/60">
                       {canApply && (
                         <td className="px-4 py-2.5">
@@ -143,13 +184,14 @@ export function TakeRateRulePanel({ rows, canApply }) {
                       </td>
                       <td className="px-4 py-2.5 text-ink-soft">
                         {r.addingServiceNames.join(" + ")}
-                        {r.variantId ? <span className="block text-xs text-ink-muted">service added on the base product; take rate changes on this variant only</span> : null}
+                        {r.variantId ? <span className="block text-xs text-ink-muted">service and take rate change on this variant only</span> : null}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <Pager page={readyPage} setPage={setReadyPage} total={ready.length} />
             {canApply && (
               <CardBody className="border-t border-line">
                 <Textarea placeholder="Reason (required before applying)" value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
@@ -185,7 +227,7 @@ export function TakeRateRulePanel({ rows, canApply }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {blocked.map((r) => (
+                {blockedShown.map((r) => (
                   <tr key={rowKey(r)} className="align-top hover:bg-surface-muted/60">
                     <td className="px-4 py-2.5"><RowMeta row={r} /></td>
                     <td className="px-4 py-2.5"><TierBadge tier={r.tier} /></td>
@@ -214,6 +256,7 @@ export function TakeRateRulePanel({ rows, canApply }) {
                 ))}
               </tbody>
             </table>
+            <Pager page={blockedPage} setPage={setBlockedPage} total={blocked.length} />
           </div>
         ) : (
           <CardBody>
