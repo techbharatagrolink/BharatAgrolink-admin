@@ -22,6 +22,10 @@ const REQUIRED_SERVICE_NAMES = {
 const MAX_CANDIDATES = 200; // same cap as the generic bulk-action limit elsewhere in this app
 const SCAN_CONCURRENCY = 2; // each candidate does a GET + a preview POST; the admin API drops connections outright if pushed harder
 const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just how many are in flight
+// Apply's selection is admin-curated (far smaller than a full scan) and each save was already
+// re-verified once during the scan, so a bit more headroom here is safe.
+const APPLY_CONCURRENCY = 3;
+const APPLY_MIN_INTERVAL_MS = 150;
 
 function tierFor(takeRate) {
   if (!Number.isFinite(takeRate)) return null;
@@ -151,4 +155,13 @@ export async function applyTakeRateRule(id, reason, user) {
   const saved = await withRetry(() => saveProductPricingFactors(id, { ...candidate.body, reason }, user));
   if (!saved.ok) return { ok: false, message: saved.message };
   return { ok: true, message: `Take rate set to ${candidate.proposedTakeRate}% and ${candidate.addingServiceNames.join(" + ")} selected.` };
+}
+
+/**
+ * Applies to several products in one call instead of one server-action round trip per product
+ * (that was the slow part — each round trip is a full browser-to-server hop on top of the
+ * paced backend calls). Still paced/retried the same way per item, just without the extra hop.
+ */
+export async function applyTakeRateRuleBatch(ids, reason, user) {
+  return mapLimit(ids, APPLY_CONCURRENCY, (id) => applyTakeRateRule(id, reason, user).then((result) => ({ id, ...result })), { minIntervalMs: APPLY_MIN_INTERVAL_MS });
 }

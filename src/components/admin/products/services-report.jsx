@@ -3,6 +3,33 @@ import { formatINR, formatNumber } from "@/lib/format";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { site } from "@/lib/site";
+
+/** The live customer-facing listing — this report exists so sales can pitch what's already there. */
+function storeUrl(slug) {
+  return slug ? `${site.url.replace(/\/$/, "")}/product/${slug}` : null;
+}
+
+function ProductCell({ p }) {
+  const href = storeUrl(p.slug);
+  return (
+    <div className="min-w-0">
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline" title="Open on the live site">
+          {p.name}
+        </a>
+      ) : (
+        <span className="font-medium text-ink">{p.name}</span>
+      )}
+      <div className="text-xs text-ink-muted">
+        {p.sku} ·{" "}
+        <Link href={`/admin/products/${p.id}`} className="hover:underline">
+          Edit
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Shared building blocks for the "products by seller service" reports
@@ -13,6 +40,24 @@ import { cn } from "@/lib/utils";
 
 export function chargeText(s) {
   return s.chargeType === "FIXED_PER_UNIT" ? `₹${s.chargeValue}/unit` : `${s.chargeValue}%`;
+}
+
+/** Search by name/SKU/vendor and a last-updated date range — applied on top of the service-card filter. */
+export function filterRowsByQuery(rows, { q, from, to } = {}) {
+  let result = rows;
+  if (q) {
+    const needle = q.toLowerCase();
+    result = result.filter((p) => [p.name, p.sku, p.vendor].some((v) => String(v ?? "").toLowerCase().includes(needle)));
+  }
+  if (from) {
+    const fromTime = new Date(`${from}T00:00:00+05:30`).getTime();
+    result = result.filter((p) => p.updatedAt && new Date(p.updatedAt).getTime() >= fromTime);
+  }
+  if (to) {
+    const toTime = new Date(`${to}T23:59:59+05:30`).getTime();
+    result = result.filter((p) => p.updatedAt && new Date(p.updatedAt).getTime() <= toTime);
+  }
+  return result;
 }
 
 /** One entry per distinct service, with how many of the given products have it selected. */
@@ -116,10 +161,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                 {rows.map((p) => (
                   <tr key={p.id} className="align-top hover:bg-surface-muted/60">
                     <td className="px-4 py-2.5">
-                      <Link href={`/admin/products/${p.id}`} className="font-medium text-brand-700 hover:underline">
-                        {p.name}
-                      </Link>
-                      <div className="text-xs text-ink-muted">{p.sku}</div>
+                      <ProductCell p={p} />
                     </td>
                     <td className="px-4 py-2.5 text-ink-soft">{p.vendor}</td>
                     <td className="px-4 py-2.5 text-ink-soft">{p.category}</td>
@@ -137,12 +179,21 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
             {rows.map((p) => (
               <li key={p.id} className="rounded-xl border border-line p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <Link href={`/admin/products/${p.id}`} className="font-medium text-brand-700 hover:underline">
-                    {p.name}
-                  </Link>
+                  {storeUrl(p.slug) ? (
+                    <a href={storeUrl(p.slug)} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline" title="Open on the live site">
+                      {p.name}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-ink">{p.name}</span>
+                  )}
                   <Badge tone="brand">{p.services.length} service{p.services.length === 1 ? "" : "s"}</Badge>
                 </div>
-                <p className="text-xs text-ink-muted">{p.sku} · {p.vendor} · {p.category}</p>
+                <p className="text-xs text-ink-muted">
+                  {p.sku} · {p.vendor} · {p.category} ·{" "}
+                  <Link href={`/admin/products/${p.id}`} className="hover:underline">
+                    Edit
+                  </Link>
+                </p>
                 <div className="mt-2">
                   <ServiceBadges services={p.services} baseHref={baseHref} />
                 </div>

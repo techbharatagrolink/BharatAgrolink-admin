@@ -4,15 +4,25 @@ import { getProductsWithServices } from "@/lib/services/admin/products";
 import { formatNumber } from "@/lib/format";
 import { Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
-import { groupByService, ProductsServicesTable, ServiceCardsGrid } from "@/components/admin/products/services-report";
+import { filterRowsByQuery, groupByService, ProductsServicesTable, ServiceCardsGrid } from "@/components/admin/products/services-report";
+import { QueryFilters } from "@/components/admin/parity/seller/query-filters";
 
 export const metadata = { title: "Products with Seller Services" };
 
 const BASE_HREF = "/admin/products/with-services";
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const FILTER_FIELDS = [
+  { name: "q", label: "Search", type: "search", placeholder: "Product name, SKU or vendor" },
+  { name: "from", label: "Updated from", type: "date" },
+  { name: "to", label: "Updated to", type: "date" },
+];
 
 export default async function ProductsWithServicesPage({ searchParams }) {
   const params = await searchParams;
   const selected = params?.service ? String(params.service) : "";
+  const q = typeof params?.q === "string" ? params.q.trim().slice(0, 120) : "";
+  const from = DATE.test(params?.from ?? "") ? params.from : "";
+  const to = DATE.test(params?.to ?? "") ? params.to : "";
 
   const { allowed, user } = await checkPermission("products");
   if (!allowed) {
@@ -27,7 +37,8 @@ export default async function ProductsWithServicesPage({ searchParams }) {
   const { rows, scanned, totalCatalog, truncated, message } = await getProductsWithServices(user);
   const serviceGroups = groupByService(rows);
   const selectedGroup = serviceGroups.find((g) => g.key === selected);
-  const filteredRows = selectedGroup ? rows.filter((p) => (p.services ?? []).some((s) => String(s.code ?? s.name) === selected)) : rows;
+  const byService = selectedGroup ? rows.filter((p) => (p.services ?? []).some((s) => String(s.code ?? s.name) === selected)) : rows;
+  const filteredRows = filterRowsByQuery(byService, { q, from, to });
 
   return (
     <>
@@ -54,6 +65,10 @@ export default async function ProductsWithServicesPage({ searchParams }) {
           for the full catalog.
         </Notice>
       )}
+
+      <div className="mb-4">
+        <QueryFilters fields={FILTER_FIELDS} />
+      </div>
 
       <ServiceCardsGrid baseHref={BASE_HREF} serviceGroups={serviceGroups} selectedKey={selectedGroup?.key} totalCount={rows.length} />
 

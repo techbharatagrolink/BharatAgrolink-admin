@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { applyTakeRateRuleAction } from "@/lib/actions/admin/take-rate-rules";
+import { applyTakeRateRuleBatchAction } from "@/lib/actions/admin/take-rate-rules";
 import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/form";
-import { sleep } from "@/lib/utils";
-
-const APPLY_PACE_MS = 250; // each save is already its own request; space them out so a big batch doesn't trip the admin API's rate limiter
 
 const STATUS_LABEL = {
   "blocked-seller-inactive": "Seller hasn't activated the service",
@@ -73,14 +70,13 @@ export function TakeRateRulePanel({ rows, canApply }) {
     const ids = [...selected];
     if (!ids.length || !reason.trim()) return;
     startTransition(async () => {
-      let okCount = 0;
-      let failCount = 0;
-      for (const [i, id] of ids.entries()) {
-        if (i > 0) await sleep(APPLY_PACE_MS);
-        const res = await applyTakeRateRuleAction(id, reason);
-        if (res.ok) okCount += 1;
-        else failCount += 1;
+      const batch = await applyTakeRateRuleBatchAction(ids, reason);
+      if (!batch.ok) {
+        notify({ message: batch.message, tone: "error" });
+        return;
       }
+      const okCount = batch.results.filter((r) => r.ok).length;
+      const failCount = batch.results.length - okCount;
       notify({ message: `${okCount} product${okCount === 1 ? "" : "s"} updated${failCount ? `, ${failCount} failed` : ""}.`, tone: failCount && !okCount ? "error" : "success" });
       setSelected(new Set());
       setReason("");

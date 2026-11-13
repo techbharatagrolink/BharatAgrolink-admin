@@ -5,9 +5,8 @@ import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
 import { api, apiForm, ApiError } from "@/lib/api";
-import { mapLimit, mockLatency, withRetry } from "./_query";
+import { mapLimit, mockLatency } from "./_query";
 import { STOCK_STATUSES } from "@/lib/content/admin/stock";
-import { getProductPricingFactors } from "./pricing-factors";
 
 function liveError(error, fallback) {
   if (!(error instanceof ApiError)) return { ok: false, message: fallback };
@@ -109,13 +108,15 @@ const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just ho
 
 /**
  * Shared by the admin-only report pages below: there is no server-side filter for
- * "has services" or "take rate above X" on the admin API, so these scan the live
- * products list (newest-updated first) up to a page cap and filter locally.
+ * "take rate above X" on the admin API, so that one scans the live products list
+ * (newest-updated first) up to a page cap and filters locally. Pass `extraQuery` (e.g.
+ * `{ services: "yes" }`) when the list IS filterable server-side — it cuts the scan down
+ * to just the matching pages instead of paging through the whole catalog to find them.
  */
-export async function scanProductRows(user) {
+export async function scanProductRows(user, extraQuery = {}) {
   if (!user?.token) return { rows: [], scanned: 0, totalCatalog: 0, truncated: false };
   try {
-    const query = { pageSize: SCAN_PAGE_SIZE, sort: "updatedAt:desc" };
+    const query = { pageSize: SCAN_PAGE_SIZE, sort: "updatedAt:desc", ...extraQuery };
     const { data: first } = await api("admin/lists/products", { token: user.token, query: { ...query, page: 1 } });
     const pageCount = Math.max(1, Number(first?.pageCount) || 1);
     const pagesToScan = Math.min(pageCount, SCAN_PAGE_CAP);
@@ -140,40 +141,22 @@ export async function scanProductRows(user) {
   }
 }
 
-const SERVICES_DETAIL_CAP = 200;
-
 /**
  * Sales-facing report: every product with at least one seller-selected service, for
  * promoting those listings.
  *
- * The products list (`admin/lists/products`) embeds a `services` array per row, but its
- * item shape doesn't match the Pricing & Tax tab's (names/charges came back as
- * `undefined` in the UI). The per-product pricing endpoint's `services.available` /
- * `services.selected` is the shape already proven correct there, so each candidate row
- * is re-fetched from that endpoint and its `services` replaced before it's returned.
+ * The products list (`admin/lists/products`) now embeds a real `services` array per row
+ * (`{code, name, category, chargeType, chargeValue}` — fixed backend-side to return
+ * `JSON_ARRAYAGG` instead of a plain comma-joined name string), so this is just a filter
+ * over the scan. It used to re-fetch each candidate's pricing individually to work around
+ * the old string shape, which was slow enough to time the page out once enough products
+ * had services — don't reintroduce that per-product fetch. `services=yes` is now a real
+ * server-side filter too, so the scan only pages through the matching products (typically
+ * a small fraction of the catalog) instead of the whole thing.
  */
 export async function getProductsWithServices(user) {
-  const scan = await scanProductRows(user);
-  const withServices = scan.rows.filter((p) => Array.isArray(p.services) && p.services.length > 0);
-  const candidates = withServices.slice(0, SERVICES_DETAIL_CAP);
-  const detailed = await mapLimit(
-    candidates,
-    SCAN_CONCURRENCY,
-    async (p) => {
-      const loaded = await withRetry(() => getProductPricingFactors(p.id, 0, user));
-      if (!loaded.ok) return null;
-      const available = loaded.pricing.services?.available ?? [];
-      const selected = loaded.pricing.services?.selected ?? [];
-      const services = available.filter((s) => selected.includes(s.code));
-      return services.length ? { ...p, services } : null;
-    },
-    { minIntervalMs: SCAN_MIN_INTERVAL_MS },
-  );
-  return {
-    ...scan,
-    rows: detailed.filter(Boolean),
-    truncated: scan.truncated || withServices.length > SERVICES_DETAIL_CAP,
-  };
+  const scan = await scanProductRows(user, { services: "yes" });
+  return { ...scan, rows: scan.rows.filter((p) => Array.isArray(p.services) && p.services.length > 0) };
 }
 
 /**
