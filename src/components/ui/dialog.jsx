@@ -8,8 +8,11 @@ import { Button } from "./button";
 import { Field, Select, Textarea } from "./form";
 
 function useModalBehaviour(open, onClose, panelRef) {
+  // Latest onClose for the key handler below, without re-running that effect when the parent re-renders.
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;

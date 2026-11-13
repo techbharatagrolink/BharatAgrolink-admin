@@ -255,6 +255,9 @@ export function Sidebar({ navigation, badges = {}, rail, onToggleRail, mobileOpe
         </div>
 
         <nav className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain py-3">
+          {/* railAnchors (DOM nodes the compact-rail flyouts hang from) is read inside: a flyout only opens from a click
+              on its anchor, so the node is already in the map on the render that shows it. */}
+          {/* eslint-disable-next-line react-hooks/refs */}
           {navigation.map((section) => {
             const sectionKey = sectionKeyOf(section);
             const collapsible = Boolean(section.section) && !compact;

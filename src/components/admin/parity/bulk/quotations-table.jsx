@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Repeat, Trash2 } from "lucide-react";
@@ -21,7 +21,9 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
   const [busy, setBusy] = useState(false);
   // React Compiler compares closed-over fields on every render. pending is null until a row action is chosen.
   const pendingRef = useRef(null);
-  pendingRef.current = pending;
+  useEffect(() => {
+    pendingRef.current = pending;
+  });
   const rows = Array.isArray(result?.rows) ? result.rows.filter((q) => q && q.id != null) : [];
 
   async function confirm() {

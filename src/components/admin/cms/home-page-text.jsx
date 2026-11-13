@@ -48,7 +48,12 @@ export function HomePageText({ settings, content, footer, canEdit }) {
 
 function SettingsForm({ settings, canEdit, busy, onSave }) {
   const [values, setValues] = useState(settings || {});
-  useEffect(() => setValues(settings), [settings]);
+  // Fresh settings from the server (after a save / refresh) replace the edited values.
+  const [syncedSettings, setSyncedSettings] = useState(settings);
+  if (syncedSettings !== settings) {
+    setSyncedSettings(settings);
+    setValues(settings);
+  }
   const set = (name) => (event) => setValues((current) => ({ ...current, [name]: event.target.value }));
   return (
     <Card>
@@ -87,10 +92,12 @@ function SettingsForm({ settings, canEdit, busy, onSave }) {
 function ContentForm({ content, canEdit, busy, onSave }) {
   const [title, setTitle] = useState(content?.title || "");
   const [description, setDescription] = useState(content?.description || "");
-  useEffect(() => {
+  const [syncedContent, setSyncedContent] = useState(content);
+  if (syncedContent !== content) {
+    setSyncedContent(content);
     setTitle(content.title || "");
     setDescription(content.description || "");
-  }, [content]);
+  }
   return (
     <Card>
       <CardHeader title="Homepage description" description="The title and HTML shown in the homepage description block." />
@@ -122,7 +129,11 @@ function ContentForm({ content, canEdit, busy, onSave }) {
 function FooterForm({ footer, canEdit, busy, onSave }) {
   const rows = Array.isArray(footer) ? footer : [];
   const [categories, setCategories] = useState(rows.length ? rows : [{ name: "", items: [{ keyword: "", link: "" }] }]);
-  useEffect(() => setCategories(rows.length ? rows : [{ name: "", items: [{ keyword: "", link: "" }] }]), [footer]);
+  const [syncedFooter, setSyncedFooter] = useState(footer);
+  if (syncedFooter !== footer) {
+    setSyncedFooter(footer);
+    setCategories(rows.length ? rows : [{ name: "", items: [{ keyword: "", link: "" }] }]);
+  }
   const update = (index, patch) => setCategories((current) => current.map((category, i) => (i === index ? { ...category, ...patch } : category)));
   return (
     <Card>

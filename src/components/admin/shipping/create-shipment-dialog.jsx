@@ -78,7 +78,9 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
   const [booking, startBooking] = useTransition();
   const [pricingAccess, setPricingAccess] = useState(null);
   const fallbackRef = useRef(fallbackVendors);
-  fallbackRef.current = fallbackVendors;
+  useEffect(() => {
+    fallbackRef.current = fallbackVendors;
+  });
 
   const reset = () => {
     setCompany("nimbus");
@@ -106,6 +108,8 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
     if (!open) return undefined;
     let cancelled = false;
     const label = companyLabel(company);
+    // Opening the dialog / switching courier company starts a quote request: reset to "loading" and fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError("");
     setResult(null);
