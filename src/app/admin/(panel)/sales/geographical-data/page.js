@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth/session";
-import { getGeo, getGeoOptions } from "@/lib/services/admin/parity/geo";
+import { geoFilters, getGeo, getGeoOptions } from "@/lib/services/admin/parity/geo";
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { ApiUnavailable } from "@/components/ui/states";
 import { GeoTable } from "@/components/admin/parity/geo/geo-table";
@@ -23,13 +23,7 @@ const one = (v) => (Array.isArray(v) ? v[0] : v) ?? "";
 function listQuery(sp) {
   const page = Math.min(100000, Math.max(1, Number.parseInt(one(sp.page), 10) || 1));
   const size = Number(one(sp.pageSize));
-  const query = { page, pageSize: PAGE_SIZES.includes(size) ? size : 25 };
-  for (const [key, max] of [["q", 100], ["state", 150], ["district", 150], ["type", 150]]) {
-    const value = one(sp[key]).trim().slice(0, max);
-    if (value) query[key] = value;
-  }
-  if (/^\d{6}$/.test(one(sp.pincode).trim())) query.pincode = one(sp.pincode).trim();
-  return query;
+  return { page, pageSize: PAGE_SIZES.includes(size) ? size : 25, ...geoFilters(sp) };
 }
 
 /** Sales > Geographical Data: the pincode_mapping database, one tab per table, read only. */
@@ -40,7 +34,7 @@ export default async function GeographicalDataPage({ searchParams }) {
   const kind = TABS.some((t) => t.value === sp.tab) ? sp.tab : "blocks";
   const query = listQuery(sp);
 
-  const [listed, opted] = await Promise.allSettled([getGeo(kind, query, user), getGeoOptions(kind, query.state, user)]);
+  const [listed, opted] = await Promise.allSettled([getGeo(kind, query, user), getGeoOptions(kind, { state: query.state, district: query.district }, user)]);
   const failure = [listed, opted].find((r) => r.status === "rejected")?.reason;
   // a search the API refused as too slow (422) keeps the tabs and filters on screen so it can be narrowed
   const tooSlow = failure instanceof ApiError && failure.status === 422 && listed.status === "rejected" && opted.status === "fulfilled";
