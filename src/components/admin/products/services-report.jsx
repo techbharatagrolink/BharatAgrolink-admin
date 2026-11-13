@@ -33,16 +33,29 @@ function ProductCell({ p, v }) {
 }
 
 /**
- * Services are chosen on the base product and apply to every variant (not per-variant), but
- * display price and stock aren't — so a product with variants becomes one row per variant here
- * (each with its own price/stock, the same services), instead of hiding that behind a single
+ * Each variation has its own service pick (falling back to the base product's), and its own
+ * display price and stock — so a product with variants becomes one row per variant here
+ * (each with its own services, price and stock), instead of hiding that behind a single
  * base-product row. A product with no variants is still just the one row.
  */
 function toDisplayRows(rows) {
   return rows.flatMap((p) => {
     const variants = Array.isArray(p.variants) ? p.variants : [];
-    if (!variants.length) return [{ key: p.id, p, v: null }];
-    return variants.map((v) => ({ key: `${p.id}:${v.id}`, p, v }));
+    if (!variants.length) return [{ key: p.id, p, v: null, services: uniqueServices(p.services) }];
+    // A variation shows its own pick (pricing reads only that one; null = none). Older APIs send no
+    // "services" key on a variant: then the base product's pick applies.
+    return variants.map((v) => ({ key: `${p.id}:${v.id}`, p, v, services: uniqueServices("services" in v ? v.services : p.services) }));
+  });
+}
+
+/** One badge per service: older API versions repeat a service once per variation. */
+export function uniqueServices(services) {
+  const seen = new Set();
+  return (services ?? []).filter((s) => {
+    const key = String(s.code ?? s.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
@@ -79,7 +92,7 @@ export function filterRowsByQuery(rows, { q, from, to } = {}) {
 export function groupByService(rows) {
   const map = new Map();
   for (const p of rows) {
-    for (const s of p.services ?? []) {
+    for (const s of uniqueServices(p.services)) {
       const key = String(s.code ?? s.name);
       if (!map.has(key)) map.set(key, { key, name: s.name, category: s.category, chargeType: s.chargeType, chargeValue: s.chargeValue, count: 0 });
       map.get(key).count += 1;
@@ -175,7 +188,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {displayRows.map(({ key, p, v }) => (
+                {displayRows.map(({ key, p, v, services }) => (
                   <tr key={key} className="align-top hover:bg-surface-muted/60">
                     <td className="px-4 py-2.5">
                       <ProductCell p={p} v={v} />
@@ -183,7 +196,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                     <td className="px-4 py-2.5 text-ink-soft">{p.vendor}</td>
                     <td className="px-4 py-2.5 text-ink-soft">{p.category}</td>
                     <td className="px-4 py-2.5">
-                      <ServiceBadges services={p.services} baseHref={baseHref} />
+                      <ServiceBadges services={services} baseHref={baseHref} />
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(v ? v.display : p.display)}</td>
                     <td className="px-4 py-2.5 text-right tabular">{formatNumber(v ? v.stock : p.stock)}</td>
@@ -193,7 +206,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
             </table>
           </div>
           <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
-            {displayRows.map(({ key, p, v }) => (
+            {displayRows.map(({ key, p, v, services }) => (
               <li key={key} className="rounded-xl border border-line p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -206,7 +219,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                     )}
                     {v && <Badge tone="info" className="ml-1.5">{v.label || `Variant #${v.id}`}</Badge>}
                   </div>
-                  <Badge tone="brand">{p.services.length} service{p.services.length === 1 ? "" : "s"}</Badge>
+                  <Badge tone="brand">{services.length} service{services.length === 1 ? "" : "s"}</Badge>
                 </div>
                 <p className="text-xs text-ink-muted">
                   {v ? v.sku : p.sku} · {p.vendor} · {p.category} ·{" "}
@@ -215,7 +228,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                   </Link>
                 </p>
                 <div className="mt-2">
-                  <ServiceBadges services={p.services} baseHref={baseHref} />
+                  <ServiceBadges services={services} baseHref={baseHref} />
                 </div>
                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[13px]">
                   <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(v ? v.display : p.display)}</dd></div>
