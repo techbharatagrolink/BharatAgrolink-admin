@@ -156,7 +156,9 @@ export async function scanProductRows(user, extraQuery = {}) {
  */
 export async function getProductsWithServices(user) {
   const scan = await scanProductRows(user, { services: "yes" });
-  return { ...scan, rows: scan.rows.filter((p) => Array.isArray(p.services) && p.services.length > 0) };
+  // Services are picked per product and per variant: keep a product when it or any of its variants has one.
+  const has = (list) => Array.isArray(list) && list.length > 0;
+  return { ...scan, rows: scan.rows.filter((p) => has(p.services) || (p.variants ?? []).some((v) => has(v.services))) };
 }
 
 /**

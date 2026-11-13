@@ -4,7 +4,7 @@ import { getProductsWithServices } from "@/lib/services/admin/products";
 import { formatNumber } from "@/lib/format";
 import { Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
-import { filterRowsByQuery, groupByService, ProductsServicesTable, ServiceCardsGrid } from "@/components/admin/products/services-report";
+import { filterRowsByQuery, groupByService, ProductsServicesTable, ServiceCardsGrid, toServiceRows } from "@/components/admin/products/services-report";
 import { QueryFilters } from "@/components/admin/parity/seller/query-filters";
 
 export const metadata = { title: "Products with Marketing Services" };
@@ -17,12 +17,8 @@ const FILTER_FIELDS = [
   { name: "to", label: "Updated to", type: "date" },
 ];
 
-/** Keeps only the Marketing-category services on each product (B2B / catalog / agronomist services are dropped). */
-function toMarketingOnly(rows) {
-  return rows
-    .map((p) => ({ ...p, services: (p.services ?? []).filter((s) => String(s.category || "").trim().toLowerCase() === "marketing") }))
-    .filter((p) => p.services.length > 0);
-}
+/** Only Marketing-category services count here (B2B / catalog / agronomist services are dropped). */
+const isMarketing = (s) => String(s.category || "").trim().toLowerCase() === "marketing";
 
 export default async function MarketingServicesPage({ searchParams }) {
   const params = await searchParams;
@@ -42,10 +38,11 @@ export default async function MarketingServicesPage({ searchParams }) {
   }
 
   const { rows: scannedRows, scanned, totalCatalog, truncated, message } = await getProductsWithServices(user);
-  const rows = toMarketingOnly(scannedRows);
+  // One row per sellable item (product, or each variant) with at least one Marketing service of its own.
+  const rows = toServiceRows(scannedRows, isMarketing);
   const serviceGroups = groupByService(rows);
   const selectedGroup = serviceGroups.find((g) => g.key === selected);
-  const byService = selectedGroup ? rows.filter((p) => p.services.some((s) => String(s.code ?? s.name) === selected)) : rows;
+  const byService = selectedGroup ? rows.filter((r) => r.services.some((s) => String(s.code ?? s.name) === selected)) : rows;
   const filteredRows = filterRowsByQuery(byService, { q, from, to });
 
   return (

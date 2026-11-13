@@ -33,18 +33,22 @@ function ProductCell({ p, v }) {
 }
 
 /**
- * Each variation has its own service pick (falling back to the base product's), and its own
- * display price and stock — so a product with variants becomes one row per variant here
- * (each with its own services, price and stock), instead of hiding that behind a single
- * base-product row. A product with no variants is still just the one row.
+ * Services are picked per sellable item: the base product, or each of its variations (its own pick,
+ * the one its price is worked out from). So the report lists items, not products: a product without
+ * variations is one row, a product with variations one row per variation. Only items that have at
+ * least one service are kept, so a variation with no services never shows up next to its siblings.
+ * Each row: { key, p (the product), v (the variation or null), services, name, sku, vendor, updatedAt }.
  */
-function toDisplayRows(rows) {
-  return rows.flatMap((p) => {
+export function toServiceRows(products, keepService = () => true) {
+  return products.flatMap((p) => {
     const variants = Array.isArray(p.variants) ? p.variants : [];
-    if (!variants.length) return [{ key: p.id, p, v: null, services: uniqueServices(p.services) }];
-    // A variation shows its own pick (pricing reads only that one; null = none). Older APIs send no
-    // "services" key on a variant: then the base product's pick applies.
-    return variants.map((v) => ({ key: `${p.id}:${v.id}`, p, v, services: uniqueServices("services" in v ? v.services : p.services) }));
+    const items = variants.length
+      ? // Older APIs send no "services" key on a variation: then the base product's pick applies.
+        variants.map((v) => ({ key: `${p.id}:${v.id}`, p, v, services: "services" in v ? v.services : p.services }))
+      : [{ key: String(p.id), p, v: null, services: p.services }];
+    return items
+      .map((row) => ({ ...row, services: uniqueServices(row.services).filter(keepService), name: p.name, sku: row.v ? row.v.sku : p.sku, vendor: p.vendor, updatedAt: p.updatedAt }))
+      .filter((row) => row.services.length > 0);
   });
 }
 
@@ -88,7 +92,7 @@ export function filterRowsByQuery(rows, { q, from, to } = {}) {
   return result;
 }
 
-/** One entry per distinct service, with how many of the given products have it selected. */
+/** One entry per distinct service, with how many of the given listings (toServiceRows) have it selected. */
 export function groupByService(rows) {
   const map = new Map();
   for (const p of rows) {
@@ -134,7 +138,7 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
           >
             <p className="text-sm font-semibold text-ink">All services</p>
             <p className="mt-1.5 text-xl font-semibold tabular text-ink">{totalCount}</p>
-            <p className="text-[11px] text-ink-muted">products</p>
+            <p className="text-[11px] text-ink-muted">listings</p>
           </Link>
           {serviceGroups.map((g) => (
             <Link
@@ -148,7 +152,7 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
               <p className="truncate text-sm font-semibold text-ink">{g.name}</p>
               {g.category && <p className="truncate text-xs text-ink-muted">{g.category}</p>}
               <p className="mt-1.5 text-xl font-semibold tabular text-ink">{g.count}</p>
-              <p className="text-[11px] text-ink-muted">product{g.count === 1 ? "" : "s"} · {chargeText(g)}</p>
+              <p className="text-[11px] text-ink-muted">listing{g.count === 1 ? "" : "s"} · {chargeText(g)}</p>
             </Link>
           ))}
         </div>
@@ -158,13 +162,13 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
 }
 
 export function ProductsServicesTable({ rows, baseHref, description, selectedName, emptyMessage }) {
-  const displayRows = toDisplayRows(rows);
-  const variantRowCount = displayRows.filter((r) => r.v).length;
+  const displayRows = rows;
+  const productCount = new Set(rows.map((r) => r.p.id)).size;
   return (
     <Card>
       <CardHeader
-        title={`${formatNumber(rows.length)} product${rows.length === 1 ? "" : "s"}${selectedName ? ` with “${selectedName}”` : ""}`}
-        description={`${description || "Scanned from the live products list."}${variantRowCount ? ` ${formatNumber(variantRowCount)} shown by variant, each with its own price and stock.` : ""}`}
+        title={`${formatNumber(rows.length)} listing${rows.length === 1 ? "" : "s"} · ${formatNumber(productCount)} product${productCount === 1 ? "" : "s"}${selectedName ? ` with “${selectedName}”` : ""}`}
+        description={`${description || "Scanned from the live products list."} Each listing is a product or one of its variants, with its own services, price and stock; items with no service are left out.`}
         actions={
           selectedName ? (
             <Link href={baseHref} className="text-xs font-medium text-brand-700 hover:underline">

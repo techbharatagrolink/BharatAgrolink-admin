@@ -4,7 +4,7 @@ import { getProductsWithServices } from "@/lib/services/admin/products";
 import { formatNumber } from "@/lib/format";
 import { Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
-import { filterRowsByQuery, groupByService, ProductsServicesTable, ServiceCardsGrid } from "@/components/admin/products/services-report";
+import { filterRowsByQuery, groupByService, ProductsServicesTable, ServiceCardsGrid, toServiceRows } from "@/components/admin/products/services-report";
 import { QueryFilters } from "@/components/admin/parity/seller/query-filters";
 
 export const metadata = { title: "Products with Seller Services" };
@@ -34,10 +34,12 @@ export default async function ProductsWithServicesPage({ searchParams }) {
     );
   }
 
-  const { rows, scanned, totalCatalog, truncated, message } = await getProductsWithServices(user);
+  const { rows: products, scanned, totalCatalog, truncated, message } = await getProductsWithServices(user);
+  // One row per sellable item (product, or each variant) that has its own services.
+  const rows = toServiceRows(products);
   const serviceGroups = groupByService(rows);
   const selectedGroup = serviceGroups.find((g) => g.key === selected);
-  const byService = selectedGroup ? rows.filter((p) => (p.services ?? []).some((s) => String(s.code ?? s.name) === selected)) : rows;
+  const byService = selectedGroup ? rows.filter((r) => r.services.some((s) => String(s.code ?? s.name) === selected)) : rows;
   const filteredRows = filterRowsByQuery(byService, { q, from, to });
 
   return (
