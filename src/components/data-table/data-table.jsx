@@ -28,14 +28,14 @@ function matchesWhen(action, row) {
   return true;
 }
 
-function toCsv(columns, rows) {
+export function toCsv(columns, rows) {
   const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const header = columns.map((c) => escape(c.label)).join(",");
   const body = rows.map((row) => columns.map((c) => escape(c.type === "status" || c.type === "mono" || !c.type ? row[c.key] : formatCellValue(c, row))).join(","));
   return [header, ...body].join("\n");
 }
 
-function download(filename, text) {
+export function download(filename, text) {
   const blob = new Blob(["\ufeff", text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
