@@ -95,8 +95,10 @@ export function ContentCalendar({ events: rawEvents, can }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // "Today" is read in the browser after hydration: reading the clock while rendering would differ from the server's HTML.
   useEffect(() => {
     const now = new Date();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setToday(ymd(now));
     setCursor((c) => c ?? new Date(now.getFullYear(), now.getMonth(), now.getDate()));
   }, []);

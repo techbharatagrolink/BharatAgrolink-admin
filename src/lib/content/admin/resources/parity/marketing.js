@@ -20,6 +20,7 @@ export const livePaths = [
   "/admin/marketing",
   "/admin/marketing/expenses",
   "/admin/marketing/engagement",
+  "/admin/marketing/products-with-services",
   "/admin/ceo-matrix",
   "/admin/dashboards/business",
   "/admin/finance/fraud",

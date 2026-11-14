@@ -5,7 +5,7 @@ import { can } from "@/lib/auth/permissions";
 import { validateForm, validateReason } from "@/lib/validation/admin/forms";
 import { validateVariations } from "@/lib/validation/admin/product-variations";
 import { api, apiForm, ApiError } from "@/lib/api";
-import { mockLatency } from "./_query";
+import { mapLimit, mockLatency } from "./_query";
 import { STOCK_STATUSES } from "@/lib/content/admin/stock";
 
 function liveError(error, fallback) {
@@ -101,38 +101,76 @@ export async function getProductsSummary(user) {
   };
 }
 
-const SERVICES_PAGE_SIZE = 100;
-const SERVICES_SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
+const SCAN_PAGE_SIZE = 100;
+const SCAN_PAGE_CAP = 20; // up to 2,000 products, newest first
+const SCAN_CONCURRENCY = 2; // the admin API drops connections outright if pushed harder
+const SCAN_MIN_INTERVAL_MS = 250; // paces the actual dispatch rate, not just how many are in flight
 
 /**
- * Sales-facing report: every product with at least one seller-selected service, for
- * promoting those listings. There is no "has services" filter on the admin API, so this
- * scans the live products list (newest-updated first) up to a page cap and filters locally.
+ * Shared by the admin-only report pages below: there is no server-side filter for
+ * "take rate above X" on the admin API, so that one scans the live products list
+ * (newest-updated first) up to a page cap and filters locally. Pass `extraQuery` (e.g.
+ * `{ services: "yes" }`) when the list IS filterable server-side — it cuts the scan down
+ * to just the matching pages instead of paging through the whole catalog to find them.
  */
-export async function getProductsWithServices(user) {
+export async function scanProductRows(user, extraQuery = {}) {
   if (!user?.token) return { rows: [], scanned: 0, totalCatalog: 0, truncated: false };
   try {
-    const query = { pageSize: SERVICES_PAGE_SIZE, sort: "updatedAt:desc" };
+    const query = { pageSize: SCAN_PAGE_SIZE, sort: "updatedAt:desc", ...extraQuery };
     const { data: first } = await api("admin/lists/products", { token: user.token, query: { ...query, page: 1 } });
     const pageCount = Math.max(1, Number(first?.pageCount) || 1);
-    const pagesToScan = Math.min(pageCount, SERVICES_SCAN_PAGE_CAP);
-    const rest = await Promise.all(
-      Array.from({ length: pagesToScan - 1 }, (_, i) => i + 2).map((page) =>
+    const pagesToScan = Math.min(pageCount, SCAN_PAGE_CAP);
+    const rest = await mapLimit(
+      Array.from({ length: pagesToScan - 1 }, (_, i) => i + 2),
+      SCAN_CONCURRENCY,
+      (page) =>
         api("admin/lists/products", { token: user.token, query: { ...query, page } })
           .then((res) => res.data?.rows ?? [])
           .catch(() => []),
-      ),
+      { minIntervalMs: SCAN_MIN_INTERVAL_MS },
     );
-    const scannedRows = [...(first?.rows ?? []), ...rest.flat()];
+    const rows = [...(first?.rows ?? []), ...rest.flat()];
     return {
-      rows: scannedRows.filter((p) => Array.isArray(p.services) && p.services.length > 0),
-      scanned: scannedRows.length,
-      totalCatalog: first?.total ?? scannedRows.length,
-      truncated: pageCount > SERVICES_SCAN_PAGE_CAP,
+      rows,
+      scanned: rows.length,
+      totalCatalog: first?.total ?? rows.length,
+      truncated: pageCount > SCAN_PAGE_CAP,
     };
   } catch (error) {
     return { rows: [], scanned: 0, totalCatalog: 0, truncated: false, message: error instanceof ApiError ? error.message : "Could not load products from the admin API." };
   }
+}
+
+/**
+ * Sales-facing report: every product with at least one seller-selected service, for
+ * promoting those listings.
+ *
+ * The products list (`admin/lists/products`) now embeds a real `services` array per row
+ * (`{code, name, category, chargeType, chargeValue}` — fixed backend-side to return
+ * `JSON_ARRAYAGG` instead of a plain comma-joined name string), so this is just a filter
+ * over the scan. It used to re-fetch each candidate's pricing individually to work around
+ * the old string shape, which was slow enough to time the page out once enough products
+ * had services — don't reintroduce that per-product fetch. `services=yes` is now a real
+ * server-side filter too, so the scan only pages through the matching products (typically
+ * a small fraction of the catalog) instead of the whole thing.
+ */
+export async function getProductsWithServices(user) {
+  const scan = await scanProductRows(user, { services: "yes" });
+  // Services are picked per product and per variant: keep a product when it or any of its variants has one.
+  const has = (list) => Array.isArray(list) && list.length > 0;
+  return { ...scan, rows: scan.rows.filter((p) => has(p.services) || (p.variants ?? []).some((v) => has(v.services))) };
+}
+
+/**
+ * Existing-products profitability audit: every Active, priced product whose contribution
+ * margin verdict is "loss" or "below_floor" (below the live pricing_config target — see
+ * the VERDICT_SQL fix this session). `verdict`/`contributionMargin` are already correct
+ * fields on the products list row, so this just filters the same scan — no extra per-product
+ * fetches needed.
+ */
+export async function getProfitabilityAuditCandidates(user) {
+  const scan = await scanProductRows(user);
+  return { ...scan, rows: scan.rows.filter((p) => p.verdict === "loss" || p.verdict === "below_floor") };
 }
 
 export async function calculatePricingLive(input, user) {

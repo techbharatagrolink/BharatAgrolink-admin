@@ -150,7 +150,9 @@ const blankCustomer = () => ({
 });
 
 export function CreateBulkOrderForm({ options, quotation }) {
-  const requestId = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}`);
+  const lineSeq = useRef(0); // makes each added line's React key unique
+  // One id per opened form (idempotency key of the create call), generated once.
+  const [requestId] = useState(() => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}`));
   const [provider, setProvider] = useState("shiprocket");
   const [customerQuery, setCustomerQuery] = useState(quotation?.customer_name || "");
   const [customers, setCustomers] = useState([]);
@@ -297,7 +299,7 @@ export function CreateBulkOrderForm({ options, quotation }) {
 
   function addProduct(choice) {
     const next = [...lines, {
-      key: choice.key + Date.now(),
+      key: `${choice.key}-${(lineSeq.current += 1)}`,
       name: choice.name,
       sku: choice.sku || "",
       quantity: 1,
@@ -464,7 +466,7 @@ export function CreateBulkOrderForm({ options, quotation }) {
     const docs = docText.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 5);
     const payload = {
       provider,
-      client_request_id: requestId.current,
+      client_request_id: requestId,
       quotation_id: quotation?.id || null,
       no_of_packages: Number(noOfPackages),
       invoice_value: invoice,

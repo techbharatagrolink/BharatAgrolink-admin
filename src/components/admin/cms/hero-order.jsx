@@ -15,7 +15,12 @@ export function HeroOrder({ items, canEdit }) {
   const [order, setOrder] = useState(items);
   const [busy, setBusy] = useState("");
 
-  useEffect(() => setOrder(items), [items]);
+  // Fresh items from the server (after a save / refresh) replace the local order.
+  const [syncedItems, setSyncedItems] = useState(items);
+  if (syncedItems !== items) {
+    setSyncedItems(items);
+    setOrder(items);
+  }
 
   async function run(key, action) {
     setBusy(key);

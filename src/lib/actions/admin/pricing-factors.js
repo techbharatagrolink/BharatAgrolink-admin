@@ -6,6 +6,7 @@ import { can, canPage } from "@/lib/auth/permissions";
 import {
   getDraftPricingFactors,
   getProductPricingFactors,
+  getProfitabilityAlerts,
   pricingFactorsEnabled,
   previewDraftPricingFactors,
   previewProductPricingFactors,
@@ -20,6 +21,18 @@ const expired = { ok: false, message: "Your session has expired. Please log in a
 const denied = { ok: false, message: "You do not have permission to do this." };
 const PRODUCT_PAGE = "manage_product.php";
 const COST_PAGE = "product_cost_management.php";
+
+/** Background alert polling: viewing cost data or the product list both qualify. */
+function canViewCosts(user) {
+  return canPage(user, COST_PAGE, "view") || canPage(user, PRODUCT_PAGE, "view");
+}
+
+export async function profitabilityAlertsAction() {
+  const user = await getCurrentAdmin();
+  if (!user) return { ok: false, products: [], message: expired.message };
+  if (!canViewCosts(user)) return { ok: false, products: [], message: denied.message };
+  return getProfitabilityAlerts(user);
+}
 
 const text = (value, max = 100) => (value == null ? undefined : String(value).trim().slice(0, max));
 

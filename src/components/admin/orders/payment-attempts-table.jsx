@@ -88,7 +88,9 @@ function SyncDialog({ attempt, onClose, onDone }) {
     [attempt.pendingOrderId, onDone]
   );
 
+  // The dialog starts its Razorpay check as soon as it opens: a fetch on mount, which is what an effect is for.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     doSync();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
