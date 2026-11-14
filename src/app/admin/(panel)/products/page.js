@@ -35,7 +35,7 @@ export default async function ProductsPage({ searchParams }) {
           <StatCard
             label="Out of Stock"
             value={formatNumber(summary.outOfStock ?? 0)}
-            hint="0 inventory units"
+            hint="No pack size can be sold (live inventory)"
             tone="warning"
             icon={PackageX}
             href="/admin/products?stockStatus=Out+of+Stock&sort=stock%3Aasc"

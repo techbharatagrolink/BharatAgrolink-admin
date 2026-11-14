@@ -126,6 +126,8 @@ const EXTRA_PAGES = {
   "dashboard.sellers": ["seller_dashboard.php"],
   "products.approval": ["verfiy_pending_products.php", "pending_products.php"],
   "products.import": ["import_products_excel.php"],
+  // Inventory Management screens: their own menu, or Manage Products (same rule as /admin/stock in the API).
+  inventory: ["inventory_management.php", "manage_product.php"],
   pricing: ["price_calculator.php"],
   finance: ["finance.php", "payout_finance.php"],
   "finance.expenses": ["expense_limit_dashboard.php", "fixed_expenses.php"],
@@ -306,6 +308,8 @@ export function isLiveAdminPath(pathname) {
   if (LIVE_ADMIN_PATHS.has(pathname)) return true;
   const path = pathname || "";
   if (path.startsWith("/admin/dashboard/cards/")) return true;
+  // Inventory Management: every screen reads the live /admin/stock API.
+  if (path === "/admin/inventory" || path.startsWith("/admin/inventory/")) return true;
   if (/^\/admin\/orders\/(?!new$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/crm\/leads\/\d+$/.test(path)) return true;
   if (/^\/admin\/crm\/customer-360\/[^/]+$/.test(path)) return true;

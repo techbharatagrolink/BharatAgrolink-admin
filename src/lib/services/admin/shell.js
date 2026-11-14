@@ -13,16 +13,34 @@ async function total(user, path, query) {
   }
 }
 
+/** Live inventory counts (GET /admin/stock/summary + open short orders) for the Inventory Management badges. */
+async function stockCounts(user) {
+  const none = { outOfStock: 0, stockAlerts: 0, shortOrders: 0 };
+  if (!can(user, "inventory")) return none;
+  try {
+    const [summary, shortfalls] = await Promise.all([api("admin/stock/summary", { token: user.token }), api("admin/stock/shortfalls", { token: user.token })]);
+    const s = summary.data ?? {};
+    return {
+      outOfStock: Number(s.outOfStock ?? 0),
+      stockAlerts: Number(s.outOfStock ?? 0) + Number(s.critical ?? 0) + Number(s.lowStock ?? 0),
+      shortOrders: Array.isArray(shortfalls.data) ? shortfalls.data.length : 0,
+    };
+  } catch {
+    return none;
+  }
+}
+
 /** Sidebar badge counts from the live lists. Queues without an endpoint stay at 0. */
 export async function getNavBadges(user) {
-  const [pendingProducts, pendingShipments, pendingReturns, pendingVendors, openTickets, outOfStock] = await Promise.all([
+  const [pendingProducts, pendingShipments, pendingReturns, pendingVendors, openTickets, stock] = await Promise.all([
     total(user, "/products/pending", { permission: "products.approval" }),
     total(user, "/shipments", { permission: "shipping", params: { status: "Ready to Ship" } }),
     total(user, "/returns", { permission: "returns", params: { status: "Pending" } }),
     total(user, "/vendors/verification", { permission: "vendors.verification", params: { status: "Pending" } }),
     total(user, "/support/tickets", { permission: "support", params: { status: "Open" } }),
-    total(user, "/inventory", { permission: "products", params: { stockStatus: "Out of Stock" } }),
+    stockCounts(user),
   ]);
+  const { outOfStock, stockAlerts, shortOrders } = stock;
   const badges = {
     pendingProducts,
     pendingShipments,
@@ -33,6 +51,8 @@ export async function getNavBadges(user) {
     openEscalations: 0,
     openTickets,
     outOfStock,
+    stockAlerts,
+    shortOrders,
   };
   return badges;
 }
@@ -44,7 +64,8 @@ export async function getNotifications(user) {
   if (badges.pendingProducts) items.push({ id: "pp", title: `${badges.pendingProducts} products waiting for approval`, meta: "Catalog · Pending Products", href: "/admin/products/pending", tone: "warning" });
   if (badges.pendingReturns) items.push({ id: "ret", title: `${badges.pendingReturns} return requests need a decision`, meta: "Returns & RTO", href: "/admin/returns?status=Pending", tone: "warning" });
   if (badges.openTickets) items.push({ id: "tk", title: `${badges.openTickets} open support tickets`, meta: "Support", href: "/admin/support?status=Open", tone: "warning" });
-  if (badges.outOfStock) items.push({ id: "ls", title: `${badges.outOfStock} products are out of stock`, meta: "Catalog · Inventory", href: "/admin/inventory?stockStatus=Out+of+Stock", tone: "warning" });
+  if (badges.shortOrders) items.push({ id: "so", title: `${badges.shortOrders} paid orders were short of stock – call the customers`, meta: "Inventory · Short Orders", href: "/admin/inventory/exceptions", tone: "warning" });
+  if (badges.outOfStock) items.push({ id: "ls", title: `${badges.outOfStock} SKUs are out of stock`, meta: "Inventory · Stock Alerts", href: "/admin/inventory/stock?status=OUT_OF_STOCK", tone: "warning" });
   if (badges.pendingVendors) items.push({ id: "vn", title: `${badges.pendingVendors} sellers waiting for approval`, meta: "Vendors", href: "/admin/vendors/verification?status=Pending", tone: "warning" });
   return items;
 }

@@ -78,6 +78,7 @@ const FA_ICONS = [
   [/tachometer|chart-pie|dashboard/, "LayoutDashboard"],
   [/chart-line|line-chart/, "TrendingUp"],
   [/balance-scale|gavel/, "Gauge"],
+  [/warehouse/, "Warehouse"],
   [/store|user-tie/, "Store"],
   [/users-cog|user-friends|users/, "Users"],
   [/box|cubes|dolly|truck-loading/, "Boxes"],
