@@ -78,3 +78,36 @@ export async function setActiveAction(resource, id, isActive) {
   if (!["services", "placements", "packages"].includes(resource)) return { ok: false, message: "Unknown item." };
   return run("edit", `${resource}/${Number(id)}`, { method: "PATCH", body: { isActive: Boolean(isActive) } });
 }
+
+/** Asks Razorpay again for a banner order's payment (admin reconcile, doc §4.6). Only Razorpay's answer changes anything. */
+export async function reconcileBannerPaymentAction(orderId) {
+  return run("edit", `orders/${Number(orderId)}/reconcile-payment`, { method: "POST" });
+}
+
+/** Supplier details printed on BAN invoices (registered address etc.); GSTIN and state are fixed. */
+export async function saveInvoiceProfileAction(input) {
+  return run("edit", "invoice-profile", {
+    method: "PUT",
+    body: {
+      legalName: str(input?.legalName),
+      address: str(input?.address),
+      email: str(input?.email),
+      phone: str(input?.phone),
+      pan: str(input?.pan),
+      cin: str(input?.cin) || undefined,
+      defaultSac: str(input?.defaultSac),
+    },
+  });
+}
+
+const ORDER_ACTIONS = new Set(["approve", "reject", "request-revision", "reschedule", "pause", "resume", "stop", "refund"]);
+
+/** Review / schedule / control / refund one banner order (doc §4.4). The API validates the transition. */
+export async function bannerOrderAction(id, action, input = {}) {
+  if (!ORDER_ACTIONS.has(action)) return { ok: false, message: "Unknown action." };
+  const body = {};
+  if (input.startDate) body.startDate = str(input.startDate);
+  if (input.reason) body.reason = str(input.reason);
+  if (input.note) body.note = str(input.note);
+  return run("edit", `orders/${Number(id)}/${action}`, { body });
+}

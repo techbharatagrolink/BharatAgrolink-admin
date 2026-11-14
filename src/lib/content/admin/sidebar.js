@@ -24,12 +24,7 @@ const norm = (link) => String(link ?? "").trim().replace(/^\/+/, "");
 const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 
 /** Sidebar routes whose screen is not built yet. Remove a route when its page lands. */
-const PENDING_ROUTES = new Set([
-  // Monetization Center screens of later steps (task #100).
-  "/admin/monetization/orders",
-  "/admin/monetization/payments",
-  "/admin/monetization/analytics",
-]);
+const PENDING_ROUTES = new Set();
 
 const isRouteLink = (link) => String(link ?? "").trim().startsWith("/admin/");
 

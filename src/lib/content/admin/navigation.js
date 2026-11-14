@@ -126,7 +126,7 @@ export const navigation = [
         icon: "Megaphone",
         children: [
           { key: "monetization-overview", label: "Monetization Overview", href: "/admin/monetization", page: "monetization_center.php", permission: "monetization", icon: "LayoutDashboard" },
-          { key: "monetization-orders", label: "Banner Orders", href: "/admin/monetization/orders", page: "monetization_center.php", permission: "monetization", icon: "ClipboardList" },
+          { key: "monetization-orders", label: "Banner Orders", href: "/admin/monetization/orders", page: "monetization_center.php", permission: "monetization", icon: "ClipboardList", badge: "bannerReview" },
           { key: "monetization-packages", label: "Services & Packages", href: "/admin/monetization/packages", page: "monetization_center.php", permission: "monetization", icon: "Tags" },
           { key: "monetization-placements", label: "Placements", href: "/admin/monetization/placements", page: "monetization_center.php", permission: "monetization", icon: "LayoutTemplate" },
           { key: "monetization-payments", label: "Payments & Invoices", href: "/admin/monetization/payments", page: "monetization_center.php", permission: "monetization", icon: "Receipt" },

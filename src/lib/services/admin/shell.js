@@ -30,15 +30,28 @@ async function stockCounts(user) {
   }
 }
 
+/** Banner ads waiting for review and refunds to issue (GET /admin/monetization/orders meta.counts). */
+async function bannerCounts(user) {
+  const none = { bannerReview: 0, bannerRefunds: 0 };
+  if (!can(user, "monetization")) return none;
+  try {
+    const { meta } = await api("admin/monetization/orders", { token: user.token, query: { queue: "review", limit: 1 } });
+    return { bannerReview: Number(meta?.counts?.review ?? 0), bannerRefunds: Number(meta?.counts?.refund ?? 0) };
+  } catch {
+    return none;
+  }
+}
+
 /** Sidebar badge counts from the live lists. Queues without an endpoint stay at 0. */
 export async function getNavBadges(user) {
-  const [pendingProducts, pendingShipments, pendingReturns, pendingVendors, openTickets, stock] = await Promise.all([
+  const [pendingProducts, pendingShipments, pendingReturns, pendingVendors, openTickets, stock, banners] = await Promise.all([
     total(user, "/products/pending", { permission: "products.approval" }),
     total(user, "/shipments", { permission: "shipping", params: { status: "Ready to Ship" } }),
     total(user, "/returns", { permission: "returns", params: { status: "Pending" } }),
     total(user, "/vendors/verification", { permission: "vendors.verification", params: { status: "Pending" } }),
     total(user, "/support/tickets", { permission: "support", params: { status: "Open" } }),
     stockCounts(user),
+    bannerCounts(user),
   ]);
   const { outOfStock, stockAlerts, shortOrders } = stock;
   const badges = {
@@ -53,6 +66,8 @@ export async function getNavBadges(user) {
     outOfStock,
     stockAlerts,
     shortOrders,
+    bannerReview: banners.bannerReview,
+    bannerRefunds: banners.bannerRefunds,
   };
   return badges;
 }
@@ -67,5 +82,7 @@ export async function getNotifications(user) {
   if (badges.shortOrders) items.push({ id: "so", title: `${badges.shortOrders} paid orders were short of stock – call the customers`, meta: "Inventory · Short Orders", href: "/admin/inventory/exceptions", tone: "warning" });
   if (badges.outOfStock) items.push({ id: "ls", title: `${badges.outOfStock} SKUs are out of stock`, meta: "Inventory · Stock Alerts", href: "/admin/inventory/stock?status=OUT_OF_STOCK", tone: "warning" });
   if (badges.pendingVendors) items.push({ id: "vn", title: `${badges.pendingVendors} sellers waiting for approval`, meta: "Vendors", href: "/admin/vendors/verification?status=Pending", tone: "warning" });
+  if (badges.bannerReview) items.push({ id: "bar", title: `${badges.bannerReview} paid banner ads waiting for review`, meta: "Monetization Center · Banner Orders", href: "/admin/monetization/orders?queue=review", tone: "warning" });
+  if (badges.bannerRefunds) items.push({ id: "baf", title: `${badges.bannerRefunds} banner refunds to issue`, meta: "Monetization Center · Banner Orders", href: "/admin/monetization/orders?queue=refund", tone: "warning" });
   return items;
 }
