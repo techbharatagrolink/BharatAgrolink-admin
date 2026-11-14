@@ -119,6 +119,21 @@ export const navigation = [
         ],
       },
       {
+        // Standalone prepaid banner ads (/admin/monetization API). admin_menus rows: API migration
+        // 2026-11-14-002-monetization-admin-menu.sql. Every screen shares the menu link monetization_center.php.
+        key: "monetization-center",
+        label: "Monetization Center",
+        icon: "Megaphone",
+        children: [
+          { key: "monetization-overview", label: "Monetization Overview", href: "/admin/monetization", page: "monetization_center.php", permission: "monetization", icon: "LayoutDashboard" },
+          { key: "monetization-orders", label: "Banner Orders", href: "/admin/monetization/orders", page: "monetization_center.php", permission: "monetization", icon: "ClipboardList" },
+          { key: "monetization-packages", label: "Services & Packages", href: "/admin/monetization/packages", page: "monetization_center.php", permission: "monetization", icon: "Tags" },
+          { key: "monetization-placements", label: "Placements", href: "/admin/monetization/placements", page: "monetization_center.php", permission: "monetization", icon: "LayoutTemplate" },
+          { key: "monetization-payments", label: "Payments & Invoices", href: "/admin/monetization/payments", page: "monetization_center.php", permission: "monetization", icon: "Receipt" },
+          { key: "monetization-analytics", label: "Ad Performance", href: "/admin/monetization/analytics", page: "monetization_center.php", permission: "monetization", icon: "TrendingUp" },
+        ],
+      },
+      {
         key: "catalog-master",
         label: "Catalog Master",
         icon: "FolderTree",
