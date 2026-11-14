@@ -99,8 +99,23 @@ export const navigation = [
           { key: "pricing-service-revenue", label: "Service Revenue", href: "/admin/pricing/service-revenue", permission: "products" },
           { key: "products-pending", label: "Pending Products", href: "/admin/products/pending", page: "pending_products.php", permission: "products.approval", badge: "pendingProducts" },
           { key: "products-import", label: "Bulk Import / Update", href: "/admin/products/import", permission: "products.import" },
-          { key: "products-inventory", label: "Inventory", href: "/admin/inventory", permission: "products", badge: "outOfStock" },
-          { key: "products-stock-history", label: "Stock History", href: "/admin/inventory/history", permission: "products" },
+        ],
+      },
+      {
+        // Live central inventory (/admin/stock API). admin_menus rows: migration 2026-11-12-002-inventory-admin-menu.sql.
+        // Every screen shares the menu link inventory_management.php (Manage Products also grants it).
+        key: "inventory-mgmt",
+        label: "Inventory Management",
+        icon: "Warehouse",
+        children: [
+          { key: "inventory-overview", label: "Inventory Overview", href: "/admin/inventory", page: "inventory_management.php", permission: "inventory", icon: "LayoutDashboard" },
+          { key: "inventory-stock", label: "All Stock", href: "/admin/inventory/stock", page: "inventory_management.php", permission: "inventory", icon: "Boxes" },
+          { key: "inventory-alerts", label: "Stock Alerts", href: "/admin/inventory/alerts", page: "inventory_management.php", permission: "inventory", icon: "TriangleAlert", badge: "stockAlerts" },
+          { key: "inventory-history", label: "Stock History", href: "/admin/inventory/history", page: "inventory_management.php", permission: "inventory", icon: "History" },
+          { key: "inventory-exceptions", label: "Short Orders & Exceptions", href: "/admin/inventory/exceptions", page: "inventory_management.php", permission: "inventory", icon: "PhoneCall", badge: "shortOrders" },
+          { key: "inventory-setup", label: "Stock Not Set Up", href: "/admin/inventory/setup", page: "inventory_management.php", permission: "inventory", icon: "ClipboardList" },
+          { key: "inventory-bulk", label: "Bulk Stock Update", href: "/admin/inventory/bulk", page: "inventory_management.php", permission: "inventory", icon: "FileUp" },
+          { key: "inventory-activity", label: "Activity Log", href: "/admin/inventory/activity", page: "inventory_management.php", permission: "inventory", icon: "ShieldCheck" },
         ],
       },
       {
@@ -617,6 +632,7 @@ export const navigation = [
 export const hiddenRoutes = [
   { pattern: /^\/admin\/orders\/[^/]+$/, label: "Order Details", parent: "/admin/orders" },
   { pattern: /^\/admin\/products\/[^/]+$/, label: "Product Details", parent: "/admin/products" },
+  { pattern: /^\/admin\/inventory\/stock\/[^/]+$/, label: "Stock Item", parent: "/admin/inventory/stock" },
   { pattern: /^\/admin\/vendors\/[^/]+\/bank$/, label: "Bank Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/vendors\/[^/]+$/, label: "Vendor Details", parent: "/admin/vendors" },
   { pattern: /^\/admin\/customers\/[^/]+$/, label: "Customer Details", parent: "/admin/customers" },

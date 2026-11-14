@@ -38,6 +38,11 @@ import {
   Users,
   UsersRound,
   Wallet,
+  Warehouse,
+  TriangleAlert,
+  History,
+  PhoneCall,
+  FileUp,
   Circle,
 } from "lucide-react";
 
@@ -81,6 +86,11 @@ const icons = {
   Users,
   UsersRound,
   Wallet,
+  Warehouse,
+  TriangleAlert,
+  History,
+  PhoneCall,
+  FileUp,
 };
 
 export function NavIcon({ name, className }) {

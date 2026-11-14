@@ -126,7 +126,8 @@ export const coreResources = {
     filters: [
       { key: "vendorId", label: "Vendor", optionsFrom: "lookup:sellers" },
       { key: "parentCategory", label: "Category", options: categories },
-      { key: "stockStatus", label: "Stock", options: ["In Stock", "Low Stock", "Out of Stock"] },
+      // Live central inventory (all pack sizes of the listing), SRS §12.2.
+      { key: "stockStatus", label: "Stock", options: ["In Stock", "Low Stock", "Partly out of stock", "Out of Stock", "Not set up"] },
       { key: "verdict", label: "Economics", options: [{ value: "ok", label: "Healthy" }, { value: "below_target", label: "Below target CM" }, { value: "below_floor", label: "Below floor CM" }, { value: "loss", label: "Loss-making" }] },
       { key: "takeRateAlert", label: "Take rate alert (< 35%)", options: [{ value: "yes", label: "< 35% Alert" }, { value: "no", label: "≥ 35% Normal" }] },
     ],
@@ -157,7 +158,9 @@ export const coreResources = {
       { key: "gst", label: "GST %", type: "number" },
       { key: "hsn", label: "HSN" },
       { key: "commission", label: "Commission", type: "number", hidden: true },
-      { key: "stock", label: "Stock", type: "number", sortable: true },
+      // Available to sell from the live inventory (sum of the listing's pack sizes); opens its Inventory Management stock.
+      { key: "stock", label: "Available stock", type: "number", sortable: true, sub: "stockStatus", href: "{inventoryHref}" },
+      { key: "packStock", label: "Pack-size stock", width: 260, wrap: true },
       { key: "verdict", label: "Economics", type: "status", labels: verdictLabels },
       { key: "status", label: "Status", type: "status" },
       { key: "updatedAt", label: "Updated", type: "date", sortable: true, hidden: true },

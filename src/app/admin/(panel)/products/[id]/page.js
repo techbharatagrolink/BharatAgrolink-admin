@@ -253,7 +253,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Stock movements" actions={<Link href={`/admin/inventory/history?q=${encodeURIComponent(p.sku)}`} className="text-[13px] font-medium text-brand-700 hover:underline">All</Link>} />
+            <CardHeader title="Stock movements" actions={<Link href={`/admin/inventory/stock?search=${encodeURIComponent(p.sku)}`} className="text-[13px] font-medium text-brand-700 hover:underline">All</Link>} />
             <CardBody>
               <Timeline
                 items={data.movements.map((m) => ({
