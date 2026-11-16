@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment, useState } from "react";
 import { DataTable, download, toCsv } from "@/components/data-table/data-table";
 import { useToast } from "@/components/ui/toast";
 import { useQueryState } from "@/components/data-table/use-query-state";
@@ -7,7 +8,100 @@ import { Select } from "@/components/ui/form";
 import { exportGeoAction } from "@/lib/actions/admin/parity/geo";
 import { UrlInput } from "@/components/admin/parity/crm/url-input";
 
-const long = (key, label, width = 320) => ({ key, label, wrap: true, width });
+const long = (key, label, width = 320) => ({ key, label, wrap: true, width, render: (_row, value) => <ClampCell value={value} /> });
+
+/*
+ * Crops / Crop diseases are free text lists. They are shown as chips, grouped when a part reads "Label: a, b", with
+ * repeats removed (case and spacing ignored, first spelling kept). Export keeps the database text unchanged.
+ */
+const clean = (s) => s.replace(/\s*\[[^\]]*\]/g, "").replace(/\s+/g, " ").replace(/^[\s\-–•*.,]+|[\s.,]+$/g, "").trim();
+const norm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/** Split on `seps` only outside (...) so "Blast (leaf, neck)" stays one item. */
+function splitTop(text, seps) {
+  const out = [];
+  let depth = 0;
+  let cur = "";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[") depth++;
+    else if ((ch === ")" || ch === "]") && depth > 0) depth--;
+    const sep = depth === 0 && seps.find((s) => text.startsWith(s, i));
+    if (sep) {
+      out.push(cur);
+      cur = "";
+      i += sep.length - 1;
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+export function structureList(value) {
+  if (typeof value !== "string" || !value.trim()) return [];
+  const groups = new Map(); // normalized label ("" = no label) -> { label, items: Map(norm -> text) }
+  for (const segment of splitTop(value, [" · ", "|", ";", "\n"])) {
+    const m = segment.match(/^\s*([^:(),]{2,60}):\s*(.*)$/s);
+    const label = m ? clean(m[1]) : "";
+    const body = m ? m[2] : segment;
+    const key = norm(label);
+    if (!groups.has(key)) groups.set(key, { label, items: new Map() });
+    const items = groups.get(key).items;
+    for (const raw of splitTop(body, [",", " / "])) {
+      const item = clean(raw);
+      const k = norm(item);
+      if (k && k !== key && !items.has(k)) items.set(k, item);
+    }
+  }
+  return [...groups.values()].filter((g) => g.items.size > 0).map((g) => ({ label: g.label, items: [...g.items.values()] }));
+}
+
+/** Items shown before "+N more", so one long list does not make the whole row tall. */
+const LIST_PREVIEW = 6;
+
+function ListCell({ value }) {
+  const [open, setOpen] = useState(false);
+  const groups = structureList(value);
+  if (groups.length === 0) return <span className="text-ink-muted">-</span>;
+  const total = groups.reduce((n, g) => n + g.items.length, 0);
+  let budget = open ? Infinity : LIST_PREVIEW;
+  const visible = [];
+  for (const g of groups) {
+    if (budget <= 0) break;
+    visible.push({ ...g, items: g.items.slice(0, budget) });
+    budget -= g.items.length;
+  }
+  const toggle = (e) => {
+    e.stopPropagation();
+    setOpen((v) => !v);
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1" title={open ? undefined : groups.map((g) => (g.label ? `${g.label}: ` : "") + g.items.join(", ")).join("\n")}>
+      {visible.map((g, gi) => (
+        <Fragment key={gi}>
+          {g.label && <span className="text-xs font-semibold text-ink">{g.label}:</span>}
+          {g.items.map((item) => (
+            <span key={item} className="rounded border border-line bg-surface-muted px-1.5 text-xs leading-5 whitespace-nowrap text-ink-soft">
+              {item}
+            </span>
+          ))}
+        </Fragment>
+      ))}
+      {total > LIST_PREVIEW && (
+        <button type="button" onClick={toggle} className="text-xs font-medium whitespace-nowrap text-brand-700 hover:underline">
+          {open ? "Show less" : `+${total - LIST_PREVIEW} more`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Long sentences: two lines in the row, the full text on hover. */
+const ClampCell = ({ value }) =>
+  value == null || value === "" ? <span className="text-ink-muted">-</span> : <span className="line-clamp-2" title={String(value)}>{String(value)}</span>;
+
+const list = (key, label, width = 340) => ({ ...long(key, label, width), render: (_row, value) => <ListCell value={value} /> });
+
 const PROFILE = [
   long("soil", "Soil"),
   long("water", "Water", 220),
@@ -15,8 +109,8 @@ const PROFILE = [
   long("climate", "Climate", 180),
   long("weather", "Weather", 260),
   long("cropSeason", "Crop season", 140),
-  long("crops", "Crops"),
-  long("cropDiseases", "Crop diseases"),
+  list("crops", "Crops"),
+  list("cropDiseases", "Crop diseases", 380),
 ];
 
 /*
@@ -65,7 +159,7 @@ const COLUMNS = {
     { key: "blockNameLocal", label: "Block (local)" },
     { key: "blockVersion", label: "Block version" },
     { key: "pincode", label: "Pincode", type: "mono" },
-    { key: "subpincode", label: "Sub-pincodes", wrap: true, width: 260 },
+    long("subpincode", "Sub-pincodes", 260),
     ...PROFILE,
   ],
   urban: [
