@@ -274,21 +274,22 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
       });
       if (!created.ok) return created;
       const saved = await saveProductAction(created.id, pricingFactors ? { ...form, hsn: priceInput.hsn || form.hsn } : form);
-      if (!saved.ok) return saved;
-      let pricingNote = "";
+      let pricingNote = saved.ok ? "" : ` Some details were not saved: ${saved.message}`;
       if (pricingFactors && pricingDraft.current?.ready) {
         const priced = await saveProductPricingAction(created.id, pricingDraft.current.body);
         if (!priced.ok) pricingNote = ` Pricing was not saved: ${priced.message}`;
       }
+      // The product already exists from here on. A failed variation/image step must not look like
+      // "nothing saved" — that left admins on /new and a second click created a duplicate product.
       const variants = await persistVariations(created.id);
-      if (!variants.ok) return variants;
+      if (!variants.ok) pricingNote += ` Variations were not saved: ${variants.message}`;
       if (draftImages.length) {
         const data = new FormData();
         const featured = draftImages.find((item) => item.featured);
         if (featured) data.append("featured", featured.file);
         for (const item of draftImages.filter((item) => !item.featured)) data.append("images", item.file);
         const uploaded = await uploadProductImagesAction(created.id, data);
-        if (!uploaded.ok) return uploaded;
+        if (!uploaded.ok) pricingNote += ` Images were not uploaded: ${uploaded.message} Add them from the Media step.`;
       }
       if (publish) {
         const published = await setProductStatusAction(created.id, "approve", "Published from the product editor");
