@@ -70,7 +70,7 @@ export function BulkPager({ result, query }) {
       </Link>
     );
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
       <span>
         {formatNumber(result.total)} records · page {formatNumber(result.page)} of {formatNumber(last)}
       </span>

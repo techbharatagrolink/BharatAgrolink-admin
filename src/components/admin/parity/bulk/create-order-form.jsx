@@ -774,7 +774,7 @@ export function CreateBulkOrderForm({ options, quotation }) {
                 <input type="radio" name="partner" className="mt-1" checked={partnerKey === partner.optionName} onChange={() => { setPartnerKey(partner.optionName); if (partner.modeName) setModeName(partner.modeName); }} />
                 <span>
                   <span className="font-medium text-ink">{partner.name}</span>
-                  {partner.isCheapest && <span className="ml-2 rounded bg-success-bg px-1.5 text-[10px] font-semibold text-success-ink">Cheapest</span>}
+                  {partner.isCheapest && <span className="ml-2 rounded bg-success-bg px-1.5 text-micro font-semibold text-success-ink">Cheapest</span>}
                   <span className="block text-xs text-ink-muted">{partner.modeName || "surface"} · {partner.rate == null ? "Rate unavailable" : formatINR(partner.rate)}{partner.tat != null ? ` · ${partner.tat} days` : ""}</span>
                 </span>
               </label>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, BookOpen, ChevronDown, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, UserRound } from "lucide-react";
+import { ArrowUpRight, Bell, BookOpen, ChevronDown, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftOpen, Plus, PlusCircle, Search, Sun, UserRound } from "lucide-react";
 import { getBreadcrumbs } from "@/lib/content/admin/navigation";
 import { initials } from "@/lib/format";
 import { site } from "@/lib/site";
@@ -51,9 +51,14 @@ function liveBreadcrumbs(navigation, pathname) {
   return next.map(({ pages, ...crumb }) => (pages ? { ...crumb, menu: visiblePages(pages) } : crumb));
 }
 
-function CrumbMenu({ crumb, activeHref }) {
+// A stable, readable id (e.g. "crumb-menu-wide-1-seller-catalog") instead of a useId() one, so the
+// server HTML and the browser always agree on aria-controls even if the trees above them differ.
+const crumbMenuId = (wide, index, label) => `crumb-menu-${wide ? "wide" : "narrow"}-${index}-${String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+
+function CrumbMenu({ crumb, activeHref, id }) {
   return (
     <Popover
+      id={id}
       align="left"
       panelClassName="w-64 py-1.5"
       trigger={({ toggle, props }) => (
@@ -63,7 +68,7 @@ function CrumbMenu({ crumb, activeHref }) {
         </button>
       )}
     >
-      <p className="px-3 pt-1 pb-1.5 text-[10.5px] font-semibold tracking-wide text-ink-muted uppercase">{crumb.label}</p>
+      <p className="px-3 pt-1 pb-1.5 text-micro font-semibold tracking-wide text-ink-muted uppercase">{crumb.label}</p>
       <ul>
         {crumb.menu.map((page) => {
           const current = page.href === activeHref;
@@ -90,13 +95,13 @@ function Breadcrumbs({ wide = false, navigation = [] }) {
   const isAncestor = (i) => i < crumbs.length - 2;
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
-      <ol className="flex min-w-0 items-center gap-1 text-[13px] text-ink-muted">
+      <ol className="flex min-w-0 items-center gap-1 text-small text-ink-muted">
         {crumbs.map((crumb, i) => {
           const last = i === crumbs.length - 1;
           // The trail's last crumb is the screen you are on (or the list screen it belongs to); "Admin" alone is just home.
           const href = last && i > 0 ? (crumb.href ?? pathname) : crumb.href;
           return (
-            <li key={`${crumb.label}-${i}`} className={cn("flex min-w-0 items-center gap-1", isAncestor(i) && (wide ? "hidden 2xl:flex" : "hidden sm:flex"), last ? "font-medium text-ink" : "shrink-0")}>
+            <li key={`${crumb.label}-${i}`} className={cn("flex min-w-0 items-center gap-1", isAncestor(i) && (wide ? "hidden 2xl:flex" : "hidden sm:flex"), last ? cn("font-semibold text-ink", wide && "text-subheading") : "shrink-0")}>
               {i > 0 && <ChevronRight className={cn("size-3.5 shrink-0 text-ink-muted/60", isAncestor(i - 1) && (wide ? "hidden 2xl:block" : "hidden sm:block"))} aria-hidden />}
               {href ? (
                 <Link
@@ -108,7 +113,7 @@ function Breadcrumbs({ wide = false, navigation = [] }) {
                   {crumb.label}
                 </Link>
               ) : crumb.menu?.length ? (
-                <CrumbMenu crumb={crumb} activeHref={crumbs[i + 1]?.href} />
+                <CrumbMenu crumb={crumb} activeHref={crumbs[i + 1]?.href} id={crumbMenuId(wide, i, crumb.label)} />
               ) : (
                 <span className="min-w-0 truncate">{crumb.label}</span>
               )}
@@ -236,10 +241,10 @@ function GlobalSearch({ navigation }) {
         onBlur={() => setOpen(false)}
         onKeyDown={onKeyDown}
         placeholder="Search pages, order ID, AWB, product, vendor…"
-        className="h-9 w-full rounded-lg border border-line bg-surface-muted pr-12 pl-9 text-sm text-ink placeholder:text-ink-muted focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 focus:outline-none"
+        className="h-9 w-full rounded-md border border-line bg-surface-muted pr-12 pl-9 text-sm text-ink transition-colors placeholder:text-ink-muted hover:border-line-strong focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 focus:outline-none"
         autoComplete="off"
       />
-      <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-line bg-surface px-1.5 text-[10px] text-ink-muted lg:block">Ctrl K</kbd>
+      <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-line bg-surface px-1.5 text-micro text-ink-muted lg:block">Ctrl K</kbd>
       {showList && (
         <ul
           id="admin-global-search-list"
@@ -248,7 +253,7 @@ function GlobalSearch({ navigation }) {
           className="absolute inset-x-0 top-full z-50 mt-1.5 max-h-[min(70vh,26rem)] overflow-y-auto rounded-xl border border-line bg-surface py-1.5 shadow-lg"
           onMouseDown={(e) => e.preventDefault()}
         >
-          {pages.length > 0 && <li role="presentation" className="px-3 pt-1 pb-1.5 text-[10.5px] font-semibold tracking-wide text-ink-muted uppercase">Pages</li>}
+          {pages.length > 0 && <li role="presentation" className="px-3 pt-1 pb-1.5 text-micro font-semibold tracking-wide text-ink-muted uppercase">Pages</li>}
           {options.map((option, i) => (
             <li
               key={option.key}
@@ -293,6 +298,122 @@ function GlobalSearch({ navigation }) {
   );
 }
 
+const CREATE_VERB = /^(add|new|create|generate|upload|import)\b/i;
+const QUICK_LIMIT = 7;
+
+/**
+ * Columns for the "+" panel, one per menu section, built only from the role's own menu (so every
+ * link is a page this user can already open): create actions first (⊕), then action queues that carry
+ * a badge (e.g. Seller Approval), then the main page of each group. Top-level links go under General.
+ */
+function quickSections(navigation) {
+  const columns = [];
+  const general = { key: "__general", title: "General", icon: "LayoutDashboard", links: [] };
+  for (const section of navigation) {
+    const leaves = [];
+    const groupFirsts = [];
+    for (const item of section.items) {
+      if (item.children?.length) {
+        item.children.forEach((c, i) => {
+          const leaf = { ...c, trail: item.label, icon: c.icon || item.icon };
+          leaves.push(leaf);
+          if (i === 0) groupFirsts.push(leaf);
+        });
+      } else if (item.href) {
+        leaves.push(item);
+        groupFirsts.push(item);
+      }
+    }
+    const usable = (l) => l.href && !l.href.includes("#");
+    const creates = leaves.filter((l) => usable(l) && CREATE_VERB.test(l.label)).map((l) => ({ ...l, kind: "create" }));
+    const queues = leaves.filter((l) => usable(l) && l.badge && !CREATE_VERB.test(l.label)).map((l) => ({ ...l, kind: "queue" }));
+    const pages = groupFirsts.filter((l) => usable(l) && !CREATE_VERB.test(l.label) && !l.badge).map((l) => ({ ...l, kind: "page" }));
+    const seen = new Set();
+    const links = [...creates, ...queues, ...pages].filter((l) => !seen.has(l.href) && seen.add(l.href)).slice(0, QUICK_LIMIT);
+    if (!links.length) continue;
+    if (!section.section) general.links.push(...links);
+    else columns.push({ key: section.key || section.section, title: section.section, icon: section.icon, links });
+  }
+  if (general.links.length) columns.unshift({ ...general, links: general.links.slice(0, QUICK_LIMIT) });
+  return columns;
+}
+
+// Zoho-style "+" quick panel: create actions and the most important pages, grouped by area.
+function QuickCreate({ navigation, badges = {} }) {
+  const columns = quickSections(navigation);
+  if (!columns.length) return null;
+  return (
+    <Popover
+      id="admin-quick-create"
+      label="Quick create and shortcuts"
+      // A sheet across the content area, just under the header. The header's backdrop blur makes the header
+      // the containing block for this fixed panel, so these offsets are measured from the header — which
+      // already starts right of the sidebar — and the panel never slides under the sidebar.
+      panelClassName="fixed top-[62px] right-3 left-3 mt-0 w-auto max-w-none md:right-5 md:left-5"
+      trigger={({ toggle, props }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          {...props}
+          title="Quick create"
+          className="mr-1 flex size-8 items-center justify-center rounded-md border border-brand-600/60 text-brand-700 transition-colors hover:bg-brand-50 aria-expanded:bg-brand-600 aria-expanded:text-brand-fg"
+        >
+          <Plus className="size-[18px]" aria-hidden />
+        </button>
+      )}
+    >
+      <div className="max-h-[min(70vh,560px)] overflow-y-auto overscroll-contain p-4 sm:p-5">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {columns.map((col) => (
+            <section key={col.key} aria-label={col.title} className="min-w-0">
+              <h3 className="mb-2 flex items-center gap-1.5 text-micro font-medium tracking-[0.06em] text-ink-muted uppercase">
+                <NavIcon name={col.icon} className="size-3.5" />
+                {col.title}
+              </h3>
+              <ul className="space-y-0.5">
+                {col.links.map((l) => {
+                  const count = l.badge ? badges[l.badge] || 0 : 0;
+                  // Same label twice in a column (e.g. "Create Order" for B2C and Bulk): show which group.
+                  const repeated = l.trail && col.links.filter((x) => x.label === l.label).length > 1;
+                  return (
+                    <li key={l.key || l.href}>
+                      <Link
+                        href={l.href}
+                        title={l.trail ? `${l.label} · ${l.trail}` : l.label}
+                        className="group -mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-body text-ink transition-colors hover:bg-brand-50 hover:text-brand-700"
+                      >
+                        {l.kind === "create" ? (
+                          <PlusCircle className="size-4 shrink-0 fill-ink-muted/80 text-surface transition-colors group-hover:fill-brand-600" aria-hidden />
+                        ) : (
+                          <ArrowUpRight className="size-4 shrink-0 text-ink-muted transition-colors group-hover:text-brand-600" aria-hidden />
+                        )}
+                        <span className="min-w-0 flex-1 truncate">
+                          {l.label}
+                          {repeated && <span className="ml-1 text-micro text-ink-muted">· {l.trail}</span>}
+                        </span>
+                        {count > 0 && <span className="shrink-0 rounded-full bg-danger px-1.5 text-micro leading-[18px] font-semibold text-white tabular">{count > 99 ? "99+" : count}</span>}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+        <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3 text-micro text-ink-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <PlusCircle className="size-3.5 fill-ink-muted/80 text-surface" aria-hidden /> Create new
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <ArrowUpRight className="size-3.5" aria-hidden /> Go to page
+          </span>
+          <span className="ml-auto hidden sm:inline">Only pages your role can open are shown.</span>
+        </p>
+      </div>
+    </Popover>
+  );
+}
+
 function ThemeToggle({ className }) {
   const toggle = () => {
     const dark = !document.documentElement.classList.contains("dark");
@@ -302,7 +423,7 @@ function ThemeToggle({ className }) {
     } catch {}
   };
   return (
-    <button type="button" onClick={toggle} className={cn("flex size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg hover:text-ink", className)} aria-label="Switch light or dark mode">
+    <button type="button" onClick={toggle} className={cn("flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink", className)} aria-label="Switch light or dark mode">
       <Sun className="hidden size-[18px] dark:block" aria-hidden />
       <Moon className="size-[18px] dark:hidden" aria-hidden />
     </button>
@@ -317,9 +438,9 @@ function Notifications({ items }) {
       label={`Notifications${count ? `, ${count} need attention` : ""}`}
       panelClassName="w-80"
       trigger={({ toggle, props }) => (
-        <button type="button" onClick={toggle} {...props} className="relative flex size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg hover:text-ink">
+        <button type="button" onClick={toggle} {...props} className="relative flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink">
           <Bell className="size-[18px]" aria-hidden />
-          {count > 0 && <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9.5px] font-bold text-accent-fg ring-2 ring-surface">{count > 9 ? "9+" : count}</span>}
+          {count > 0 && <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-danger text-micro font-bold text-white ring-2 ring-surface">{count > 9 ? "9+" : count}</span>}
         </button>
       )}
     >
@@ -354,7 +475,7 @@ function Help() {
       id="admin-help-panel"
       label="Help"
       trigger={({ toggle, props }) => (
-        <button type="button" onClick={toggle} {...props} className="hidden size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg hover:text-ink sm:flex">
+        <button type="button" onClick={toggle} {...props} className="hidden size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink sm:flex">
           <CircleHelp className="size-[18px]" aria-hidden />
         </button>
       )}
@@ -390,8 +511,8 @@ function AccountMenu({ user }) {
         <button type="button" onClick={toggle} {...props} className="flex items-center gap-2 rounded-lg py-1 pr-1.5 pl-1 hover:bg-neutral-bg">
           <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-brand-fg">{initials(user.name)}</span>
           <span className="hidden min-w-0 text-left leading-tight xl:block">
-            <span className="block max-w-36 truncate text-[13px] font-medium text-ink">{user.name}</span>
-            <span className="block max-w-36 truncate text-[11px] text-ink-muted">{user.role.name}</span>
+            <span className="block max-w-36 truncate text-small font-medium text-ink">{user.name}</span>
+            <span className="block max-w-36 truncate text-micro text-ink-muted">{user.role.name}</span>
           </span>
         </button>
       )}
@@ -399,7 +520,7 @@ function AccountMenu({ user }) {
       <div className="border-b border-line px-4 py-3">
         <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
         <p className="truncate text-xs text-ink-muted">{user.email}</p>
-        <p className="mt-1.5 inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">{user.role.name}</p>
+        <p className="mt-1.5 inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-micro font-medium text-brand-700">{user.role.name}</p>
       </div>
       <div className="py-1">
         <Link href="/admin/account" className="flex items-center gap-3 px-4 py-2 text-sm text-ink hover:bg-surface-muted">
@@ -415,23 +536,38 @@ function AccountMenu({ user }) {
   );
 }
 
-export function Header({ user, navigation = [], notifications, rail, onToggleRail, onOpenMobile }) {
+export function Header({ user, navigation = [], notifications, badges = {}, rail, onToggleRail, onOpenMobile }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
+    <header
+      className={cn(
+        "sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur transition-shadow duration-200 supports-[backdrop-filter]:bg-surface/90",
+        scrolled ? "shadow-[0_6px_18px_-10px_rgb(24_39_75/0.35)]" : "shadow-[0_1px_2px_rgb(24_39_75/0.04)]",
+      )}
+    >
       <div className="flex h-14 items-center gap-2 px-3 sm:gap-3 sm:px-5">
         <div className="flex shrink-0 items-center lg:min-w-0 lg:flex-1 lg:basis-0">
-          <button type="button" onClick={onOpenMobile} className="flex size-9 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg md:hidden" aria-label="Open menu">
+          <button type="button" onClick={onOpenMobile} className="flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg md:hidden" aria-label="Open menu">
             <Menu className="size-5" />
           </button>
-          <button
-            type="button"
-            onClick={onToggleRail}
-            className="mr-1 hidden size-9 shrink-0 items-center justify-center rounded-lg text-ink-soft hover:bg-neutral-bg hover:text-ink md:flex"
-            aria-label={rail ? "Expand sidebar" : "Collapse sidebar"}
-            title={rail ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {rail ? <PanelLeftOpen className="size-[18px]" aria-hidden /> : <PanelLeftClose className="size-[18px]" aria-hidden />}
-          </button>
+          {/* Collapsing lives in the sidebar's own header; this button brings a collapsed sidebar back. */}
+          {rail && (
+            <button
+              type="button"
+              onClick={onToggleRail}
+              className="mr-1 hidden size-9 shrink-0 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink md:flex"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <PanelLeftOpen className="size-[18px]" aria-hidden />
+            </button>
+          )}
           <div className="hidden min-w-0 lg:block">
             <Breadcrumbs wide navigation={navigation} />
           </div>
@@ -440,6 +576,7 @@ export function Header({ user, navigation = [], notifications, rail, onToggleRai
           <GlobalSearch navigation={navigation} />
         </div>
         <div className="flex shrink-0 items-center justify-end gap-0.5 lg:flex-1 lg:basis-0">
+          <QuickCreate navigation={navigation} badges={badges} />
           <Notifications items={notifications} />
           <Help />
           <ThemeToggle className="hidden sm:flex" />

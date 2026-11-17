@@ -36,7 +36,7 @@ export function RangeFilter({ presets, active, from = "", to = "", calendarValue
   return (
     <div className="rounded-xl border border-line bg-surface p-3 print:hidden">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-[13px] font-semibold text-ink-muted">Filter:</span>
+        <span className="mr-1 text-small font-semibold text-ink-muted">Filter:</span>
         {presets.map((p) => (
           <Button key={p.value || "all"} size="sm" variant={current === p.value ? "primary" : "outline"} onClick={() => choose(p.value)}>
             {p.label}

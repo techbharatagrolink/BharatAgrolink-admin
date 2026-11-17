@@ -5,6 +5,7 @@ import { useState } from "react";
 import { loadProductPricingAction, previewProductPricingAction } from "@/lib/actions/admin/pricing-factors";
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatNumber } from "@/lib/format";
+import { GridTable } from "@/components/data-table/grid-table";
 
 const VERDICT_LABEL = { loss: "Loss-making", below_floor: "Below floor CM" };
 const VERDICT_TONE = { loss: "danger", below_floor: "warning" };
@@ -96,42 +97,31 @@ export function ProfitabilityAuditTable({ rows }) {
           Download CSV
         </button>
       </div>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-y border-line bg-surface-muted text-left text-xs font-medium text-ink-muted">
-              <th scope="col" className="px-4 py-2.5">Product</th>
-              <th scope="col" className="px-4 py-2.5">Vendor</th>
-              <th scope="col" className="px-4 py-2.5">Verdict</th>
-              <th scope="col" className="px-4 py-2.5 text-right">Contribution margin</th>
-              <th scope="col" className="px-4 py-2.5 text-right">Take rate</th>
-              <th scope="col" className="px-4 py-2.5 text-right">Display price</th>
-              <th scope="col" className="px-4 py-2.5">Correction</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map((r) => (
-              <tr key={r.id} className="align-top hover:bg-surface-muted/60">
-                <td className="px-4 py-2.5">
+      <div className="hidden border-t border-line md:block">
+        <GridTable
+          rows={rows}
+          rowKey="id"
+          columns={[
+            {
+              key: "product",
+              label: "Product",
+              render: (r) => (
+                <>
                   <Link href={`/admin/products/${r.id}`} className="font-medium text-brand-700 hover:underline">
                     {r.name}
                   </Link>
                   <div className="text-xs text-ink-muted">{r.sku} · {r.category}</div>
-                </td>
-                <td className="px-4 py-2.5 text-ink-soft">{r.vendor}</td>
-                <td className="px-4 py-2.5">
-                  <Badge tone={VERDICT_TONE[r.verdict] || "neutral"}>{VERDICT_LABEL[r.verdict] || r.verdict}</Badge>
-                </td>
-                <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(r.contributionMargin)}</td>
-                <td className="px-4 py-2.5 text-right tabular">{r.takeRate}%</td>
-                <td className="px-4 py-2.5 text-right tabular">{formatINR(r.display)}</td>
-                <td className="px-4 py-2.5">
-                  <SuggestionRow id={r.id} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </>
+              ),
+            },
+            { key: "vendor", label: "Vendor", render: (r) => <span className="text-ink-soft">{r.vendor}</span> },
+            { key: "verdict", label: "Verdict", render: (r) => <Badge tone={VERDICT_TONE[r.verdict] || "neutral"}>{VERDICT_LABEL[r.verdict] || r.verdict}</Badge> },
+            { key: "margin", label: "Contribution margin", align: "right", render: (r) => <span className="font-medium text-ink">{formatINR(r.contributionMargin)}</span> },
+            { key: "takeRate", label: "Take rate", align: "right", render: (r) => `${r.takeRate}%` },
+            { key: "display", label: "Display price", align: "right", render: (r) => formatINR(r.display) },
+            { key: "correction", label: "Correction", render: (r) => <SuggestionRow id={r.id} /> },
+          ]}
+        />
       </div>
       <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
         {rows.map((r) => (
@@ -143,7 +133,7 @@ export function ProfitabilityAuditTable({ rows }) {
               <Badge tone={VERDICT_TONE[r.verdict] || "neutral"}>{VERDICT_LABEL[r.verdict] || r.verdict}</Badge>
             </div>
             <p className="text-xs text-ink-muted">{r.sku} · {r.vendor} · {r.category}</p>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[13px]">
+            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-small">
               <div><dt className="text-xs text-ink-muted">Contribution margin</dt><dd className="font-medium text-ink">{formatINR(r.contributionMargin)}</dd></div>
               <div><dt className="text-xs text-ink-muted">Take rate</dt><dd className="text-ink-soft">{r.takeRate}%</dd></div>
               <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="text-ink-soft">{formatINR(r.display)}</dd></div>

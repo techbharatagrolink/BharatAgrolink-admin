@@ -269,7 +269,7 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
                   {isAccepted ? "Accepted by Seller" : "Pending Acceptance"}
                 </span>
                 {isAccepted && seller.acceptedAt && (
-                  <p className="mt-1 text-[11px] text-ink-muted">
+                  <p className="mt-1 text-micro text-ink-muted">
                     Accepted on {formatDateTime(seller.acceptedAt)}
                   </p>
                 )}
@@ -278,19 +278,19 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
 
             <div className="mt-4 grid grid-cols-2 gap-4 rounded-lg bg-white/70 p-3 text-xs sm:grid-cols-4 border border-[#eee8dc]">
               <div>
-                <span className="text-ink-muted block text-[10px] uppercase tracking-wide">Version</span>
+                <span className="text-ink-muted block text-micro uppercase tracking-wide">Version</span>
                 <span className="font-semibold text-ink">{agreementMeta.version}</span>
               </div>
               <div>
-                <span className="text-ink-muted block text-[10px] uppercase tracking-wide">Effective Date</span>
+                <span className="text-ink-muted block text-micro uppercase tracking-wide">Effective Date</span>
                 <span className="font-semibold text-ink">14 October 2026</span>
               </div>
               <div>
-                <span className="text-ink-muted block text-[10px] uppercase tracking-wide">Vendor ID</span>
+                <span className="text-ink-muted block text-micro uppercase tracking-wide">Vendor ID</span>
                 <span className="font-mono font-semibold text-ink">{seller.vendorId}</span>
               </div>
               <div>
-                <span className="text-ink-muted block text-[10px] uppercase tracking-wide">Acceptance IP</span>
+                <span className="text-ink-muted block text-micro uppercase tracking-wide">Acceptance IP</span>
                 <span className="font-mono text-ink">{seller.ipAddress || "—"}</span>
               </div>
             </div>
@@ -360,7 +360,7 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
               <div className="rounded-lg border border-line bg-surface-muted p-4 text-xs">
                 <div className="flex items-center justify-between border-b border-line pb-2 font-semibold text-[#1f3b57]">
                   <span>For Bharat Agrolink</span>
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-micro font-bold text-emerald-800">
                     Verified
                   </span>
                 </div>
@@ -374,7 +374,7 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
                   <p>
                     <span className="font-medium text-ink">Effective Date:</span> 14 October 2026
                   </p>
-                  <p className="text-[11px] text-ink-muted italic pt-2">
+                  <p className="text-micro text-ink-muted italic pt-2">
                     System-certified platform digital endorsement
                   </p>
                 </div>
@@ -393,7 +393,7 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
                   <span className="text-[#1f3b57]">For {seller.vendorName}</span>
                   <span
                     className={cn(
-                      "rounded px-2 py-0.5 text-[11px] font-bold",
+                      "rounded px-2 py-0.5 text-micro font-bold",
                       isAccepted
                         ? "bg-emerald-600 text-white"
                         : "bg-amber-600 text-white"
@@ -439,7 +439,7 @@ export function AgreementDocumentModal({ seller, open, onClose }) {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 border-t border-[#ddd8cc] pt-4 text-center text-[11px] text-ink-muted">
+          <div className="mt-8 border-t border-[#ddd8cc] pt-4 text-center text-micro text-ink-muted">
             {agreementMeta.footer}
           </div>
         </div>

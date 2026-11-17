@@ -72,7 +72,7 @@ function EventChip({ event, onOpen, draggable, compact }) {
         ev.stopPropagation();
         onOpen(event);
       }}
-      className={cn("flex w-full items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-white", compact ? "" : "py-1 text-xs")}
+      className={cn("flex w-full items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-left text-micro font-medium text-white", compact ? "" : "py-1 text-xs")}
       style={{ background: event.color || "#10A450" }}
       title={event.title}
     >
@@ -254,7 +254,7 @@ export function ContentCalendar({ events: rawEvents, can }) {
                       {items.length > 3 && (
                         <button
                           type="button"
-                          className="px-1 text-[11px] font-medium text-brand-700 hover:underline"
+                          className="px-1 text-micro font-medium text-brand-700 hover:underline"
                           onClick={(ev) => {
                             ev.stopPropagation();
                             setCursor(d);
@@ -283,7 +283,7 @@ export function ContentCalendar({ events: rawEvents, can }) {
                   <div className="space-y-1">
                     {items.map((e) => (
                       <div key={e.id}>
-                        <p className="text-[10px] text-ink-muted">{time(e.startDate)}</p>
+                        <p className="text-micro text-ink-muted">{time(e.startDate)}</p>
                         <EventChip event={e} onOpen={openEvent} />
                       </div>
                     ))}

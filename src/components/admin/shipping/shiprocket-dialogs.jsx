@@ -180,7 +180,7 @@ export function ShiprocketOrderDialog({ srOrderId, open, onClose, canEdit }) {
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-xs text-ink-muted">Invoice:</span>
                 {invoice && (
-                  <a href={invoice} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-brand-700 hover:underline">
+                  <a href={invoice} target="_blank" rel="noreferrer" className="text-small font-medium text-brand-700 hover:underline">
                     View Invoice
                   </a>
                 )}
@@ -338,7 +338,7 @@ export function ShiprocketTrackingDialog({ shipmentId, open, onClose }) {
             </Section>
           )}
           {t.trackUrl && (
-            <a href={t.trackUrl} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-brand-700 hover:underline">
+            <a href={t.trackUrl} target="_blank" rel="noreferrer" className="text-small font-medium text-brand-700 hover:underline">
               Track on Shiprocket
             </a>
           )}
@@ -379,7 +379,7 @@ export function ShiprocketBulkTrackingDialog({ data, rowsByAwb, open, onClose })
               label: "",
               render: (r) =>
                 r.found && r.tracking.trackUrl ? (
-                  <a href={r.tracking.trackUrl} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-brand-700 hover:underline">
+                  <a href={r.tracking.trackUrl} target="_blank" rel="noreferrer" className="text-small font-medium text-brand-700 hover:underline">
                     Track
                   </a>
                 ) : null,

@@ -24,7 +24,7 @@ export default async function IntegrationsPage() {
                 <p className="font-medium text-ink">{r.name}</p>
                 <p className="text-sm text-ink-muted">{r.purpose}</p>
                 <p className="mt-1 flex flex-wrap gap-1.5">
-                  {r.keys.map((k) => <code key={k} className="rounded bg-neutral-bg px-1.5 py-0.5 text-[11px] text-ink-soft">{k}</code>)}
+                  {r.keys.map((k) => <code key={k} className="rounded bg-neutral-bg px-1.5 py-0.5 text-micro text-ink-soft">{k}</code>)}
                 </p>
               </div>
               {r.configured ? <Badge tone="success">Connected</Badge> : r.partial ? <Badge tone="warning">Partially configured</Badge> : <Badge tone="neutral">Not configured</Badge>}

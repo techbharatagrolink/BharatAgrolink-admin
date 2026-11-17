@@ -39,7 +39,7 @@ function sortedCouriers(vendor) {
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -281,7 +281,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                           const id = courierKey(courier, index);
                           const best = index === 0;
                           return (
-                            <label key={id} className={cn("flex min-w-0 cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3 text-[12.5px]", best && "bg-success-bg", skip && "cursor-not-allowed opacity-70")}>
+                            <label key={id} className={cn("flex min-w-0 cursor-pointer items-start gap-2.5 rounded-lg border border-line p-3 text-label", best && "bg-success-bg", skip && "cursor-not-allowed opacity-70")}>
                               <input
                                 type="radio"
                                 name={`courier-${key}`}
@@ -296,7 +296,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                                   <span className="font-semibold text-ink">{courier.name || "Courier"}</span>
                                   {best && <Badge tone="success">Best price</Badge>}
                                 </div>
-                                <span className="mt-0.5 block text-[11px] text-ink-muted">ID: {courier.id || "—"}</span>
+                                <span className="mt-0.5 block text-micro text-ink-muted">ID: {courier.id || "—"}</span>
                                 <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
                                   <CardField label="Freight" value={formatINR(courier.freightCharges || 0)} />
                                   <CardField label="COD" value={formatINR(courier.codCharges || 0)} />
@@ -311,7 +311,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                       </div>
 
                       <div className="hidden max-w-full min-w-0 overflow-x-auto rounded-lg border border-line xl:block">
-                        <table className="w-full min-w-[720px] text-left text-[12.5px]">
+                        <table className="w-full min-w-[720px] text-left text-label">
                           <thead>
                             <tr className="bg-ink text-white">
                               {["Select", "Courier name", "Freight", "COD", "Total", "Delivery", "Weight"].map((heading) => (
@@ -341,7 +341,7 @@ export function CreateShipmentDialog({ orderId, open, onClose, fallbackVendors =
                                   <td className="px-3 py-2">
                                     <span className="font-semibold text-ink">{courier.name || "Courier"}</span>
                                     {best && <Badge tone="success" className="ml-2">Best price</Badge>}
-                                    <span className="mt-0.5 block text-[11px] text-ink-muted">ID: {courier.id || "—"}</span>
+                                    <span className="mt-0.5 block text-micro text-ink-muted">ID: {courier.id || "—"}</span>
                                   </td>
                                   <td className="px-3 py-2 tabular">{formatINR(courier.freightCharges || 0)}</td>
                                   <td className="px-3 py-2 tabular">{formatINR(courier.codCharges || 0)}</td>

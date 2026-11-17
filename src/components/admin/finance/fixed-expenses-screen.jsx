@@ -205,7 +205,7 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
               role="tab"
               aria-selected={tab.active}
               onClick={() => !tab.active && setParams({ month: tab.month })}
-              className={cn("rounded-md px-3 py-1.5 text-[13px] font-medium", tab.active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
+              className={cn("rounded-md px-3 py-1.5 text-small font-medium", tab.active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
             >
               {tab.label}
             </button>
@@ -233,7 +233,7 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
                 )}
               >
                 {cal.hasCustom && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-warning-ink" aria-label="Has month-specific items" />}
-                <span className="block text-[13px] font-semibold">{new Date(`${cal.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "short", timeZone: "UTC" })}</span>
+                <span className="block text-small font-semibold">{new Date(`${cal.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "short", timeZone: "UTC" })}</span>
                 <span className={cn("block text-xs tabular", active ? "text-brand-fg" : "text-ink-muted")}>{formatINR(cal.total, { compact: true })}</span>
               </button>
             );

@@ -1,5 +1,15 @@
 import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge";
+
+// The typography tokens (text-page-title, text-section, … see globals.css) are font sizes. Registered
+// here so tailwind-merge doesn't mistake them for text colours and drop either the size or the colour.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [{ text: ["page-title", "section", "subheading", "body", "small", "table", "label", "micro", "button", "field"] }],
+    },
+  },
+});
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));

@@ -25,7 +25,9 @@ function monthRange(monthValue) {
   return { first, last };
 }
 
-export function DashboardFilters({ values, options, label }) {
+// variant="zoho" restyles the bar for the main dashboard; the default look is kept for the card pages.
+export function DashboardFilters({ values, options, label, variant }) {
+  const z = variant === "zoho";
   const router = useRouter();
   const pathname = usePathname();
   const [draft, setDraft] = useState(values);
@@ -73,15 +75,22 @@ export function DashboardFilters({ values, options, label }) {
   };
 
   return (
-    <form onSubmit={apply} className="mb-4 rounded-xl border border-line bg-surface p-3 sm:p-4" aria-label="Dashboard filters">
+    <form
+      onSubmit={apply}
+      className={cn(
+        "mb-4 p-3 sm:p-4",
+        z ? "rounded-xl bg-[var(--z-card)] shadow-[var(--z-shadow)] ring-1 ring-[var(--z-line)] sm:px-5 [&_input]:focus:border-[var(--z-accent)] [&_input]:focus:ring-[var(--z-accent)]/20 [&_label]:text-[var(--z-soft)] [&_select]:focus:border-[var(--z-accent)] [&_select]:focus:ring-[var(--z-accent)]/20" : "rounded-xl border border-line bg-surface",
+      )}
+      aria-label="Dashboard filters"
+    >
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1.7fr)_repeat(4,minmax(0,1fr))]">
         <Field label="Seller" className="col-span-2 md:col-span-1">
           {({ id }) => <Select id={id} value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} options={options.vendors} placeholder="All sellers" />}
         </Field>
         <fieldset className="col-span-2 min-w-0 md:col-span-2 xl:col-span-1">
           <div className="mb-1.5 flex items-center justify-between gap-2">
-            <legend className="text-[13px] font-medium text-ink-soft">Date range</legend>
-            <div className="inline-flex shrink-0 rounded-md border border-line-strong p-0.5">
+            <legend className="text-small font-medium text-ink-soft">Date range</legend>
+            <div className={cn("inline-flex shrink-0 rounded-md p-0.5", z ? "bg-[var(--z-head)] ring-1 ring-[var(--z-line)]" : "border border-line-strong")}>
               {[
                 { value: "month", label: "Month" },
                 { value: "date", label: "Custom" },
@@ -91,8 +100,12 @@ export function DashboardFilters({ values, options, label }) {
                   type="button"
                   onClick={() => setRangeMode(m.value)}
                   className={cn(
-                    "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
-                    rangeMode === m.value ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink",
+                    "rounded px-2 py-0.5 text-micro font-medium transition-colors",
+                    rangeMode === m.value
+                      ? z
+                        ? "bg-[var(--z-card)] text-[var(--z-accent)] shadow-sm"
+                        : "bg-brand-600 text-brand-fg"
+                      : "text-ink-muted hover:text-ink",
                   )}
                 >
                   {m.label}
@@ -131,10 +144,10 @@ export function DashboardFilters({ values, options, label }) {
         </div>
       </div>
 
-      <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className={cn("mt-3 flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-center lg:justify-between", z ? "border-[var(--z-line)]" : "border-line")}>
         <div className="-mx-1 overflow-x-auto px-1 scrollbar-thin">
           <nav aria-label="Date presets" className="flex min-w-max items-center gap-1.5">
-            <span className="mr-1 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">Presets</span>
+            <span className="mr-1 text-micro font-semibold tracking-wide text-ink-muted uppercase">Presets</span>
             {options.presets.map((p) => (
               <Link
                 key={p.value}
@@ -143,7 +156,13 @@ export function DashboardFilters({ values, options, label }) {
                 aria-current={values.preset === p.value ? "true" : undefined}
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-                  values.preset === p.value ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line text-ink-soft hover:border-brand-200 hover:bg-brand-50",
+                  z
+                    ? values.preset === p.value
+                      ? "border-[var(--z-accent)] bg-[var(--z-accent-soft)] text-[var(--z-accent)]"
+                      : "border-[var(--z-line-strong)] text-[var(--z-soft)] hover:border-[var(--z-accent)] hover:text-[var(--z-accent)]"
+                    : values.preset === p.value
+                      ? "border-brand-600 bg-brand-600 text-brand-fg"
+                      : "border-line text-ink-soft hover:border-brand-200 hover:bg-brand-50",
                 )}
               >
                 {p.label}
@@ -158,13 +177,19 @@ export function DashboardFilters({ values, options, label }) {
           <Button type="button" size="sm" variant="ghost" onClick={reset}>
             <RotateCcw className="size-4" aria-hidden /> Reset
           </Button>
-          <Button type="submit" size="sm" variant="primary" disabled={Boolean(dateError)}>
+          <Button
+            type="submit"
+            size="sm"
+            variant="primary"
+            disabled={Boolean(dateError)}
+            className={z ? "bg-[var(--z-accent)] text-white hover:bg-[var(--z-accent-hover)] active:bg-[var(--z-accent-hover)] dark:text-[#0e131c]" : undefined}
+          >
             <Filter className="size-4" aria-hidden /> Apply filter
           </Button>
         </div>
       </div>
-      <p className="mt-2 text-xs text-ink-muted" aria-live="polite">
-        Showing: <span className="font-medium text-ink-soft">{label}</span>
+      <p className={cn("mt-2 text-xs", z ? "text-[var(--z-muted)]" : "text-ink-muted")} aria-live="polite">
+        Showing: <span className={cn("font-medium", z ? "text-[var(--z-ink)]" : "text-ink-soft")}>{label}</span>
       </p>
     </form>
   );

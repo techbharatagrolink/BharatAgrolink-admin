@@ -85,7 +85,7 @@ export default async function OrderInsightsPage() {
             </div>
             <Notice className="mt-4">Return reasons are not stored for RTO orders, so they are grouped by status and responsible party. Forward and reverse shipping costs are in the RTO ledger.</Notice>
             <Card className="mt-4">
-              <CardHeader title="Latest RTO orders" actions={<Link href="/admin/rto" className="text-[13px] font-medium text-brand-700 hover:underline">Open RTO ledger</Link>} />
+              <CardHeader title="Latest RTO orders" actions={<Link href="/admin/rto" className="text-small font-medium text-brand-700 hover:underline">Open RTO ledger</Link>} />
               <MiniTable
                 columns={[
                   { key: "id", label: "Order", render: (r) => <Link href={`/admin/orders/${r.id}`} className="font-mono text-xs font-medium text-brand-700 hover:underline">{r.id}</Link> },

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { StaticGrid } from "@/components/data-table/static-grid";
 
 export function RangeSwitch({ pathname, ranges, active }) {
   return (
@@ -10,7 +11,7 @@ export function RangeSwitch({ pathname, ranges, active }) {
           href={`${pathname}?range=${r.value}`}
           scroll={false}
           aria-current={r.value === active ? "true" : undefined}
-          className={cn("rounded-md px-2.5 py-2.5 text-[13px] sm:py-1 font-medium whitespace-nowrap", r.value === active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
+          className={cn("rounded-md px-2.5 py-2.5 text-small sm:py-1 font-medium whitespace-nowrap", r.value === active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
         >
           {r.label}
         </Link>
@@ -47,14 +48,14 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
       <ul className="divide-y divide-line md:hidden">
         {rows.map((row, i) => (
           <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3">
-            <div className="min-w-0 text-sm">
+            <div className="min-w-0 text-table">
               <div className="font-medium break-words text-ink">{lead.render ? lead.render(row) : row[lead.key]}</div>
             </div>
             {rest.length > 0 && (
-              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px]">
+              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-table">
                 {rest.map((c) => (
                   <div key={c.key} className={cn("min-w-0", c.wrap && "col-span-2")}>
-                    <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
                     <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">{c.render ? c.render(row) : row[c.key]}</dd>
                   </div>
                 ))}
@@ -63,29 +64,16 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto scrollbar-thin md:block">
-        <table className="w-full min-w-max text-left text-[13px]">
-          <thead>
-            <tr className="border-b border-line">
-              {columns.map((c) => (
-                <th key={c.key} scope="col" className={cn("px-4 py-2 text-xs font-semibold text-ink-muted", c.align === "right" && "text-right")}>
-                  {c.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={`${row.id ?? "row"}-${i}`} className="border-b border-line last:border-0">
-                {columns.map((c) => (
-                  <td key={c.key} className={cn("px-4 py-2 text-ink-soft", c.align === "right" && "text-right tabular")}>
-                    {c.render ? c.render(row) : row[c.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Desktop: the shared AG Grid look. Cells are drawn here (server or client) and handed over as
+          finished elements, because server pages can't pass render functions to a client component. */}
+      <div className="hidden md:block">
+        <StaticGrid
+          columns={columns.map(({ key, label, align, wrap, width }) => ({ key, label: typeof label === "string" ? label : "", align, wrap, width }))}
+          rows={rows.map((row, i) => ({
+            __key: `${row.id ?? "row"}-${i}`,
+            cells: Object.fromEntries(columns.map((c) => [c.key, c.render ? c.render(row) : (row[c.key] ?? null)])),
+          }))}
+        />
       </div>
     </>
   );

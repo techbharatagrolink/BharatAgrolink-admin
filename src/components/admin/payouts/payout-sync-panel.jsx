@@ -57,19 +57,19 @@ function JobCard({ job, canRun, busy, onRun }) {
         </dl>
 
         {!running && last?.ok && last.summary && (
-          <p className="flex items-start gap-1.5 rounded-md bg-success-bg px-3 py-2 text-[13px] text-success-ink">
+          <p className="flex items-start gap-1.5 rounded-md bg-success-bg px-3 py-2 text-small text-success-ink">
             <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {last.summary}
           </p>
         )}
         {!running && last && !last.ok && last.error && (
-          <p className="flex items-start gap-1.5 rounded-md bg-danger-bg px-3 py-2 text-[13px] text-danger-ink">
+          <p className="flex items-start gap-1.5 rounded-md bg-danger-bg px-3 py-2 text-small text-danger-ink">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {last.error}
           </p>
         )}
         {job.blockedReason && (
-          <p className="flex items-start gap-1.5 rounded-md bg-warning-bg px-3 py-2 text-[13px] text-warning-ink">
+          <p className="flex items-start gap-1.5 rounded-md bg-warning-bg px-3 py-2 text-small text-warning-ink">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {job.blockedReason}
           </p>

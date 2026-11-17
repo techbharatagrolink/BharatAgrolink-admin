@@ -48,19 +48,19 @@ export default async function OperationsTeamPage({ searchParams }) {
   const filterForm = (
     <form method="get" className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
       <div className="w-44 space-y-1.5">
-        <label htmlFor="team-from" className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor="team-from" className="block text-small font-medium text-ink-soft">
           From Date
         </label>
         <Input id="team-from" type="date" name="from" defaultValue={filters.from} required />
       </div>
       <div className="w-44 space-y-1.5">
-        <label htmlFor="team-to" className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor="team-to" className="block text-small font-medium text-ink-soft">
           To Date
         </label>
         <Input id="team-to" type="date" name="to" defaultValue={filters.to} required />
       </div>
       <div className="w-44 space-y-1.5">
-        <label htmlFor="team-days" className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor="team-days" className="block text-small font-medium text-ink-soft">
           Daily Trend
         </label>
         <Select id="team-days" name="days" defaultValue={filters.days} options={TREND_PERIODS} />
@@ -97,7 +97,7 @@ export default async function OperationsTeamPage({ searchParams }) {
       </StatGrid>
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="Agent performance" actions={<Link href="/admin/operations/team/agents" className="text-[13px] font-medium text-brand-700 hover:underline">Agent-wise report</Link>} />
+          <CardHeader title="Agent performance" actions={<Link href="/admin/operations/team/agents" className="text-small font-medium text-brand-700 hover:underline">Agent-wise report</Link>} />
           <MiniTable
             columns={[
               { key: "name", label: "Agent", render: (r) => <Link href={`/admin/operations/team/assignments?agent=${encodeURIComponent(r.name)}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link> },
@@ -113,7 +113,7 @@ export default async function OperationsTeamPage({ searchParams }) {
           />
         </Card>
         <Card>
-          <CardHeader title="Team KPI targets" actions={<Link href="/admin/operations/team/setup" className="text-[13px] font-medium text-brand-700 hover:underline">Setup</Link>} />
+          <CardHeader title="Team KPI targets" actions={<Link href="/admin/operations/team/setup" className="text-small font-medium text-brand-700 hover:underline">Setup</Link>} />
           <CardBody><KpiTargets rows={d.kpiTargets} /></CardBody>
         </Card>
       </div>

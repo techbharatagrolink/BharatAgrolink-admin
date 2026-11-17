@@ -13,6 +13,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Select, Textarea } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
+import { GridTable } from "@/components/data-table/grid-table";
 import { BulkPager } from "./bulk-list";
 
 const CSV_COLUMNS = ["order_id", "customer_name", "product_names", "total_quantity", "invoice_value", "payment_status", "order_status", "responsible", "remark", "salesman_name", "created_at", "source_warehouse"];
@@ -49,6 +50,8 @@ function download(name, text) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+const orderHref = (order) => (order.orderId ? `/admin/bulk-orders/orders/${encodeURIComponent(plain(order.orderId))}` : "/admin/bulk-orders/orders");
 
 const HEADERS = ["#", "Bulk Order ID", "Customer Name", "Product Name", "Quantity", "Total Amount", "Payment Status", "Order Status", "Sales Agent", "Created Date", "Assigned Vendor", "Remarks", ""];
 
@@ -131,92 +134,113 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
       {rows.length === 0 ? (
         <EmptyState title="No bulk orders" description="No orders match these filters. Clear the filters to see every bulk order." />
       ) : (
-        <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-          <table className="w-full min-w-max text-left text-[13px]">
-            <thead>
-              <tr className="border-b border-line text-xs text-ink-muted">
-                {HEADERS.map((h) => (
-                  <th key={h || "actions"} scope="col" className="px-3 py-2 font-semibold">
-                    {h || "Actions"}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((order, index) => {
-                const orderId = plain(order.orderId) || "—";
-                const href = order.orderId ? `/admin/bulk-orders/orders/${encodeURIComponent(plain(order.orderId))}` : "/admin/bulk-orders/orders";
-                const vendorBits = [plain(order.provider) && plain(order.provider) !== "N/A" ? plain(order.provider) : "", plain(order.waybillNo) ? `AWB: ${plain(order.waybillNo)}` : ""].filter(Boolean);
-                const last = order.lastRemark;
-                const remarkText = plain(last?.remark);
-                return (
-                  <tr key={plain(order.id) || orderId} className="border-b border-line align-top last:border-0">
-                    <td className="px-3 py-2 text-ink-muted tabular">{(page - 1) * pageSize + index + 1}</td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      <Link href={href} className="font-semibold text-brand-700 hover:underline">
-                        {orderId}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="font-medium text-ink">{plain(order.customerName) || "N/A"}</div>
-                      {plain(order.customerContact) && <div className="text-xs text-ink-muted">{plain(order.customerContact)}</div>}
-                    </td>
-                    <td className="max-w-64 px-3 py-2 whitespace-normal text-ink-soft" title={plain(order.productNames)}>
-                      {plain(order.productNames) || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 tabular">
-                      <div className="font-medium text-ink">{formatNumber(order.totalQuantity)}</div>
-                      <div className="text-xs text-ink-muted">{formatNumber(order.noOfPackages)} pkg(s)</div>
-                    </td>
-                    <td className="px-3 py-2 text-right font-medium tabular">{inr(order.invoiceValue)}</td>
-                    <td className="px-3 py-2">{plain(order.paymentStatus) || "Unpaid"}</td>
-                    <td className="px-3 py-2">
-                      <StatusBadge status={displayStatus(order)} />
-                    </td>
-                    <td className="px-3 py-2">{plain(order.salesmanName) || "Unassigned"}</td>
-                    <td className="px-3 py-2 text-xs text-ink-muted">{formatDateTime(order.createdAt)}</td>
-                    <td className="px-3 py-2">
+        <div className="hidden xl:block">
+          <GridTable
+            rows={rows}
+            rowKey={(order) => plain(order.id) || plain(order.orderId)}
+            columns={[
+              { key: "n", label: HEADERS[0], width: 56, render: (_, index) => <span className="text-ink-muted tabular">{(page - 1) * pageSize + index + 1}</span> },
+              {
+                key: "orderId",
+                label: HEADERS[1],
+                render: (order) => (
+                  <Link href={orderHref(order)} className="font-mono text-xs font-semibold text-brand-700 hover:underline">
+                    {plain(order.orderId) || "—"}
+                  </Link>
+                ),
+              },
+              {
+                key: "customer",
+                label: HEADERS[2],
+                render: (order) => (
+                  <>
+                    <div className="font-medium text-ink">{plain(order.customerName) || "N/A"}</div>
+                    {plain(order.customerContact) && <div className="text-xs text-ink-muted">{plain(order.customerContact)}</div>}
+                  </>
+                ),
+              },
+              { key: "products", label: HEADERS[3], render: (order) => <span title={plain(order.productNames)}>{plain(order.productNames) || "N/A"}</span> },
+              {
+                key: "qty",
+                label: HEADERS[4],
+                render: (order) => (
+                  <span className="tabular">
+                    <span className="block font-medium text-ink">{formatNumber(order.totalQuantity)}</span>
+                    <span className="block text-xs text-ink-muted">{formatNumber(order.noOfPackages)} pkg(s)</span>
+                  </span>
+                ),
+              },
+              { key: "amount", label: HEADERS[5], align: "right", render: (order) => <span className="font-medium">{inr(order.invoiceValue)}</span> },
+              { key: "payment", label: HEADERS[6], render: (order) => plain(order.paymentStatus) || "Unpaid" },
+              { key: "status", label: HEADERS[7], render: (order) => <StatusBadge status={displayStatus(order)} /> },
+              { key: "agent", label: HEADERS[8], render: (order) => plain(order.salesmanName) || "Unassigned" },
+              { key: "created", label: HEADERS[9], render: (order) => <span className="text-xs text-ink-muted">{formatDateTime(order.createdAt)}</span> },
+              {
+                key: "vendor",
+                label: HEADERS[10],
+                render: (order) => {
+                  const vendorBits = [plain(order.provider) && plain(order.provider) !== "N/A" ? plain(order.provider) : "", plain(order.waybillNo) ? `AWB: ${plain(order.waybillNo)}` : ""].filter(Boolean);
+                  return (
+                    <>
                       <div className="font-medium text-ink">{plain(order.sourceWarehouse) || "N/A"}</div>
                       {vendorBits.length > 0 && <div className="text-xs text-ink-muted capitalize">{vendorBits.join(" | ")}</div>}
-                    </td>
-                    <td className="max-w-56 px-3 py-2 text-xs whitespace-normal text-ink-soft">
+                    </>
+                  );
+                },
+              },
+              {
+                key: "remarks",
+                label: HEADERS[11],
+                render: (order) => {
+                  const last = order.lastRemark;
+                  const remarkText = plain(last?.remark);
+                  return (
+                    <span className="text-xs text-ink-soft">
                       {remarkText ? (
                         <>
                           {remarkText}
-                          <div className="text-ink-muted">
+                          <span className="block text-ink-muted">
                             {plain(last.addedBy) || "Unknown"}
                             {Number(order.remarkCount) > 1 ? ` · ${formatNumber(order.remarkCount)} total` : ""}
-                          </div>
+                          </span>
                         </>
                       ) : (
                         "No remarks"
                       )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-1">
-                        <Link href={href} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${orderId}`} title="View details">
-                          <Eye className="size-4" aria-hidden />
-                        </Link>
-                        {canEdit && (
-                          <Button size="icon-sm" variant="ghost" onClick={() => openRemark(order)} aria-label={`Remark ${orderId}`} title="Add remark">
-                            <MessageSquare className="size-4" aria-hidden />
-                          </Button>
-                        )}
-                        <Button size="icon-sm" variant="ghost" onClick={() => openLabel(order)} loading={labelFor === orderId} aria-label={`Label ${orderId}`} title="Download label">
-                          <FileText className="size-4" aria-hidden />
+                    </span>
+                  );
+                },
+              },
+              {
+                key: "actions",
+                label: "Actions",
+                width: 168,
+                render: (order) => {
+                  const orderId = plain(order.orderId) || "—";
+                  return (
+                    <div className="flex gap-1">
+                      <Link href={orderHref(order)} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${orderId}`} title="View details">
+                        <Eye className="size-4" aria-hidden />
+                      </Link>
+                      {canEdit && (
+                        <Button size="icon-sm" variant="ghost" onClick={() => openRemark(order)} aria-label={`Remark ${orderId}`} title="Add remark">
+                          <MessageSquare className="size-4" aria-hidden />
                         </Button>
-                        {canDelete && (
-                          <Button size="icon-sm" variant="ghost" onClick={() => setPending(order)} aria-label={`Delete ${orderId}`} title="Delete">
-                            <Trash2 className="size-4 text-danger-ink" aria-hidden />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      )}
+                      <Button size="icon-sm" variant="ghost" onClick={() => openLabel(order)} loading={labelFor === orderId} aria-label={`Label ${orderId}`} title="Download label">
+                        <FileText className="size-4" aria-hidden />
+                      </Button>
+                      {canDelete && (
+                        <Button size="icon-sm" variant="ghost" onClick={() => setPending(order)} aria-label={`Delete ${orderId}`} title="Delete">
+                          <Trash2 className="size-4 text-danger-ink" aria-hidden />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                },
+              },
+            ]}
+          />
         </div>
       )}
       {rows.length > 0 && (
@@ -228,7 +252,7 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
             const last = order.lastRemark;
             const remarkText = plain(last?.remark);
             return (
-              <div key={plain(order.id) || orderId} className="space-y-2.5 rounded-lg border border-line p-3 text-[13px]">
+              <div key={plain(order.id) || orderId} className="space-y-2.5 rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <Link href={href} className="font-mono text-xs font-semibold text-brand-700 hover:underline">#{(page - 1) * pageSize + index + 1} · {orderId}</Link>
@@ -240,27 +264,27 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
                 <p className="text-ink-soft" title={plain(order.productNames)}>{plain(order.productNames) || "N/A"}</p>
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Qty</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Qty</dt>
                     <dd className="text-ink tabular">{formatNumber(order.totalQuantity)} ({formatNumber(order.noOfPackages)} pkg)</dd>
                   </div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Amount</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Amount</dt>
                     <dd className="font-medium text-ink tabular">{inr(order.invoiceValue)}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Payment</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Payment</dt>
                     <dd className="text-ink">{plain(order.paymentStatus) || "Unpaid"}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Sales agent</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Sales agent</dt>
                     <dd className="text-ink">{plain(order.salesmanName) || "Unassigned"}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Created</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Created</dt>
                     <dd className="text-ink">{formatDateTime(order.createdAt)}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Warehouse</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Warehouse</dt>
                     <dd className="text-ink">{plain(order.sourceWarehouse) || "N/A"}{vendorBits.length > 0 && <span className="block text-xs text-ink-muted capitalize">{vendorBits.join(" | ")}</span>}</dd>
                   </div>
                 </dl>

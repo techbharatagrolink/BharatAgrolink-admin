@@ -55,7 +55,7 @@ function FactorRow({ factor, permissions, onSaved }) {
     notify({ message: res.message, tone: res.ok ? "success" : "error" });
     if (res.ok) onSaved();
   });
-  const FIELD_LABEL = "text-[10.5px] font-medium uppercase tracking-wide text-ink-muted xl:hidden";
+  const FIELD_LABEL = "text-micro font-medium uppercase tracking-wide text-ink-muted xl:hidden";
   return (
     <div
       className="grid grid-cols-2 gap-x-3 gap-y-2 border-b border-line p-3 text-sm xl:grid-cols-[70px_minmax(0,1fr)_90px_80px_70px_90px_90px_100px_auto] xl:items-center xl:gap-3 xl:px-3 xl:py-2"
@@ -276,29 +276,29 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
                     </div>
                     <Badge tone={marginTone(r.marginBps, config.minMarginBps)} className="shrink-0">{formatINR(r.margin)} · {bpsToPct(r.marginBps)}</Badge>
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[12.5px] sm:grid-cols-3">
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-label sm:grid-cols-3">
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Mode</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Mode</dt>
                       <dd className="truncate text-ink-soft">{r.mode === "FROM_ACTUALS" ? "From actuals" : "Take rate"}</dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Take rate</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Take rate</dt>
                       <dd className="tabular-nums text-ink-soft">{r.takeRate.replace(/0+$/, "").replace(/\.$/, "")}%</dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">NRV</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">NRV</dt>
                       <dd className="tabular-nums text-ink-soft">{formatINR(r.nrv)}</dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Display price</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Display price</dt>
                       <dd className="tabular-nums text-ink-soft">{formatINR(r.displayPrice)}</dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Net SC</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Net SC</dt>
                       <dd className="tabular-nums text-ink-soft">{formatINR(r.netServiceCharge)}</dd>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Costs (actual)</dt>
+                      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Costs (actual)</dt>
                       <dd className="tabular-nums text-ink-soft">{formatINR(r.actualTotal)}</dd>
                     </div>
                   </dl>

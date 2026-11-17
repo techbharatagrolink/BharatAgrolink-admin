@@ -11,7 +11,7 @@ export default function PanelError({ reset }) {
         description="This page could not be loaded. Your data is safe — try again, or go back to the dashboard."
         onRetry={reset}
         action={
-          <Link href="/admin/dashboard" className="inline-flex h-8 items-center rounded-md px-3 text-[13px] font-medium text-brand-700 hover:bg-surface-muted hover:underline">
+          <Link href="/admin/dashboard" className="inline-flex h-8 items-center rounded-md px-3 text-small font-medium text-brand-700 hover:bg-surface-muted hover:underline">
             Go to dashboard
           </Link>
         }

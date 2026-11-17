@@ -261,12 +261,12 @@ function PaymentForm({ id: formId, initial, className, onSubmit }) {
                             ? "info"
                             : "neutral"
                       }
-                      className="text-[10px]"
+                      className="text-micro"
                     >
                       {item.status || "Unknown"}
                     </Badge>
                     {item.source && (
-                      <span className="text-[10px] text-ink-muted hidden sm:inline">
+                      <span className="text-micro text-ink-muted hidden sm:inline">
                         ({item.source === "manual_order_payment_attempts" ? "attempt" : item.source})
                       </span>
                     )}
@@ -289,7 +289,7 @@ function PaymentForm({ id: formId, initial, className, onSubmit }) {
 
                 {/* Rich payment details: Method, VPA, RRN, Bank, Card, Date */}
                 {(item.method || item.vpa || item.rrn || item.bank || item.cardLast4 || item.createdAt) && (
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted border-t border-line/60 pt-1.5 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-ink-muted border-t border-line/60 pt-1.5 mt-0.5">
                     {item.method && (
                       <span className="inline-flex items-center gap-1 font-semibold text-ink uppercase tracking-wide">
                         <CreditCard className="size-3 text-ink-muted" />

@@ -62,7 +62,9 @@ function loadRazorpay() {
   });
 }
 
-export function ManualOrderForm({ leadCode = "" }) {
+// onCreated(id) / onCreateAnother(): optional hooks for the "Create order" popup on All Orders. Without
+// them (the /admin/orders/new page) the form behaves as before — "Create another order" reloads the page.
+export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother }) {
   const { notify } = useToast();
   const [customerQuery, setCustomerQuery] = useState("");
   const [customers, setCustomers] = useState([]);
@@ -271,6 +273,7 @@ export function ManualOrderForm({ leadCode = "" }) {
     if (result?.ok) {
       notify({ message: result.message, tone: "success" });
       setCreatedId(result.id);
+      onCreated?.(result.id);
     } else {
       setFormError(result?.message || "Could not create the order.");
     }
@@ -372,7 +375,7 @@ export function ManualOrderForm({ leadCode = "" }) {
           <p className="text-lg font-semibold text-success-ink">Order created</p>
           <p className="text-sm text-ink-muted">Manual order <span className="font-mono text-ink">{createdId}</span> is placed.</p>
           <div className="flex flex-wrap justify-center gap-2">
-            <Button type="button" variant="primary" onClick={() => window.location.reload()}>Create another order</Button>
+            <Button type="button" variant="primary" onClick={onCreateAnother ?? (() => window.location.reload())}>Create another order</Button>
             <ButtonLink href={`/admin/orders/${encodeURIComponent(createdId)}`} variant="secondary">Open this order</ButtonLink>
             <ButtonLink href="/admin/orders" variant="secondary">View all orders</ButtonLink>
           </div>
@@ -428,7 +431,7 @@ export function ManualOrderForm({ leadCode = "" }) {
                 <span className="font-medium text-ink">{customer.fullname}</span>
                 <span className="text-ink-muted"> · {customer.phone}{customer.email ? ` · ${customer.email}` : ""} · {customer.orders} orders</span>
               </div>
-              <Link href={`/admin/customers/${customer.id}`} className="text-[13px] font-medium text-brand-700 hover:underline">View customer</Link>
+              <Link href={`/admin/customers/${customer.id}`} className="text-small font-medium text-brand-700 hover:underline">View customer</Link>
             </div>
           )}
 
@@ -576,7 +579,7 @@ export function ManualOrderForm({ leadCode = "" }) {
               )}
             </Field>
             <div>
-              <p className="mb-1.5 text-[13px] font-medium text-ink-soft">Payment method <span className="text-danger-ink">*</span></p>
+              <p className="mb-1.5 text-small font-medium text-ink-soft">Payment method <span className="text-danger-ink">*</span></p>
               <div className="grid grid-cols-3 gap-2">
                 <PayOption mode="prepaid" current={paymentMode} title="Prepaid" badge="3% OFF" onSelect={setPaymentMode} />
                 <PayOption mode="partial" current={paymentMode} title="Partial" badge="1% OFF" onSelect={setPaymentMode} />
@@ -626,7 +629,7 @@ export function ManualOrderForm({ leadCode = "" }) {
       </Card>
 
       <Card>
-        <CardHeader title="Live order summary" actions={<span className="rounded bg-success-bg px-2 py-0.5 text-[11px] font-semibold text-success-ink">LIVE</span>} />
+        <CardHeader title="Live order summary" actions={<span className="rounded bg-success-bg px-2 py-0.5 text-micro font-semibold text-success-ink">LIVE</span>} />
         <CardBody>
           <div className="grid gap-4 md:grid-cols-5">
             <div className="hidden overflow-x-auto md:col-span-3 md:block">
@@ -754,7 +757,7 @@ function PayOption({ mode, current, title, badge, disabled, onSelect }) {
       )}
     >
       <span className="block">{title}</span>
-      {badge && <span className="mt-1 inline-block rounded bg-success-bg px-1.5 text-[10px] font-semibold text-success-ink">{badge}</span>}
+      {badge && <span className="mt-1 inline-block rounded bg-success-bg px-1.5 text-micro font-semibold text-success-ink">{badge}</span>}
     </button>
   );
 }

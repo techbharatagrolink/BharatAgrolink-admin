@@ -19,7 +19,7 @@ function Kpi({ label, value, sub, tone }) {
   return (
     <div className={cn("min-w-0 rounded-lg border border-line p-3", tone && HEALTH_RING[tone])}>
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className="mt-0.5 truncate text-[15px] font-semibold text-ink tabular">{value}</p>
+      <p className="mt-0.5 truncate text-subheading font-semibold text-ink tabular">{value}</p>
       {sub && <p className="truncate text-xs text-ink-muted">{sub}</p>}
     </div>
   );
@@ -61,7 +61,7 @@ export function ApprovalCard({ quote, rules, canDecide }) {
   return (
     <Card>
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-        <h3 className="text-[15px] font-semibold text-ink">{quote.number}</h3>
+        <h3 className="text-subheading font-semibold text-ink">{quote.number}</h3>
         <Badge tone={quote.cmHealth}>CM {formatPercent(quote.cmPct)}</Badge>
         <Badge tone={APPROVAL_TONE[quote.approvalStatus] ?? "neutral"} dot>
           {String(quote.approvalStatus || "").replace(/_/g, " ")}
@@ -80,7 +80,7 @@ export function ApprovalCard({ quote, rules, canDecide }) {
           <Kpi label="Triggering Rule" value={quote.rule} />
         </div>
         {quote.note && (
-          <p className="text-[13px] text-ink-soft">
+          <p className="text-small text-ink-soft">
             Last note: <em>{quote.note}</em>
           </p>
         )}

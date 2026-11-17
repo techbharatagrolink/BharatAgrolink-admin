@@ -11,7 +11,7 @@ import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "B2B Dashboard" };
 
-const more = (href, label) => <Link href={href} className="text-[13px] font-medium text-brand-700 hover:underline">{label}</Link>;
+const more = (href, label) => <Link href={href} className="text-small font-medium text-brand-700 hover:underline">{label}</Link>;
 
 export default async function B2BDashboardPage() {
   const { user, allowed } = await checkPermission("b2b");

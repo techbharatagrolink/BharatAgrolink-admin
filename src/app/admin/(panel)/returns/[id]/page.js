@@ -132,7 +132,7 @@ export default async function ReturnDetailPage({ params, searchParams }) {
                   <span className="font-mono text-xs">{refund.id}</span>
                   <StatusBadge status={refund.status} />
                   <span className="tabular">{formatINR(refund.amount)}</span>
-                  <Link href="/admin/refunds" className="ml-auto text-[13px] font-medium text-brand-700 hover:underline">Refunds</Link>
+                  <Link href="/admin/refunds" className="ml-auto text-small font-medium text-brand-700 hover:underline">Refunds</Link>
                 </div>
               )}
             </CardBody>

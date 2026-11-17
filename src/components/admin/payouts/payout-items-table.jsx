@@ -306,7 +306,7 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
                   key={g.id}
                   scope="colgroup"
                   colSpan={COLUMNS.filter((c) => c.group === g.id).length + (i === 1 ? 0 : 1)}
-                  className={cn(thBase, "py-1.5 text-[13px] text-ink", i < 2 && "border-r", i === 0 ? "bg-success-bg" : i === 1 ? "bg-info-bg" : "bg-warning-bg")}
+                  className={cn(thBase, "py-1.5 text-small text-ink", i < 2 && "border-r", i === 0 ? "bg-success-bg" : i === 1 ? "bg-info-bg" : "bg-warning-bg")}
                 >
                   {g.label}
                 </th>

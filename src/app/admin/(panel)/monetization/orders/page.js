@@ -134,7 +134,7 @@ export default async function BannerOrdersPage({ searchParams }) {
                   </span>
                 ),
               },
-              { key: "seller", label: "Seller", render: (o) => <span className="text-[13px]">{o.sellerName}</span> },
+              { key: "seller", label: "Seller", render: (o) => <span className="text-small">{o.sellerName}</span> },
               { key: "ad", label: "Ad", render: (o) => `${o.serviceName} · ${o.packageName}` },
               { key: "total", label: "Amount", align: "right", render: (o) => rupees.format(o.total) },
               { key: "pay", label: "Payment", render: (o) => <Status map={ORDER_STATUS} value={o.orderStatus} /> },

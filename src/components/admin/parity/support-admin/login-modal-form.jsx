@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 
@@ -96,10 +97,10 @@ export function LoginModalForm({ values, canEdit }) {
         {({ id, invalid, describedBy }) => <Input id={id} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} disabled={!canEdit || saving} maxLength={255} placeholder="Enter modal subtitle" aria-invalid={invalid || undefined} aria-describedby={describedBy} />}
       </Field>
       <Field label="Modal Image" error={errors.image} hint="Recommended size: 400x400px or larger. Supported formats: JPG, PNG, WebP (max 10MB).">
-        {({ id, describedBy }) => <input key={inputKey} id={id} type="file" accept="image/jpeg,image/png,image/webp" onChange={pick} disabled={!canEdit || saving} aria-describedby={describedBy} className="block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-[13px] file:font-medium" />}
+        {({ id, describedBy }) => <FileInput key={inputKey} id={id} accept="image/jpeg,image/png,image/webp" onChange={pick} disabled={!canEdit || saving} aria-describedby={describedBy} />}
       </Field>
       <div>
-        <p className="mb-1.5 text-[13px] font-medium text-ink-soft">{preview ? "New Image (not saved yet)" : "Current Image"}</p>
+        <p className="mb-1.5 text-small font-medium text-ink-soft">{preview ? "New Image (not saved yet)" : "Current Image"}</p>
         {shown ? (
           <Image src={shown} alt="Signup modal" width={240} height={240} unoptimized className="h-auto max-h-60 w-auto max-w-full rounded-lg border border-line object-contain" />
         ) : (

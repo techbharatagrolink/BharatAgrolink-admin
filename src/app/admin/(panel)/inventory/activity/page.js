@@ -53,7 +53,7 @@ export default async function InventoryActivityPage({ searchParams }) {
 
   const [log, sellers] = await Promise.all([loadStock(user, "activity", { ...filters, limit: 50 }), loadStock(user, "sellers")]);
   const pageHref = (page) => `/admin/inventory/activity?${new URLSearchParams({ ...filters, page: String(page) })}`;
-  const label = "min-w-0 space-y-1 text-[13px] font-medium text-ink-soft";
+  const label = "min-w-0 space-y-1 text-small font-medium text-ink-soft";
 
   return (
     <>
@@ -112,7 +112,7 @@ export default async function InventoryActivityPage({ searchParams }) {
                     <span className="block">
                       <Badge tone={ACTOR_TONE[r.actorType] ?? "neutral"}>{ACTOR_LABEL[r.actorType] ?? r.actorType}</Badge>
                       <span className="mt-0.5 block text-xs font-medium text-ink">{r.actorName || (r.actorType === "system" ? "Automatic" : r.actorId || "—")}</span>
-                      {r.channel && <span className="block text-[11px] text-ink-muted">via {r.channel}</span>}
+                      {r.channel && <span className="block text-micro text-ink-muted">via {r.channel}</span>}
                     </span>
                   ),
                 },

@@ -39,7 +39,7 @@ export function ScriptsForm({ values, canEdit }) {
       {FIELDS.map((f) => (
         <Field key={f.name} label={f.label}>
           {({ id }) => (
-            <Textarea id={id} rows={8} value={form[f.name] ?? ""} disabled={!canEdit || saving} maxLength={60000} spellCheck={false} className="font-mono text-[12.5px]" onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} />
+            <Textarea id={id} rows={8} value={form[f.name] ?? ""} disabled={!canEdit || saving} maxLength={60000} spellCheck={false} className="font-mono text-label" onChange={(e) => setForm({ ...form, [f.name]: e.target.value })} />
           )}
         </Field>
       ))}

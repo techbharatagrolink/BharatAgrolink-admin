@@ -29,7 +29,7 @@ export default async function ServiceRevenuePage() {
           <Card key={a.label} className="p-3.5">
             <p className="text-xs font-medium text-ink-muted">{a.label}</p>
             <p className="mt-1.5 text-xl font-semibold tabular text-ink">{formatINR(a.revenue)}</p>
-            <p className="text-[11px] text-ink-muted">
+            <p className="text-micro text-ink-muted">
               {total > 0 ? `${((a.revenue / total) * 100).toFixed(1)}% of total` : "—"}
               {a.products != null && ` · ${formatNumber(a.products)} products`}
             </p>

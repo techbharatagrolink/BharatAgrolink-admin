@@ -86,7 +86,7 @@ export default async function VendorDetailPage({ params, searchParams }) {
             />
           </Card>
           <Card>
-            <CardHeader title="Products" actions={<Link href={`/admin/products?vendorId=${v.id}`} className="text-[13px] font-medium text-brand-700 hover:underline">All {data.productCount}</Link>} />
+            <CardHeader title="Products" actions={<Link href={`/admin/products?vendorId=${v.id}`} className="text-small font-medium text-brand-700 hover:underline">All {data.productCount}</Link>} />
             <MiniTable
               columns={[
                 { key: "name", label: "Product", render: (r) => <Link href={`/admin/products/${r.id}`} className="block max-w-72 truncate text-brand-700 hover:underline">{r.name}</Link> },

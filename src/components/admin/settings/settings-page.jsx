@@ -34,7 +34,7 @@ export async function SettingsPage({ section, description }) {
                     <li key={s.env} className="flex items-center justify-between gap-3 text-sm">
                       <span className="min-w-0">
                         <span className="block text-ink">{s.label}</span>
-                        <span className="font-mono text-[11px] text-ink-muted">{s.env}</span>
+                        <span className="font-mono text-micro text-ink-muted">{s.env}</span>
                       </span>
                       {s.configured ? <Badge tone="success">Configured</Badge> : <Badge tone="warning">Not set</Badge>}
                     </li>

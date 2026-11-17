@@ -231,7 +231,7 @@ export function MultiSelectFilter({ name, label, options }) {
       </div>
       {selected.length > 0 && (
         <div className="border-t border-line p-1.5">
-          <button type="button" data-close onClick={() => setParams({ [name]: "" })} className="w-full rounded-lg px-2 py-1.5 text-left text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
+          <button type="button" data-close onClick={() => setParams({ [name]: "" })} className="w-full rounded-lg px-2 py-1.5 text-left text-small font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
             Clear {label.toLowerCase()}
           </button>
         </div>
@@ -253,7 +253,7 @@ export function ClearFiltersButton({ className }) {
         for (const k of searchParams.keys()) if (!["tab"].includes(k)) reset[k] = "";
         setParams(reset);
       }}
-      className={cn("inline-flex h-9 items-center gap-1 self-start rounded-lg px-2.5 text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink lg:self-auto", className)}
+      className={cn("inline-flex h-9 items-center gap-1 self-start rounded-lg px-2.5 text-small font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink lg:self-auto", className)}
     >
       <X className="size-3.5" aria-hidden /> Clear filters
     </button>

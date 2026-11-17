@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
@@ -80,7 +81,7 @@ export function PayoutActions({ id, status, amount, vendorReady }) {
             {({ id: fid }) => <Input id={fid} value={form.transactionId} onChange={(e) => setForm({ ...form, transactionId: e.target.value.toUpperCase() })} autoComplete="off" />}
           </Field>
           <Field label="Payment proof" required hint="Bank advice or statement (PDF, PNG or JPG). Uploaded to secure storage when the payouts API is connected.">
-            {({ id: fid }) => <input id={fid} type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => setForm({ ...form, proofName: e.target.files?.[0]?.name ?? "" })} className="block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium" />}
+            {({ id: fid }) => <FileInput id={fid} accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => setForm({ ...form, proofName: e.target.files?.[0]?.name ?? "" })} />}
           </Field>
           <Field label="Note (saved in the audit log)" required>
             {({ id: fid }) => <Textarea id={fid} rows={2} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />}

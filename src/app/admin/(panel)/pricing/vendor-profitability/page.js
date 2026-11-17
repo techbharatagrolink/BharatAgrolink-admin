@@ -5,6 +5,7 @@ import { formatINR, formatNumber, formatPercent } from "@/lib/format";
 import { Notice, PageHeader } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { PermissionDenied } from "@/components/ui/states";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Vendor Profitability Report" };
 
@@ -26,38 +27,19 @@ export default async function VendorProfitabilityPage() {
         </Notice>
       )}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-y border-line bg-surface-muted text-left text-xs font-medium text-ink-muted">
-                <th scope="col" className="px-4 py-2.5">Vendor</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Priced products</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Total contribution</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Avg. margin</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Loss</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Below floor</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Below target</th>
-                <th scope="col" className="px-4 py-2.5 text-right">Healthy</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {rows.map((r) => (
-                <tr key={r.vendorId} className="hover:bg-surface-muted/60">
-                  <td className="px-4 py-2.5">
-                    <Link href={`/admin/vendors/${r.vendorId}`} className="font-medium text-brand-700 hover:underline">{r.vendor}</Link>
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular">{formatNumber(r.products)}</td>
-                  <td className="px-4 py-2.5 text-right tabular font-medium text-ink">{formatINR(r.totalContribution)}</td>
-                  <td className="px-4 py-2.5 text-right tabular">{formatPercent(r.avgMarginBps / 100)}</td>
-                  <td className="px-4 py-2.5 text-right tabular">{r.lossCount ? <span className="text-danger-ink">{r.lossCount}</span> : "—"}</td>
-                  <td className="px-4 py-2.5 text-right tabular">{r.belowFloorCount || "—"}</td>
-                  <td className="px-4 py-2.5 text-right tabular">{r.belowTargetCount || "—"}</td>
-                  <td className="px-4 py-2.5 text-right tabular">{r.healthyCount || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <MiniTable
+          rows={rows.map((r) => ({ ...r, id: r.vendorId }))}
+          columns={[
+            { key: "vendor", label: "Vendor", render: (r) => <Link href={`/admin/vendors/${r.vendorId}`} className="font-medium text-brand-700 hover:underline">{r.vendor}</Link> },
+            { key: "products", label: "Priced products", align: "right", render: (r) => formatNumber(r.products) },
+            { key: "total", label: "Total contribution", align: "right", render: (r) => <span className="font-medium text-ink">{formatINR(r.totalContribution)}</span> },
+            { key: "avg", label: "Avg. margin", align: "right", render: (r) => formatPercent(r.avgMarginBps / 100) },
+            { key: "loss", label: "Loss", align: "right", render: (r) => (r.lossCount ? <span className="text-danger-ink">{r.lossCount}</span> : "—") },
+            { key: "floor", label: "Below floor", align: "right", render: (r) => r.belowFloorCount || "—" },
+            { key: "below", label: "Below target", align: "right", render: (r) => r.belowTargetCount || "—" },
+            { key: "healthy", label: "Healthy", align: "right", render: (r) => r.healthyCount || "—" },
+          ]}
+        />
         {!rows.length && <p className="p-4 text-sm text-ink-muted">No priced vendors yet.</p>}
       </Card>
     </>

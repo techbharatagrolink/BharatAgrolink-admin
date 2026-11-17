@@ -188,7 +188,7 @@ export function BulkUpload({ sellers }) {
             }
           />
           <div className="max-h-[28rem] overflow-auto scrollbar-thin">
-            <table className="w-full text-left text-[13px]">
+            <table className="w-full text-left text-small">
               <thead className="sticky top-0 bg-surface">
                 <tr className="border-b border-line text-xs font-semibold text-ink-muted">
                   <th className="px-4 py-2">Row</th>

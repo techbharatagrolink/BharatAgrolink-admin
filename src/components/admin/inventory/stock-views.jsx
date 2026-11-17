@@ -198,7 +198,7 @@ export function MovementList({ movements }) {
 
 /** GET filter form for the stock list; state lives in the URL. */
 export function StockFilters({ filters, categories = [], sellers = [] }) {
-  const label = "min-w-0 space-y-1 text-[13px] font-medium text-ink-soft";
+  const label = "min-w-0 space-y-1 text-small font-medium text-ink-soft";
   return (
     <CardBody className="border-b border-line">
       <form method="get" action="/admin/inventory/stock" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
@@ -245,7 +245,7 @@ export function Pager({ meta, href, unit = "SKUs" }) {
   const totalPages = meta?.totalPages ?? 1;
   if (totalPages <= 1) return null;
   return (
-    <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+    <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
       <span>
         Page {page} of {totalPages} · {qty(meta.total)} {unit}
       </span>

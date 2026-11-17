@@ -14,6 +14,7 @@ import { PermissionDenied } from "@/components/ui/states";
 import { PricingBreakdown, PricingPanel } from "@/components/admin/products/pricing-panel";
 import { ProductStatusActions, StockControl } from "@/components/admin/products/product-controls";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
+import { StaticGrid } from "@/components/data-table/static-grid";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -38,37 +39,39 @@ function VariationsCard({ product: p }) {
       />
       {p.variations.length ? (
         <>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y border-line bg-surface-muted text-left text-xs font-medium text-ink-muted">
-                  <th scope="col" className="px-4 py-2.5">{p.variationAttribute ?? "Variation"}</th>
-                  <th scope="col" className="px-4 py-2.5">SKU</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">MRP</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">NRV</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Display price</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Weight</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Stock</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {rows.map((r) => (
-                  <tr key={r.id} className="hover:bg-surface-muted/60">
-                    <td className="px-4 py-2.5 font-medium text-ink">
+          <div className="hidden border-t border-line md:block">
+            {/* Server page: cells drawn here, shown in the shared AG Grid on the client. */}
+            <StaticGrid
+              columns={[
+                { key: "label", label: p.variationAttribute ?? "Variation" },
+                { key: "sku", label: "SKU" },
+                { key: "mrp", label: "MRP", align: "right" },
+                { key: "nrv", label: "NRV", align: "right" },
+                { key: "display", label: "Display price", align: "right" },
+                { key: "weight", label: "Weight", align: "right" },
+                { key: "stock", label: "Stock", align: "right" },
+              ]}
+              rows={rows.map((r) => ({
+                __key: String(r.id),
+                cells: {
+                  label: (
+                    <span className="font-medium text-ink">
                       {r.label} {r.base && <Badge tone="brand" className="ml-1.5">Base</Badge>}
-                    </td>
-                    <td className="px-4 py-2.5 text-ink-soft tabular">{r.sku}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-soft tabular">{formatINR(r.mrp)}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-soft tabular">{formatINR(r.nrv)}</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(r.display)}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-soft tabular">{r.weightKg} g</td>
-                    <td className="px-4 py-2.5 text-right">
+                    </span>
+                  ),
+                  sku: <span className="text-ink-soft">{r.sku}</span>,
+                  mrp: <span className="text-ink-soft">{formatINR(r.mrp)}</span>,
+                  nrv: <span className="text-ink-soft">{formatINR(r.nrv)}</span>,
+                  display: <span className="font-medium text-ink">{formatINR(r.display)}</span>,
+                  weight: <span className="text-ink-soft">{r.weightKg} g</span>,
+                  stock: (
+                    <span>
                       <span className="tabular">{formatNumber(r.stock)}</span> <StatusBadge status={r.stockStatus} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  ),
+                },
+              }))}
+            />
           </div>
           <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
             {rows.map((r) => (
@@ -79,7 +82,7 @@ function VariationsCard({ product: p }) {
                   </p>
                   <StatusBadge status={r.stockStatus} />
                 </div>
-                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[13px]">
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-small">
                   <div><dt className="text-xs text-ink-muted">SKU</dt><dd className="text-ink-soft">{r.sku}</dd></div>
                   <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(r.display)}</dd></div>
                   <div><dt className="text-xs text-ink-muted">MRP / NRV</dt><dd className="text-ink-soft">{formatINR(r.mrp)} / {formatINR(r.nrv)}</dd></div>
@@ -210,7 +213,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-line text-left text-[11px] text-ink-muted">
+                      <tr className="border-b border-line text-left text-micro text-ink-muted">
                         <th scope="col" className="py-1 pr-2 font-medium">Service</th>
                         <th scope="col" className="py-1 pr-2 font-medium">Category</th>
                         <th scope="col" className="py-1 text-right font-medium">Charge</th>
@@ -253,7 +256,7 @@ export default async function ProductDetailPage({ params, searchParams }) {
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Stock movements" actions={<Link href={`/admin/inventory/stock?search=${encodeURIComponent(p.sku)}`} className="text-[13px] font-medium text-brand-700 hover:underline">All</Link>} />
+            <CardHeader title="Stock movements" actions={<Link href={`/admin/inventory/stock?search=${encodeURIComponent(p.sku)}`} className="text-small font-medium text-brand-700 hover:underline">All</Link>} />
             <CardBody>
               <Timeline
                 items={data.movements.map((m) => ({
