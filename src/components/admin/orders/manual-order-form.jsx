@@ -118,6 +118,8 @@ export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother }) {
         setCustomerQuery(data.user.phone);
         searchManualCustomersAction(data.user.phone).then((rows) => {
           const match = (rows || []).find((row) => String(row.id) === String(data.user.id)) || rows?.[0];
+          // chooseCustomer is declared further down; it only runs after this async lookup resolves.
+          // eslint-disable-next-line react-hooks/immutability
           if (match) chooseCustomer(match);
         });
       } else {
@@ -126,7 +128,6 @@ export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother }) {
       }
     });
     // The lead is only read once, from the URL.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadCode]);
 
   useEffect(() => {

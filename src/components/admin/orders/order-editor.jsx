@@ -151,8 +151,8 @@ function PaymentForm({ id: formId, initial, className, onSubmit }) {
           const total = Number(res.totalAmount) || 0;
           setMergedTotal(total);
           // Auto-fill advance amount if partial and current advance is 0 or empty
-          if (payment.mode === "partial" && total > 0 && (!payment.advanceAmount || Number(payment.advanceAmount) === 0)) {
-            setPayment((p) => ({ ...p, advanceAmount: total }));
+          if (payment.mode === "partial" && total > 0) {
+            setPayment((p) => (!p.advanceAmount || Number(p.advanceAmount) === 0 ? { ...p, advanceAmount: total } : p));
           }
         }
       } catch {

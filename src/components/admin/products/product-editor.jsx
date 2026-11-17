@@ -435,6 +435,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <div className="mt-3 flex flex-wrap gap-2">
                 {(creating ? draftImages : photos.map((url) => ({ url }))).map((item) => (
                   <div key={item.url} className="w-28">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
                     <img src={item.url} alt="" className="h-28 w-28 rounded-lg border object-cover" />
                     <button type="button" className="mt-1 text-xs text-danger-ink" disabled={pending} onClick={() => {
                       if (creating) {
@@ -573,6 +574,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
         <aside className="min-w-0 space-y-3">
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Product Preview</p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
             {photos[0] ? <img src={photos[0]} alt="" className="mt-2 h-40 w-full rounded-lg object-contain" /> : <div className="mt-2 flex h-40 items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted">No image</div>}
             <p className="mt-2 break-words text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
             <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {creating ? "assigned on save" : (product.sku || "—")}</p>

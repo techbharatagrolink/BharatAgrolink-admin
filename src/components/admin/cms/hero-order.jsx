@@ -61,6 +61,7 @@ export function HeroOrder({ items, canEdit }) {
             <div className="flex min-w-0 items-center gap-3">
               <span className="w-20 shrink-0 text-sm font-medium text-ink">Banner {index + 1}</span>
               {item.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image
                 <img src={item.image} alt="" className="h-10 w-16 shrink-0 rounded border border-line object-contain" />
               ) : (
                 <span className="w-16 shrink-0 text-xs text-ink-muted">Empty</span>

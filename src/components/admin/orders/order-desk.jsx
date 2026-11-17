@@ -322,6 +322,7 @@ function LineCard({ line, onPreview }) {
               className="group relative col-start-2 block size-16 cursor-zoom-in overflow-hidden rounded-lg border border-line focus-visible:ring-2 focus-visible:ring-brand-600/40 focus-visible:outline-none"
               aria-label={`Enlarge image of ${line.productName}`}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
               <img src={line.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none" />
               <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden>
                 <ZoomIn className="size-5 text-white" />
@@ -864,6 +865,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
       <Dialog open={Boolean(preview)} onClose={closePreview} title={preview?.productName || "Product image"}>
         {preview && (
           <div className="space-y-3 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
             <img src={preview.image} alt={preview.productName || ""} className="mx-auto max-h-[60vh] w-auto rounded-lg object-contain" />
             <Link href={`/admin/products/${preview.productId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
               Open product page
