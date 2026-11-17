@@ -44,6 +44,43 @@ export const SALES_CARD_SLUGS = [
 
 const FINANCE_CARDS = new Set(["seller-payout", "platform-revenue", "pg-charges", "tcs", "rto-charges"]);
 
+/**
+ * Non-sales dashboard cards are gated by the SAME section permission that renders their tile on the
+ * main dashboard (see app/admin/(panel)/dashboard/page.js). They have no individual
+ * #dashboard_card_* checkbox, so a card's detail page is viewable iff its section is. Keyed by
+ * card slug → section page key.
+ */
+const NON_SALES_CARD_SECTION = {
+  // Orders overview
+  "total-orders": "#dashboard_orders_overview",
+  "accepted-orders": "#dashboard_orders_overview",
+  "rejected-orders": "#dashboard_orders_overview",
+  "sub-orders": "#dashboard_orders_overview",
+  shipped: "#dashboard_orders_overview",
+  "delivered-orders": "#dashboard_orders_overview",
+  "delivered-gross": "#dashboard_orders_overview",
+  "cancelled-orders": "#dashboard_orders_overview",
+  "rto-orders": "#dashboard_orders_overview",
+  "rto-rate": "#dashboard_orders_overview",
+  "new-orders": "#dashboard_orders_overview",
+  "repeat-orders": "#dashboard_orders_overview",
+  "repeat-customers": "#dashboard_orders_overview",
+  // Shipping & courier analytics
+  delhivery: "#dashboard_logistics_overview",
+  shiprocket: "#dashboard_logistics_overview",
+  "average-shipping": "#dashboard_logistics_overview",
+  // Marketplace, product & location
+  "top-products": "#dashboard_products_overview",
+  "top-locations": "#dashboard_products_overview",
+  // Customers
+  "unique-visitors": "#dashboard_customers_overview",
+  "ordering-customers": "#dashboard_customers_overview",
+  // Payments
+  "prepaid-orders": "#dashboard_payments_overview",
+  "partial-orders": "#dashboard_payments_overview",
+  "cod-orders": "#dashboard_payments_overview",
+};
+
 export function cardPermissionKey(slug) {
   return `#dashboard_card_${String(slug || "").replace(/-/g, "_")}`;
 }
@@ -56,11 +93,18 @@ export function canCard(user, slug) {
   const key = cardPermissionKey(slug);
   if (canPage(user, key, "view")) return true;
 
-  // If this role has ANY specific sales card permission configured, then cards not granted are hidden
+  // Non-sales cards (Orders Overview, shipping, marketplace, customers, payments) have no individual
+  // #dashboard_card_* checkbox. The detail page mirrors the SAME section permission that renders the
+  // tile on the main dashboard, so the card is viewable iff its section is. This keeps e.g. the
+  // "RTO rate" orders card visible regardless of which specific Sales cards a role has configured.
+  const sectionKey = NON_SALES_CARD_SECTION[slug];
+  if (sectionKey) return canPage(user, sectionKey, "view");
+
+  // Sales cards: if this role has configured ANY specific sales card, sales cards not granted are hidden.
   const hasAnySpecificCard = SALES_CARD_SLUGS.some((s) => canPage(user, cardPermissionKey(s), "view"));
   if (hasAnySpecificCard) return false;
 
-  // Backward compatibility: role hasn't configured specific cards yet, check section and finance
+  // Backward compatibility: role hasn't configured specific sales cards yet — check section and finance.
   const hasSection = canPage(user, "#dashboard_sales_overview", "view");
   if (!hasSection) return false;
 
