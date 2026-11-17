@@ -11,7 +11,8 @@ const nextConfig = {
     serverComponentsHmrCache: false,
     staleTimes: { dynamic: 0 },
     // Admin forms upload images and documents through server actions (PHP allowed large files).
-    serverActions: { bodySizeLimit: "16mb" },
+    // Product create sends the featured + gallery photos in one action, uncapped per photo.
+    serverActions: { bodySizeLimit: "100mb" },
   },
   // Browser calls to /api/v1/* are proxied at runtime by src/app/api/v1/[...path]/route.js.
   // The old console panel (/login, /dashboard, /orders, ...) now lives under /admin.
