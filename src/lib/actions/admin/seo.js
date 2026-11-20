@@ -111,3 +111,8 @@ export async function saveSeoMilestoneAction(id, input) {
   };
   return id ? seoWrite("edit", `milestones/${Number(id)}`, { method: "PATCH", body }) : seoWrite("add", "milestones", { body });
 }
+
+/** Runs the product data check now (a few seconds; database only). */
+export async function runProductCheckAction() {
+  return seoWrite("edit", "product-quality/run");
+}

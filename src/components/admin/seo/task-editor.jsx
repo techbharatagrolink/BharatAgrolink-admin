@@ -113,7 +113,7 @@ export function NewTaskButton({ owners, milestones, issue, size = "sm", label })
             ...EMPTY,
             title: `${issue.label}: ${issue.path}`.slice(0, 200),
             description: [`URL: ${issue.url}`, issue.evidence && `Evidence: ${issue.evidence}`, issue.fix && `Fix: ${issue.fix}`].filter(Boolean).join("\n"),
-            module: "website_health",
+            module: issue.module ?? "website_health",
             priority: issue.severity === "CRITICAL" ? "CRITICAL" : issue.severity === "HIGH" ? "HIGH" : issue.severity === "MEDIUM" ? "MEDIUM" : "LOW",
           }
         : EMPTY
@@ -122,7 +122,7 @@ export function NewTaskButton({ owners, milestones, issue, size = "sm", label })
   };
   const save = () =>
     run(
-      () => createSeoTaskAction({ ...form, sourceType: issue ? "audit_issue" : "manual", sourceId: issue?.id }),
+      () => createSeoTaskAction({ ...form, sourceType: issue ? (issue.sourceType ?? "audit_issue") : "manual", sourceId: issue?.id }),
       "Task created.",
       () => setOpen(false)
     );
