@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { loadSeo, rangeParams } from "@/lib/services/admin/seo";
 import { Card, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ProgressBar } from "@/components/ui/page";
 import { formatDate, formatNumber } from "@/lib/format";
 import { IntegrationsCard, KpiCard, RangeNote, SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 
 export const metadata = { title: "SEO & AI Command Center" };
+
+const TASK_TONE = { PENDING: "neutral", IN_PROGRESS: "info", BLOCKED: "danger", COMPLETED: "success" };
+const TASK_LABEL = { PENDING: "Pending", IN_PROGRESS: "In progress", BLOCKED: "Blocked", COMPLETED: "Completed" };
 
 /**
  * CEO Overview (task #104, subtasks 1-2): KPI cards, readiness, data sources, tasks and milestones.
@@ -103,8 +108,14 @@ export default async function SeoOverviewPage({ searchParams }) {
             <ul className="divide-y divide-line">
               {tasks.data.tasks.slice(0, 6).map((t) => (
                 <li key={t.id} className="flex items-center justify-between gap-2 px-4 py-2 text-sm">
-                  <span className="min-w-0 truncate text-ink">{t.title}</span>
-                  <span className="shrink-0 text-xs text-ink-muted">{t.status.replace("_", " ")}</span>
+                  <span className="min-w-0">
+                    <span className={t.status === "COMPLETED" ? "block truncate text-ink-muted line-through" : "block truncate text-ink"}>{t.title}</span>
+                    <span className="text-xs text-ink-muted">
+                      {t.owner_name ?? "Unassigned"}
+                      {t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}
+                    </span>
+                  </span>
+                  <Badge tone={TASK_TONE[t.status]}>{TASK_LABEL[t.status] ?? t.status}</Badge>
                 </li>
               ))}
             </ul>
@@ -118,12 +129,15 @@ export default async function SeoOverviewPage({ searchParams }) {
           {milestones.data?.milestones?.length ? (
             <ul className="divide-y divide-line">
               {milestones.data.milestones.map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-2 px-4 py-2 text-sm">
-                  <span className="min-w-0">
-                    <span className="block truncate text-ink">{m.title}</span>
-                    <span className="text-xs text-ink-muted">{m.target_date ? formatDate(m.target_date) : "No target date"}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-ink-muted">{m.completion_percent == null ? "No tasks linked" : `${m.completion_percent}%`}</span>
+                <li key={m.id} className="px-4 py-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="block truncate text-ink">{m.title}</span>
+                      <span className="text-xs text-ink-muted">{m.target_date ? formatDate(m.target_date) : "No target date"}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-ink-muted">{m.completion_percent == null ? "No tasks linked" : `${m.completion_percent}%`}</span>
+                  </div>
+                  {m.completion_percent != null && <ProgressBar value={m.completion_percent} className="mt-1.5" label={`${m.title} progress`} />}
                 </li>
               ))}
             </ul>

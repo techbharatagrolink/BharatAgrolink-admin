@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { assertPermission } from "@/lib/auth/session";
-import { writeSeo } from "@/lib/services/admin/seo";
+import { loadSeo, writeSeo } from "@/lib/services/admin/seo";
 
 /*
  * SEO & AI Command Center writes. The permission is checked here and again by the API.
@@ -52,4 +52,62 @@ export async function toggleSeoPromptAction(id, isActive) {
   const result = await writeSeo(gate.user, `ai-prompts/${Number(id)}`, { method: "PATCH", body: { isActive: Boolean(isActive) } });
   if (result.ok) revalidatePath("/admin/seo", "layout");
   return result;
+}
+
+/* ---------- Tasks & milestones ---------- */
+
+async function seoWrite(action, path, options) {
+  const gate = await assertPermission("seo", action);
+  if (!gate.ok) return { ok: false, message: gate.message };
+  const result = await writeSeo(gate.user, path, options);
+  if (result.ok) revalidatePath("/admin/seo", "layout");
+  return result;
+}
+
+const orNull = (v) => (v === "" || v == null ? null : v);
+
+/** Creates a task (by hand or from a Website Health issue). */
+export async function createSeoTaskAction(input) {
+  return seoWrite("add", "tasks", {
+    body: {
+      title: String(input?.title ?? "").trim(),
+      description: String(input?.description ?? "").trim(),
+      module: input?.module || "other",
+      ownerId: orNull(input?.ownerId),
+      priority: input?.priority || "MEDIUM",
+      dueDate: orNull(input?.dueDate),
+      milestoneId: orNull(input?.milestoneId),
+      sourceType: input?.sourceType || "manual",
+      sourceId: orNull(input?.sourceId),
+    },
+  });
+}
+
+/** Updates a task; only the fields sent are changed. */
+export async function updateSeoTaskAction(id, patch) {
+  const body = {};
+  for (const key of ["title", "description", "module", "priority", "status", "note"]) if (patch?.[key] !== undefined) body[key] = patch[key];
+  for (const key of ["ownerId", "dueDate", "milestoneId", "evidence"]) if (patch?.[key] !== undefined) body[key] = orNull(patch[key]);
+  return seoWrite("edit", `tasks/${Number(id)}`, { method: "PATCH", body });
+}
+
+/** One task with its history, for the edit dialog. */
+export async function loadSeoTaskAction(id) {
+  const gate = await assertPermission("seo", "view");
+  if (!gate.ok) return { ok: false, message: gate.message };
+  const result = await loadSeo(gate.user, `tasks/${Number(id)}`);
+  return result.error ? { ok: false, message: result.error.message } : { ok: true, data: result.data };
+}
+
+export async function saveSeoMilestoneAction(id, input) {
+  const body = {
+    title: String(input?.title ?? "").trim(),
+    description: orNull(input?.description),
+    completionCriteria: orNull(input?.completionCriteria),
+    ownerId: orNull(input?.ownerId),
+    targetDate: orNull(input?.targetDate),
+    status: input?.status || "PENDING",
+    sortOrder: input?.sortOrder === "" || input?.sortOrder == null ? undefined : Number(input.sortOrder),
+  };
+  return id ? seoWrite("edit", `milestones/${Number(id)}`, { method: "PATCH", body }) : seoWrite("add", "milestones", { body });
 }

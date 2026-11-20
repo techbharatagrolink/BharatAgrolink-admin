@@ -6,6 +6,7 @@ import { formatDateTime, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 import { AuditRunButton } from "@/components/admin/seo/audit-run-button";
+import { NewTaskButton } from "@/components/admin/seo/task-editor";
 
 export const metadata = { title: "Website Health" };
 
@@ -98,7 +99,13 @@ export default async function SeoWebsiteHealthPage({ searchParams }) {
     status: ["OPEN", "RESOLVED", "IGNORED", "ALL"].includes(sp.status) ? sp.status : undefined,
     page: Number(sp.page) > 0 ? Number(sp.page) : undefined,
   };
-  const result = await loadSeo(page.user, "website-health", filters);
+  const [result, owners, milestones] = await Promise.all([
+    loadSeo(page.user, "website-health", filters),
+    page.canAdd ? loadSeo(page.user, "owners") : { data: [] },
+    page.canAdd ? loadSeo(page.user, "milestones") : { data: null },
+  ]);
+  const ownerList = Array.isArray(owners.data) ? owners.data : [];
+  const milestoneList = milestones.data?.milestones ?? [];
   const blocked = SeoLoadState({ result, what: "Website Health" });
   if (blocked)
     return (
@@ -192,6 +199,7 @@ export default async function SeoWebsiteHealthPage({ searchParams }) {
                   <th className="px-4 py-2 font-medium">URL</th>
                   <th className="px-4 py-2 font-medium">Evidence & fix</th>
                   <th className="px-4 py-2 font-medium">Seen</th>
+                  {page.canAdd && <th className="px-4 py-2 font-medium" aria-label="Actions" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line align-top">
@@ -218,6 +226,25 @@ export default async function SeoWebsiteHealthPage({ searchParams }) {
                       <span className="block">Last {formatDateTime(i.last_seen_at)}</span>
                       {i.resolved_at && <span className="block text-success-ink">Resolved {formatDateTime(i.resolved_at)}</span>}
                     </td>
+                    {page.canAdd && (
+                      <td className="px-4 py-2.5">
+                        {i.status === "OPEN" && (
+                          <NewTaskButton
+                            owners={ownerList}
+                            milestones={milestoneList}
+                            issue={{
+                              id: i.id,
+                              label: TYPE_LABEL[i.issue_type] ?? i.issue_type,
+                              path: path(i.url),
+                              url: i.url,
+                              severity: i.severity,
+                              fix: i.recommended_fix,
+                              evidence: JSON.stringify(i.evidence ?? {}).slice(0, 600),
+                            }}
+                          />
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
