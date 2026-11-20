@@ -116,3 +116,8 @@ export async function saveSeoMilestoneAction(id, input) {
 export async function runProductCheckAction() {
   return seoWrite("edit", "product-quality/run");
 }
+
+/** Recalculates today's readiness snapshot from the latest data. */
+export async function recalcReadinessAction() {
+  return seoWrite("edit", "readiness/recalculate");
+}

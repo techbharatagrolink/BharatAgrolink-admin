@@ -3,8 +3,9 @@ import { loadSeo, rangeParams } from "@/lib/services/admin/seo";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/page";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { IntegrationsCard, KpiCard, RangeNote, SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
+import { ProgressToTarget, ReadinessCategories, ReadinessGauge, RecalcButton } from "@/components/admin/seo/readiness";
 
 export const metadata = { title: "SEO & AI Command Center" };
 
@@ -56,10 +57,26 @@ export default async function SeoOverviewPage({ searchParams }) {
         <Card className="min-w-0">
           <CardHeader
             title="Overall Readiness Score"
-            description={`Target ${r.target}%+ · methodology ${r.methodologyVersion ?? "not set"}. Weights are editable in Settings.`}
+            description={
+              r.latest
+                ? `Calculated ${formatDateTime(r.latest.calculatedAt)} · methodology ${r.methodologyVersion} · weights editable in Settings. Click a category to see its checks.`
+                : `Target ${r.target}%+. Weights are editable in Settings.`
+            }
+            actions={page.canEdit ? <RecalcButton /> : null}
           />
           {r.latest ? (
-            <p className="px-4 py-6 text-sm text-ink">Score {formatNumber(r.latest.totalScore)} on {formatDate(r.latest.scoreDate)}</p>
+            <div className="grid gap-4 px-4 py-3 sm:grid-cols-[minmax(0,13rem)_1fr]">
+              <div>
+                <ReadinessGauge score={r.latest.totalScore} coverage={r.latest.coverage} target={r.target} />
+                {r.latest.totalScore != null && (
+                  <p className="mt-2 text-center text-xs text-ink-soft">
+                    {r.latest.toTarget > 0 ? `${formatNumber(r.latest.toTarget)} points to the ${r.target}% target` : `Target ${r.target}% reached`}
+                  </p>
+                )}
+                {r.reason && <p className="mt-2 text-center text-xs text-warning-ink">{r.reason}</p>}
+              </div>
+              <ReadinessCategories categories={r.categories} />
+            </div>
           ) : (
             <>
               <Unavailable>{r.reason} It will be calculated from audit checks once the data sources have synced; missing data never counts as a pass.</Unavailable>
@@ -76,16 +93,15 @@ export default async function SeoOverviewPage({ searchParams }) {
         </Card>
 
         <Card className="min-w-0">
-          <CardHeader title={`Progress to Target (${r.target}%+)`} description="Monthly readiness history. No future values are projected." />
+          <CardHeader
+            title={`Progress to Target (${r.target}%+)`}
+            description="Score at the end of each month (current month = latest). Actual values only; nothing is projected."
+          />
           {r.history.length ? (
-            <ul className="divide-y divide-line">
-              {r.history.map((h) => (
-                <li key={h.scoreDate} className="flex justify-between px-4 py-2 text-sm">
-                  <span>{formatDate(h.scoreDate)}</span>
-                  <span className="tabular">{h.totalScore == null ? "Partial data" : `${formatNumber(h.totalScore)}%`}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="px-4 py-3">
+              <ProgressToTarget history={r.history} target={r.target} />
+              {r.history.length === 1 && <p className="mt-1 text-xs text-ink-muted">The first month is being recorded; the line grows one point per month.</p>}
+            </div>
           ) : (
             <Unavailable>No readiness score has been recorded yet, so there is no history to chart.</Unavailable>
           )}
