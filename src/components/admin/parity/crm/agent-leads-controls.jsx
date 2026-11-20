@@ -25,7 +25,7 @@ export function AgentStatusFilter({ filters }) {
           aria-pressed={active === f.value}
           onClick={() => setParams({ status: f.value === "all" ? "" : f.value })}
           className={cn(
-            "h-8 rounded-full border px-3 text-[13px] font-medium transition-colors",
+            "h-8 rounded-full border px-3 text-small font-medium transition-colors",
             active === f.value ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line-strong bg-surface text-ink-soft hover:bg-surface-muted",
           )}
         >

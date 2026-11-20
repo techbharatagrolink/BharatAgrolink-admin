@@ -30,7 +30,7 @@ export function Collapsible({ id, title, icon: Icon, badge, actions, defaultOpen
         </h2>
         <div className="flex items-center gap-2">
           {actions}
-          {badge && <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-brand-700">{badge}</span>}
+          {badge && <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-micro font-bold tracking-wide text-brand-700">{badge}</span>}
         </div>
       </div>
       <div id={id} hidden={!open}>
@@ -45,7 +45,7 @@ export function ChipGroup({ label, options, value, onChange, columns = "sm:grid-
   const toggle = (v) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   return (
     <fieldset>
-      <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">{label}</legend>
+      <legend className="mb-1.5 text-small font-medium text-ink-soft">{label}</legend>
       <div className={cn("grid grid-cols-2 gap-2", columns)}>
         {options.map((o) => {
           const v = typeof o === "object" ? o.value : o;
@@ -76,7 +76,7 @@ export function ChipGroup({ label, options, value, onChange, columns = "sm:grid-
 
 export function MetaItem({ label, children }) {
   return (
-    <div className="flex items-baseline gap-1.5 text-[13px]">
+    <div className="flex items-baseline gap-1.5 text-small">
       <span className="text-ink-muted">{label}:</span>
       <strong className="text-ink">{children}</strong>
     </div>
@@ -87,7 +87,7 @@ export function MetaItem({ label, children }) {
 export function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="mt-0.5 min-w-0 break-words text-ink">{value ?? "—"}</dd>
     </div>
   );

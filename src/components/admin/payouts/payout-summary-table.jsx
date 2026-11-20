@@ -124,7 +124,7 @@ export function ExportMenu({ label, title, path, filters, payoutIds = [], column
         <ul className="p-1">
           {FORMATS.map(({ value, label: formatLabel, icon: Icon }) => (
             <li key={value}>
-              <a href={exportHref(path, filters, searchParams, value, payoutIds, chosen)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink hover:bg-surface-muted">
+              <a href={exportHref(path, filters, searchParams, value, payoutIds, chosen)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-small text-ink hover:bg-surface-muted">
                 <Icon className="size-4 text-ink-muted" aria-hidden /> {formatLabel}
               </a>
             </li>
@@ -231,7 +231,7 @@ function MonthPicker({ value, cycles, onChange }) {
                   aria-pressed={active}
                   onClick={() => onChange(active ? "" : ym)}
                   className={cn(
-                    "relative w-full rounded-md border px-2 py-1.5 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                    "relative w-full rounded-md border px-2 py-1.5 text-small transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                     active ? "border-brand-600 bg-brand-50 font-semibold text-brand-700" : "border-line text-ink hover:border-brand-200 hover:bg-surface-muted",
                   )}
                 >
@@ -317,10 +317,10 @@ function CycleStrip({ cycles }) {
                   )}
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[13px] font-semibold text-ink">{c.label.replace(/ \(.*\)$/, "")}</span>
+                    <span className="truncate text-small font-semibold text-ink">{c.label.replace(/ \(.*\)$/, "")}</span>
                     <Badge tone={STATE_TONE[c.state]}>{c.state}</Badge>
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-ink-muted tabular">
+                  <span className="mt-0.5 block text-micro text-ink-muted tabular">
                     {c.from.slice(8)}–{c.to.slice(8)} {monthLabel(c.month)} · {formatNumber(c.vendors)} vendors · {formatNumber(c.items)} items
                   </span>
                   <span className="mt-1 block truncate text-xs text-success-ink tabular">Paid BSA {formatINR(c.paidBsa)}</span>

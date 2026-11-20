@@ -120,7 +120,7 @@ export function AdjustStock({ item, initialAction = "ADD", label = "Adjust", siz
           {step === "form" ? (
             <>
               <fieldset>
-                <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">What happened?</legend>
+                <legend className="mb-1.5 text-small font-medium text-ink-soft">What happened?</legend>
                 <div className="grid gap-1.5">
                   {ADJUST_ACTIONS.map((a) => (
                     <label

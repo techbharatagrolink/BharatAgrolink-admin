@@ -206,7 +206,7 @@ function CardList({ data, error, pending, page, onPage, onOpenProduct }) {
         ]}
       />
       {data.pageCount > 1 && (
-        <div className="flex items-center justify-between text-[13px] text-ink-muted">
+        <div className="flex items-center justify-between text-small text-ink-muted">
           <span>Page {formatNumber(page)} of {formatNumber(data.pageCount)} · {formatNumber(data.total)} products</span>
           <div className="flex gap-1.5">
             <Button size="sm" disabled={page <= 1 || pending} onClick={() => onPage(page - 1)}>Previous</Button>

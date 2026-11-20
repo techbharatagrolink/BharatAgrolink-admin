@@ -131,7 +131,7 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show." })
               <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
                 {rest.map((c) => (
                   <div key={c.key} className="min-w-0">
-                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{c.label}</dt>
+                    <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{c.label}</dt>
                     <dd className="mt-0.5 min-w-0 break-words text-ink">{cellValue(c, row, i)}</dd>
                   </div>
                 ))}

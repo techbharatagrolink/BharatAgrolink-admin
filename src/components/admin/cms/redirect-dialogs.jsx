@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { formatDateTime, formatNumber } from "@/lib/format";
@@ -236,21 +237,16 @@ export function ImportDialog({ canUpdate, onClose, onImported }) {
     >
       <div className="space-y-4">
         {error && <Notice tone="danger">{error}</Notice>}
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong px-4 py-7 text-center hover:bg-surface-muted">
-          <Upload className="size-5 text-ink-muted" aria-hidden />
-          <span className="text-sm font-medium break-all text-ink">{file ? file.name : "Choose an .xlsx or .csv file"}</span>
-          <span className="text-xs text-ink-muted">Up to 5 MB and 20,000 rows. New rules are active 301 redirects.</span>
-          <input
-            type="file"
-            accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            className="sr-only"
-            onChange={(e) => {
-              setFile(e.target.files?.[0] ?? null);
-              setPreview(null);
-              setError(null);
-            }}
-          />
-        </label>
+        <FileInput
+          accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          maxBytes={5 * 1024 * 1024}
+          hint="Up to 20,000 rows. New rules are active 301 redirects."
+          onChange={(e) => {
+            setFile(e.target.files?.[0] ?? null);
+            setPreview(null);
+            setError(null);
+          }}
+        />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Checkbox
             label="Update the destination when a source already has a rule"
@@ -261,7 +257,7 @@ export function ImportDialog({ canUpdate, onClose, onImported }) {
               setPreview(null);
             }}
           />
-          <a href={SAMPLE_HREF} className="inline-flex items-center gap-1 text-[13px] text-brand-700 hover:underline">
+          <a href={SAMPLE_HREF} className="inline-flex items-center gap-1 text-small text-brand-700 hover:underline">
             <Download className="size-3.5" aria-hidden /> Sample template
           </a>
         </div>
@@ -290,7 +286,7 @@ function ImportPreview({ preview, updateExisting }) {
       {preview.preview.length > 0 && (
         <div className="rounded-lg border border-line">
           <div className="hidden overflow-x-auto xl:block">
-            <table className="w-full min-w-max text-left text-[12.5px]">
+            <table className="w-full min-w-max text-left text-label">
               <thead>
                 <tr className="border-b border-line bg-surface-muted">
                   <th className="px-3 py-2 font-semibold text-ink-muted">Row</th>
@@ -324,7 +320,7 @@ function ImportPreview({ preview, updateExisting }) {
           </div>
           <ul className="divide-y divide-line xl:hidden">
             {preview.preview.map((r) => (
-              <li key={r.row} className="space-y-1.5 px-3 py-2.5 text-[12.5px]">
+              <li key={r.row} className="space-y-1.5 px-3 py-2.5 text-label">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-ink-muted tabular">Row {r.row}</span>
                   <span>
@@ -337,11 +333,11 @@ function ImportPreview({ preview, updateExisting }) {
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Source path</p>
+                  <p className="text-micro font-medium uppercase tracking-wide text-ink-muted">Source path</p>
                   <p className="break-all" title={r.sourceUrl}><code>{showPath(r.sourcePath)}</code></p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Destination</p>
+                  <p className="text-micro font-medium uppercase tracking-wide text-ink-muted">Destination</p>
                   <p className="break-all" title={r.targetUrl}>{r.targetUrl}</p>
                 </div>
               </li>
@@ -353,8 +349,8 @@ function ImportPreview({ preview, updateExisting }) {
 
       {preview.skipped.length > 0 && (
         <details className="rounded-lg border border-line" open={!preview.validRows}>
-          <summary className="cursor-pointer px-3 py-2 text-[13px] font-medium text-ink">Skipped rows ({formatNumber(preview.skippedCount)})</summary>
-          <ul className="max-h-56 divide-y divide-line overflow-y-auto border-t border-line text-[12.5px]">
+          <summary className="cursor-pointer px-3 py-2 text-small font-medium text-ink">Skipped rows ({formatNumber(preview.skippedCount)})</summary>
+          <ul className="max-h-56 divide-y divide-line overflow-y-auto border-t border-line text-label">
             {preview.skipped.map((s) => (
               <li key={`${s.row}-${s.reason}`} className="flex gap-3 px-3 py-1.5">
                 <span className="w-14 shrink-0 text-ink-muted tabular">Row {s.row}</span>
@@ -420,7 +416,7 @@ export function TestDialog({ initialUrl = "", siteUrl, onClose }) {
             <Notice tone="success" title={`HTTP ${d.statusCode} redirect`}>
               <DestinationLink target={d.destination} siteUrl={siteUrl} className="inline-flex max-w-full items-center gap-1 font-medium break-all underline" />
             </Notice>
-            <dl className="divide-y divide-line rounded-lg border border-line text-[13px]">
+            <dl className="divide-y divide-line rounded-lg border border-line text-small">
               {[
                 ["Requested path", <code key="p">{showPath(d.testedPath)}</code>],
                 ["Matched rule", `#${d.ruleId} · ${d.sourceUrl}`],
@@ -471,7 +467,7 @@ export function LogsDialog({ onClose }) {
       {state.logs.length > 0 && (
         <div className="rounded-lg border border-line">
           <div className="hidden overflow-x-auto xl:block">
-            <table className="w-full min-w-max text-left text-[12.5px]">
+            <table className="w-full min-w-max text-left text-label">
               <thead>
                 <tr className="border-b border-line bg-surface-muted">
                   {["#", "Action", "Path", "Details", "By", "IP", "When"].map((h) => (
@@ -502,28 +498,28 @@ export function LogsDialog({ onClose }) {
           </div>
           <ul className="divide-y divide-line xl:hidden">
             {state.logs.map((log) => (
-              <li key={log.id} className="space-y-1.5 px-3 py-2.5 text-[12.5px]">
+              <li key={log.id} className="space-y-1.5 px-3 py-2.5 text-label">
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone={ACTION_TONE[log.action] ?? "neutral"}>{log.action.replace(/_/g, " ")}</Badge>
                   <span className="text-ink-muted">{formatDateTime(log.createdAt)}</span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Path</p>
+                  <p className="text-micro font-medium uppercase tracking-wide text-ink-muted">Path</p>
                   <p className="break-all"><code>{log.sourcePath && !["*", "bulk"].includes(log.sourcePath) ? showPath(log.sourcePath) : log.sourcePath ?? "—"}</code></p>
                 </div>
                 {log.details && (
                   <div className="min-w-0">
-                    <p className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Details</p>
+                    <p className="text-micro font-medium uppercase tracking-wide text-ink-muted">Details</p>
                     <p className="break-words text-ink-soft">{log.details}</p>
                   </div>
                 )}
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                   <div className="min-w-0">
-                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">By</dt>
+                    <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">By</dt>
                     <dd className="truncate text-ink-soft">{log.performedBy ?? "—"}</dd>
                   </div>
                   <div className="min-w-0">
-                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">IP</dt>
+                    <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">IP</dt>
                     <dd className="truncate tabular text-ink-muted">{log.ipAddress ?? "—"}</dd>
                   </div>
                 </dl>

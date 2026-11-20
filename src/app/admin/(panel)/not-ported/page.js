@@ -30,7 +30,7 @@ export default async function NotPortedPage({ searchParams }) {
       <Notice tone="warning" title="Not moved yet">
         {link ? (
           <>
-            PHP page: <code className="font-mono text-[13px]">{link}</code>
+            PHP page: <code className="font-mono text-small">{link}</code>
           </>
         ) : (
           "No PHP page was given."

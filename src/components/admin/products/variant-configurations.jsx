@@ -241,7 +241,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
                     type="button"
                     disabled={busy}
                     onClick={() => toggleStatus(row)}
-                    className={`mt-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
+                    className={`mt-2 rounded-full px-2 py-0.5 text-micro font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
                   >
                     {row.active ? "Active" : "Inactive"}
                   </button>
@@ -259,9 +259,9 @@ export function VariantConfigurations({ productName, productType, attributes = [
                     {[["mrp", "MRP"], ["nrv", "NRV"], ["display", "Display Price"], ["gstPercent", "GST %"], ["stock", "Stock"]].map(([key, label]) => (
                       priceLocked && (key === "display" || key === "gstPercent") ? (
                         <div key={key}>
-                          <p className="text-[13px] font-medium text-ink-soft">{label}</p>
+                          <p className="text-small font-medium text-ink-soft">{label}</p>
                           <p className="mt-1 text-sm tabular-nums text-ink">{row[key] ?? "—"}</p>
-                          <p className="text-[11px] text-ink-muted">Set by Pricing &amp; Tax</p>
+                          <p className="text-micro text-ink-muted">Set by Pricing &amp; Tax</p>
                         </div>
                       ) : (
                         <Field key={key} label={label}>
@@ -353,7 +353,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
                           disabled={busy || editing}
                           onClick={() => toggleStatus(row)}
                           title={row.active ? "Click to deactivate" : "Click to activate"}
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
+                          className={`rounded-full px-2 py-0.5 text-micro font-medium ${row.active ? "bg-success-bg text-success-ink" : "bg-danger-bg text-danger-ink"}`}
                         >
                           {row.active ? "Active" : "Inactive"}
                         </button>
@@ -412,7 +412,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
                           <Input id={id} className="min-w-0 flex-1" type="number" min="0" step="0.01" value={row.weightValue} onChange={(event) => patch(index, "weightValue", event.target.value)} />
                           <Select className="w-24 shrink-0" value={row.weightUnit} onChange={(event) => patch(index, "weightUnit", event.target.value)} options={UNITS} aria-label="Weight unit" />
                         </div>
-                        <p className="mt-1 text-[11px] text-ink-muted">{toVariantGrams(row.weightValue, row.weightUnit) ? `${toVariantGrams(row.weightValue, row.weightUnit)} gm` : "0 gm"}</p>
+                        <p className="mt-1 text-micro text-ink-muted">{toVariantGrams(row.weightValue, row.weightUnit) ? `${toVariantGrams(row.weightValue, row.weightUnit)} gm` : "0 gm"}</p>
                       </>
                     )}
                   </Field>
@@ -466,7 +466,7 @@ export function VariantConfigurations({ productName, productType, attributes = [
                       <Input className="w-20" type="number" min="0" step="0.01" value={row.weightValue} onChange={(event) => patch(index, "weightValue", event.target.value)} />
                       <Select className="w-20" value={row.weightUnit} onChange={(event) => patch(index, "weightUnit", event.target.value)} options={UNITS} />
                     </div>
-                    <p className="mt-1 text-[11px] text-ink-muted">{toVariantGrams(row.weightValue, row.weightUnit) ? `${toVariantGrams(row.weightValue, row.weightUnit)} gm` : "0 gm"}</p>
+                    <p className="mt-1 text-micro text-ink-muted">{toVariantGrams(row.weightValue, row.weightUnit) ? `${toVariantGrams(row.weightValue, row.weightUnit)} gm` : "0 gm"}</p>
                   </td>
                   {["mrp", "nrv", "gstPercent", "stock"].map((key) => (
                     <td key={key} className="pr-2 py-2"><Input className="w-20" type="number" min="0" step="0.01" value={row[key]} onChange={(event) => patch(index, key, event.target.value)} /></td>

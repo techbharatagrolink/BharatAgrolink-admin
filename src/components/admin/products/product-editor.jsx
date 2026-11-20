@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
 import { effectiveStockStatus, STOCK_STATUSES, toStockStatus } from "@/lib/content/admin/stock";
@@ -435,6 +436,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <div className="mt-3 flex flex-wrap gap-2">
                 {(creating ? draftImages : photos.map((url) => ({ url }))).map((item) => (
                   <div key={item.url} className="w-28">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
                     <img src={item.url} alt="" className="h-28 w-28 rounded-lg border object-cover" />
                     <button type="button" className="mt-1 text-xs text-danger-ink" disabled={pending} onClick={() => {
                       if (creating) {
@@ -465,8 +467,8 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 if ([...data.keys()].length) run(() => uploadProductImagesAction(product.id, data));
                 event.target.reset();
               }}>
-                <Field label="Featured image">{({ id }) => <Input id={id} className="max-w-full" name="featured" type="file" accept="image/jpeg,image/png,image/webp" />}</Field>
-                <Field label="Gallery">{({ id }) => <Input id={id} className="max-w-full" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />}</Field>
+                <Field label="Featured image">{({ id }) => <FileInput id={id} name="featured" accept="image/jpeg,image/png,image/webp" hint="The main photo shown on the product card." />}</Field>
+                <Field label="Gallery">{({ id }) => <FileInput id={id} name="images" accept="image/jpeg,image/png,image/webp" multiple hint="Extra photos for the product page." />}</Field>
                 <Field label="Video URL" className="sm:col-span-2">{({ id }) => <Input id={id} value={form.videoUrl} onChange={set("videoUrl")} />}</Field>
                 <Button type="submit" loading={pending}>{creating ? "Add images" : "Upload to Cloudflare R2"}</Button>
               </form>
@@ -493,7 +495,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                 <p className="text-xs text-ink-muted">Description, specifications, usage and FAQ</p>
               </div>
               <div>
-                <p className="mb-1.5 text-[13px] font-medium text-ink-soft">Product Full Details <span className="text-danger-ink">*</span></p>
+                <p className="mb-1.5 text-small font-medium text-ink-soft">Product Full Details <span className="text-danger-ink">*</span></p>
                 <ProductHtmlEditor value={form.details} onChange={(details) => setForm((current) => ({ ...current, details }))} />
               </div>
               <div>
@@ -573,6 +575,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
         <aside className="min-w-0 space-y-3">
           <div className="rounded-xl border border-line bg-surface p-3">
             <p className="text-xs font-semibold text-ink-muted">Product Preview</p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
             {photos[0] ? <img src={photos[0]} alt="" className="mt-2 h-40 w-full rounded-lg object-contain" /> : <div className="mt-2 flex h-40 items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted">No image</div>}
             <p className="mt-2 break-words text-sm font-semibold text-ink">{form.name || "Untitled product"}</p>
             <p className="text-xs text-ink-muted">{selectedCategory[0]?.label || "No category"} · SKU {creating ? "assigned on save" : (product.sku || "—")}</p>
@@ -587,7 +590,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
               <div className="mt-2 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-line text-left text-[11px] text-ink-muted">
+                    <tr className="border-b border-line text-left text-micro text-ink-muted">
                       <th scope="col" className="py-1 pr-2 font-medium">Service</th>
                       <th scope="col" className="py-1 pr-2 font-medium">Category</th>
                       <th scope="col" className="py-1 text-right font-medium">Charge</th>
@@ -629,7 +632,7 @@ export function ProductEditor({ product: source, options, vendorName, mode = "ed
                       <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold">RED ALERT: Take Rate {takeRate}%</span>
-                        <p className="text-[11px] text-rose-700 font-normal">Below 35% minimum threshold!</p>
+                        <p className="text-micro text-rose-700 font-normal">Below 35% minimum threshold!</p>
                       </div>
                     </div>
                   ) : (

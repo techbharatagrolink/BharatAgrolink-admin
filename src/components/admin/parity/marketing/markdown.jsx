@@ -16,7 +16,7 @@ function inline(text, keyBase) {
     .map((part, i) => {
       const key = `${keyBase}-${i}`;
       if (/^(\*\*|__).+\1$/.test(part)) return <strong key={key} className="font-semibold text-ink">{part.slice(2, -2)}</strong>;
-      if (/^`.+`$/.test(part)) return <code key={key} className="rounded bg-surface-muted px-1 py-0.5 text-[12px]">{part.slice(1, -1)}</code>;
+      if (/^`.+`$/.test(part)) return <code key={key} className="rounded bg-surface-muted px-1 py-0.5 text-label">{part.slice(1, -1)}</code>;
       const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part);
       if (link) {
         return /^https?:\/\//i.test(link[2]) ? (
@@ -32,7 +32,7 @@ function inline(text, keyBase) {
     });
 }
 
-const HEADING_CLASSES = ["text-lg font-semibold", "text-base font-semibold", "text-[15px] font-semibold", "text-sm font-semibold"];
+const HEADING_CLASSES = ["text-lg font-semibold", "text-base font-semibold", "text-subheading font-semibold", "text-sm font-semibold"];
 
 function parse(source, numberedHeadings) {
   const lines = String(source ?? "")
@@ -141,7 +141,7 @@ export function Markdown({ source, className, numberedHeadings = false }) {
           const [head, ...body] = block.rows;
           return (
             <div key={key} className="overflow-x-auto">
-              <table className="w-full border-collapse text-[13px]">
+              <table className="w-full border-collapse text-small">
                 {head && (
                   <thead>
                     <tr>

@@ -96,7 +96,7 @@ function RemarkNote({ item }) {
   return (
     <div>
       <p className="break-words whitespace-pre-wrap text-ink">{item.text}</p>
-      <p className="text-[11px] text-ink-muted">
+      <p className="text-micro text-ink-muted">
         {item.by || "Unknown"}
         {when ? ` · ${when}` : ""}
       </p>
@@ -128,7 +128,7 @@ function RemarksCell({ remarks, orderId }) {
           }}
         >
           <MessageSquare className="size-3.5" aria-hidden />
-          {count > 1 ? <span className="text-[11px] font-semibold tabular text-brand-700">{count}</span> : null}
+          {count > 1 ? <span className="text-micro font-semibold tabular text-brand-700">{count}</span> : null}
         </button>
       </div>
       <Dialog open={open} onClose={() => setOpen(false)} title="Remarks" description={orderId ? `Order ${orderId}` : "Every note on this order"} size="md">
@@ -226,7 +226,7 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
       >
         {isAlert && <AlertTriangle className="size-3.5 text-rose-600 shrink-0" aria-label="Take rate below 35% alert" />}
         {formatPercent(num)}
-        {isAlert && <span className="text-[10px] uppercase font-bold tracking-wider text-rose-700 bg-rose-200/80 px-1 py-0.2 rounded">Low</span>}
+        {isAlert && <span className="text-micro uppercase font-bold tracking-wider text-rose-700 bg-rose-200/80 px-1 py-0.2 rounded">Low</span>}
       </span>
     ) : (
       <span className="text-ink-muted">—</span>
@@ -262,7 +262,7 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
           return (
             <span
               key={idx}
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200"
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-micro font-medium bg-blue-50 text-blue-700 border border-blue-200"
             >
               {name}
             </span>
@@ -295,7 +295,7 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
         {sign}{vKg.toFixed(2)} kg
         <span
           className={cn(
-            "text-[10px] uppercase font-bold tracking-wider px-1 py-0.5 rounded",
+            "text-micro uppercase font-bold tracking-wider px-1 py-0.5 rounded",
             isAlert ? "text-rose-700 bg-rose-200/80" : isWarning ? "text-amber-700 bg-amber-200/80" : "text-emerald-700 bg-emerald-200/80"
           )}
         >
@@ -313,11 +313,11 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
       <div className="flex flex-col min-w-0">
         <span className="font-semibold text-ink tabular flex items-center gap-1 text-xs">
           {sKg >= 1 ? `${sKg.toFixed(2)} kg` : `${Math.round(sKg * 1000)}g`}
-          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-1 py-0.2 rounded">
+          <span className="text-micro font-bold text-emerald-700 bg-emerald-100 border border-emerald-200 px-1 py-0.2 rounded">
             Courier
           </span>
         </span>
-        <span className="text-[11px] text-ink-muted truncate">
+        <span className="text-micro text-ink-muted truncate">
           Catalog: {catalogLabel ? <strong className="font-medium text-ink-soft">{catalogLabel}</strong> : "—"}
         </span>
       </div>
@@ -349,7 +349,7 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
         </Link>
       )
     ) : (
-      <span className={cn(column.type === "mono" && "font-mono text-[12.5px]", column.emphasis && "font-medium text-ink", danger && "inline-flex items-center gap-1 font-bold text-danger-ink")}>
+      <span className={cn(column.type === "mono" && "font-mono text-label", column.emphasis && "font-medium text-ink", danger && "inline-flex items-center gap-1 font-bold text-danger-ink")}>
         {text}
         {danger && <Clock className="size-3.5" aria-label="Overdue" />}
       </span>

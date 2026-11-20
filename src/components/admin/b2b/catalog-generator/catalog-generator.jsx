@@ -117,13 +117,13 @@ function ProductRow({ product, vendor, selected, onToggle }) {
         <img alt="" src={product.image || createProductPlaceholder(product)} className="size-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = createProductPlaceholder(product); }} />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold text-ink">{product.name}</p>
-        <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11.5px] text-ink-muted">
+        <p className="truncate text-small font-semibold text-ink">{product.name}</p>
+        <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-micro text-ink-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {vendor && <img alt="" src={vendor.logo || createVendorPlaceholder(vendor)} className="size-3.5 shrink-0 rounded-[3px] object-cover" />}
           <span className="truncate">{vendor ? vendor.name : "Vendor information unavailable"}</span>
         </p>
-        <p className="mt-0.5 truncate text-[11px] text-ink-muted/80">{product.sku} · {product.category}</p>
+        <p className="mt-0.5 truncate text-micro text-ink-muted/80">{product.sku} · {product.category}</p>
       </div>
       <span className={cn("flex size-[18px] items-center justify-center rounded border-[1.5px]", selected ? "border-brand-600 bg-brand-600 text-white" : "border-line-strong")} aria-hidden>
         {selected && <Check className="size-3" strokeWidth={3} />}

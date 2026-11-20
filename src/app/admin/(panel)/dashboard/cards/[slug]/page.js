@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { DataTable } from "@/components/data-table/data-table";
 import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 const PAGE_SIZES = [20, 25, 50, 100];
 const STATUS_OPTIONS = [
@@ -199,11 +200,11 @@ export default async function DashboardCardPage({ params, searchParams }) {
         </div>
       )}
       {data.salesmen && data.salesmen.length > 0 && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5 bg-gray-50/70">
+        <div className="mb-6 rounded-xl border border-line bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line px-5 py-3.5 bg-surface-muted/70">
             <div>
-              <h3 className="text-sm font-bold text-gray-900 tracking-tight">Sales person breakdown</h3>
-              <p className="text-xs text-gray-500">Orders and sales volume grouped by sales agent for {data.period}</p>
+              <h3 className="text-sm font-bold text-ink tracking-tight">Sales person breakdown</h3>
+              <p className="text-xs text-ink-muted">Orders and sales volume grouped by sales agent for {data.period}</p>
             </div>
             <div className="flex items-center gap-2">
               {query?.q && (
@@ -219,45 +220,30 @@ export default async function DashboardCardPage({ params, searchParams }) {
               </span>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50/80 text-xs font-semibold text-gray-500 border-b border-gray-100">
-                <tr>
-                  <th className="py-3 px-5 w-20 text-gray-400">S.No.</th>
-                  <th className="py-3 px-5">Sales person</th>
-                  <th className="py-3 px-5 text-right">Orders</th>
-                  <th className="py-3 px-5 text-right">Sales</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.salesmen.map((s) => {
-                  const isSelected = query?.q && String(query.q).toLowerCase() === s.salesman.toLowerCase();
-                  return (
-                    <tr
-                      key={s.salesman}
-                      className={`hover:bg-brand-50/40 transition-colors ${isSelected ? "bg-brand-50/70 font-semibold" : ""}`}
-                    >
-                      <td className="py-3 px-5 font-mono text-xs text-gray-400">{s.sno}</td>
-                      <td className="py-3 px-5 font-medium text-gray-900">
-                        <Link
-                          href={dashboardFilterHref("/admin/dashboard/cards/total-sales-b2c", {
-                            ...query,
-                            q: isSelected ? "" : s.salesman === "Unassigned" ? "" : s.salesman,
-                          })}
-                          className="hover:text-brand-700 hover:underline"
-                        >
-                          {s.salesman}
-                          {isSelected && <span className="ml-2 text-xs text-brand-600 font-normal">(filtering sub-orders)</span>}
-                        </Link>
-                      </td>
-                      <td className="py-3 px-5 text-right font-mono text-gray-700">{formatNumber(s.orders)}</td>
-                      <td className="py-3 px-5 text-right font-semibold text-gray-900 tabular-nums">{formatINR(s.revenue)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <MiniTable
+            rows={data.salesmen.map((s) => ({ ...s, id: s.salesman, isSelected: Boolean(query?.q && String(query.q).toLowerCase() === s.salesman.toLowerCase()) }))}
+            columns={[
+              { key: "sno", label: "S.No.", render: (s) => <span className="font-mono text-xs text-ink-muted">{s.sno}</span> },
+              {
+                key: "salesman",
+                label: "Sales person",
+                render: (s) => (
+                  <Link
+                    href={dashboardFilterHref("/admin/dashboard/cards/total-sales-b2c", {
+                      ...query,
+                      q: s.isSelected ? "" : s.salesman === "Unassigned" ? "" : s.salesman,
+                    })}
+                    className={`text-ink hover:text-brand-700 hover:underline ${s.isSelected ? "font-semibold" : "font-medium"}`}
+                  >
+                    {s.salesman}
+                    {s.isSelected && <span className="ml-2 text-xs font-normal text-brand-600">(filtering sub-orders)</span>}
+                  </Link>
+                ),
+              },
+              { key: "orders", label: "Orders", align: "right", render: (s) => <span className={`font-mono text-ink-soft ${s.isSelected ? "font-semibold" : ""}`}>{formatNumber(s.orders)}</span> },
+              { key: "revenue", label: "Sales", align: "right", render: (s) => <span className="font-semibold text-ink tabular-nums">{formatINR(s.revenue)}</span> },
+            ]}
+          />
         </div>
       )}
       <DataTable

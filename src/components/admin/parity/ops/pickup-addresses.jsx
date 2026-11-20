@@ -168,7 +168,7 @@ export function PickupAddresses({ rows, canAdd }) {
           <Button size="sm" disabled={current <= 1} onClick={() => setPage(current - 1)}>
             Previous
           </Button>
-          <span className="px-2 text-[13px] text-ink-muted">
+          <span className="px-2 text-small text-ink-muted">
             Page {current} of {pages}
           </span>
           <Button size="sm" disabled={current >= pages} onClick={() => setPage(current + 1)}>

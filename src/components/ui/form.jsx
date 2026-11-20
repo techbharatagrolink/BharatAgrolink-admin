@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const controlBase =
-  "w-full min-w-0 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink placeholder:text-ink-muted transition-colors hover:border-ink-muted focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 disabled:bg-surface-muted disabled:text-ink-muted aria-invalid:border-danger aria-invalid:ring-danger/15";
+  "w-full min-w-0 rounded-md border border-line-strong bg-surface px-3 text-field text-ink placeholder:text-ink-muted transition-colors hover:border-ink-muted focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 disabled:bg-surface-muted disabled:text-ink-muted aria-invalid:border-danger aria-invalid:ring-danger/15";
 
 export function Input({ className, ...props }) {
   return <input className={cn(controlBase, "h-9", className)} {...props} />;
@@ -42,7 +42,7 @@ export function Field({ label, hint, error, required, children, className, htmlF
   return (
     <div className={cn("min-w-0 space-y-1.5", className)}>
       {label && (
-        <label htmlFor={id} className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor={id} className="block text-label font-medium text-ink-soft">
           {label}
           {required && <span className="ml-0.5 text-danger-ink" aria-hidden>*</span>}
         </label>

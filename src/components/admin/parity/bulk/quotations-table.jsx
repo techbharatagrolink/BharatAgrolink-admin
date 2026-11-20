@@ -11,6 +11,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import { GridTable } from "@/components/data-table/grid-table";
 import { BulkPager } from "./bulk-list";
 
 /** quotations.php grid with view, convert-to-order and delete. */
@@ -44,75 +45,74 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
         <p className="px-4 py-8 text-center text-sm text-ink-muted">No quotations match the filters.</p>
       ) : (
         <>
-          <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-            <table className="w-full min-w-max text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-line text-xs text-ink-muted">
-                  {["Quotation #", "Date", "Customer", "Mobile", "Email", "Company", "Invoice", "Packages", "Status", "Converted", "Valid Until", ""].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-2 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((q) => (
-                  <tr key={q.id} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2 font-mono text-xs">
-                      <Link href={`/admin/bulk-orders/quotations/${q.id}`} className="text-brand-700 hover:underline">
-                        {q.quotationNumber}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2 text-xs">{formatDate(q.quotationDate)}</td>
-                    <td className="px-3 py-2 font-medium text-ink">{q.customerName || "—"}</td>
-                    <td className="px-3 py-2">{q.customerMobile || "—"}</td>
-                    <td className="px-3 py-2">{q.customerEmail || "—"}</td>
-                    <td className="px-3 py-2">{q.customerCompany || "—"}</td>
-                    <td className="px-3 py-2 tabular">{inr(q.invoiceValue)}</td>
-                    <td className="px-3 py-2 tabular">{q.noOfPackages}</td>
-                    <td className="px-3 py-2">
-                      <StatusBadge status={q.status} />
-                    </td>
-                    <td className="px-3 py-2">
-                      {q.converted ? (
-                        q.orderId ? (
-                          <Link href={`/admin/bulk-orders/orders/${encodeURIComponent(q.orderId)}`} className="text-brand-700 hover:underline">
-                            {q.orderId}
-                          </Link>
-                        ) : (
-                          <Badge tone="success">Converted</Badge>
-                        )
-                      ) : (
-                        <Badge tone="neutral">No</Badge>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-xs">{q.validUntil ? formatDate(q.validUntil) : "—"}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex gap-1">
-                        <Link href={`/admin/bulk-orders/quotations/${q.id}`} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${q.quotationNumber}`}>
-                          <Eye className="size-4" aria-hidden />
+          <div className="hidden xl:block">
+            <GridTable
+              rows={rows}
+              rowKey="id"
+              columns={[
+                {
+                  key: "number",
+                  label: "Quotation #",
+                  render: (q) => (
+                    <Link href={`/admin/bulk-orders/quotations/${q.id}`} className="font-mono text-xs text-brand-700 hover:underline">
+                      {q.quotationNumber}
+                    </Link>
+                  ),
+                },
+                { key: "date", label: "Date", render: (q) => <span className="text-xs">{formatDate(q.quotationDate)}</span> },
+                { key: "customer", label: "Customer", render: (q) => <span className="font-medium text-ink">{q.customerName || "—"}</span> },
+                { key: "mobile", label: "Mobile", render: (q) => q.customerMobile || "—" },
+                { key: "email", label: "Email", render: (q) => q.customerEmail || "—" },
+                { key: "company", label: "Company", render: (q) => q.customerCompany || "—" },
+                { key: "invoice", label: "Invoice", align: "right", render: (q) => inr(q.invoiceValue) },
+                { key: "packages", label: "Packages", align: "right", render: (q) => q.noOfPackages },
+                { key: "status", label: "Status", render: (q) => <StatusBadge status={q.status} /> },
+                {
+                  key: "converted",
+                  label: "Converted",
+                  render: (q) =>
+                    q.converted ? (
+                      q.orderId ? (
+                        <Link href={`/admin/bulk-orders/orders/${encodeURIComponent(q.orderId)}`} className="text-brand-700 hover:underline">
+                          {q.orderId}
                         </Link>
-                        {canEdit && !q.converted && (
-                          <Button size="icon-sm" variant="ghost" onClick={() => setPending({ kind: "convert", row: q })} aria-label={`Convert ${q.quotationNumber} to order`}>
-                            <Repeat className="size-4" aria-hidden />
-                          </Button>
-                        )}
-                        {canDelete && !q.converted && (
-                          <Button size="icon-sm" variant="ghost" onClick={() => setPending({ kind: "delete", row: q })} aria-label={`Delete ${q.quotationNumber}`}>
-                            <Trash2 className="size-4 text-danger-ink" aria-hidden />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      ) : (
+                        <Badge tone="success">Converted</Badge>
+                      )
+                    ) : (
+                      <Badge tone="neutral">No</Badge>
+                    ),
+                },
+                { key: "valid", label: "Valid Until", render: (q) => <span className="text-xs">{q.validUntil ? formatDate(q.validUntil) : "—"}</span> },
+                {
+                  key: "actions",
+                  label: "Actions",
+                  width: 132,
+                  render: (q) => (
+                    <div className="flex gap-1">
+                      <Link href={`/admin/bulk-orders/quotations/${q.id}`} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${q.quotationNumber}`}>
+                        <Eye className="size-4" aria-hidden />
+                      </Link>
+                      {canEdit && !q.converted && (
+                        <Button size="icon-sm" variant="ghost" onClick={() => setPending({ kind: "convert", row: q })} aria-label={`Convert ${q.quotationNumber} to order`}>
+                          <Repeat className="size-4" aria-hidden />
+                        </Button>
+                      )}
+                      {canDelete && !q.converted && (
+                        <Button size="icon-sm" variant="ghost" onClick={() => setPending({ kind: "delete", row: q })} aria-label={`Delete ${q.quotationNumber}`}>
+                          <Trash2 className="size-4 text-danger-ink" aria-hidden />
+                        </Button>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
 
           <div className="space-y-3 p-3 xl:hidden">
             {rows.map((q) => (
-              <div key={q.id} className="space-y-2.5 rounded-lg border border-line p-3 text-[13px]">
+              <div key={q.id} className="space-y-2.5 rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <Link href={`/admin/bulk-orders/quotations/${q.id}`} className="font-mono text-xs font-semibold text-brand-700 hover:underline">{q.quotationNumber}</Link>
@@ -121,14 +121,14 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
                   <StatusBadge status={q.status} />
                 </div>
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Date</dt><dd className="text-ink">{formatDate(q.quotationDate)}</dd></div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Mobile</dt><dd className="text-ink">{q.customerMobile || "—"}</dd></div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Email</dt><dd className="truncate text-ink">{q.customerEmail || "—"}</dd></div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Company</dt><dd className="truncate text-ink">{q.customerCompany || "—"}</dd></div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Invoice</dt><dd className="text-ink tabular">{inr(q.invoiceValue)}</dd></div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Packages</dt><dd className="text-ink tabular">{q.noOfPackages}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Date</dt><dd className="text-ink">{formatDate(q.quotationDate)}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Mobile</dt><dd className="text-ink">{q.customerMobile || "—"}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Email</dt><dd className="truncate text-ink">{q.customerEmail || "—"}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Company</dt><dd className="truncate text-ink">{q.customerCompany || "—"}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Invoice</dt><dd className="text-ink tabular">{inr(q.invoiceValue)}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Packages</dt><dd className="text-ink tabular">{q.noOfPackages}</dd></div>
                   <div>
-                    <dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Converted</dt>
+                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Converted</dt>
                     <dd>
                       {q.converted ? (
                         q.orderId ? (
@@ -141,7 +141,7 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
                       )}
                     </dd>
                   </div>
-                  <div><dt className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Valid Until</dt><dd className="text-ink">{q.validUntil ? formatDate(q.validUntil) : "—"}</dd></div>
+                  <div><dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">Valid Until</dt><dd className="text-ink">{q.validUntil ? formatDate(q.validUntil) : "—"}</dd></div>
                 </dl>
                 <div className="flex gap-1 border-t border-line pt-2">
                   <Link href={`/admin/bulk-orders/quotations/${q.id}`} className={buttonClasses({ size: "icon-sm", variant: "ghost" })} aria-label={`View ${q.quotationNumber}`}>

@@ -44,7 +44,7 @@ export default async function CrmDashboardPage() {
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Upcoming and overdue follow-ups" actions={<Link href="/admin/crm/follow-ups" className="text-[13px] font-medium text-brand-700 hover:underline">All follow-ups</Link>} />
+          <CardHeader title="Upcoming and overdue follow-ups" actions={<Link href="/admin/crm/follow-ups" className="text-small font-medium text-brand-700 hover:underline">All follow-ups</Link>} />
           <MiniTable
             columns={[
               { key: "name", label: "Lead", render: (r) => <Link href={`/admin/crm/leads/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link> },

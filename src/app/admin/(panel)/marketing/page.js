@@ -20,7 +20,7 @@ export default async function SocialMediaDashboardPage() {
 
   return (
     <>
-      <PageHeader title="Social Media Dashboard" description="AI trend reports, the content calendar and video scripts." meta={<span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-brand-700">AGRI-INTELLIGENCE</span>} />
+      <PageHeader title="Social Media Dashboard" description="AI trend reports, the content calendar and video scripts." meta={<span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-micro font-bold tracking-wide text-brand-700">AGRI-INTELLIGENCE</span>} />
       <SocialDashboard initial={initial} events={events} can={{ add: can(user, "marketing", "add"), edit: can(user, "marketing", "edit"), delete: can(user, "marketing", "delete") }} />
     </>
   );

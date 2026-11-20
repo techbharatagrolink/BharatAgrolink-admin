@@ -277,11 +277,11 @@ export function QuotationForm({ options }) {
                     </div>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       <div>
-                        <p className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">Stock</p>
+                        <p className="text-micro font-medium tracking-wide text-ink-muted uppercase">Stock</p>
                         <p className="text-sm text-ink tabular">{line.stock}</p>
                       </div>
                       <div>
-                        <p className="text-[10.5px] font-medium tracking-wide text-ink-muted uppercase">GST %</p>
+                        <p className="text-micro font-medium tracking-wide text-ink-muted uppercase">GST %</p>
                         <p className="text-sm text-ink tabular">{line.gstPct}</p>
                       </div>
                       <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></Field>

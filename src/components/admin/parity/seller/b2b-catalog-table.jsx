@@ -71,7 +71,7 @@ function AttachPdfDialog({ target, onClose, onDone }) {
       }
     >
       <div className="space-y-4">
-        <ul className="max-h-32 overflow-y-auto rounded-lg border border-line px-3 py-2 text-[13px] text-ink-soft">
+        <ul className="max-h-32 overflow-y-auto rounded-lg border border-line px-3 py-2 text-small text-ink-soft">
           {target.rows.map((r) => (
             <li key={r.id} className="truncate">
               {r.name} <span className="font-mono text-xs text-ink-muted">{r.sku}</span>
@@ -129,9 +129,9 @@ function VendorCatalogDialog({ sellers, onClose }) {
               <p className="rounded-lg border border-line px-3 py-2 text-sm text-ink-muted">{info.vendor.name} has no master catalog PDF.</p>
             )}
             <div>
-              <p className="mb-1.5 text-[13px] font-medium text-ink-soft">Recent catalogs</p>
+              <p className="mb-1.5 text-small font-medium text-ink-soft">Recent catalogs</p>
               {info.recent.length ? (
-                <ul className="divide-y divide-line rounded-lg border border-line text-[13px]">
+                <ul className="divide-y divide-line rounded-lg border border-line text-small">
                   {info.recent.map((c) => (
                     <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                       <span className="min-w-0">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
@@ -161,7 +162,7 @@ export function AddReturnRequest({ reasons }) {
 
           {customer && (
             <div className="space-y-2">
-              <p className="text-[13px] font-medium text-ink-soft">Order items</p>
+              <p className="text-small font-medium text-ink-soft">Order items</p>
               {orders.loading && <p className="text-sm text-ink-muted">Loading orders…</p>}
               {orders.message && <Notice tone={orders.message.startsWith("Error") ? "danger" : "info"}>{orders.message}</Notice>}
               {orders.list.length > 0 && (
@@ -245,7 +246,7 @@ export function AddReturnRequest({ reasons }) {
                 {({ id }) => <Textarea id={id} rows={3} value={detail} onChange={(e) => setDetail(e.target.value)} />}
               </Field>
               <Field label="Attachments" hint="Up to 5 images.">
-                {({ id }) => <input id={id} type="file" multiple accept="image/*" className="block w-full text-sm" onChange={(e) => pickFiles(e.target.files)} />}
+                {({ id }) => <FileInput id={id} multiple accept="image/*" onChange={(e) => pickFiles(e.target.files)} />}
               </Field>
             </>
           )}

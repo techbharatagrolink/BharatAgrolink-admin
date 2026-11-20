@@ -113,7 +113,7 @@ export default async function MonetizationPaymentsPage({ searchParams }) {
             description={`Printed on every new BAN invoice. Address from ${p.sources?.address === "invoice-details" ? "Invoice details" : "Settings → System Settings"}.`}
             actions={<InvoiceProfileEditor profile={p} canEdit={canEdit} />}
           />
-          <div className="grid gap-x-6 gap-y-1 px-4 pb-4 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-1 px-4 pb-4 text-small sm:grid-cols-2 lg:grid-cols-3">
             <span>
               <span className="text-ink-muted">Name: </span>
               {p.legalName}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -22,14 +23,14 @@ function ImageInput({ name, label, current, required, error }) {
     <Field label={label} required={required} error={error} hint="JPG, PNG or WebP, 5 MB max.">
       {({ id, invalid, describedBy }) => (
         <div className="space-y-2">
-          <Input
+          <FileInput
             id={id}
-            type="file"
             name={name}
             accept={IMAGE_ACCEPT}
+            maxBytes={5 * 1024 * 1024}
+            preview={false}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
-            className="h-auto py-1.5"
             onChange={(e) => {
               const file = e.target.files?.[0];
               setPreview((old) => {
@@ -55,7 +56,7 @@ function CategoryTree({ categories, value, onChange, disabled }) {
   return (
     <div className="space-y-2">
       {!disabled && <Input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Search for names.." aria-label="Search categories" />}
-      <ul className="max-h-72 overflow-y-auto rounded-lg border border-line p-2 text-[13px]">
+      <ul className="max-h-72 overflow-y-auto rounded-lg border border-line p-2 text-small">
         {shown.map((c) => (
           <li key={c.id} style={{ paddingLeft: filter ? 0 : c.depth * 16 }} className="py-0.5">
             {c.selectable ? (
@@ -156,7 +157,7 @@ export function FeatureCategoryForm({ category, options, canSave }) {
           </Field>
           {editing && <Notice>The category type, parent, category set and chemical formula products are fixed once the category is created.</Notice>}
           <fieldset className="space-y-2" disabled={locked}>
-            <legend className="text-[13px] font-medium text-ink-soft">
+            <legend className="text-small font-medium text-ink-soft">
               Select Category Type<span className="ml-0.5 text-danger-ink">*</span>
             </legend>
             <div className="flex flex-wrap gap-4">
@@ -174,7 +175,7 @@ export function FeatureCategoryForm({ category, options, canSave }) {
           </fieldset>
           {multi && (
             <div className="space-y-3 rounded-lg border border-line p-3">
-              <p className="text-[13px] font-medium text-ink-soft">Select Multi Category Details</p>
+              <p className="text-small font-medium text-ink-soft">Select Multi Category Details</p>
               <Checkbox label="Main Category" checked={form.mainCategory} disabled={locked} onChange={(e) => setForm((f) => ({ ...f, mainCategory: e.target.checked }))} />
               {!form.mainCategory && (
                 <Field label="or map with Parent Category">
@@ -189,7 +190,7 @@ export function FeatureCategoryForm({ category, options, canSave }) {
                   <ProductPicker value={formulaProducts} onChange={setFormulaProducts} permission={PERMISSION} disabled={locked} placeholder="Map Same Chemical Formula Product" />
                   {!editing && (
                     <Field label="Promotion Images" hint="One or more images (JPG, PNG or WebP).">
-                      {({ id, describedBy }) => <Input id={id} type="file" name="product_image" multiple accept={IMAGE_ACCEPT} aria-describedby={describedBy} className="h-auto py-1.5" />}
+                      {({ id, describedBy }) => <FileInput id={id} name="product_image" multiple accept={IMAGE_ACCEPT} aria-describedby={describedBy} />}
                     </Field>
                   )}
                   {editing && category.promotionImages.length > 0 && (

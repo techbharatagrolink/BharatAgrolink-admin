@@ -179,7 +179,7 @@ export default async function BannerOrderDetailPage({ params }) {
           </Card>
           <Card>
             <CardHeader title="Payments" />
-            <ul className="divide-y divide-line px-4 pb-2 text-[13px]">
+            <ul className="divide-y divide-line px-4 pb-2 text-small">
               {o.payments.length ? (
                 o.payments.map((p) => (
                   <li key={p.id} className="py-2">

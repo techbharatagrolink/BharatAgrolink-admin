@@ -30,7 +30,7 @@ export function ToastProvider({ children }) {
         {toasts.map((toast) => {
           const Icon = toast.tone === "error" ? XCircle : toast.tone === "info" ? Info : CheckCircle2;
           return (
-            <div key={toast.id} className="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-line bg-surface p-3 shadow-lg">
+            <div key={toast.id} className="pointer-events-auto flex w-full animate-in items-start gap-3 rounded-xl border border-line bg-surface p-3 shadow-[var(--shadow-pop)] duration-300 fade-in-0 slide-in-from-right-6 motion-reduce:animate-none">
               <Icon className={cn("mt-0.5 size-5 shrink-0", toast.tone === "error" ? "text-danger-ink" : toast.tone === "info" ? "text-info-ink" : "text-success-ink")} aria-hidden />
               <div className="min-w-0 flex-1">
                 {toast.title && <p className="text-sm font-semibold text-ink">{toast.title}</p>}

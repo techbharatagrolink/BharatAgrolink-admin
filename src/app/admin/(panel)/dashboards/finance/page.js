@@ -44,7 +44,7 @@ export default async function FinanceDashboardPage({ searchParams }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Expense limits" description="Actual vs cap, % of sales" actions={<Link href="/admin/finance/expense-limits" className="text-[13px] font-medium text-brand-700 hover:underline">Details</Link>} />
+          <CardHeader title="Expense limits" description="Actual vs cap, % of sales" actions={<Link href="/admin/finance/expense-limits" className="text-small font-medium text-brand-700 hover:underline">Details</Link>} />
           <CardBody className="space-y-4">
             {!d.expenseCaps.length && <p className="text-sm text-ink-muted">No expense-limit percentages are available from the finance API yet.</p>}
             {d.expenseCaps.map((c) => (
@@ -62,7 +62,7 @@ export default async function FinanceDashboardPage({ searchParams }) {
         </Card>
       </div>
       <Card className="mt-4">
-        <CardHeader title="Payout queue" actions={<Link href="/admin/payouts" className="text-[13px] font-medium text-brand-700 hover:underline">All payouts</Link>} />
+        <CardHeader title="Payout queue" actions={<Link href="/admin/payouts" className="text-small font-medium text-brand-700 hover:underline">All payouts</Link>} />
         <MiniTable
           columns={[
             { key: "id", label: "Payout", render: (r) => <Link href={`/admin/payouts/${r.id}`} className="font-mono text-xs font-medium text-brand-700 hover:underline" aria-label={`Payout ${r.id}`}>{r.id}</Link> },

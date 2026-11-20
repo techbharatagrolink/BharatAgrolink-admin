@@ -115,7 +115,7 @@ export function SlaTicketActions({ ticket, teams, departments, assignmentsEnable
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={cn("rounded-md px-3 py-1.5 text-[13px] font-medium", tab === t.id ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
+              className={cn("rounded-md px-3 py-1.5 text-small font-medium", tab === t.id ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:text-ink")}
             >
               {t.label}
             </button>
@@ -124,7 +124,7 @@ export function SlaTicketActions({ ticket, teams, departments, assignmentsEnable
 
         <div className="space-y-3">
           {needsTable && (
-            <p className="rounded-lg bg-warning-bg px-3 py-2 text-[13px] text-warning-ink">
+            <p className="rounded-lg bg-warning-bg px-3 py-2 text-small text-warning-ink">
               {tab === "assign" ? "Team and agent ownership needs the support_ticket_sla table (run the API migrations). The department can still be changed." : "Escalation needs the support_ticket_sla table (run the API migrations)."}
             </p>
           )}
@@ -161,7 +161,7 @@ export function SlaTicketActions({ ticket, teams, departments, assignmentsEnable
               {({ id, describedBy }) => <Select id={id} aria-describedby={describedBy} value={form.department ?? ""} onChange={(e) => set({ department: e.target.value })} options={departments} />}
             </Field>
           )}
-          {tab === "escalate" && <p className="text-[13px] text-ink-muted">Sets priority to Urgent, raises the escalation level and adds an internal note. The deadline is not moved.</p>}
+          {tab === "escalate" && <p className="text-small text-ink-muted">Sets priority to Urgent, raises the escalation level and adds an internal note. The deadline is not moved.</p>}
           {tab === "deadline" && (
             <>
               <Switch checked={Boolean(form.recalculate)} onChange={(v) => set({ recalculate: v })} label={`Restart the SLA clock from now (${ticket.ruleHours ?? "rule"} h for this priority and category)`} />

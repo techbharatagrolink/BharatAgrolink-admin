@@ -10,6 +10,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DescriptionList, PageHeader } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Bulk Quotation" };
 
@@ -95,34 +96,20 @@ export default async function BulkQuotationPage({ params }) {
         </div>
         <Card>
           <CardHeader title="Products" description={`${q.products.length} line${q.products.length === 1 ? "" : "s"}`} />
-          <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full min-w-max text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-line text-xs text-ink-muted">
-                  {["#", "Item", "SKU", "HSN", "Qty", "Rate", "GST %", "Taxable", "Total"].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-2 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {q.products.map((p) => (
-                  <tr key={p.item_number} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2 tabular">{p.item_number}</td>
-                    <td className="px-3 py-2 font-medium text-ink">{p.item_name}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{p.sku}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{p.hsn_code || "—"}</td>
-                    <td className="px-3 py-2 tabular">{formatNumber(p.quantity)}</td>
-                    <td className="px-3 py-2 tabular">{inr(p.rate)}</td>
-                    <td className="px-3 py-2 tabular">{p.gst_percentage}%</td>
-                    <td className="px-3 py-2 tabular">{inr(p.taxable_amount)}</td>
-                    <td className="px-3 py-2 tabular">{inr(p.total_amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <MiniTable
+            rows={q.products.map((p) => ({ ...p, id: p.item_number }))}
+            columns={[
+              { key: "n", label: "#", render: (p) => <span className="tabular">{p.item_number}</span> },
+              { key: "item", label: "Item", render: (p) => <span className="font-medium text-ink">{p.item_name}</span> },
+              { key: "sku", label: "SKU", render: (p) => <span className="font-mono text-xs">{p.sku}</span> },
+              { key: "hsn", label: "HSN", render: (p) => <span className="font-mono text-xs">{p.hsn_code || "—"}</span> },
+              { key: "qty", label: "Qty", align: "right", render: (p) => formatNumber(p.quantity) },
+              { key: "rate", label: "Rate", align: "right", render: (p) => inr(p.rate) },
+              { key: "gst", label: "GST %", align: "right", render: (p) => `${p.gst_percentage}%` },
+              { key: "taxable", label: "Taxable", align: "right", render: (p) => inr(p.taxable_amount) },
+              { key: "total", label: "Total", align: "right", render: (p) => inr(p.total_amount) },
+            ]}
+          />
         </Card>
         <Card>
           <CardHeader title="Shipment & payment" />

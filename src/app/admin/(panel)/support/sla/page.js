@@ -187,35 +187,35 @@ export default async function SupportSlaPage({ searchParams }) {
         <CardHeader title={stateLabel} description={`${meta?.total ?? tickets.length} ticket${(meta?.total ?? tickets.length) === 1 ? "" : "s"} · most urgent first`} />
         <CardBody className="border-b border-line">
           <form method="get" action="/admin/support/sla" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>SLA</span>
               <Select name="state" defaultValue={state} options={SLA_STATES} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Team</span>
               <Select name="team" defaultValue={filters.team ?? ""} placeholder="All" options={ownerOptions} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Agent</span>
               <Select name="agentId" defaultValue={filters.agentId ?? ""} placeholder="All" options={agentOptions} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Priority</span>
               <Select name="priority" defaultValue={filters.priority ?? ""} placeholder="All" options={teams.priorities} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Status</span>
               <Select name="status" defaultValue={filters.status ?? ""} placeholder="All" options={teams.statuses} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Created from</span>
               <Input type="date" name="from" defaultValue={filters.from ?? ""} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Created to</span>
               <Input type="date" name="to" defaultValue={filters.to ?? ""} />
             </label>
-            <label className="min-w-0 space-y-1 text-[13px] font-medium text-ink-soft">
+            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Search</span>
               <Input type="search" name="q" defaultValue={filters.q ?? ""} placeholder="Ticket #, subject, requester" />
             </label>
@@ -304,7 +304,7 @@ export default async function SupportSlaPage({ searchParams }) {
           <EmptyState title="No tickets match" description={state === "attention" ? "Nothing is breached or at risk for these filters." : "Try a different SLA state or clear the filters."} />
         )}
         {totalPages > 1 && (
-          <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+          <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
             <span>
               Page {page} of {totalPages}
             </span>

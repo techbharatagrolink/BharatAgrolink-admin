@@ -57,7 +57,7 @@ export function FeatureCategoryList({ categories, canEdit, canDelete }) {
       />
       <div className="space-y-3 p-4">
         {canEdit && (
-          <p className="flex items-center gap-1.5 text-[13px] text-ink-muted">
+          <p className="flex items-center gap-1.5 text-small text-ink-muted">
             <Info className="size-4" aria-hidden /> Drag and drop categories to change their display order, then save.
           </p>
         )}

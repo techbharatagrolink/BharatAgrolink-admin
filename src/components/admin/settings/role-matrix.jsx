@@ -83,16 +83,16 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
                 <li key={p.key} className="px-4 py-3">
                   <p className="text-sm text-ink">
                     {p.label}
-                    {p.sensitive && <span className="ml-1.5 text-[11px] font-medium text-warning-ink">sensitive</span>}
-                    {p.groupMenu && <span className="ml-1.5 text-[11px] font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
+                    {p.sensitive && <span className="ml-1.5 text-micro font-medium text-warning-ink">sensitive</span>}
+                    {p.groupMenu && <span className="ml-1.5 text-micro font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
                   </p>
-                  <p className="font-mono text-[11px] break-all text-ink-muted">{p.key}</p>
+                  <p className="font-mono text-micro break-all text-ink-muted">{p.key}</p>
                   <div className="mt-2 grid grid-cols-4 gap-2">
                     {ACTIONS.map((a) => {
-                      if (notApplicable(p, a)) return <span key={a} className="text-[13px] text-ink-muted" title={HEADING_HINT}>—</span>;
+                      if (notApplicable(p, a)) return <span key={a} className="text-small text-ink-muted" title={HEADING_HINT}>—</span>;
                       const on = (grants[p.key] ?? []).includes(a);
                       const allowed = editable && (grantable === true || grantable?.[p.key]?.includes(a) || on);
-                      return <Checkbox key={a} label={<span className="capitalize">{a}</span>} checked={on} disabled={!allowed} onChange={(e) => toggle(p.key, a, e.target.checked)} aria-label={`${a} ${p.label}`} className="text-[13px]" />;
+                      return <Checkbox key={a} label={<span className="capitalize">{a}</span>} checked={on} disabled={!allowed} onChange={(e) => toggle(p.key, a, e.target.checked)} aria-label={`${a} ${p.label}`} className="text-small" />;
                     })}
                   </div>
                 </li>
@@ -122,9 +122,9 @@ export function RoleMatrix({ roleId, catalog, permissions, editable, grantable, 
                   <tr key={p.key} className="border-b border-line">
                     <th scope="row" className="px-4 py-2 text-left font-normal">
                       <span className="text-ink">{p.label}</span>
-                      {p.sensitive && <span className="ml-1.5 text-[11px] font-medium text-warning-ink">sensitive</span>}
-                      {p.groupMenu && <span className="ml-1.5 text-[11px] font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
-                      <span className="block font-mono text-[11px] text-ink-muted">{p.key}</span>
+                      {p.sensitive && <span className="ml-1.5 text-micro font-medium text-warning-ink">sensitive</span>}
+                      {p.groupMenu && <span className="ml-1.5 text-micro font-medium text-ink-muted" title={HEADING_HINT}>section</span>}
+                      <span className="block font-mono text-micro text-ink-muted">{p.key}</span>
                     </th>
                     {ACTIONS.map((a) => {
                       if (notApplicable(p, a)) {

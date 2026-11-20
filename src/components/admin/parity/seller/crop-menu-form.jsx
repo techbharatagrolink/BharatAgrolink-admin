@@ -7,6 +7,7 @@ import { Info, Trash2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { createShopTopicAction, searchCropsAction, updateShopTopicAction } from "@/lib/actions/admin/parity/seller";
@@ -53,7 +54,7 @@ function CropPicker({ value, onChange, disabled }) {
         <div className="relative">
           <Input value={term} onChange={(e) => search(e.target.value)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Search crops by name..." aria-label="Add Crop" autoComplete="off" />
           {open && (
-            <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-line bg-surface py-1 text-[13px] shadow-lg">
+            <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-line bg-surface py-1 text-small shadow-lg">
               {results?.length ? (
                 results.map((c) => (
                   <li key={c.id}>
@@ -79,7 +80,7 @@ function CropPicker({ value, onChange, disabled }) {
           onChange={onChange}
           disabled={disabled}
           renderItem={(c) => (
-            <div className="flex items-center justify-between gap-2 text-[13px] text-ink">
+            <div className="flex items-center justify-between gap-2 text-small text-ink">
               {c.name}
               {!disabled && (
                 <button type="button" onClick={() => onChange(value.filter((x) => x.id !== c.id))} className="rounded p-1 text-danger-ink hover:bg-danger-bg" aria-label={`Remove ${c.name}`}>
@@ -169,14 +170,15 @@ export function CropMenuForm({ type, label, topic, canSave }) {
           <Field label="Image" required={!editing} error={errors.topic_img} hint="JPG, PNG or WEBP, 5 MB max.">
             {({ id, invalid, describedBy }) => (
               <div className="space-y-2">
-                <Input
+                <FileInput
                   id={id}
-                  type="file"
                   name="topic_img"
                   accept="image/jpeg,image/png,image/webp"
+                  maxBytes={5 * 1024 * 1024}
+                  preview={false}
                   aria-invalid={invalid || undefined}
                   aria-describedby={describedBy}
-                  className="h-auto py-1.5 sm:max-w-md"
+                  className="sm:max-w-md"
                   disabled={!canSave}
                   onChange={(e) => {
                     const file = e.target.files?.[0];

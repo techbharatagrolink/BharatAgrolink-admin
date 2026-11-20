@@ -8,6 +8,7 @@ import { Notice, PageHeader, ProgressBar, StatCard, StatGrid } from "@/component
 import { ApiUnavailable, EmptyState, PermissionDenied } from "@/components/ui/states";
 import { AchievementMonth, OrderRangeButtons, RefreshButton, SalesPersonSelect } from "@/components/admin/parity/crm/performance-controls";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "My Sales Performance" };
 
@@ -22,7 +23,7 @@ function DailyBox({ label, value, hint, tone }) {
   const tones = { warning: "bg-warning-bg text-warning-ink", success: "bg-success-bg text-success-ink", info: "bg-info-bg text-info-ink", neutral: "bg-surface-muted text-ink" };
   return (
     <div className={`rounded-lg p-3 text-center ${tones[tone]}`}>
-      <p className="text-[11px] font-bold tracking-wide uppercase">{label}</p>
+      <p className="text-micro font-bold tracking-wide uppercase">{label}</p>
       <p className="mt-0.5 text-xl font-bold tabular">{value}</p>
       <p className="text-xs text-ink-muted">{hint}</p>
     </div>
@@ -94,7 +95,7 @@ export default async function MyPerformancePage({ searchParams }) {
         <Card>
           <CardHeader title="My Orders & Tracking (B2C + B2B)" actions={<OrderRangeButtons active={range} />} />
           <CardBody className="space-y-3">
-            <div className="flex flex-wrap gap-4 text-[13px]">
+            <div className="flex flex-wrap gap-4 text-small">
               <span>
                 <strong>{formatNumber(orders.totals.b2cOrders)}</strong> B2C · <strong>{formatNumber(orders.totals.b2bOrders)}</strong> B2B
               </span>
@@ -109,40 +110,20 @@ export default async function MyPerformancePage({ searchParams }) {
             {orders.rows.length === 0 ? (
               <EmptyState title="No orders in this period." />
             ) : (
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="w-full min-w-max text-left text-[13px]">
-                  <thead>
-                    <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
-                      {["Order ID", "Type", "Date", "Customer", "Value", "Delivered", "Status", "Tracking"].map((h) => (
-                        <th key={h} className={`px-3 py-2 font-semibold ${["Value", "Delivered"].includes(h) ? "text-right" : ""}`}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.rows.map((o) => (
-                      <tr key={o.key} className="border-b border-line last:border-0">
-                        <td className="px-3 py-2">
-                          <Link href={o.href} className="font-medium text-brand-700 hover:underline">
-                            {o.orderId}
-                          </Link>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Badge tone={o.type === "B2B" ? "info" : "neutral"}>{o.type}</Badge>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(o.date)}</td>
-                        <td className="px-3 py-2">{o.customer || "-"}</td>
-                        <td className="px-3 py-2 text-right tabular">{formatINR(o.value)}</td>
-                        <td className={`px-3 py-2 text-right tabular ${o.delivered > 0 ? "font-semibold text-success-ink" : "text-ink-muted"}`}>{formatINR(o.delivered)}</td>
-                        <td className="px-3 py-2">
-                          <Badge tone={o.done ? "success" : "neutral"}>{o.status}</Badge>
-                        </td>
-                        <td className="px-3 py-2 font-mono text-[12.5px]">{o.tracking || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="-mx-4 -mb-4 overflow-hidden rounded-b-xl border-t border-line">
+                <MiniTable
+                  rows={orders.rows.map((o) => ({ ...o, id: o.key }))}
+                  columns={[
+                    { key: "orderId", label: "Order ID", render: (o) => <Link href={o.href} className="font-medium text-brand-700 hover:underline">{o.orderId}</Link> },
+                    { key: "type", label: "Type", render: (o) => <Badge tone={o.type === "B2B" ? "info" : "neutral"}>{o.type}</Badge> },
+                    { key: "date", label: "Date", render: (o) => formatDate(o.date) },
+                    { key: "customer", label: "Customer", render: (o) => o.customer || "-" },
+                    { key: "value", label: "Value", align: "right", render: (o) => formatINR(o.value) },
+                    { key: "delivered", label: "Delivered", align: "right", render: (o) => <span className={o.delivered > 0 ? "font-semibold text-success-ink" : "text-ink-muted"}>{formatINR(o.delivered)}</span> },
+                    { key: "status", label: "Status", render: (o) => <Badge tone={o.done ? "success" : "neutral"}>{o.status}</Badge> },
+                    { key: "tracking", label: "Tracking", render: (o) => <span className="font-mono text-label">{o.tracking || "-"}</span> },
+                  ]}
+                />
               </div>
             )}
           </CardBody>
@@ -154,31 +135,17 @@ export default async function MyPerformancePage({ searchParams }) {
             {achievements.rows.length === 0 ? (
               <EmptyState title="No achievements found" icon={CalendarDays} />
             ) : (
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="w-full min-w-max text-left text-[13px]">
-                  <thead>
-                    <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
-                      <th className="px-3 py-2 font-semibold">Month</th>
-                      <th className="px-3 py-2 text-right font-semibold">Target Amount</th>
-                      <th className="px-3 py-2 text-right font-semibold">Achieved Amount</th>
-                      <th className="px-3 py-2 text-right font-semibold">Achievement %</th>
-                      <th className="px-3 py-2 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {achievements.rows.map((a) => (
-                      <tr key={a.id} className="border-b border-line last:border-0">
-                        <td className="px-3 py-2">{monthLabel(String(a.month))}</td>
-                        <td className="px-3 py-2 text-right tabular">{formatINR(a.target)}</td>
-                        <td className="px-3 py-2 text-right tabular">{formatINR(a.achieved)}</td>
-                        <td className="px-3 py-2 text-right tabular">{a.percent.toFixed(2)}%</td>
-                        <td className="px-3 py-2">
-                          <Badge tone={a.met ? "success" : "warning"}>{a.met ? "Target Met" : "Pending"}</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="-mx-4 -mb-4 overflow-hidden rounded-b-xl border-t border-line">
+                <MiniTable
+                  rows={achievements.rows}
+                  columns={[
+                    { key: "month", label: "Month", render: (a) => monthLabel(String(a.month)) },
+                    { key: "target", label: "Target Amount", align: "right", render: (a) => formatINR(a.target) },
+                    { key: "achieved", label: "Achieved Amount", align: "right", render: (a) => formatINR(a.achieved) },
+                    { key: "percent", label: "Achievement %", align: "right", render: (a) => `${a.percent.toFixed(2)}%` },
+                    { key: "status", label: "Status", render: (a) => <Badge tone={a.met ? "success" : "warning"}>{a.met ? "Target Met" : "Pending"}</Badge> },
+                  ]}
+                />
               </div>
             )}
           </CardBody>

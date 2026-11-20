@@ -6,8 +6,8 @@ export function PageHeader({ title, description, actions, meta, className }) {
   return (
     <div className={cn("mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-[22px]">{title}</h1>
-        {description && <p className="mt-1 max-w-3xl text-sm text-ink-muted">{description}</p>}
+        <h1 className="text-page-title font-semibold tracking-tight text-ink">{title}</h1>
+        {description && <p className="mt-1 max-w-3xl text-body text-ink-muted">{description}</p>}
         {meta && <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -20,14 +20,14 @@ export function StatCard({ label, value, hint, delta, href, icon: Icon, tone = "
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[12.5px] font-medium text-ink-muted">{label}</p>
+        <p className="text-small font-medium text-ink-soft">{label}</p>
         {Icon && (
           <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg", toneBg)}>
             <Icon className="size-4" aria-hidden />
           </span>
         )}
       </div>
-      <p className="mt-1.5 truncate text-[22px] font-semibold tracking-tight text-ink tabular">{value}</p>
+      <p className="mt-2 truncate text-[22px] font-bold tracking-tight text-ink tabular">{value}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
         {delta != null && Number.isFinite(delta) && (
           <span className={cn("inline-flex items-center gap-0.5 font-medium", delta >= 0 ? "text-success-ink" : "text-danger-ink")}>
@@ -39,7 +39,11 @@ export function StatCard({ label, value, hint, delta, href, icon: Icon, tone = "
       </div>
     </>
   );
-  const classes = cn("block min-w-0 rounded-xl border border-line bg-surface p-3.5", href && "transition-colors hover:border-brand-200 hover:bg-surface-muted", className);
+  const classes = cn(
+    "block min-w-0 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]",
+    href && "transition-all duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[var(--shadow-hover)]",
+    className,
+  );
   return href ? (
     <Link href={href} className={classes}>
       {content}
@@ -50,7 +54,7 @@ export function StatCard({ label, value, hint, delta, href, icon: Icon, tone = "
 }
 
 export function StatGrid({ children, className }) {
-  return <div className={cn("grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4", className)}>{children}</div>;
+  return <div className={cn("ui-stagger grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4", className)}>{children}</div>;
 }
 
 export function DescriptionList({ items, columns = 2, className }) {
@@ -95,12 +99,12 @@ export function LinkTabs({ tabs, active }) {
               scroll={false}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "-mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-3 text-sm font-medium transition-colors",
-                isActive ? "border-brand-600 text-brand-700" : "border-transparent text-ink-muted hover:text-ink",
+                "-mb-px inline-flex h-10 items-center gap-1.5 rounded-t-md border-b-2 px-3 text-sm font-medium transition-colors",
+                isActive ? "border-brand-600 text-brand-700" : "border-transparent text-ink-muted hover:border-line-strong hover:bg-surface/70 hover:text-ink",
               )}
             >
               {tab.label}
-              {tab.count != null && <span className="rounded-full bg-neutral-bg px-1.5 text-[11px] text-ink-soft tabular">{tab.count}</span>}
+              {tab.count != null && <span className="rounded-full bg-neutral-bg px-1.5 text-micro text-ink-soft tabular">{tab.count}</span>}
             </Link>
           );
         })}

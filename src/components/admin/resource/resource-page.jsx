@@ -5,6 +5,7 @@ import { listResource, resolveFilterOptions, resolveFormOptions, withReasonOptio
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
+import { CreateOrderButton } from "@/components/admin/orders/create-order-dialog";
 import { ResourceTable } from "./resource-table";
 
 function tabHref(pathname, searchParams, field, value) {
@@ -59,11 +60,15 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
   const headerActions =
     actions || links.length ? (
       <>
-        {links.map((a) => (
-          <ButtonLink key={a.href} href={a.href} size="sm" variant={a.primary ? "primary" : "secondary"}>
-            {a.label}
-          </ButtonLink>
-        ))}
+        {links.map((a) =>
+          a.dialog === "manualOrder" ? (
+            <CreateOrderButton key={a.href} label={a.label} href={a.href} primary={a.primary} />
+          ) : (
+            <ButtonLink key={a.href} href={a.href} size="sm" variant={a.primary ? "primary" : "secondary"}>
+              {a.label}
+            </ButtonLink>
+          ),
+        )}
         {actions}
       </>
     ) : null;

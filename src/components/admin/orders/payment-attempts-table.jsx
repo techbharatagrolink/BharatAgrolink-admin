@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Script from "next/script";
 import { formatINR } from "@/lib/format";
+import { GridTable } from "@/components/data-table/grid-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/form";
@@ -32,6 +33,12 @@ const STATUS_TONE = {
   "Placed": "success",
 };
 
+// One pending order can have several payment attempts (e.g. a retry after a failure), so the pending
+// order ID alone repeats. Key by the attempt's own Razorpay IDs, with the position as a final tie-breaker.
+function attemptKey(row, index) {
+  return [row.pendingOrderId, row.razorpayOrderId, row.razorpayPaymentId, index].map((v) => v ?? "").join("|");
+}
+
 function fmt(v) {
   return v || <span className="text-ink-muted">—</span>;
 }
@@ -48,7 +55,7 @@ function fmtDatetime(v) {
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -403,8 +410,8 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
 
       {rows.length > 0 && (
         <div className="space-y-3 xl:hidden">
-          {rows.map((row) => (
-            <div key={row.pendingOrderId} className="rounded-lg border border-line bg-surface p-3 text-sm">
+          {rows.map((row, i) => (
+            <div key={attemptKey(row, i)} className="rounded-lg border border-line bg-surface p-3 text-sm">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   {row.orderId ? (
@@ -435,52 +442,45 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
       )}
 
       {rows.length > 0 && (
-        <div className="hidden overflow-x-auto rounded-xl border border-line bg-surface xl:block">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-line text-ink-muted">
-                {["Attempt / Order", "Customer", "Mode", "Amount", "Status", "Razorpay Order", "Payment ID", "Updated", "Reason", "Action"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-medium whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.pendingOrderId} className="border-b border-line/50 hover:bg-surface-raised/50">
-                  <td className="px-4 py-3">
-                    {row.orderId ? (
-                      <a href={`/admin/orders/${row.orderId}`} className="font-mono text-xs text-brand hover:underline">{row.orderId}</a>
-                    ) : (
-                      <code className="font-mono text-xs text-ink-muted">{row.pendingOrderId}</code>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 min-w-[140px]">
-                    {row.customerName ? (
-                      <div>
-                        <div className="text-xs font-medium text-ink truncate max-w-40" title={row.customerName}>{row.customerName}</div>
-                        {row.customerPhone && <div className="text-xs text-ink-muted">{row.customerPhone}</div>}
-                        {row.customerCity && <div className="text-xs text-ink-muted">{row.customerCity}</div>}
-                      </div>
-                    ) : (
-                      <span className="text-ink-muted">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{String(row.paymentMode || "").toUpperCase()}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatINR(row.amount)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <StatusBadge status={STATUS_TONE[row.status] ?? "neutral"} dot>{row.status}</StatusBadge>
-                  </td>
-                  <td className="px-4 py-3"><code className="font-mono text-xs">{fmt(row.razorpayOrderId)}</code></td>
-                  <td className="px-4 py-3"><code className="font-mono text-xs">{fmt(row.razorpayPaymentId)}</code></td>
-                  <td className="px-4 py-3 whitespace-nowrap text-ink-muted text-xs">{fmtDatetime(row.updatedAt)}</td>
-                  <td className="px-4 py-3 max-w-[180px] text-xs text-ink-muted truncate" title={row.failureReason ?? ""}>{fmt(row.failureReason)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <Actions row={row} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)] xl:block">
+          <GridTable
+            rows={rows}
+            rowKey={(row, i) => attemptKey(row, i)}
+            columns={[
+              {
+                key: "attempt",
+                label: "Attempt / Order",
+                render: (row) =>
+                  row.orderId ? (
+                    <a href={`/admin/orders/${row.orderId}`} className="font-mono text-xs text-brand hover:underline">{row.orderId}</a>
+                  ) : (
+                    <code className="font-mono text-xs text-ink-muted">{row.pendingOrderId}</code>
+                  ),
+              },
+              {
+                key: "customer",
+                label: "Customer",
+                render: (row) =>
+                  row.customerName ? (
+                    <div>
+                      <div className="text-xs font-medium text-ink" title={row.customerName}>{row.customerName}</div>
+                      {row.customerPhone && <div className="text-xs text-ink-muted">{row.customerPhone}</div>}
+                      {row.customerCity && <div className="text-xs text-ink-muted">{row.customerCity}</div>}
+                    </div>
+                  ) : (
+                    <span className="text-ink-muted">—</span>
+                  ),
+              },
+              { key: "mode", label: "Mode", render: (row) => String(row.paymentMode || "").toUpperCase() },
+              { key: "amount", label: "Amount", align: "right", render: (row) => formatINR(row.amount) },
+              { key: "status", label: "Status", render: (row) => <StatusBadge status={STATUS_TONE[row.status] ?? "neutral"} dot>{row.status}</StatusBadge> },
+              { key: "rzpOrder", label: "Razorpay Order", render: (row) => <code className="font-mono text-xs">{fmt(row.razorpayOrderId)}</code> },
+              { key: "rzpPayment", label: "Payment ID", render: (row) => <code className="font-mono text-xs">{fmt(row.razorpayPaymentId)}</code> },
+              { key: "updated", label: "Updated", render: (row) => <span className="text-xs text-ink-muted">{fmtDatetime(row.updatedAt)}</span> },
+              { key: "reason", label: "Reason", render: (row) => <span className="text-xs text-ink-muted" title={row.failureReason ?? ""}>{fmt(row.failureReason)}</span> },
+              { key: "action", label: "Action", render: (row) => <Actions row={row} /> },
+            ]}
+          />
         </div>
       )}
 

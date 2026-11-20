@@ -46,13 +46,13 @@ export default async function OperationsOverallPage({ searchParams }) {
   const filters = (
     <form method="get" className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
       <div className="w-44 space-y-1.5">
-        <label htmlFor="overall-from" className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor="overall-from" className="block text-small font-medium text-ink-soft">
           From Date
         </label>
         <Input id="overall-from" type="date" name="from" defaultValue={from} required />
       </div>
       <div className="w-44 space-y-1.5">
-        <label htmlFor="overall-to" className="block text-[13px] font-medium text-ink-soft">
+        <label htmlFor="overall-to" className="block text-small font-medium text-ink-soft">
           To Date
         </label>
         <Input id="overall-to" type="date" name="to" defaultValue={to} required />

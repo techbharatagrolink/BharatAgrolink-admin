@@ -58,7 +58,8 @@ export const coreResources = {
     exportable: true,
     // Funnel filter in every column header (not S.No. or the product image).
     columnFilters: true,
-    headerActions: [{ label: "Create order", href: "/admin/orders/new", action: "add", primary: true }],
+    // dialog: opens the create-order form in a popup over the list (href stays as the full-page fallback).
+    headerActions: [{ label: "Create order", href: "/admin/orders/new", action: "add", primary: true, dialog: "manualOrder" }],
     columns: [
       { key: "id", label: "Order", type: "mono" },
       { key: "customer", label: "Customer", sub: "city" },

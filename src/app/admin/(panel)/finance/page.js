@@ -60,7 +60,7 @@ export default async function ProfitLossPage({ searchParams }) {
           </div>
         </Card>
         <Card>
-          <CardHeader title="Expense limits" description="Actual vs cap, % of sales" actions={<Link href="/admin/finance/expense-limits" className="text-[13px] font-medium text-brand-700 hover:underline">Manage</Link>} />
+          <CardHeader title="Expense limits" description="Actual vs cap, % of sales" actions={<Link href="/admin/finance/expense-limits" className="text-small font-medium text-brand-700 hover:underline">Manage</Link>} />
           <CardBody className="space-y-4">
             {d.expenseCaps.map((c) => (
               <div key={c.id}>

@@ -12,6 +12,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DescriptionList, PageHeader } from "@/components/ui/page";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BulkOrderActions } from "@/components/admin/parity/bulk/order-actions";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export async function generateMetadata({ params }) {
   const { orderId } = await params;
@@ -70,37 +71,27 @@ export default async function BulkOrderPage({ params }) {
 
           <Card>
             <CardHeader title="Items" description={`${o.items.length} line${o.items.length === 1 ? "" : "s"}`} />
-            <div className="overflow-x-auto scrollbar-thin">
-              <table className="w-full min-w-max text-left text-[13px]">
-                <thead>
-                  <tr className="border-b border-line text-xs text-ink-muted">
-                    {["Item", "HSN", "Qty", "Rate", "Taxable", "GST %", "Total"].map((h) => (
-                      <th key={h} scope="col" className="px-3 py-2 font-semibold">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {o.items.map((it) => (
-                    <tr key={it.id} className="border-b border-line last:border-0">
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-ink">{it.name}</div>
-                        {it.description && <div className="text-xs text-ink-muted">{it.description}</div>}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{it.hsn || "—"}</td>
-                      <td className="px-3 py-2 tabular">
-                        {formatNumber(it.quantity)} {it.unit}
-                      </td>
-                      <td className="px-3 py-2 tabular">{inr(it.rate)}</td>
-                      <td className="px-3 py-2 tabular">{inr(it.taxable)}</td>
-                      <td className="px-3 py-2 tabular">{it.gstPercentage}%</td>
-                      <td className="px-3 py-2 tabular">{inr(it.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <MiniTable
+              rows={o.items}
+              columns={[
+                {
+                  key: "item",
+                  label: "Item",
+                  render: (it) => (
+                    <>
+                      <div className="font-medium text-ink">{it.name}</div>
+                      {it.description && <div className="text-xs text-ink-muted">{it.description}</div>}
+                    </>
+                  ),
+                },
+                { key: "hsn", label: "HSN", render: (it) => <span className="font-mono text-xs">{it.hsn || "—"}</span> },
+                { key: "qty", label: "Qty", align: "right", render: (it) => `${formatNumber(it.quantity)} ${it.unit ?? ""}`.trim() },
+                { key: "rate", label: "Rate", align: "right", render: (it) => inr(it.rate) },
+                { key: "taxable", label: "Taxable", align: "right", render: (it) => inr(it.taxable) },
+                { key: "gst", label: "GST %", align: "right", render: (it) => `${it.gstPercentage}%` },
+                { key: "total", label: "Total", align: "right", render: (it) => inr(it.total) },
+              ]}
+            />
             <CardBody className="border-t border-line">
               <DescriptionList
                 columns={3}

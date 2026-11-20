@@ -90,7 +90,7 @@ export function WhatsAppDialog({ kind, row, canSend, onClose }) {
             {({ id }) => <Select id={id} value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGES} />}
           </Field>
           <div>
-            <p className="mb-1.5 text-[13px] font-medium text-ink-soft">Message Preview</p>
+            <p className="mb-1.5 text-small font-medium text-ink-soft">Message Preview</p>
             <div className="rounded-lg border border-[#25d366]/40 bg-[#dcf8c6]/40 p-3 text-sm whitespace-pre-wrap text-ink" aria-live="polite">
               {error ? <span className="text-danger-ink">{error}</span> : preview ? preview.message : <span className="text-ink-muted">Loading preview…</span>}
             </div>

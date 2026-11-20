@@ -6,6 +6,7 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  LayoutDashboard,
   CircleDollarSign,
   ClipboardList,
   CreditCard,
@@ -42,12 +43,13 @@ import { can, canCard, canPage, SALES_CARD_SLUGS } from "@/lib/auth/permissions"
 import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { getFixedExpenses } from "@/lib/services/admin/fixed-expenses";
 import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
-import { PageHeader, StatCard } from "@/components/ui/page";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page";
+import { KpiCard as StatCard, Widget, WidgetLink, ZohoTable } from "@/components/admin/dashboard/zoho";
 import { StatusBadge } from "@/components/ui/badge";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
-import { BarChart, DonutChart, HBarList, LineChart } from "@/components/charts/charts";
-import { AlertList, MiniTable } from "@/components/admin/dashboard/range-switch";
+import { BarChart, HBarList, LineChart } from "@/components/charts/charts";
+import { StatusMixView } from "@/components/admin/dashboard/zoho-charts";
+import { AlertList } from "@/components/admin/dashboard/range-switch";
 import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters";
 import { DashboardAccordion, DashboardSection } from "@/components/admin/dashboard/dashboard-accordion";
 import { cn } from "@/lib/utils";
@@ -60,7 +62,7 @@ const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
 const subShare = (pct, text) => (pct == null ? text[0].toUpperCase() + text.slice(1) : `${pct}% of sub-orders · ${text}`);
 
 function Grid({ children, className }) {
-  return <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
+  return <div className={cn("z-stagger grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
 }
 
 export default async function MainDashboardPage({ searchParams }) {
@@ -124,12 +126,46 @@ export default async function MainDashboardPage({ searchParams }) {
   ];
   const indexOf = (id) => sectionIds.indexOf(id) + 1;
 
-  return (
-    <>
-      <PageHeader title="Main Dashboard" description="Marketplace performance across sales, orders, shipping, customers and finance. All figures are calculated on the server for the filters below." />
-      <DashboardFilters values={d.filters.values} options={d.filters.options} label={d.filters.label} />
+  // Zoho-style headline strip: the same figures (and permission gates / links) as the cards below.
+  const highlights = [
+    canCard(user, "total-revenue") && { key: "rev", label: "Total revenue", value: inr(sales.totalRevenue), delta: deltas.totalRevenue, hint: vs ?? "Delivered B2C and B2B", icon: TrendingUp, href: card("total-revenue") },
+    showOrdersOverview && { key: "ord", label: "Total orders", value: formatNumber(orders.total), delta: deltas.totalOrders, hint: vs ?? "B2C + B2B", icon: ClipboardList, tone: "info", href: card("total-orders") },
+    showOrdersOverview && { key: "dlv", label: "Delivered gross", value: inr(orders.deliveredGross), delta: deltas.deliveredGross, hint: vs ?? "Delivered sales value", icon: PackageCheck, href: card("delivered-gross") },
+    showCustomers && { key: "cus", label: "Ordering customers", value: formatNumber(customers.ordering), hint: "Placed at least one order", icon: ShoppingCart, tone: "warning", href: card("ordering-customers") },
+  ].filter(Boolean);
+  const highlightCols = ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4"][highlights.length];
 
-      <DashboardAccordion sections={sectionIds} defaultOpen={["sales"]}>
+  return (
+    <div className="zoho-dash -mx-3 -my-5 min-h-full bg-[var(--z-canvas)] px-3 py-4 sm:-mx-5 sm:px-5 sm:py-5 lg:-mx-6 lg:px-6">
+      <DashboardAccordion
+        sections={sectionIds}
+        defaultOpen={["sales"]}
+        header={
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--z-card)] text-[var(--z-ink)] shadow-[var(--z-shadow)] ring-1 ring-[var(--z-line)]">
+              <LayoutDashboard className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h1 className="truncate text-page-title font-semibold text-[var(--z-ink)]">Welcome {user?.name || "back"}</h1>
+              <p className="truncate text-xs text-[var(--z-muted)]" title="Marketplace performance across sales, orders, shipping, customers and finance. All figures are calculated on the server for the filters below.">
+                Main Dashboard · Marketplace performance across sales, orders, shipping, customers and finance
+              </p>
+            </div>
+          </div>
+        }
+        beforeSections={
+          <>
+            <DashboardFilters values={d.filters.values} options={d.filters.options} label={d.filters.label} variant="zoho" />
+            {highlights.length > 0 && (
+              <div className={cn("z-stagger mb-4 grid grid-cols-2 gap-2.5 sm:gap-4", highlightCols)}>
+                {highlights.map(({ key, ...h }) => (
+                  <StatCard key={key} size="lg" {...h} />
+                ))}
+              </div>
+            )}
+          </>
+        }
+      >
       {showSales && (
       <DashboardSection id="sales" index={indexOf("sales")} title="Sales overview" summary={salesSummary}>
         <Grid>
@@ -215,7 +251,7 @@ export default async function MainDashboardPage({ searchParams }) {
       )}
 
       {showFinance && (
-        <DashboardSection id="finance" index={indexOf("finance")} title="Finance & report" summary={`${finance.contributionPct}% contribution margin · net ${inr(finance.netProfit)}`} action={<Link href="/admin/dashboards/finance" className="text-[13px] font-medium text-brand-700 hover:underline">Open finance dashboard</Link>}>
+        <DashboardSection id="finance" index={indexOf("finance")} title="Finance & report" summary={`${finance.contributionPct}% contribution margin · net ${inr(finance.netProfit)}`} action={<WidgetLink href="/admin/dashboards/finance">Open finance dashboard</WidgetLink>}>
           <Grid className="lg:grid-cols-5 2xl:grid-cols-5">
             <StatCard label="Contribution margin" value={`${finance.contributionPct}%`} hint={`${inr(finance.contribution)} on delivered revenue`} icon={TrendingUp} tone={finance.contribution >= 0 ? "brand" : "danger"} />
             <StatCard label="GMV (order value)" value={inr(finance.gmv)} delta={deltas.gmv} hint={vs ?? "Delivered customer-paid value"} icon={CircleDollarSign} tone="info" />
@@ -247,38 +283,28 @@ export default async function MainDashboardPage({ searchParams }) {
 
       {showCharts && (
       <DashboardSection id="charts" index={indexOf("charts")} title="Reports & charts" summary="Sales trend, alerts, status mix, revenue mix, top categories and vendors">
-        <div className="grid gap-4 xl:grid-cols-3">
-          <Card className="xl:col-span-2">
-            <CardHeader title="Sales and orders" description="Delivered sales (₹) and orders placed" />
-            <CardBody className="space-y-6">
-              <LineChart data={d.trend} series={[{ key: "sales", label: "Delivered sales (₹)" }]} label="Delivered sales trend" height={200} />
-              <BarChart data={d.trend} series={[{ key: "orders", label: "Orders placed", color: "var(--chart-2)" }]} label="Orders trend" height={160} />
-            </CardBody>
-          </Card>
-          <Card>
-            <CardHeader title="Needs attention" description="Operational alerts across the marketplace" />
+        <div className="grid gap-3 sm:gap-4 xl:grid-cols-3">
+          <Widget className="xl:col-span-2" title="Sales and orders" description="Delivered sales (₹) and orders placed" bodyClassName="space-y-6 px-5 pt-2 pb-5">
+            <LineChart data={d.trend} series={[{ key: "sales", label: "Delivered sales (₹)" }]} label="Delivered sales trend" height={200} />
+            <BarChart data={d.trend} series={[{ key: "orders", label: "Orders placed", color: "var(--chart-2)" }]} label="Orders trend" height={160} />
+          </Widget>
+          <Widget title="Needs attention" description="Operational alerts across the marketplace" bodyClassName="pb-2 [&_ul]:border-t [&_ul]:border-[var(--z-line)]">
             <AlertList alerts={d.alerts} />
-          </Card>
+          </Widget>
         </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader title="Order status distribution" description="Sub-orders in this period" />
-            <CardBody>
-              <DonutChart data={d.statusMix} label="Order status distribution" centerValue={formatNumber(orders.subOrders)} centerLabel="sub-orders" />
-            </CardBody>
-          </Card>
-          <Card>
-            <CardHeader title="Revenue mix" description="Where the money in this period comes from" />
-            <CardBody>{d.revenueMix.some((r) => r.value > 0) ? <HBarList data={d.revenueMix} format={inr} /> : <p className="text-sm text-ink-muted">No revenue in this period.</p>}</CardBody>
-          </Card>
-          <Card>
-            <CardHeader title="Top categories" description="Delivered sales in this period" />
-            <CardBody>{d.topCategories.length ? <HBarList data={d.topCategories} format={inr} /> : <p className="text-sm text-ink-muted">No delivered sales in this period.</p>}</CardBody>
-          </Card>
-          <Card>
-            <CardHeader title="Top vendors" description="Delivered GMV in this period" />
-            <CardBody>{d.topVendors.length ? <HBarList data={d.topVendors} format={inr} /> : <p className="text-sm text-ink-muted">No delivered sales in this period.</p>}</CardBody>
-          </Card>
+        <div className="mt-3 grid gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-2">
+          <Widget title="Order status distribution" description="Sub-orders in this period" bodyClassName="px-5 pt-2 pb-5">
+            <StatusMixView data={d.statusMix} label="Order status distribution" centerValue={formatNumber(orders.subOrders)} centerLabel="sub-orders" />
+          </Widget>
+          <Widget title="Revenue mix" description="Where the money in this period comes from" bodyClassName="px-5 pt-2 pb-5">
+            {d.revenueMix.some((r) => r.value > 0) ? <HBarList data={d.revenueMix} format={inr} /> : <p className="text-sm text-[var(--z-muted)]">No revenue in this period.</p>}
+          </Widget>
+          <Widget title="Top categories" description="Delivered sales in this period" bodyClassName="px-5 pt-2 pb-5">
+            {d.topCategories.length ? <HBarList data={d.topCategories} format={inr} /> : <p className="text-sm text-[var(--z-muted)]">No delivered sales in this period.</p>}
+          </Widget>
+          <Widget title="Top vendors" description="Delivered GMV in this period" bodyClassName="px-5 pt-2 pb-5">
+            {d.topVendors.length ? <HBarList data={d.topVendors} format={inr} /> : <p className="text-sm text-[var(--z-muted)]">No delivered sales in this period.</p>}
+          </Widget>
         </div>
       </DashboardSection>
       )}
@@ -290,7 +316,7 @@ export default async function MainDashboardPage({ searchParams }) {
           title="Fixed expenses"
           note={fixedMonth}
           summary={`${formatINR(fixed.kpis.total)} total · ${formatINR(fixed.kpis.baseRecurring)} recurring · ${formatINR(fixed.kpis.monthAdjustments)} adjustments`}
-          action={<Link href="/admin/finance/fixed-expenses" className="text-[13px] font-medium text-brand-700 hover:underline">Open fixed expenses</Link>}
+          action={<WidgetLink href="/admin/finance/fixed-expenses">Open fixed expenses</WidgetLink>}
         >
           <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
             <StatCard label="Total Fixed Cost" value={formatINR(fixed.kpis.total)} hint={`Effective total for ${fixedMonth}`} icon={Sigma} href="/admin/finance/fixed-expenses" />
@@ -310,11 +336,10 @@ export default async function MainDashboardPage({ searchParams }) {
       </DashboardAccordion>
 
       {showOrders && (
-        <Card className="mt-4">
-          <CardHeader title="Latest orders" description="In the selected period" actions={<Link href="/admin/orders" className="text-[13px] font-medium text-brand-700 hover:underline">View all orders</Link>} />
-          <MiniTable
+        <Widget className="mt-4" title="Latest orders" description="In the selected period" actions={<WidgetLink href="/admin/orders">View all orders</WidgetLink>}>
+          <ZohoTable
             columns={[
-              { key: "id", label: "Order", render: (r) => <Link href={`/admin/orders/${r.id}`} className="font-mono text-xs font-medium text-brand-700 hover:underline">{r.id}</Link> },
+              { key: "id", label: "Order", render: (r) => <Link href={`/admin/orders/${r.id}`} className="font-mono text-xs font-medium text-[var(--z-accent)] hover:underline">{r.id}</Link> },
               { key: "customer", label: "Customer" },
               { key: "paymentMode", label: "Payment" },
               { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
@@ -324,8 +349,8 @@ export default async function MainDashboardPage({ searchParams }) {
             rows={d.recentOrders}
             empty="No orders in this period."
           />
-        </Card>
+        </Widget>
       )}
-    </>
+    </div>
   );
 }

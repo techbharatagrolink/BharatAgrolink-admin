@@ -42,22 +42,22 @@ function useRunner(action) {
 
 function OptionCard({ option }) {
   return (
-    <div className="rounded-lg border border-line p-3 text-[13px]">
+    <div className="rounded-lg border border-line p-3 text-small">
       <div className="flex items-center justify-between gap-2">
         <p className="font-semibold text-ink">{option.name ?? option.courierName}</p>
         <p className="font-semibold text-brand-700 tabular">{formatINR(option.totalCharges)}</p>
       </div>
       <dl className="mt-2 grid grid-cols-3 gap-2 text-ink-soft">
         <div>
-          <dt className="text-[11px] text-ink-muted uppercase">Freight</dt>
+          <dt className="text-micro text-ink-muted uppercase">Freight</dt>
           <dd className="tabular">{formatINR(option.freightCharges)}</dd>
         </div>
         <div>
-          <dt className="text-[11px] text-ink-muted uppercase">COD Charges</dt>
+          <dt className="text-micro text-ink-muted uppercase">COD Charges</dt>
           <dd className="tabular">{formatINR(option.codCharges)}</dd>
         </div>
         <div>
-          <dt className="text-[11px] text-ink-muted uppercase">Estimated Days</dt>
+          <dt className="text-micro text-ink-muted uppercase">Estimated Days</dt>
           <dd>{option.estimatedDays || "—"}</dd>
         </div>
       </dl>

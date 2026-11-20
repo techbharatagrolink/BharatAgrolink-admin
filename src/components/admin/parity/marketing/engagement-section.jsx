@@ -219,7 +219,7 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
           <div className="grid grid-cols-2 gap-2 border-b border-line px-3 py-2 md:hidden">
             {columns.filter((c) => c.filter).map((c) => (
               <label key={c.key} className="min-w-0 space-y-1">
-                <span className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{c.label}</span>
+                <span className="text-micro font-medium tracking-wide text-ink-muted uppercase">{c.label}</span>
                 {filterInput(c)}
               </label>
             ))}
@@ -230,7 +230,7 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
         )}
 
         <div className="hidden max-h-[70vh] overflow-auto scrollbar-thin md:block">
-          <table className="w-full min-w-max border-separate border-spacing-0 text-left text-[13px]">
+          <table className="w-full min-w-max border-separate border-spacing-0 text-left text-small">
             <caption className="sr-only">{cart ? "User cart tracking" : "User recently viewed products"}</caption>
             <thead>
               <tr>
@@ -310,10 +310,10 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
                   <div className="-mt-1 -mr-1 shrink-0">{messageButton(r)}</div>
                 </div>
                 {rest.length > 0 && (
-                  <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px]">
+                  <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-small">
                     {rest.map((c) => (
                       <div key={c.key} className={cn("min-w-0", c.wrap && "col-span-2")}>
-                        <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
+                        <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
                         <dd className="mt-0.5 min-w-0 break-words text-ink-soft">{showCell(c, r)}</dd>
                       </div>
                     ))}

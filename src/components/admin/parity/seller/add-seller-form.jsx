@@ -3,9 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { addSellerCitiesAction, addSellerStatesAction, createSellerAction, verifyGstAction } from "@/lib/actions/admin/parity/seller";
@@ -150,12 +151,33 @@ export function AddSellerForm({ options, canAdd }) {
     });
   };
 
+  // Zoho Books "New Vendor" layout: grouped sections, label-left rows (.ba-form-rows), sticky Save bar.
+  // Same fields, checks and actions as before — only arranged differently.
+  const section = (title, hint) => (
+    <div className="mb-4 border-b border-line pb-2">
+      <h2 className="text-section font-semibold text-ink">{title}</h2>
+      {hint && <p className="mt-0.5 text-xs text-ink-muted">{hint}</p>}
+    </div>
+  );
+  const focusGst = () => document.getElementById("seller-gst-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+
   return (
+    // No overflow-hidden on the card: it would stop the Save bar below from sticking while scrolling.
     <Card>
-      <CardBody>
-        <form onSubmit={submit} className="space-y-4" noValidate>
+      <form onSubmit={submit} noValidate>
+        <div className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-line bg-info-bg px-5 py-3 text-sm text-info-ink">
+          <CheckCircle2 className="size-4 shrink-0" aria-hidden />
+          <span>Have the seller&apos;s GSTIN? Verify it to confirm the registered business name and address.</span>
+          <button type="button" onClick={focusGst} className="font-semibold text-brand-700 hover:underline">
+            Go to GST &rsaquo;
+          </button>
+        </div>
+        <CardBody className="space-y-8 px-5 py-6 sm:px-8">
           {!canAdd && <Notice>You can view this form. Adding sellers needs add permission.</Notice>}
-          <div className="grid gap-4 sm:grid-cols-2">
+
+          <section>
+            {section("Business details")}
+            <div className="ba-form-rows space-y-5">
             <Field label="Shop Name (Display Name)" required error={errors.sellerName}>
               {({ id, invalid }) => <Input id={id} value={form.sellerName} onChange={set("sellerName")} aria-invalid={invalid || undefined} placeholder="Full Name" maxLength={80} />}
             </Field>
@@ -167,14 +189,20 @@ export function AddSellerForm({ options, canAdd }) {
                 <Select id={id} value={form.groupId} onChange={set("groupId")} aria-invalid={invalid || undefined} placeholder="Select Seller type" options={options.groups.map((g) => ({ value: String(g.id), label: g.name }))} />
               )}
             </Field>
+            <Field label="Business Description" required error={errors.description}>
+              {({ id, invalid }) => <Textarea id={id} rows={5} value={form.description} onChange={set("description")} aria-invalid={invalid || undefined} placeholder="About your Business / Company..." maxLength={5000} />}
+            </Field>
+            </div>
+          </section>
+
+          <section>
+            {section("Address", "The PIN code is checked against the selected state and city.")}
+            <div className="ba-form-rows space-y-5">
             <Field label="Country" required>
               {({ id }) => <Select id={id} value={countryId} onChange={changeCountry} placeholder="Select Country" options={options.countries.map((c) => ({ value: String(c.id), label: c.name }))} />}
             </Field>
-            <Field label="Business Address" required error={errors.address} className="sm:col-span-2">
+            <Field label="Business Address" required error={errors.address}>
               {({ id, invalid }) => <Textarea id={id} rows={4} value={form.address} onChange={set("address")} aria-invalid={invalid || undefined} placeholder="Business Address" maxLength={250} />}
-            </Field>
-            <Field label="Business Description" required error={errors.description} className="sm:col-span-2">
-              {({ id, invalid }) => <Textarea id={id} rows={5} value={form.description} onChange={set("description")} aria-invalid={invalid || undefined} placeholder="About your Business / Company..." maxLength={5000} />}
             </Field>
             <Field label="State" required error={errors.state}>
               {({ id, invalid }) => (
@@ -203,6 +231,12 @@ export function AddSellerForm({ options, canAdd }) {
             <Field label="Pincode" required error={errors.pincode} hint="Checked against the selected state and city.">
               {({ id, invalid, describedBy }) => <Input id={id} value={form.pincode} onChange={set("pincode")} aria-invalid={invalid || undefined} aria-describedby={describedBy} placeholder="462026" inputMode="numeric" maxLength={6} />}
             </Field>
+            </div>
+          </section>
+
+          <section>
+            {section("Contact & login", "The seller signs in to the seller panel with this email and password.")}
+            <div className="ba-form-rows space-y-5">
             <Field label="Phone" required error={errors.phone}>
               {({ id, invalid }) => <Input id={id} value={form.phone} onChange={set("phone")} aria-invalid={invalid || undefined} placeholder="** without country code" inputMode="tel" maxLength={10} />}
             </Field>
@@ -212,12 +246,13 @@ export function AddSellerForm({ options, canAdd }) {
             <Field label="Password" required error={errors.password}>
               {({ id, invalid }) => <Input id={id} type="password" value={form.password} onChange={set("password")} aria-invalid={invalid || undefined} placeholder="Password" maxLength={100} autoComplete="new-password" />}
             </Field>
-            {FILES.map((f) => (
-              <Field key={f.name} label={f.label} error={errors[f.name]} hint="JPG, PNG or WebP.">
-                {({ id, describedBy }) => <Input id={id} type="file" name={f.name} accept={IMAGE_ACCEPT} aria-describedby={describedBy} className="h-auto py-1.5" />}
-              </Field>
-            ))}
-            <Field label="GST/VAT Number" required error={errors.gst} className="sm:col-span-2">
+            </div>
+          </section>
+
+          <section id="seller-gst-section" className="scroll-mt-24">
+            {section("Tax")}
+            <div className="ba-form-rows space-y-5">
+            <Field label="GST/VAT Number" required error={errors.gst}>
               {({ id, invalid }) => (
                 <div className="space-y-2">
                   <div className="flex gap-2">
@@ -237,7 +272,7 @@ export function AddSellerForm({ options, canAdd }) {
                     </Button>
                   </div>
                   {gstResult?.active && (
-                    <div className="space-y-0.5 text-[13px] text-ink-soft">
+                    <div className="space-y-0.5 text-small text-ink-soft">
                       <p>
                         Business Name: <b>{gstResult.legalName || "N/A"}</b>
                       </p>
@@ -250,21 +285,37 @@ export function AddSellerForm({ options, canAdd }) {
                     </div>
                   )}
                   {gstResult && !gstResult.active && (
-                    <p className="inline-flex items-center gap-1 text-[13px] text-warning-ink">
+                    <p className="inline-flex items-center gap-1 text-small text-warning-ink">
                       <XCircle className="size-4" aria-hidden /> GST Number is invalid
                     </p>
                   )}
                 </div>
               )}
             </Field>
-          </div>
-          <div className="flex justify-end border-t border-line pt-4">
-            <Button type="submit" variant="primary" loading={saving} disabled={!canAdd}>
-              Save
-            </Button>
-          </div>
-        </form>
-      </CardBody>
+            </div>
+          </section>
+
+          <section>
+            {section("Documents", "Optional. JPG, PNG or WebP images.")}
+            <div className="ba-form-rows space-y-5">
+            {FILES.map((f) => (
+              <Field key={f.name} label={f.label} error={errors[f.name]} hint="JPG, PNG or WebP.">
+                {({ id, describedBy }) => <FileInput id={id} name={f.name} accept={IMAGE_ACCEPT} aria-describedby={describedBy} />}
+              </Field>
+            ))}
+            </div>
+          </section>
+        </CardBody>
+        {/* Sticky action bar, as in Zoho Books: always reachable while scrolling a long form. */}
+        <div className="sticky bottom-0 z-10 flex items-center gap-2 rounded-b-xl border-t border-line bg-surface/95 px-5 py-3 backdrop-blur sm:px-8">
+          <Button type="submit" variant="primary" loading={saving} disabled={!canAdd}>
+            Save
+          </Button>
+          <ButtonLink href="/admin/vendors" variant="secondary">
+            Cancel
+          </ButtonLink>
+        </div>
+      </form>
     </Card>
   );
 }

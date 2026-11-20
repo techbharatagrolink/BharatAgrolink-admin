@@ -46,7 +46,7 @@ export default async function StockHistoryPage({ searchParams }) {
           <MovementTable movements={moves.data} />
         )}
         {(beforeId || moves.data?.length === PAGE) && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
             <span>Showing {moves.data?.length ?? 0} entries</span>
             <span className="flex gap-2">
               {beforeId && (

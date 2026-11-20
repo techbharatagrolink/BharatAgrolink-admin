@@ -12,6 +12,7 @@ import { Field } from "@/components/ui/form";
 import { Notice, ProgressBar } from "@/components/ui/page";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
 import { agentPerformanceAction, salesByLeadsAction } from "@/lib/actions/admin/parity/crm";
+import { GridTable } from "@/components/data-table/grid-table";
 
 const STATUS_TONE = { Excellent: "success", Good: "info", Average: "warning", "Low Performance": "danger" };
 const rateTone = (rate) => (rate >= 20 ? "brand" : rate >= 10 ? "info" : rate >= 5 ? "warning" : "danger");
@@ -37,7 +38,7 @@ function Metric({ label, value, className }) {
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -128,7 +129,7 @@ function SalesByLeadsDialog({ type, onClose }) {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="rounded-lg bg-brand-600 px-4 py-3 text-brand-fg">
-            <p className="text-[11px] font-semibold tracking-wide uppercase opacity-80">Total Sales</p>
+            <p className="text-micro font-semibold tracking-wide uppercase opacity-80">Total Sales</p>
             <p className="text-2xl font-bold tabular">{d ? formatINR(d.totalSales) : "—"}</p>
           </div>
           {type === "total" && (
@@ -155,43 +156,34 @@ function SalesByLeadsDialog({ type, onClose }) {
           <p className="py-6 text-center text-sm text-ink-muted">No sales agents found.</p>
         ) : (
           <>
-          <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-            <table className="w-full min-w-max text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
-                  <th className="px-3 py-2 font-semibold">Agent</th>
-                  <th className="px-3 py-2 text-right font-semibold">Total Leads</th>
-                  <th className="px-3 py-2 text-right font-semibold">Converted Leads</th>
-                  <th className="px-3 py-2 text-right font-semibold">Total Revenue</th>
-                  <th className="px-3 py-2 text-right font-semibold">Avg Amount/Lead</th>
-                  <th className="px-3 py-2 text-right font-semibold">Conversion Rate</th>
-                  <th className="px-3 py-2 text-right font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.rows.map((r) => (
-                  <tr key={r.id} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2">
+          <div className="hidden xl:block">
+            <GridTable
+              rows={d.rows}
+              rowKey="id"
+              columns={[
+                {
+                  key: "agent",
+                  label: "Agent",
+                  render: (r) => (
+                    <>
                       <p className="font-medium text-ink">{r.name}</p>
                       <p className="text-xs text-ink-muted">{r.role}</p>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular">{formatNumber(r.totalLeads)}</td>
-                    <td className="px-3 py-2 text-right tabular text-success-ink">{formatNumber(r.converted)}</td>
-                    <td className="px-3 py-2 text-right font-medium tabular">{formatINR(r.revenue)}</td>
-                    <td className="px-3 py-2 text-right tabular">{formatINR(r.avgPerLead)}</td>
-                    <td className="px-3 py-2 text-right tabular">{r.rate}%</td>
-                    <td className="px-3 py-2 text-right">
-                      <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </>
+                  ),
+                },
+                { key: "total", label: "Total Leads", align: "right", render: (r) => formatNumber(r.totalLeads) },
+                { key: "converted", label: "Converted Leads", align: "right", render: (r) => <span className="text-success-ink">{formatNumber(r.converted)}</span> },
+                { key: "revenue", label: "Total Revenue", align: "right", render: (r) => <span className="font-medium">{formatINR(r.revenue)}</span> },
+                { key: "avg", label: "Avg Amount/Lead", align: "right", render: (r) => formatINR(r.avgPerLead) },
+                { key: "rate", label: "Conversion Rate", align: "right", render: (r) => `${r.rate}%` },
+                { key: "status", label: "Status", align: "right", render: (r) => <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge> },
+              ]}
+            />
           </div>
 
           <div className="space-y-3 xl:hidden">
             {d.rows.map((r) => (
-              <div key={r.id} className="rounded-lg border border-line p-3 text-[13px]">
+              <div key={r.id} className="rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium text-ink">{r.name}</p>
@@ -227,7 +219,7 @@ export function TeamPerformance({ rows, summary }) {
 
   const kpi = (label, value, onClick) => (
     <button key={label} type="button" onClick={onClick} disabled={!onClick} className="rounded-xl border border-line bg-surface p-3.5 text-left enabled:hover:border-brand-200 enabled:hover:bg-surface-muted">
-      <p className="text-[12.5px] font-medium text-ink-muted">{label}</p>
+      <p className="text-label font-medium text-ink-muted">{label}</p>
       <p className="mt-1.5 truncate text-[22px] font-semibold tracking-tight text-ink tabular">{value}</p>
       {onClick && <p className="mt-1 text-xs text-brand-700">View agent breakdown</p>}
     </button>
@@ -287,53 +279,49 @@ export function TeamPerformance({ rows, summary }) {
             </div>
           }
         />
-        <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-          <table className="w-full min-w-max text-left text-[13px]">
-            <thead>
-              <tr className="border-y border-line bg-surface-muted text-xs text-ink-muted">
-                <th className="px-4 py-2 font-semibold">Agent</th>
-                <th className="px-3 py-2 text-center font-semibold">Total Leads</th>
-                <th className="px-3 py-2 text-center font-semibold">Converted</th>
-                <th className="px-3 py-2 text-center font-semibold">Dead</th>
-                <th className="w-1/4 px-3 py-2 font-semibold">Conversion Rate</th>
-                <th className="px-4 py-2 text-right font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((r) => (
-                <tr key={r.id} onClick={() => setAgent(r.id)} className="cursor-pointer border-b border-line last:border-0 hover:bg-surface-muted">
-                  <td className="px-4 py-2">
-                    <button type="button" onClick={() => setAgent(r.id)} className="text-left">
-                      <span className="block font-medium text-ink">{r.name}</span>
-                      <span className="block text-xs text-ink-muted">{r.role}</span>
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 text-center tabular">{formatNumber(r.totalLeads)}</td>
-                  <td className="px-3 py-2 text-center font-medium tabular text-success-ink">{formatNumber(r.converted)}</td>
-                  <td className="px-3 py-2 text-center font-medium tabular text-danger-ink">{formatNumber(r.dead)}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-12 text-xs font-medium tabular">{r.rate}%</span>
-                      <ProgressBar value={r.rate} tone={rateTone(r.rate)} label={`${r.name} conversion rate`} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
-                      {r.alert && <AlertTriangle className="size-4 text-danger-ink" aria-label="Low conversion alert" />}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {visible.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-ink-muted">
-                    No agents found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="hidden border-t border-line xl:block">
+          <GridTable
+            rows={visible}
+            rowKey="id"
+            onRowClick={(r) => setAgent(r.id)}
+            columns={[
+              {
+                key: "agent",
+                label: "Agent",
+                render: (r) => (
+                  <button type="button" onClick={() => setAgent(r.id)} className="text-left">
+                    <span className="block font-medium text-ink">{r.name}</span>
+                    <span className="block text-xs text-ink-muted">{r.role}</span>
+                  </button>
+                ),
+              },
+              { key: "total", label: "Total Leads", align: "right", render: (r) => formatNumber(r.totalLeads) },
+              { key: "converted", label: "Converted", align: "right", render: (r) => <span className="font-medium text-success-ink">{formatNumber(r.converted)}</span> },
+              { key: "dead", label: "Dead", align: "right", render: (r) => <span className="font-medium text-danger-ink">{formatNumber(r.dead)}</span> },
+              {
+                key: "rate",
+                label: "Conversion Rate",
+                render: (r) => (
+                  <div className="flex items-center gap-2">
+                    <span className="w-12 shrink-0 text-xs font-medium tabular">{r.rate}%</span>
+                    <ProgressBar value={r.rate} tone={rateTone(r.rate)} label={`${r.name} conversion rate`} />
+                  </div>
+                ),
+              },
+              {
+                key: "status",
+                label: "Status",
+                align: "right",
+                render: (r) => (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                    {r.alert && <AlertTriangle className="size-4 text-danger-ink" aria-label="Low conversion alert" />}
+                  </span>
+                ),
+              },
+            ]}
+          />
+          {visible.length === 0 && <p className="px-4 py-8 text-center text-sm text-ink-muted">No agents found.</p>}
         </div>
 
         <div className="divide-y divide-line xl:hidden">
@@ -349,7 +337,7 @@ export function TeamPerformance({ rows, summary }) {
                   {r.alert && <AlertTriangle className="size-4 text-danger-ink" aria-label="Low conversion alert" />}
                 </span>
               </div>
-              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-small sm:grid-cols-3">
                 <CardField label="Total Leads" value={formatNumber(r.totalLeads)} />
                 <CardField label="Converted" value={formatNumber(r.converted)} />
                 <CardField label="Dead" value={formatNumber(r.dead)} />

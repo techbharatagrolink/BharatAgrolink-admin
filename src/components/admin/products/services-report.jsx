@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { storefrontUrl } from "@/lib/site";
+import { StaticGrid } from "@/components/data-table/static-grid";
 
 /** The live customer-facing listing — this report exists so sales can pitch what's already there. */
 function storeUrl(slug) {
@@ -113,7 +114,7 @@ export function ServiceBadges({ services, baseHref }) {
           key={s.code ?? idx}
           href={`${baseHref}?service=${encodeURIComponent(String(s.code ?? s.name))}`}
           title={s.category ? `Filter by ${s.category}` : "Filter by this service"}
-          className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300"
+          className="inline-flex items-center px-1.5 py-0.5 rounded text-micro font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300"
         >
           {s.name} ({chargeText(s)})
         </Link>
@@ -138,7 +139,7 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
           >
             <p className="text-sm font-semibold text-ink">All services</p>
             <p className="mt-1.5 text-xl font-semibold tabular text-ink">{totalCount}</p>
-            <p className="text-[11px] text-ink-muted">listings</p>
+            <p className="text-micro text-ink-muted">listings</p>
           </Link>
           {serviceGroups.map((g) => (
             <Link
@@ -152,7 +153,7 @@ export function ServiceCardsGrid({ baseHref, serviceGroups, selectedKey, totalCo
               <p className="truncate text-sm font-semibold text-ink">{g.name}</p>
               {g.category && <p className="truncate text-xs text-ink-muted">{g.category}</p>}
               <p className="mt-1.5 text-xl font-semibold tabular text-ink">{g.count}</p>
-              <p className="text-[11px] text-ink-muted">listing{g.count === 1 ? "" : "s"} · {chargeText(g)}</p>
+              <p className="text-micro text-ink-muted">listing{g.count === 1 ? "" : "s"} · {chargeText(g)}</p>
             </Link>
           ))}
         </div>
@@ -179,35 +180,29 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
       />
       {displayRows.length ? (
         <>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y border-line bg-surface-muted text-left text-xs font-medium text-ink-muted">
-                  <th scope="col" className="px-4 py-2.5">Product</th>
-                  <th scope="col" className="px-4 py-2.5">Vendor</th>
-                  <th scope="col" className="px-4 py-2.5">Category</th>
-                  <th scope="col" className="px-4 py-2.5">Services</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Display price</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Stock</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {displayRows.map(({ key, p, v, services }) => (
-                  <tr key={key} className="align-top hover:bg-surface-muted/60">
-                    <td className="px-4 py-2.5">
-                      <ProductCell p={p} v={v} />
-                    </td>
-                    <td className="px-4 py-2.5 text-ink-soft">{p.vendor}</td>
-                    <td className="px-4 py-2.5 text-ink-soft">{p.category}</td>
-                    <td className="px-4 py-2.5">
-                      <ServiceBadges services={services} baseHref={baseHref} />
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-medium text-ink tabular">{formatINR(v ? v.display : p.display)}</td>
-                    <td className="px-4 py-2.5 text-right tabular">{formatNumber(v ? v.stock : p.stock)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="hidden border-t border-line md:block">
+            {/* Server component: cells are drawn here and handed to the client grid as finished elements. */}
+            <StaticGrid
+              columns={[
+                { key: "product", label: "Product" },
+                { key: "vendor", label: "Vendor" },
+                { key: "category", label: "Category" },
+                { key: "services", label: "Services" },
+                { key: "display", label: "Display price", align: "right" },
+                { key: "stock", label: "Stock", align: "right" },
+              ]}
+              rows={displayRows.map(({ key, p, v, services }) => ({
+                __key: key,
+                cells: {
+                  product: <ProductCell p={p} v={v} />,
+                  vendor: <span className="text-ink-soft">{p.vendor}</span>,
+                  category: <span className="text-ink-soft">{p.category}</span>,
+                  services: <ServiceBadges services={services} baseHref={baseHref} />,
+                  display: <span className="font-medium text-ink">{formatINR(v ? v.display : p.display)}</span>,
+                  stock: formatNumber(v ? v.stock : p.stock),
+                },
+              }))}
+            />
           </div>
           <ul className="space-y-2.5 border-t border-line p-3 md:hidden">
             {displayRows.map(({ key, p, v, services }) => (
@@ -234,7 +229,7 @@ export function ProductsServicesTable({ rows, baseHref, description, selectedNam
                 <div className="mt-2">
                   <ServiceBadges services={services} baseHref={baseHref} />
                 </div>
-                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[13px]">
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-small">
                   <div><dt className="text-xs text-ink-muted">Display price</dt><dd className="font-medium text-ink">{formatINR(v ? v.display : p.display)}</dd></div>
                   <div><dt className="text-xs text-ink-muted">Stock</dt><dd className="text-ink-soft">{formatNumber(v ? v.stock : p.stock)}</dd></div>
                 </dl>

@@ -114,6 +114,7 @@ export function ResourceTable({ resourceKey, resource, data, canAdd, rowActions,
         rowHref={resource.rowHref}
         rowActions={rowActions}
         bulkActions={bulkActions}
+        promoteRowActions
         onAction={onAction}
         onCustomAction={onCustomAction}
         onExport={resource.exportable ? (params) => resourceExportAction(resourceKey, params) : undefined}

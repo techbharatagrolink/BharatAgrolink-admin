@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/format";
 import {
@@ -156,7 +157,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
 
       <CardBody className="space-y-6">
         <section aria-labelledby="seller-panel-docs">
-          <h3 id="seller-panel-docs" className="text-[13px] font-semibold text-ink">
+          <h3 id="seller-panel-docs" className="text-small font-semibold text-ink">
             Seller panel documents
           </h3>
           <ul className="mt-2 divide-y divide-line rounded-lg border border-line">
@@ -211,7 +212,7 @@ export function VendorDocuments({ vendorId, businessType, sellerType, categories
         {licenseDocuments ? (
           licenseDocuments.groups.map((group) => (
             <section key={group.id} aria-labelledby={`license-group-${group.id}`}>
-              <h3 id={`license-group-${group.id}`} className="text-[13px] font-semibold text-ink">
+              <h3 id={`license-group-${group.id}`} className="text-small font-semibold text-ink">
                 {group.title}
               </h3>
               <ul className="mt-2 divide-y divide-line rounded-lg border border-line">
@@ -432,7 +433,7 @@ function UploadDialog({ vendorId, groups, initialType = "", onClose, onDone }) {
           {({ id }) => <Textarea id={id} name="remarks" rows={2} maxLength={500} />}
         </Field>
         <Field label="File (PDF, JPG or PNG, max 5 MB)" required className="sm:col-span-2">
-          {({ id }) => <Input id={id} name="file" type="file" accept={ACCEPT} className="h-auto py-1.5" />}
+          {({ id }) => <FileInput id={id} name="file" accept={ACCEPT} />}
         </Field>
         {error ? (
           <p role="alert" className="text-sm text-danger-ink sm:col-span-2">

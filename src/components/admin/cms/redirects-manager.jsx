@@ -36,7 +36,7 @@ function SourceCell({ rule }) {
   return (
     <span className="block max-w-[26rem] min-w-0 whitespace-normal">
       <span className="flex flex-wrap items-center gap-1.5">
-        <code className="rounded bg-surface-muted px-1.5 py-0.5 text-[12.5px] break-all text-ink">{path}</code>
+        <code className="rounded bg-surface-muted px-1.5 py-0.5 text-label break-all text-ink">{path}</code>
         {rule.overrideRoute && <Badge tone="warning">Override</Badge>}
         {rule.liveRoute && !rule.overrideRoute && <Badge tone="info">Live page</Badge>}
       </span>
@@ -245,7 +245,7 @@ export function RedirectsManager({ title, items, metrics, meta, filters, siteUrl
         )}
 
         {totalPages > 1 && (
-          <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+          <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
             <span>
               Page {page} of {totalPages}
             </span>
