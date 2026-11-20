@@ -93,7 +93,7 @@ export default async function InventoryOverviewPage() {
                 label: "",
                 render: (r) =>
                   r.sellerId ? (
-                    <Link href={stockHref({ sellerId: r.sellerId })} className="inline-flex items-center text-[13px] font-medium text-brand-700 hover:underline">
+                    <Link href={stockHref({ sellerId: r.sellerId })} className="inline-flex items-center text-small font-medium text-brand-700 hover:underline">
                       View <ChevronRight className="size-4" aria-hidden />
                     </Link>
                   ) : null,

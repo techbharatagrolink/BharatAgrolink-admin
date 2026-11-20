@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startRouteProgress } from "@/components/admin/shell/route-progress";
 import { useMemo, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Columns3, Download, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Columns3, Copy, Download, Loader2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,9 @@ import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
 import { Cell, formatCellValue, resolveHref } from "./cells";
 import { ClearFiltersButton, FilterBar } from "./filter-bar";
-import { applyColumnFilters, ColumnFilter, columnFilterable, columnFilterActive } from "./column-filter";
+import { applyColumnFilters, columnFilterActive } from "./column-filter";
 import { useQueryState } from "./use-query-state";
+import { AgDataGrid } from "./ag-data-grid";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
@@ -75,6 +76,10 @@ export function DataTable({
   pageSizes = PAGE_SIZES,
   serial = true,
   columnFilters = false,
+  // Row checkboxes on every table (bulk export / copy IDs work everywhere). Pass false to hide them.
+  selectable = true,
+  // Resource lists: also offer the safe row actions in bulk (see `promoted` below).
+  promoteRowActions = false,
 }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -97,8 +102,33 @@ export function DataTable({
   const selectedOnPage = selected.filter((sid) => pageIds.includes(sid));
   const allChecked = rows.length > 0 && selectedOnPage.length === rows.length;
   const [sortField, sortDir] = (get("sort") || "").split(":");
-  const showSelection = bulkActions.length > 0;
+  const showSelection = selectable || bulkActions.length > 0;
   const hasRowActions = rowActions.length > 0;
+  // Selected rows loaded on this page (full records) and how many are selected on other pages.
+  const selectedRows = rows.filter((r) => selected.includes(r[rowKey]));
+  const offPage = selected.length - selectedRows.length;
+  // Row actions also offered in bulk on resource lists. Only server actions that are safe to repeat:
+  // not destructive (no danger tone / remove), no written reason, no form or picker, and not already
+  // a bulk action. They post the same { ids } list the API's action endpoint already accepts, and the
+  // server re-checks permission. Each runs only on selected rows where the row menu would offer it.
+  const promoted = promoteRowActions
+    ? rowActions.filter((a) => a.effect && !a.effect.remove && !a.href && a.kind !== "form" && !a.assign && a.tone !== "danger" && !a.confirm?.requireReason && !bulkActions.some((b) => b.id === a.id))
+    : [];
+
+  const exportSelected = () => {
+    download(`${exportName || id}-selected-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(columns, selectedRows));
+    notify({ message: `Exported ${formatNumber(selectedRows.length)} selected row${selectedRows.length === 1 ? "" : "s"}.` });
+  };
+  const copyIds = async () => {
+    // Real record IDs for rows on this page (some tables use an internal row key); keys for the rest.
+    const onPage = new Map(selectedRows.map((r) => [r[rowKey], r.id ?? r.orderId ?? r[rowKey]]));
+    try {
+      await navigator.clipboard.writeText(selected.map((k) => onPage.get(k) ?? k).join("\n"));
+      notify({ message: `Copied ${formatNumber(selected.length)} ID${selected.length === 1 ? "" : "s"}.` });
+    } catch {
+      notify({ message: "Could not copy to the clipboard.", tone: "error" });
+    }
+  };
 
   const pickLine = (orderId, line) => setPicks((current) => ({ ...current, [orderId]: line }));
   const viewOf = (row) => {
@@ -203,7 +233,7 @@ export function DataTable({
   const serialOf = (index) => (Math.max(0, (data.page - 1) * data.pageSize) || 0) + index + 1;
 
   return (
-    <div className="min-w-0 rounded-xl border border-line bg-surface shadow-sm">
+    <div className="min-w-0 rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
       {(search || filters.length > 0 || dateRange || toolbar || onExport !== undefined) && (
         <div className={cn("flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start", inlineToolbar ? "xl:flex-wrap" : "xl:justify-between")}>
           {/* inlineToolbar: the toolbar sits right after the filters and "Clear filters" gets its own line */}
@@ -248,13 +278,39 @@ export function DataTable({
       {summary && <div className="border-b border-line bg-surface-muted px-3 py-2 text-xs text-ink-soft">{summary}</div>}
 
       {showSelection && selected.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-brand-50 px-3 py-2">
-          <span className="text-[13px] font-medium text-brand-800">{selected.length} selected</span>
+        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-brand-50 px-3 py-2" role="region" aria-label="Bulk actions">
+          <span className="text-small font-medium text-brand-800">
+            {selected.length} selected
+            {offPage > 0 && <span className="font-normal text-brand-700"> ({formatNumber(offPage)} on other pages)</span>}
+          </span>
           {bulkActions.map((action) => (
             <Button key={action.id} size="xs" variant={action.tone === "danger" ? "danger-outline" : "secondary"} onClick={() => trigger(action, selected)} disabled={running}>
               {action.label}
             </Button>
           ))}
+          {promoted.map((action) => {
+            const ids = selectedRows.filter((r) => matchesWhen(action, r)).map((r) => r[rowKey]);
+            return (
+              <Button
+                key={`row-${action.id}`}
+                size="xs"
+                variant="secondary"
+                onClick={() => trigger(action, ids)}
+                disabled={running || ids.length === 0}
+                title={ids.length === selected.length ? undefined : `Applies to ${ids.length} of the selected rows on this page (the ones where "${action.label}" is available).`}
+              >
+                {action.label}
+                {ids.length !== selected.length && <span className="tabular opacity-75">({ids.length})</span>}
+              </Button>
+            );
+          })}
+          <Button size="xs" variant="secondary" onClick={exportSelected} disabled={selectedRows.length === 0} title={offPage > 0 ? "Exports the selected rows on this page" : undefined}>
+            <Download className="size-3.5" aria-hidden /> Export selected
+            {offPage > 0 && <span className="tabular opacity-75">({selectedRows.length})</span>}
+          </Button>
+          <Button size="xs" variant="secondary" onClick={copyIds}>
+            <Copy className="size-3.5" aria-hidden /> Copy IDs
+          </Button>
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>
             Clear
           </Button>
@@ -263,103 +319,46 @@ export function DataTable({
 
       <div className="relative">
         {pending && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden bg-brand-100" aria-hidden>
+            <div className="ui-indeterminate h-full w-2/5 rounded-full bg-brand-600" />
+          </div>
+        )}
+        {pending && (
           <div className="absolute inset-x-0 top-0 z-10 flex justify-center pt-10" aria-live="polite">
             <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink-soft shadow-sm">
               <Loader2 className="size-3.5 animate-spin" aria-hidden /> Loading…
             </span>
           </div>
         )}
-        <div className={cn("hidden max-h-[70vh] overflow-auto scrollbar-thin xl:block", pending && "opacity-55")}>
-          <table className="w-full min-w-max border-separate border-spacing-0 text-left text-[13px]">
-            <thead>
-              <tr>
-                {showSelection && (
-                  <th scope="col" className="sticky top-0 z-10 w-10 border-b border-line bg-surface-muted px-3 py-2.5">
-                    <Checkbox aria-label="Select all rows on this page" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? [...new Set([...selected, ...pageIds])] : selected.filter((sid) => !pageIds.includes(sid)))} />
-                  </th>
-                )}
-                {showSerial && (
-                  <th scope="col" className="sticky top-0 z-10 w-14 border-b border-line bg-surface-muted px-3 py-2.5 text-right text-xs font-semibold whitespace-nowrap text-ink-muted">
-                    S.No.
-                  </th>
-                )}
-                {visible.map((column, index) => {
-                  const active = sortField === column.key;
-                  const SortIcon = !active ? ArrowUpDown : sortDir === "asc" ? ArrowUp : ArrowDown;
-                  return (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                      className={cn("sticky top-0 z-10 border-b border-line bg-surface-muted px-3 py-2.5 text-xs font-semibold whitespace-nowrap text-ink-muted", index === 0 && "left-0 z-20", ["currency", "number", "percent"].includes(column.type) && "text-right", column.align === "right" && "text-right")}
-                      style={column.width ? { width: column.width, maxWidth: column.width } : undefined}
-                    >
-                      <span className={cn("flex items-center gap-2", columnFilters && columnFilterable(column) ? "justify-between" : (["currency", "number", "percent"].includes(column.type) || column.align === "right") && "justify-end")}>
-                        {column.sortable ? (
-                          <button type="button" onClick={() => sortBy(column)} className={cn("inline-flex items-center gap-1 hover:text-ink", active && "text-ink")}>
-                            {column.label}
-                            <SortIcon className="size-3.5" aria-hidden />
-                          </button>
-                        ) : (
-                          column.label
-                        )}
-                        {columnFilters && columnFilterable(column) && <ColumnFilter column={column} filter={colFilters[column.key]} onChange={(value) => setColFilter(column.key, value)} />}
-                      </span>
-                    </th>
-                  );
-                })}
-                {hasRowActions && (
-                  <th scope="col" className="sticky top-0 z-10 w-12 border-b border-line bg-surface-muted px-3 py-2.5">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => {
-                const key = row[rowKey];
-                const view = viewOf(row);
-                const href = resolveHref(rowHref, row);
-                const actions = rowActions.filter((a) => matchesWhen(a, row));
-                return (
-                  <tr
-  key={key}
-  className={cn(
-    "group border-b border-line last:border-0",
-    selected.includes(key) && "bg-brand-50/60"
-  )}
->
-                    {showSelection && (
-                      <td className="border-b border-line bg-surface px-3 py-2 group-hover:bg-surface-muted">
-                        <Checkbox aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
-                      </td>
-                    )}
-                    {showSerial && <td className={cn("border-b border-line bg-surface group-hover:bg-surface-muted px-3 text-right align-middle text-ink-muted tabular", dense ? "py-2" : "py-3")}>{serialOf(index)}</td>}
-                    {visible.map((column, ci) => (
-                      <td
-                        key={column.key}
-                        className={cn("border-b border-line bg-surface px-3 align-middle text-ink-soft group-hover:bg-surface-muted", dense ? "py-2" : "py-3", ci === 0 && "sticky left-0 z-[1]", ["currency", "number", "percent"].includes(column.type) && "text-right tabular", column.align === "right" && "text-right")}
-                        style={{ maxWidth: column.width || 320 }}
-                      >
-                        {ci === 0 && href && !column.href && column.type !== "image" ? (
-                          <Link href={href} className="block truncate font-medium text-brand-700 hover:underline">
-                            {formatCellValue(column, view)}
-                            {column.sub && view[column.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{view[column.sub]}</span>}
-                          </Link>
-                        ) : (
-                          <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
-                        )}
-                      </td>
-                    ))}
-                   {hasRowActions && (
-  <td className="border-b border-line bg-surface px-3 py-2 text-right group-hover:bg-surface-muted">
-    {actionsMenu(key, actions)}
-  </td>
-)}    </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {/* Desktop: AG Grid. All state below stays in this component; the grid only renders it. */}
+        <div className="hidden xl:block">
+          <AgDataGrid
+            rows={rows}
+            columns={visible}
+            rowKey={rowKey}
+            rowHref={rowHref}
+            dense={dense}
+            pending={pending}
+            showSelection={showSelection}
+            showSerial={showSerial}
+            hasRowActions={hasRowActions}
+            selected={selected}
+            setSelected={setSelected}
+            pageIds={pageIds}
+            allChecked={allChecked}
+            sortField={sortField}
+            sortDir={sortDir}
+            sortBy={sortBy}
+            columnFilters={columnFilters}
+            colFilters={colFilters}
+            setColFilter={setColFilter}
+            picks={picks}
+            pickLine={pickLine}
+            viewOf={viewOf}
+            serialOf={serialOf}
+            actionsFor={(row) => rowActions.filter((a) => matchesWhen(a, row))}
+            onTrigger={trigger}
+          />
         </div>
 
         <div className={cn("xl:hidden", pending && "opacity-55")}>
@@ -394,7 +393,7 @@ export function DataTable({
                       <Checkbox className="mt-0.5" aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                     )}
                     {showSerial && <span className="shrink-0 pt-px text-xs text-ink-muted tabular">{serialOf(index)}.</span>}
-                    <div className="min-w-0 flex-1 text-sm">
+                    <div className="min-w-0 flex-1 text-table">
                       {lead &&
                         (href && !lead.href && lead.type !== "image" ? (
                           <Link href={href} className="block font-medium break-words text-brand-700 hover:underline">
@@ -410,10 +409,10 @@ export function DataTable({
                     {hasRowActions && <div className="-mt-1 -mr-1 shrink-0">{actionsMenu(key, actions)}</div>}
                   </div>
                   {rest.length > 0 && (
-                    <dl className={cn("mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px]", showSelection && "pl-7")}>
+                    <dl className={cn("mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-table", showSelection && "pl-7")}>
                       {rest.map((column) => (
                         <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
-                          <dt className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
+                          <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
                           <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">
                             <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
                           </dd>
@@ -434,7 +433,7 @@ export function DataTable({
           ))}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-line px-3 py-2.5 text-[13px] text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 border-t border-line px-3 py-2.5 text-small text-ink-muted sm:flex-row sm:items-center sm:justify-between">
         <p className="tabular">
           {data.total === 0 ? "No results" : `Showing ${formatNumber(from)}–${formatNumber(to)} of ${formatNumber(data.total)}`}
           {filteredCount != null && (

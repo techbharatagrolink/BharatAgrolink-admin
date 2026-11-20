@@ -47,7 +47,7 @@ function inline(text, onImage, prefix) {
       );
     } else if (m[5] !== undefined) {
       out.push(
-        <code key={key} className="rounded bg-neutral-bg px-1 font-mono text-[12px]">
+        <code key={key} className="rounded bg-neutral-bg px-1 font-mono text-label">
           {m[5]}
         </code>,
       );
@@ -155,7 +155,7 @@ function parse(source) {
   return blocks;
 }
 
-const HEADING_CLASS = ["text-lg font-semibold", "text-base font-semibold", "text-[15px] font-semibold", "text-sm font-semibold", "text-sm font-semibold", "text-sm font-semibold"];
+const HEADING_CLASS = ["text-lg font-semibold", "text-base font-semibold", "text-subheading font-semibold", "text-sm font-semibold", "text-sm font-semibold", "text-sm font-semibold"];
 
 function render(blocks, onImage, prefix) {
   return blocks.map((block, b) => {
@@ -163,7 +163,7 @@ function render(blocks, onImage, prefix) {
     switch (block.type) {
       case "code":
         return (
-          <pre key={key} className="overflow-x-auto rounded-lg bg-neutral-bg p-2.5 font-mono text-[12px]">
+          <pre key={key} className="overflow-x-auto rounded-lg bg-neutral-bg p-2.5 font-mono text-label">
             {block.text}
           </pre>
         );
@@ -186,7 +186,7 @@ function render(blocks, onImage, prefix) {
       case "table":
         return (
           <div key={key} className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
+            <table className="w-full border-collapse text-small">
               <thead>
                 <tr>
                   {block.head.map((cell, c) => (

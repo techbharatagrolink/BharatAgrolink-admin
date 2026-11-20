@@ -42,7 +42,7 @@ export function ExpenseCapEditor({ caps, canEdit }) {
               <ProgressBar value={c.actualPercent ?? 0} max={c.capPercent || 1} tone={c.over ? "danger" : "brand"} label={`${c.label}: ${c.actualPercent == null ? "no delivered GMV" : `${c.actualPercent}% of ${c.capPercent}% cap`}`} />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor={`cap-${c.id}`} className="text-[13px] text-ink-muted">Cap %</label>
+              <label htmlFor={`cap-${c.id}`} className="text-small text-ink-muted">Cap %</label>
               <Input id={`cap-${c.id}`} type="number" min={0} max={100} step={0.1} inputMode="decimal" className="w-20" value={value} disabled={!canEdit} onChange={(e) => setValues({ ...values, [c.id]: e.target.value })} />
               {canEdit && (
                 <Button size="sm" variant="primary" disabled={!changed || !value} onClick={() => setPending(c)}>

@@ -48,7 +48,7 @@ export function ProductPicker({ id, value, onChange, permission, disabled = fals
         <div className="relative">
           <Input id={id} value={term} onChange={(e) => search(e.target.value)} onBlur={() => setTimeout(() => setOpen(false), 150)} onFocus={() => results && term && setOpen(true)} placeholder={placeholder} aria-invalid={invalid || undefined} autoComplete="off" />
           {open && (
-            <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-line bg-surface py-1 text-[13px] shadow-lg">
+            <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-line bg-surface py-1 text-small shadow-lg">
               {results?.length ? (
                 results.map((p) => (
                   <li key={p.sku}>
@@ -71,7 +71,7 @@ export function ProductPicker({ id, value, onChange, permission, disabled = fals
           onChange={onChange}
           disabled={disabled}
           renderItem={(p) => (
-            <div className="flex items-center justify-between gap-2 text-[13px]">
+            <div className="flex items-center justify-between gap-2 text-small">
               <span className="min-w-0 truncate text-ink">
                 {p.name !== p.sku && <span>{p.name} </span>}
                 <span className="font-mono text-xs text-ink-muted">{p.sku}</span>
@@ -85,7 +85,7 @@ export function ProductPicker({ id, value, onChange, permission, disabled = fals
           )}
         />
       ) : (
-        <p className="rounded-lg border border-dashed border-line px-3 py-3 text-center text-[13px] text-ink-muted">No products added yet.</p>
+        <p className="rounded-lg border border-dashed border-line px-3 py-3 text-center text-small text-ink-muted">No products added yet.</p>
       )}
     </div>
   );

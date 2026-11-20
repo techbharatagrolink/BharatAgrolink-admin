@@ -19,7 +19,7 @@ function Row({ label, value, strong, hint }) {
     <div className="flex items-baseline justify-between gap-4 py-1.5">
       <dt className="text-sm text-ink-muted">
         {label}
-        {hint && <span className="block text-[11px]">{hint}</span>}
+        {hint && <span className="block text-micro">{hint}</span>}
       </dt>
       <dd className={strong ? "text-sm font-semibold text-ink tabular" : "text-sm text-ink tabular"}>{value}</dd>
     </div>

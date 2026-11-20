@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/form";
+import { GridTable } from "@/components/data-table/grid-table";
 import { Popover } from "@/components/ui/popover";
 import { EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
@@ -20,7 +21,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -172,45 +173,28 @@ export function ShiprocketOrdersTable({ rows, canEdit }) {
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto xl:block">
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
-            <tr>
-              <th className="w-8 px-3 py-2">
-                <Checkbox aria-label="Select all" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? rows.map((r) => r.key) : [])} />
-              </th>
-              <th className="px-3 py-2 font-medium">Channel order ID</th>
-              <th className="px-3 py-2 font-medium">Shipment ID</th>
-              <th className="px-3 py-2 font-medium">AWB code</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Courier</th>
-              <th className="px-3 py-2 text-right font-medium">Freight charges</th>
-              <th className="px-3 py-2 font-medium">Created at</th>
-              <th className="px-3 py-2" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map((r) => (
-              <tr key={r.key} className="align-top hover:bg-surface-muted/60">
-                <td className="px-3 py-2.5">
-                  <Checkbox aria-label={`Select ${r.channelOrderId || r.srOrderId}`} checked={selected.includes(r.key)} onChange={(e) => toggle(r.key, e.target.checked)} />
-                </td>
-                <td className="px-3 py-2.5 font-mono text-xs font-medium text-ink">{r.channelOrderId || "N/A"}</td>
-                <td className="px-3 py-2.5 font-mono text-xs text-ink-soft">{r.shipmentId || "-"}</td>
-                <td className="px-3 py-2.5 font-mono text-xs text-ink-soft">{r.awb || "-"}</td>
-                <td className="px-3 py-2.5">
-                  <Badge tone={listTone(r.status)} dot>{r.status || "N/A"}</Badge>
-                </td>
-                <td className="px-3 py-2.5 text-xs text-ink-soft">{r.courier || "-"}</td>
-                <td className="px-3 py-2.5 text-right tabular">{formatINR(r.freight)}</td>
-                <td className="px-3 py-2.5 text-xs text-ink-soft">{r.createdAt || "-"}</td>
-                <td className="px-3 py-2.5 text-right">
-                  <RowActions row={r} onTrack={() => setTracking(r.shipmentId)} onDetails={() => setDetails(r.srOrderId)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="hidden xl:block">
+        <GridTable
+          rows={rows}
+          rowKey="key"
+          columns={[
+            {
+              key: "select",
+              label: "Select",
+              width: 52,
+              header: () => <Checkbox aria-label="Select all" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? rows.map((r) => r.key) : [])} />,
+              render: (r) => <Checkbox aria-label={`Select ${r.channelOrderId || r.srOrderId}`} checked={selected.includes(r.key)} onChange={(e) => toggle(r.key, e.target.checked)} />,
+            },
+            { key: "channel", label: "Channel order ID", render: (r) => <span className="font-mono text-xs font-medium text-ink">{r.channelOrderId || "N/A"}</span> },
+            { key: "shipment", label: "Shipment ID", render: (r) => <span className="font-mono text-xs text-ink-soft">{r.shipmentId || "-"}</span> },
+            { key: "awb", label: "AWB code", render: (r) => <span className="font-mono text-xs text-ink-soft">{r.awb || "-"}</span> },
+            { key: "status", label: "Status", render: (r) => <Badge tone={listTone(r.status)} dot>{r.status || "N/A"}</Badge> },
+            { key: "courier", label: "Courier", render: (r) => <span className="text-xs text-ink-soft">{r.courier || "-"}</span> },
+            { key: "freight", label: "Freight charges", align: "right", render: (r) => formatINR(r.freight) },
+            { key: "created", label: "Created at", render: (r) => <span className="text-xs text-ink-soft">{r.createdAt || "-"}</span> },
+            { key: "actions", label: "Actions", align: "right", render: (r) => <RowActions row={r} onTrack={() => setTracking(r.shipmentId)} onDetails={() => setDetails(r.srOrderId)} /> },
+          ]}
+        />
       </div>
       {details && <ShiprocketOrderDialog key={details} srOrderId={details} open onClose={() => setDetails(null)} canEdit={canEdit} />}
       {tracking && <ShiprocketTrackingDialog key={tracking} shipmentId={tracking} open onClose={() => setTracking(null)} />}

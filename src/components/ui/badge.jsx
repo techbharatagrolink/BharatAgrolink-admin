@@ -29,7 +29,7 @@ const variantTone = {
 export function Badge({ tone, variant, className, children, dot = false }) {
   const resolved = tone || variantTone[variant] || "neutral";
   return (
-    <span className={cn("inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-medium leading-5 whitespace-nowrap", toneClasses[resolved], className)}>
+    <span className={cn("inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-micro font-medium leading-5 whitespace-nowrap", toneClasses[resolved], className)}>
       {dot && <span className={cn("size-1.5 shrink-0 rounded-full", dotClasses[resolved])} aria-hidden />}
       <span className="truncate">{children}</span>
     </span>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { useToast } from "@/components/ui/toast";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { deleteLeadImageAction, uploadLeadImageAction } from "@/lib/actions/admin/crm-sheet";
@@ -25,7 +26,7 @@ export function LeadRecordPanels({ leadId, mobile, chat, attachments, canEdit })
               {messages.map((message) => (
                 <li key={message.id} className={message.direction === "out" ? "ml-8 rounded-lg bg-emerald-50 px-3 py-2" : "mr-8 rounded-lg bg-surface-muted px-3 py-2"}>
                   <p className="text-sm whitespace-pre-wrap text-ink">{message.text}</p>
-                  <p className="mt-1 text-[11px] text-ink-muted">{message.direction === "out" ? "Outbound" : "Inbound"} · {formatDateTime(message.at)}</p>
+                  <p className="mt-1 text-micro text-ink-muted">{message.direction === "out" ? "Outbound" : "Inbound"} · {formatDateTime(message.at)}</p>
                 </li>
               ))}
             </ul>
@@ -63,7 +64,7 @@ function Photo({ leadId, photo, canEdit }) {
       ) : null}
       <div className="space-y-1 p-3">
         <p className="text-sm text-ink">{photo.remark || photo.name}</p>
-        <p className="text-[11px] text-ink-muted">{[photo.by, formatDateTime(photo.at)].filter(Boolean).join(" · ")}</p>
+        <p className="text-micro text-ink-muted">{[photo.by, formatDateTime(photo.at)].filter(Boolean).join(" · ")}</p>
         {canEdit && (
           <Button size="sm" variant="secondary" loading={pending} onClick={() => start(async () => {
             const result = await deleteLeadImageAction(leadId, photo.id);
@@ -107,7 +108,7 @@ function UploadForm({ leadId }) {
       <Field label="Remark" required className="sm:col-span-2">
         {({ id }) => <Input id={id} value={remark} maxLength={1000} required placeholder="What does this image show?" onChange={(event) => setRemark(event.target.value)} />}
       </Field>
-      <Input type="file" accept="image/jpeg,image/png,image/webp" required onChange={(event) => setFile(event.target.files?.[0] || null)} />
+      <FileInput accept="image/jpeg,image/png,image/webp" required onChange={(event) => setFile(event.target.files?.[0] || null)} />
       <Button type="submit" variant="primary" loading={pending}>Upload image</Button>
     </form>
   );

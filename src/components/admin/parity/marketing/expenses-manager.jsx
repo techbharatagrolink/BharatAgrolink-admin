@@ -91,7 +91,7 @@ export function ExpensesManager({ data, can }) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {cards.map((b) => (
               <div key={b.bucket} className={cn("rounded-lg border border-line px-3.5 py-3", b.auto && "border-dashed bg-surface-muted")}>
-                <p className="text-[11px] font-bold tracking-wide text-ink-muted uppercase">
+                <p className="text-micro font-bold tracking-wide text-ink-muted uppercase">
                   {b.label}
                   {b.auto && <Lock className="ml-1 inline size-3" aria-label="calculated automatically" />}
                 </p>
@@ -99,11 +99,11 @@ export function ExpensesManager({ data, can }) {
               </div>
             ))}
             <div className="rounded-lg border border-[#10a450] px-3.5 py-3">
-              <p className="text-[11px] font-bold tracking-wide text-ink-muted uppercase">Total marketing cost</p>
+              <p className="text-micro font-bold tracking-wide text-ink-muted uppercase">Total marketing cost</p>
               <p className="mt-1 text-lg font-extrabold text-[#10a450] tabular">{rupees(totals.total)}</p>
             </div>
           </div>
-          <p className="rounded-lg border border-dashed border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] text-ink-muted">
+          <p className="rounded-lg border border-dashed border-line bg-surface-muted px-3.5 py-2.5 text-label text-ink-muted">
             <Lock className="mr-1 inline size-3.5" aria-hidden />
             <strong>Coupon / discount funded by Bharat Agrolink</strong> is calculated automatically from delivered, non-returned orders that used a company coupon. It cannot be entered by hand, so it is never double-counted.
           </p>
@@ -115,7 +115,7 @@ export function ExpensesManager({ data, can }) {
         <div className="hidden overflow-x-auto xl:block">
           <table className="w-full text-sm">
             <caption className="sr-only">Marketing spend entries for {month}</caption>
-            <thead className="border-b border-line text-left text-[11px] font-bold tracking-wide text-ink-muted uppercase">
+            <thead className="border-b border-line text-left text-micro font-bold tracking-wide text-ink-muted uppercase">
               <tr>
                 <th scope="col" className="w-28 px-3 py-2">Date</th>
                 <th scope="col" className="px-3 py-2">Category</th>
@@ -173,13 +173,13 @@ export function ExpensesManager({ data, can }) {
                   </div>
                   <p className="shrink-0 font-semibold text-ink tabular">{rupees(r.amount)}</p>
                 </div>
-                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-small sm:grid-cols-3">
                   <div className="min-w-0 col-span-2 sm:col-span-1">
-                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Campaign / Vendor</dt>
+                    <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Campaign / Vendor</dt>
                     <dd className="truncate text-ink">{who || "—"}</dd>
                   </div>
                   <div className="min-w-0">
-                    <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">Invoice</dt>
+                    <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">Invoice</dt>
                     <dd className="truncate text-ink">{r.invoiceNumber || "—"}</dd>
                   </div>
                 </dl>

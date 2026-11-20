@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice, Timeline } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
@@ -73,7 +74,7 @@ export function PayItemsDialog({ payoutId, items, onClose, onPaid }) {
           {({ id }) => <Input id={id} value={transactionId} maxLength={500} autoComplete="off" onChange={(e) => setTransactionId(e.target.value)} />}
         </Field>
         <Field label="Invoice proof" required hint="PDF, JPG, PNG, GIF or WEBP, up to 10 MB. Saved with each selected item.">
-          {({ id }) => <input id={id} type="file" accept={PROOF_TYPES} onChange={(e) => setFile(e.target.files?.[0] ?? null)} className={fileClasses} />}
+          {({ id }) => <FileInput id={id} accept={PROOF_TYPES} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />}
         </Field>
         <p className="text-xs text-ink-muted">The transaction date is recorded as now. Only pending items are updated; paid items are left unchanged.</p>
       </div>

@@ -17,7 +17,7 @@ export default async function HelpPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {topics.map((t) => (
           <Card key={t.key}>
-            <CardHeader title={t.title} actions={<Link href={t.href} className="text-[13px] font-medium text-brand-700 hover:underline">Open</Link>} />
+            <CardHeader title={t.title} actions={<Link href={t.href} className="text-small font-medium text-brand-700 hover:underline">Open</Link>} />
             <CardBody>
               <ul className="list-disc space-y-1.5 pl-4 text-sm text-ink-soft">
                 {t.points.map((p) => <li key={p}>{p}</li>)}

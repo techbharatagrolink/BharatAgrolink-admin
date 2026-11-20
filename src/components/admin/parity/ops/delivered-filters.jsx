@@ -77,7 +77,7 @@ export function DeliveredFilters({ query, options }) {
             key={p.id}
             type="button"
             onClick={() => preset(p.id)}
-            className={cn("h-8 rounded-full border px-3 text-[13px] font-medium", activePreset === p.id ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line bg-surface text-ink-soft hover:bg-surface-muted")}
+            className={cn("h-8 rounded-full border px-3 text-small font-medium", activePreset === p.id ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line bg-surface text-ink-soft hover:bg-surface-muted")}
           >
             {p.label}
           </button>

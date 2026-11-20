@@ -74,7 +74,7 @@ function VariationsCard({ value, onChange, errors, clearError }) {
               {value.rows.map((row, i) => (
                 <li key={row.key} className="rounded-xl border border-line bg-surface-muted/50 p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-[13px] font-semibold text-ink">Variation {i + 1}</p>
+                    <p className="text-small font-semibold text-ink">Variation {i + 1}</p>
                     <Button type="button" size="xs" variant="ghost" onClick={() => removeRow(i)} aria-label={`Remove variation ${i + 1}`}>
                       <Trash2 className="size-3.5" aria-hidden /> Remove
                     </Button>

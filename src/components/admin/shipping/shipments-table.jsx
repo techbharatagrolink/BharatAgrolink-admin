@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/form";
+import { GridTable } from "@/components/data-table/grid-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
@@ -20,7 +21,7 @@ const keyOf = (r) => `${r.orderId}|${r.vendorId}`;
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -81,11 +82,11 @@ export function ShipmentsTable({ rows, canAdd, canEdit }) {
                   <div className="min-w-0">
                     <Link href={`/admin/orders/${encodeURIComponent(r.orderId)}`} className="font-mono text-xs text-brand-700 hover:underline">{r.orderId}</Link>
                     <p className="text-xs text-ink-muted">{r.vendorName} · {formatDate(r.orderDate)}</p>
-                    {r.invoiceNumber && <p className="font-mono text-[11px] text-ink-muted">{r.invoiceNumber}</p>}
+                    {r.invoiceNumber && <p className="font-mono text-micro text-ink-muted">{r.invoiceNumber}</p>}
                   </div>
                   <StatusBadge status={r.status} />
                 </div>
-                {r.statuses?.length > 1 && <p className="mt-1 text-[11px] text-ink-muted">{r.statuses.join(", ")}</p>}
+                {r.statuses?.length > 1 && <p className="mt-1 text-micro text-ink-muted">{r.statuses.join(", ")}</p>}
                 <dl className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
                   <CardField label="Customer" value={r.customer} />
                   <CardField label="Destination" value={r.destination} />
@@ -105,56 +106,65 @@ export function ShipmentsTable({ rows, canAdd, canEdit }) {
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto xl:block">
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
-            <tr>
-              <th className="w-8 px-3 py-2">
-                <Checkbox aria-label="Select all" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? rows.map(keyOf) : [])} />
-              </th>
-              <th className="px-3 py-2 font-medium">Order / vendor</th>
-              <th className="px-3 py-2 font-medium">Customer</th>
-              <th className="px-3 py-2 font-medium">Payment</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">AWB / courier</th>
-              <th className="px-3 py-2 text-right font-medium">Amount</th>
-              <th className="px-3 py-2" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map((r) => (
-              <tr key={keyOf(r)} className="align-top hover:bg-surface-muted/60">
-                <td className="px-3 py-2.5">
-                  <Checkbox aria-label={`Select ${r.orderId} ${r.vendorName}`} checked={selected.includes(keyOf(r))} onChange={(e) => toggle(keyOf(r), e.target.checked)} />
-                </td>
-                <td className="px-3 py-2.5">
+      <div className="hidden xl:block">
+        <GridTable
+          rows={rows}
+          rowKey={(r) => keyOf(r)}
+          columns={[
+            {
+              key: "select",
+              label: "Select",
+              width: 52,
+              header: () => <Checkbox aria-label="Select all" checked={allChecked} onChange={(e) => setSelected(e.target.checked ? rows.map(keyOf) : [])} />,
+              render: (r) => <Checkbox aria-label={`Select ${r.orderId} ${r.vendorName}`} checked={selected.includes(keyOf(r))} onChange={(e) => toggle(keyOf(r), e.target.checked)} />,
+            },
+            {
+              key: "order",
+              label: "Order / vendor",
+              render: (r) => (
+                <>
                   <Link href={`/admin/orders/${encodeURIComponent(r.orderId)}`} className="font-mono text-xs text-brand-700 hover:underline">{r.orderId}</Link>
                   <p className="text-xs text-ink-muted">{r.vendorName} · {formatDate(r.orderDate)}</p>
-                  {r.invoiceNumber && <p className="font-mono text-[11px] text-ink-muted">{r.invoiceNumber}</p>}
-                </td>
-                <td className="px-3 py-2.5">
+                  {r.invoiceNumber && <p className="font-mono text-micro text-ink-muted">{r.invoiceNumber}</p>}
+                </>
+              ),
+            },
+            {
+              key: "customer",
+              label: "Customer",
+              render: (r) => (
+                <>
                   <p className="text-ink">{r.customer}</p>
                   <p className="text-xs text-ink-muted">{r.destination}</p>
-                </td>
-                <td className="px-3 py-2.5 text-xs text-ink-soft">{r.paymentMode}</td>
-                <td className="px-3 py-2.5">
+                </>
+              ),
+            },
+            { key: "payment", label: "Payment", render: (r) => <span className="text-xs text-ink-soft">{r.paymentMode}</span> },
+            {
+              key: "status",
+              label: "Status",
+              render: (r) => (
+                <>
                   <StatusBadge status={r.status} />
-                  {r.statuses?.length > 1 && <p className="mt-1 text-[11px] text-ink-muted">{r.statuses.join(", ")}</p>}
-                </td>
-                <td className="px-3 py-2.5">
-                  <TrackingCell awb={r.awb} courier={r.courier} carrier={r.carrier} trackingUrl={r.trackingUrl} labelUrl={r.labelUrl} manifestUrl={r.manifestUrl} />
-                </td>
-                <td className="px-3 py-2.5 text-right tabular">
+                  {r.statuses?.length > 1 && <p className="mt-1 text-micro text-ink-muted">{r.statuses.join(", ")}</p>}
+                </>
+              ),
+            },
+            { key: "awb", label: "AWB / courier", render: (r) => <TrackingCell awb={r.awb} courier={r.courier} carrier={r.carrier} trackingUrl={r.trackingUrl} labelUrl={r.labelUrl} manifestUrl={r.manifestUrl} /> },
+            {
+              key: "amount",
+              label: "Amount",
+              align: "right",
+              render: (r) => (
+                <>
                   {formatINR(r.amount)}
-                  <p className="text-[11px] text-ink-muted">{r.lines} line{r.lines === 1 ? "" : "s"} · qty {r.qty}</p>
-                </td>
-                <td className="px-3 py-2.5 text-right">
-                  <ShipmentActions row={r} canAdd={canAdd} canEdit={canEdit} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <p className="text-micro text-ink-muted">{r.lines} line{r.lines === 1 ? "" : "s"} · qty {r.qty}</p>
+                </>
+              ),
+            },
+            { key: "actions", label: "Actions", align: "right", render: (r) => <ShipmentActions row={r} canAdd={canAdd} canEdit={canEdit} /> },
+          ]}
+        />
       </div>
       {bulkOpen && <BulkCreateDialog orderIds={toCreate} open={bulkOpen} onClose={() => setBulkOpen(false)} onDone={() => setSelected([])} />}
       <ConfirmDialog

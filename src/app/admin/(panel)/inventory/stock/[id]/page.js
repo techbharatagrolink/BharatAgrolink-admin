@@ -36,7 +36,7 @@ export default async function StockItemPage({ params }) {
 
   return (
     <>
-      <Link href="/admin/inventory/stock" className="mb-3 inline-block text-[13px] text-ink-muted hover:text-ink">
+      <Link href="/admin/inventory/stock" className="mb-3 inline-block text-small text-ink-muted hover:text-ink">
         ← Back to all stock
       </Link>
       <PageHeader

@@ -70,7 +70,7 @@ export function ImportForm({ template }) {
             )}
             <ul className="divide-y divide-line rounded-lg border border-line xl:hidden">
               {result.results.map((r) => (
-                <li key={r.row} className="px-3 py-2.5 text-[13px]">
+                <li key={r.row} className="px-3 py-2.5 text-small">
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 font-medium break-words text-ink">
                       <span className="mr-1.5 text-xs font-normal text-ink-muted tabular">#{r.row}</span>
@@ -84,7 +84,7 @@ export function ImportForm({ template }) {
               ))}
             </ul>
             <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-              <table className="w-full min-w-max text-left text-[13px]">
+              <table className="w-full min-w-max text-left text-small">
                 <thead>
                   <tr className="border-b border-line text-xs text-ink-muted">
                     <th scope="col" className="px-3 py-2 font-semibold">Row</th>

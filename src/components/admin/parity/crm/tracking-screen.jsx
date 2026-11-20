@@ -17,6 +17,7 @@ import { storefrontUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { exportTrackingAction, trackingCustomersAction } from "@/lib/actions/admin/parity/crm";
 import { UrlInput } from "./url-input";
+import { GridTable } from "@/components/data-table/grid-table";
 
 const productHref = `${storefrontUrl.replace(/\/$/, "")}/product/{product_url}`;
 const CUSTOMER_360_HREF = "/admin/crm/customer-360/{c360_id}";
@@ -133,7 +134,7 @@ function ParamText({ name, label, placeholder, type }) {
 function CardField({ label, value }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
+      <dt className="text-micro font-medium uppercase tracking-wide text-ink-muted">{label}</dt>
       <dd className="truncate text-ink">{value ?? "—"}</dd>
     </div>
   );
@@ -175,51 +176,34 @@ function CustomersDialog({ target, sources, onClose }) {
         <p className="py-6 text-center text-sm text-ink-muted">No customers found.</p>
       ) : (
         <>
-          <div className="hidden overflow-x-auto scrollbar-thin xl:block">
-            <table className="w-full min-w-max text-left text-[13px]">
-              <thead>
-                <tr className="border-b border-line bg-surface-muted text-xs text-ink-muted">
-                  {["Customer", "Mobile Number", "Type", product ? "Times Opened" : "Times Searched", ...(product ? ["Clicked From", "Search Term", "City"] : ["Results Found", "Searched From", "City"]), "First Seen", "Last Seen"].map((h) => (
-                    <th key={h} className="px-3 py-2 font-semibold">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2 font-medium text-ink">
-                      <CustomerName row={r} />
-                    </td>
-                    <td className="px-3 py-2">{r.phone || "-"}</td>
-                    <td className="px-3 py-2">
-                      <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge>
-                    </td>
-                    <td className="px-3 py-2 tabular">{formatNumber(r.times)}</td>
-                    {product ? (
-                      <>
-                        <td className="px-3 py-2">{sourceLabel(r.source)}</td>
-                        <td className="px-3 py-2">{r.search_term || "-"}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-3 py-2 tabular">{r.results_count ?? "-"}</td>
-                        <td className="px-3 py-2">{sourceLabel(r.source)}</td>
-                      </>
-                    )}
-                    <td className="px-3 py-2">{r.city || "-"}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.created_at)}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{formatDateTime(r.updated_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="hidden xl:block">
+            <GridTable
+              rows={rows}
+              rowKey={(r, i) => i}
+              columns={[
+                { key: "customer", label: "Customer", render: (r) => <span className="font-medium text-ink"><CustomerName row={r} /></span> },
+                { key: "phone", label: "Mobile Number", render: (r) => r.phone || "-" },
+                { key: "type", label: "Type", render: (r) => <Badge tone={r.customer_type === "Registered" ? "success" : "neutral"}>{r.customer_type}</Badge> },
+                { key: "times", label: product ? "Times Opened" : "Times Searched", align: "right", render: (r) => formatNumber(r.times) },
+                ...(product
+                  ? [
+                      { key: "source", label: "Clicked From", render: (r) => sourceLabel(r.source) },
+                      { key: "term", label: "Search Term", render: (r) => r.search_term || "-" },
+                    ]
+                  : [
+                      { key: "results", label: "Results Found", align: "right", render: (r) => r.results_count ?? "-" },
+                      { key: "source", label: "Searched From", render: (r) => sourceLabel(r.source) },
+                    ]),
+                { key: "city", label: "City", render: (r) => r.city || "-" },
+                { key: "first", label: "First Seen", render: (r) => formatDateTime(r.created_at) },
+                { key: "last", label: "Last Seen", render: (r) => formatDateTime(r.updated_at) },
+              ]}
+            />
           </div>
 
           <div className="space-y-3 xl:hidden">
             {rows.map((r, i) => (
-              <div key={i} className="rounded-lg border border-line p-3 text-[13px]">
+              <div key={i} className="rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-ink">
                     <CustomerName row={r} />
@@ -286,7 +270,7 @@ export function TrackingScreen({ view, data, sources }) {
                 type="button"
                 aria-pressed={view === key}
                 onClick={() => switchView(key)}
-                className={cn("h-8 rounded-md border px-3 text-[13px] font-medium", view === key ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line-strong text-ink-soft hover:bg-surface-muted")}
+                className={cn("h-8 rounded-md border px-3 text-small font-medium", view === key ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line-strong text-ink-soft hover:bg-surface-muted")}
               >
                 {v.label}
               </button>

@@ -72,9 +72,9 @@ export function LeadSheetBar({ target }) {
 function Tile({ label, value, note }) {
   return (
     <div className="rounded-lg border border-line bg-surface-muted px-3 py-3">
-      <p className="text-[11px] font-semibold tracking-wide text-ink-muted uppercase">{label}</p>
+      <p className="text-micro font-semibold tracking-wide text-ink-muted uppercase">{label}</p>
       <p className="mt-1 text-xl font-semibold text-ink tabular-nums">{value}</p>
-      <p className="mt-0.5 text-[11px] text-ink-muted">{note}</p>
+      <p className="mt-0.5 text-micro text-ink-muted">{note}</p>
     </div>
   );
 }

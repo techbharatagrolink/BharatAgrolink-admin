@@ -34,7 +34,7 @@ export default async function SalesDashboardPage() {
         {showPayouts && <StatCard label="Payouts this month" value={formatINR(s.payoutTotal, { compact: true })} hint={`${formatINR(s.payoutPending, { compact: true })} pending`} tone="warning" href={can(user, "sales.payouts") ? "/admin/sales/payouts" : undefined} />}
       </StatGrid>
       <Card className="mt-4">
-        <CardHeader title="Target achievement" actions={<Link href="/admin/sales/achievements" className="text-[13px] font-medium text-brand-700 hover:underline">Details</Link>} />
+        <CardHeader title="Target achievement" actions={<Link href="/admin/sales/achievements" className="text-small font-medium text-brand-700 hover:underline">Details</Link>} />
         <CardBody className="space-y-4">
           {d.leaderboard.map((r) => (
             <div key={r.id}>

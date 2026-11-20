@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { useToast } from "@/components/ui/toast";
 import { clearVendorKycFileAction, saveVendorKycAction } from "@/lib/actions/admin/vendors";
 
@@ -68,7 +69,7 @@ function Preview({ doc }) {
         <span className="mt-2 line-clamp-1 max-w-full text-xs font-semibold text-ink group-hover:text-brand-700">
           {doc.label} (PDF)
         </span>
-        <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-brand-700 underline">
+        <span className="mt-1 inline-flex items-center gap-1 text-micro font-medium text-brand-700 underline">
           View / Open PDF <ExternalLink className="size-3" />
         </span>
       </a>
@@ -188,14 +189,7 @@ export function VendorKyc({ vendorId, documents = [], canEdit }) {
                 {canEdit && (
                   <Field label={file.label} hint={file.hint} className="mt-2">
                     {({ id, describedBy }) => (
-                      <Input
-                        id={id}
-                        type="file"
-                        name={file.name}
-                        accept={file.accept}
-                        aria-describedby={describedBy}
-                        className="h-auto py-1.5"
-                      />
+                      <FileInput id={id} name={file.name} accept={file.accept} aria-describedby={describedBy} />
                     )}
                   </Field>
                 )}

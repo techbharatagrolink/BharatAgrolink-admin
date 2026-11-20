@@ -45,7 +45,7 @@ export function AgentMaster({ rows, unavailable, fields, optionSets, canAdd, can
       label: "",
       align: "right",
       render: (r) => (
-        <button type="button" onClick={() => setForm({ record: r, nonce: Date.now() })} className="text-[13px] font-medium text-brand-700 hover:underline">
+        <button type="button" onClick={() => setForm({ record: r, nonce: Date.now() })} className="text-small font-medium text-brand-700 hover:underline">
           Edit
         </button>
       ),

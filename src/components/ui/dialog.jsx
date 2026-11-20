@@ -57,22 +57,22 @@ export function Dialog({ open, onClose, title, description, children, footer, si
   const titleId = useId();
   useModalBehaviour(open, onClose, panelRef);
   if (!open) return null;
-  const widths = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", wide: "max-w-[92vw]" };
+  const widths = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", "2xl": "max-w-6xl", wide: "max-w-[92vw]" };
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4">
-        <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+        <div className="absolute inset-0 animate-in bg-[#0b1220]/45 backdrop-blur-[1px] duration-200 fade-in-0 motion-reduce:animate-none" onClick={onClose} aria-hidden />
         <div
           ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className={cn("relative flex max-h-[92vh] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-xl sm:rounded-2xl", widths[size])}
+          className={cn("relative flex max-h-[92vh] w-full min-w-0 max-w-full animate-in flex-col overflow-hidden rounded-t-2xl duration-200 fade-in-0 slide-in-from-bottom-6 motion-reduce:animate-none sm:zoom-in-95 sm:slide-in-from-bottom-2 border border-line bg-surface shadow-[var(--shadow-pop)] sm:rounded-xl", widths[size])}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
             <div className="min-w-0">
-              <h2 id={titleId} className="break-words text-base font-semibold text-ink">
+              <h2 id={titleId} className="break-words text-section font-semibold text-ink">
                 {title}
               </h2>
               {description && <p className="mt-1 text-sm text-ink-muted">{description}</p>}
@@ -82,7 +82,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
             </Button>
           </div>
           <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
+          {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-surface-muted px-5 py-3">{footer}</div>}
         </div>
       </div>
     </Portal>
@@ -97,18 +97,18 @@ export function Drawer({ open, onClose, title, description, children, footer, wi
   return (
     <Portal>
       <div className="fixed inset-0 z-[60]">
-        <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+        <div className="absolute inset-0 animate-in bg-[#0b1220]/45 backdrop-blur-[1px] duration-200 fade-in-0 motion-reduce:animate-none" onClick={onClose} aria-hidden />
         <aside
           ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className={cn("absolute inset-y-0 right-0 flex w-full flex-col border-l border-line bg-surface shadow-xl", width)}
+          className={cn("absolute inset-y-0 right-0 flex w-full animate-in flex-col border-l duration-300 slide-in-from-right motion-reduce:animate-none border-line bg-surface shadow-[var(--shadow-pop)]", width)}
         >
           <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
             <div className="min-w-0">
-              <h2 id={titleId} className="truncate text-base font-semibold text-ink">
+              <h2 id={titleId} className="truncate text-section font-semibold text-ink">
                 {title}
               </h2>
               {description && <p className="mt-1 text-sm text-ink-muted">{description}</p>}
@@ -118,7 +118,7 @@ export function Drawer({ open, onClose, title, description, children, footer, wi
             </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
+          {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-surface-muted px-5 py-3">{footer}</div>}
         </aside>
       </div>
     </Portal>

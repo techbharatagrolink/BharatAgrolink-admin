@@ -41,7 +41,7 @@ export default async function OperationsCenterPage() {
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Open escalations" actions={<Link href="/admin/operations/ndr" className="text-[13px] font-medium text-brand-700 hover:underline">NDR & escalations</Link>} />
+          <CardHeader title="Open escalations" actions={<Link href="/admin/operations/ndr" className="text-small font-medium text-brand-700 hover:underline">NDR & escalations</Link>} />
           <MiniTable
             columns={[
               { key: "title", label: "Escalation", render: (r) => <span className="block max-w-56 truncate font-medium text-ink">{r.title}</span> },
@@ -55,7 +55,7 @@ export default async function OperationsCenterPage() {
           />
         </Card>
         <Card>
-          <CardHeader title="SLA breached" actions={<Link href="/admin/operations/team/assignments?slaState=Breached" className="text-[13px] font-medium text-brand-700 hover:underline">View all</Link>} />
+          <CardHeader title="SLA breached" actions={<Link href="/admin/operations/team/assignments?slaState=Breached" className="text-small font-medium text-brand-700 hover:underline">View all</Link>} />
           <MiniTable
             columns={[
               { key: "orderId", label: "Order", render: (r) => <Link href={`/admin/orders/${r.orderId}`} className="font-mono text-xs text-brand-700 hover:underline">{r.orderId}</Link> },

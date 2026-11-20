@@ -11,11 +11,11 @@ export function TrackingCell({ awb, courier, carrier, trackingUrl, labelUrl, man
       ) : (
         <span className="font-mono text-xs text-ink">{awb}</span>
       )}
-      <p className="max-w-56 truncate text-[11px] text-ink-muted" title={courier || undefined}>
+      <p className="max-w-56 truncate text-micro text-ink-muted" title={courier || undefined}>
         {[CARRIER_LABEL[carrier] ?? carrier, courier].filter(Boolean).join(" · ")}
       </p>
       {(labelUrl || manifestUrl) && (
-        <p className="space-x-2 text-[11px]">
+        <p className="space-x-2 text-micro">
           {labelUrl && <a href={labelUrl} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline">Label</a>}
           {manifestUrl && <a href={manifestUrl} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline">Manifest</a>}
         </p>

@@ -57,7 +57,7 @@ export default async function B2bApprovalsPage({ searchParams }) {
           rows.map((quote) => <ApprovalCard key={quote.id} quote={quote} rules={rules} canDecide={canDecide} />)
         )}
         {pageCount > 1 && (
-          <div className="flex items-center justify-between text-[13px] text-ink-muted">
+          <div className="flex items-center justify-between text-small text-ink-muted">
             <span>
               Page {formatNumber(page)} of {formatNumber(pageCount)} · {formatNumber(total)} quotations
             </span>

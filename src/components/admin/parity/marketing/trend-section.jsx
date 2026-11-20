@@ -39,9 +39,9 @@ function Tags({ list, max, len }) {
   return (
     <div className="flex flex-wrap gap-1">
       {list.slice(0, 2).map((t) => (
-        <span key={t} className="rounded border border-line px-1.5 py-0.5 text-[11px]">{truncate(t, len)}</span>
+        <span key={t} className="rounded border border-line px-1.5 py-0.5 text-micro">{truncate(t, len)}</span>
       ))}
-      {list.length > max && <span className="rounded border border-line px-1.5 py-0.5 text-[11px]">+{list.length - max}</span>}
+      {list.length > max && <span className="rounded border border-line px-1.5 py-0.5 text-micro">+{list.length - max}</span>}
     </div>
   );
 }
@@ -93,7 +93,7 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
       {canAdd && (
         <form onSubmit={submit} className="grid gap-4 p-4 md:grid-cols-2">
           <fieldset className="md:col-span-2">
-            <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">Analysis Scope</legend>
+            <legend className="mb-1.5 text-small font-medium text-ink-soft">Analysis Scope</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {SCOPES.map((s) => (
                 <button
@@ -181,7 +181,7 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
                 <MetaItem label="Format">{FORMAT_LABELS[report.contentFormat] ?? report.contentFormat}</MetaItem>
                 <MetaItem label="Generation Cost">
                   <span className="text-[#10A450]">${report.cost.toFixed(4)}</span>{" "}
-                  <span className="text-[11px] font-normal text-ink-muted">({Math.ceil((report.reportLength || report.report?.length || 0) / 4).toLocaleString()} tokens)</span>
+                  <span className="text-micro font-normal text-ink-muted">({Math.ceil((report.reportLength || report.report?.length || 0) / 4).toLocaleString()} tokens)</span>
                 </MetaItem>
               </div>
               {report.report ? <Markdown source={report.report} /> : <p className="py-8 text-center text-ink-muted">Report content is empty.</p>}
@@ -215,7 +215,7 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
                     <td className="px-3 py-2"><Tags list={r.regions} max={2} len={12} /></td>
                     <td className="px-3 py-2 whitespace-nowrap">{TIME_FRAME_LABELS[r.timeFrame] ?? r.timeFrame}</td>
                     <td className="px-3 py-2"><StatusPill status={r.status} /></td>
-                    <td className="px-3 py-2 text-[13px] font-semibold text-[#10A450]">${r.cost.toFixed(4)}</td>
+                    <td className="px-3 py-2 text-small font-semibold text-[#10A450]">${r.cost.toFixed(4)}</td>
                     <td className="px-3 py-2">
                       <Button size="xs" variant="outline" onClick={() => view(r.id)} loading={viewing === r.id}>
                         <Eye className="size-3.5" aria-hidden />
@@ -240,7 +240,7 @@ export function TrendSection({ latest, history, canAdd, onRefresh, refreshing })
                   <code className="rounded bg-brand-50 px-2 py-0.5 text-xs text-[#10A450]">#{r.reportId}</code>
                   <StatusPill status={r.status} />
                 </div>
-                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-small sm:grid-cols-3">
                   <CardField label="Generated" value={formatStamp(r.generatedAt)} />
                   <CardField label="Scope" value={capitalize(r.scope)} />
                   <CardField label="Time Frame" value={TIME_FRAME_LABELS[r.timeFrame] ?? r.timeFrame} />

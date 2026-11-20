@@ -261,7 +261,7 @@ export function ColumnFilter({ column, filter, onChange }) {
             <ConditionEditor kind={kind} label={column.label} condition={value.first} autoFocus onChange={(first) => onChange({ ...value, first })} />
             {conditionActive(value.first) && (
               <>
-                <div className="flex items-center justify-center gap-5 text-[13px] text-ink">
+                <div className="flex items-center justify-center gap-5 text-small text-ink">
                   {["and", "or"].map((join) => (
                     <label key={join} className="inline-flex cursor-pointer items-center gap-1.5">
                       <input type="radio" name={`join-${column.key}`} checked={value.join === join} onChange={() => onChange({ ...value, join })} className="size-4 accent-brand-600" />
@@ -274,7 +274,7 @@ export function ColumnFilter({ column, filter, onChange }) {
             )}
             {active && (
               <div className="flex justify-end border-t border-line pt-2">
-                <button type="button" onClick={() => onChange(null)} className="rounded-lg px-2 py-1 text-[13px] font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
+                <button type="button" onClick={() => onChange(null)} className="rounded-lg px-2 py-1 text-small font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
                   Reset
                 </button>
               </div>

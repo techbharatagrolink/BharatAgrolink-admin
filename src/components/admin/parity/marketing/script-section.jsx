@@ -168,7 +168,7 @@ export function ScriptSection({ latest, history, canAdd, onRefresh, refreshing }
           </Field>
           <Field label="Product Name (Optional)">{({ id }) => <Input id={id} maxLength={255} value={form.productName} onChange={set("productName")} placeholder="Enter product name if applicable..." />}</Field>
           <fieldset className="md:col-span-2">
-            <legend className="mb-1.5 text-[13px] font-medium text-ink-soft">Key Points</legend>
+            <legend className="mb-1.5 text-small font-medium text-ink-soft">Key Points</legend>
             <div className="space-y-2">
               {form.keyPoints.map((p, i) => (
                 <div key={i} className="flex gap-2">
@@ -305,7 +305,7 @@ export function ScriptSection({ latest, history, canAdd, onRefresh, refreshing }
                   <StatusPill status={s.status} />
                 </div>
                 <p className="mt-1.5 text-ink">{truncate(s.topic || "N/A", 60)}</p>
-                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] sm:grid-cols-3">
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-small sm:grid-cols-3">
                   <CardField label="Created" value={formatStamp(s.createdAt)} />
                   <CardField label="Type" value={VIDEO_TYPE_LABELS[s.videoType] ?? s.videoType} />
                   <CardField label="Duration" value={`${s.duration}s`} />

@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const variants = {
-  primary: "bg-brand-600 text-brand-fg hover:bg-brand-700 active:bg-brand-800 border border-transparent",
+  primary: "bg-brand-600 text-brand-fg shadow-sm hover:bg-brand-700 active:bg-brand-800 border border-transparent",
   secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-neutral-bg",
   ghost: "bg-transparent text-ink-soft border border-transparent hover:bg-neutral-bg hover:text-ink",
   outline: "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-neutral-bg",
@@ -14,17 +14,17 @@ const variants = {
 };
 
 const sizes = {
-  xs: "h-7 px-2 text-xs gap-1 rounded-md",
-  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-md",
-  md: "h-9 px-3.5 text-sm gap-2 rounded-lg",
-  lg: "h-10 px-4 text-sm gap-2 rounded-lg",
-  icon: "h-9 w-9 rounded-lg justify-center",
+  xs: "h-7 px-2 text-small gap-1 rounded-md",
+  sm: "h-8 px-3 text-button gap-1.5 rounded-md",
+  md: "h-9 px-3.5 text-button gap-2 rounded-md",
+  lg: "h-10 px-4 text-button gap-2 rounded-md",
+  icon: "h-9 w-9 rounded-md justify-center",
   "icon-sm": "h-8 w-8 rounded-md justify-center",
 };
 
 export function buttonClasses({ variant = "secondary", size = "md", className } = {}) {
   return cn(
-    "inline-flex shrink-0 cursor-pointer items-center justify-center font-medium whitespace-nowrap transition-colors select-none",
+    "inline-flex shrink-0 cursor-pointer items-center justify-center font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-150 select-none enabled:active:scale-[0.97] aria-disabled:active:scale-100",
     "disabled:cursor-not-allowed disabled:opacity-55 disabled:pointer-events-auto aria-disabled:cursor-not-allowed aria-disabled:opacity-55",
     variants[variant],
     sizes[size],

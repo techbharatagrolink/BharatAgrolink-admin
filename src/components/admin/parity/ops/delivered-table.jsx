@@ -98,7 +98,7 @@ export function DeliveredTable({ table }) {
                     </button>
                   </div>
                   <Input value={columnSearch} onChange={(e) => setColumnSearch(e.target.value)} placeholder="Search columns" aria-label="Search columns" className="mb-2 h-8" />
-                  <ul className="max-h-64 space-y-1 overflow-y-auto text-[13px]">
+                  <ul className="max-h-64 space-y-1 overflow-y-auto text-small">
                     {chooserColumns.map((c) => (
                       <li key={c.key}>
                         <label className="flex items-center gap-2 text-ink-soft">
@@ -119,7 +119,7 @@ export function DeliveredTable({ table }) {
         }
       />
       <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full min-w-max text-left text-[13px]">
+        <table className="w-full min-w-max text-left text-small">
           <thead>
             <tr className="border-b border-line">
               {columns.map((c) => (
@@ -159,7 +159,7 @@ export function DeliveredTable({ table }) {
           </tbody>
         </table>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-[13px] text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-small text-ink-muted">
         <span>
           Page {formatNumber(table.page)} of {formatNumber(last)}
         </span>

@@ -204,7 +204,7 @@ function Panel({ id, icon: Icon, title, meta, actions, collapsible = false, clas
 function CardField({ label, value, copy = false }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] font-bold tracking-wide text-ink uppercase">{label}</dt>
+      <dt className="text-micro font-bold tracking-wide text-ink uppercase">{label}</dt>
       <dd className="flex min-w-0 items-start gap-1 text-ink">
         <span className="min-w-0 break-words @md:truncate" title={typeof value === "string" ? value : undefined}>{value ?? "—"}</span>
         {copy && <CopyButton value={value} label={label} className="-my-0.5" />}
@@ -240,7 +240,7 @@ function OrderCostTable({ costs }) {
       <p className="px-4 pt-3 text-xs text-ink-muted">Prices are per unit; % is the share of the unit display price. The courier charge (freight without COD) and COD handling are the courier&apos;s settled bill when Shiprocket has billed it, else the booking charge — see Charge source. The difference is the courier charge minus shipping actual.</p>
       <ul className="space-y-3 p-3">
         {costs.map((cost) => (
-          <li key={cost.id || `${cost.productId}:${cost.variantId}`} className="@container rounded-lg border border-line p-3 text-[12.5px]">
+          <li key={cost.id || `${cost.productId}:${cost.variantId}`} className="@container rounded-lg border border-line p-3 text-label">
             <p className="font-semibold text-ink">{cost.productName || cost.productId}</p>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5">
               <CardField label="Qty" value={cost.qty} />
@@ -262,7 +262,7 @@ function OrderCostTable({ costs }) {
               <CardField label="Adjusted margin" value={cost.adjustedContributionMargin == null ? null : `${formatINR(cost.adjustedContributionMargin)} · ${bpsText(cost.adjustedContributionMarginBps)}`} />
               <CardField label="Seller payout" value={cost.sellerPayout == null ? null : formatINR(cost.sellerPayout)} />
             </dl>
-            <p className="mt-2 text-[11px] text-ink-soft"><span className="font-medium text-ink-muted">Cost factors: </span>{factorText(cost.factors)}</p>
+            <p className="mt-2 text-micro text-ink-soft"><span className="font-medium text-ink-muted">Cost factors: </span>{factorText(cost.factors)}</p>
           </li>
         ))}
       </ul>
@@ -295,12 +295,12 @@ function PhoneChip({ label, number }) {
 function InfoItem({ icon: Icon, label, value, mono = false, copy = false }) {
   return (
     <div className="min-w-0 rounded-lg bg-surface-muted/60 px-3 py-2.5">
-      <dt className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
+      <dt className="flex items-center gap-1.5 text-micro font-semibold tracking-wide text-ink-muted uppercase">
         <Icon className="size-3.5 text-brand-700" aria-hidden />
         {label}
       </dt>
       <dd className="mt-1 flex min-w-0 items-start gap-1 text-ink">
-        <span className={cn("min-w-0 break-all", mono && "font-mono text-[13px]")}>{value || "—"}</span>
+        <span className={cn("min-w-0 break-all", mono && "font-mono text-small")}>{value || "—"}</span>
         {copy && <CopyButton value={value} label={label} />}
       </dd>
     </div>
@@ -313,7 +313,7 @@ function LineCard({ line, onPreview }) {
   const lineTotal = (Number(line.taxable || 0) + Number(line.cgst || 0) + Number(line.sgst || 0) + Number(line.igst || 0)) * qty;
   return (
     <li className="@container">
-      <div className="rounded-lg border border-line p-3 text-[12.5px] transition hover:border-brand-600/40 hover:shadow-md motion-reduce:transition-none @md:flex @md:gap-3">
+      <div className="rounded-lg border border-line p-3 text-label transition hover:border-brand-600/40 hover:shadow-md motion-reduce:transition-none @md:flex @md:gap-3">
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 @md:block @md:shrink-0">
           {line.image ? (
             <button
@@ -322,6 +322,7 @@ function LineCard({ line, onPreview }) {
               className="group relative col-start-2 block size-16 cursor-zoom-in overflow-hidden rounded-lg border border-line focus-visible:ring-2 focus-visible:ring-brand-600/40 focus-visible:outline-none"
               aria-label={`Enlarge image of ${line.productName}`}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
               <img src={line.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-110 motion-reduce:transition-none" />
               <span className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden>
                 <ZoomIn className="size-5 text-white" />
@@ -394,7 +395,7 @@ function LineCard({ line, onPreview }) {
           })()}
           <div className="mt-2.5 flex items-center justify-end gap-2 border-t border-dashed border-line pt-2 text-ink-muted">
             Line total incl. GST
-            <span className="text-[13px] font-semibold text-ink tabular">{money(lineTotal)}</span>
+            <span className="text-small font-semibold text-ink tabular">{money(lineTotal)}</span>
           </div>
         </div>
       </div>
@@ -414,7 +415,7 @@ function CustomerDelivery({ order, address, customer, canViewProfile, canEdit, o
       className="@container"
       actions={
         customer && (
-          <span className="flex flex-wrap justify-end gap-x-3 text-[13px] font-medium">
+          <span className="flex flex-wrap justify-end gap-x-3 text-small font-medium">
             <Link href={`/admin/crm/customer-360/${encodeURIComponent(customer.id)}`} className="text-brand-700 hover:underline">Customer 360</Link>
             {canViewProfile && <Link href={`/admin/customers/${customer.id}`} className="text-brand-700 hover:underline">Profile</Link>}
           </span>
@@ -425,8 +426,8 @@ function CustomerDelivery({ order, address, customer, canViewProfile, canEdit, o
         <div className="flex min-w-0 gap-3 @2xl:pr-5">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-brand-fg">{initials(order.customer || "?")}</span>
           <div className="min-w-0 text-sm">
-            <p className="text-[11px] font-semibold tracking-wide text-ink-muted uppercase">Customer</p>
-            <p className="mt-0.5 truncate text-[15px] font-semibold text-ink">{order.customer || "—"}</p>
+            <p className="text-micro font-semibold tracking-wide text-ink-muted uppercase">Customer</p>
+            <p className="mt-0.5 truncate text-subheading font-semibold text-ink">{order.customer || "—"}</p>
             {customer && <p className="text-xs text-ink-muted">{plural(Number(customer.orders) || 0, "order")} so far</p>}
             {address?.email && (
               <p className="mt-1 flex min-w-0 items-center gap-1.5 text-ink-soft">
@@ -445,7 +446,7 @@ function CustomerDelivery({ order, address, customer, canViewProfile, canEdit, o
             <MapPin className="size-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1 text-sm">
-            <p className="flex flex-wrap items-center gap-2 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
+            <p className="flex flex-wrap items-center gap-2 text-micro font-semibold tracking-wide text-ink-muted uppercase">
               Deliver to
               {address?.type && <Badge tone="neutral">{address.type}</Badge>}
             </p>
@@ -454,7 +455,7 @@ function CustomerDelivery({ order, address, customer, canViewProfile, canEdit, o
             {address?.area && <p className="text-ink-soft">{address.area}</p>}
             <p className="font-medium text-ink">{cityLine || "—"}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <CopyButton value={fullAddress} label="address" className="h-8 rounded-md border border-line-strong px-3 text-[13px] font-medium text-ink">Copy address</CopyButton>
+              <CopyButton value={fullAddress} label="address" className="h-8 rounded-md border border-line-strong px-3 text-small font-medium text-ink">Copy address</CopyButton>
               {canEdit && address && (
                 <Button size="sm" variant="secondary" onClick={onEditAddress}>
                   <Pencil className="size-3.5" aria-hidden />
@@ -641,7 +642,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
               <InfoItem icon={Wallet} label="Payment method" value={mode ? <Badge tone="brand">{modeLabel(mode)}</Badge> : null} />
               {Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length > 1 ? (
                 <div className="min-w-0 rounded-lg bg-surface-muted/60 px-3 py-2.5">
-                  <dt className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
+                  <dt className="flex items-center gap-1.5 text-micro font-semibold tracking-wide text-ink-muted uppercase">
                     <Receipt className="size-3.5 text-brand-700" aria-hidden />
                     Payment TXN IDs ({Array.from(new Set(String(order.paymentId || "").split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))).length})
                   </dt>
@@ -693,18 +694,18 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
                                   ? "info"
                                   : "neutral"
                             }
-                            className="text-[10px]"
+                            className="text-micro"
                           >
                             {p.status}
                           </Badge>
                           {p.source && (
-                            <span className="text-[10px] text-ink-muted hidden sm:inline">
+                            <span className="text-micro text-ink-muted hidden sm:inline">
                               ({p.source === "manual_order_payment_attempts" ? "attempt" : p.source})
                             </span>
                           )}
                         </div>
                         {(p.method || p.vpa || p.rrn || p.bank || p.cardLast4 || p.createdAt) && (
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-muted">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-micro text-ink-muted">
                             {p.method && (
                               <span className="inline-flex items-center gap-1 font-semibold text-ink uppercase tracking-wide">
                                 <CreditCard className="size-3 text-ink-muted" />
@@ -746,7 +747,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
                       <ExternalLink className="size-3.5" aria-hidden />
                       Track shipment
                     </ButtonLink>
-                    <CopyButton value={firstTracked.trackingUrl} label="tracking link" className="h-8 rounded-md px-2 text-[13px] font-medium">Copy link</CopyButton>
+                    <CopyButton value={firstTracked.trackingUrl} label="tracking link" className="h-8 rounded-md px-2 text-small font-medium">Copy link</CopyButton>
                   </>
                 )}
                 {canEdit && (
@@ -851,7 +852,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
       <div className="sticky bottom-3 z-20 xl:hidden">
         <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/95 py-2.5 pr-2.5 pl-4 shadow-lg backdrop-blur supports-backdrop-filter:bg-surface/85">
           <button type="button" onClick={() => scrollToId("order-totals")} className="min-w-0 text-left" aria-label={`Grand total ${money(grand)}, show the payment summary`}>
-            <span className="block text-[11px] font-semibold tracking-wide text-ink-muted uppercase">Grand total</span>
+            <span className="block text-micro font-semibold tracking-wide text-ink-muted uppercase">Grand total</span>
             <span className="block truncate text-base font-bold text-ink tabular">{money(grand)}</span>
           </button>
           <Button variant="primary" onClick={() => setVerifyOpen(true)}>
@@ -864,6 +865,7 @@ export function OrderDesk({ order, groups, totals, editor, orderCosts = [], canE
       <Dialog open={Boolean(preview)} onClose={closePreview} title={preview?.productName || "Product image"}>
         {preview && (
           <div className="space-y-3 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image */}
             <img src={preview.image} alt={preview.productName || ""} className="mx-auto max-h-[60vh] w-auto rounded-lg object-contain" />
             <Link href={`/admin/products/${preview.productId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
               Open product page

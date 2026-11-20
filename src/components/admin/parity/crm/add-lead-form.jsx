@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form";
+import { FileInput } from "@/components/ui/file-input";
 import { Notice, ProgressBar } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { addLeadAction, importLeadsAction } from "@/lib/actions/admin/parity/crm";
@@ -120,15 +121,7 @@ export function AddLeadForm({ agents }) {
         <CardBody className="space-y-3">
           <Field label="Upload Sheet" hint="Supported format: .csv (export Excel sheets as CSV first)">
             {({ id, describedBy }) => (
-              <input
-                id={id}
-                ref={fileRef}
-                type="file"
-                accept=".csv,text/csv"
-                aria-describedby={describedBy}
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:text-ink hover:file:bg-surface-muted"
-              />
+              <FileInput id={id} ref={fileRef} accept=".csv,text/csv" aria-describedby={describedBy} onChange={(e) => setFile(e.target.files?.[0] || null)} />
             )}
           </Field>
           {progress && (

@@ -29,7 +29,7 @@ export default async function SellerDashboardPage() {
       </StatGrid>
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="Top 10 vendors" actions={<Link href="/admin/vendors/scores" className="text-[13px] font-medium text-brand-700 hover:underline">Score details</Link>} />
+          <CardHeader title="Top 10 vendors" actions={<Link href="/admin/vendors/scores" className="text-small font-medium text-brand-700 hover:underline">Score details</Link>} />
           <MiniTable
             columns={[
               { key: "name", label: "Vendor", render: (r) => <Link href={`/admin/vendors/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link> },

@@ -38,7 +38,7 @@ const PROBLEM_COLUMNS = [
 const TOP_COLUMNS = [
   { key: "rank", label: "#", index: true },
   customer,
-  { key: "totalOrders", label: "Total Orders", align: "right", className: () => "text-[15px] font-bold text-[#3b82f6]", render: (r) => formatNumber(r.totalOrders) },
+  { key: "totalOrders", label: "Total Orders", align: "right", className: () => "text-subheading font-bold text-[#3b82f6]", render: (r) => formatNumber(r.totalOrders) },
   { key: "deliveredCount", label: "Delivered", align: "right", className: () => "font-semibold text-[#10b981]", render: (r) => formatNumber(r.deliveredCount) },
   { key: "rtoCount", label: "RTO", align: "right", className: () => "font-semibold text-[#dc2626]", render: (r) => formatNumber(r.rtoCount) },
   { key: "cancelledCount", label: "Cancelled", align: "right", className: () => "font-semibold text-[#ea580c]", render: (r) => formatNumber(r.cancelledCount) },

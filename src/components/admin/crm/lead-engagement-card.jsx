@@ -7,7 +7,7 @@ function ActivityTable({ head, rows, empty }) {
   if (!rows.length) return <p className="px-4 py-3 text-sm text-ink-muted">{empty}</p>;
   return (
     <div className="overflow-x-auto scrollbar-thin">
-      <table className="w-full min-w-max text-left text-[13px]">
+      <table className="w-full min-w-max text-left text-small">
         <thead>
           <tr className="border-b border-line text-xs text-ink-muted">
             {head.map((h) => (

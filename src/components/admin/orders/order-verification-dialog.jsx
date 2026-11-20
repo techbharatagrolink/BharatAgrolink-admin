@@ -27,7 +27,7 @@ const PANEL_TONE = {
 function Panel({ icon: Icon, tone, title, children }) {
   return (
     <div className={cn("space-y-2.5 rounded-xl border border-line border-t-2 bg-surface p-3", PANEL_TONE[tone])}>
-      <p className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+      <p className="flex items-center gap-1.5 text-small font-semibold text-ink">
         <Icon className="size-4" aria-hidden /> {title}
       </p>
       {children}
@@ -71,7 +71,7 @@ export function OrderVerificationDialog({ order, editor, open, onClose, onAccept
     >
       <div className="space-y-4">
         <div className="rounded-lg border border-line bg-surface-muted p-3 text-sm">
-          <p className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">Shipping address</p>
+          <p className="text-micro font-medium tracking-wide text-ink-muted uppercase">Shipping address</p>
           <p className="mt-1 text-ink">{delivery.trim().replace(/^,\s*/, "") || "—"}</p>
         </div>
 
@@ -81,7 +81,7 @@ export function OrderVerificationDialog({ order, editor, open, onClose, onAccept
             <Button variant="primary" size="sm" className="w-full" disabled title="Needs the AiSensy confirmation campaign to be wired up">
               Send Confirmation
             </Button>
-            <p className="text-[11px] text-ink-muted">Last Sent: Never</p>
+            <p className="text-micro text-ink-muted">Last Sent: Never</p>
           </Panel>
 
           <Panel icon={Phone} tone="brand" title="Call Verification">
@@ -98,7 +98,7 @@ export function OrderVerificationDialog({ order, editor, open, onClose, onAccept
             <Button variant="primary" size="sm" className="w-full" disabled title="Needs the RapidSMS confirmation template to be wired up">
               Send SMS
             </Button>
-            <p className="text-[11px] text-ink-muted">Last Sent: Never</p>
+            <p className="text-micro text-ink-muted">Last Sent: Never</p>
           </Panel>
 
           <Panel icon={Ban} tone="danger" title="Cancel Order">

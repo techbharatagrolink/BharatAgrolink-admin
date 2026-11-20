@@ -51,7 +51,7 @@ export default async function ProductsDashboardPage() {
         </Card>
       </div>
       <Card className="mt-4">
-        <CardHeader title="Waiting for approval" actions={<Link href="/admin/products/pending" className="text-[13px] font-medium text-brand-700 hover:underline">Open approval queue</Link>} />
+        <CardHeader title="Waiting for approval" actions={<Link href="/admin/products/pending" className="text-small font-medium text-brand-700 hover:underline">Open approval queue</Link>} />
         <MiniTable
           columns={[
             { key: "name", label: "Product", render: (r) => <Link href={`/admin/products/${r.id}`} className="font-medium text-brand-700 hover:underline">{r.name}</Link> },

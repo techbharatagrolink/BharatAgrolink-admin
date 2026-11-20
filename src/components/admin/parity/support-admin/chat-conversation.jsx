@@ -55,7 +55,7 @@ export function ChatConversation({ conversation, canEdit }) {
         <DescriptionList
           columns={3}
           items={[
-            { label: "Session ID", value: <span className="font-mono text-[12.5px]">{conversation.sessionId}</span> },
+            { label: "Session ID", value: <span className="font-mono text-label">{conversation.sessionId}</span> },
             { label: "Region", value: conversation.region || "N/A" },
             { label: "Total Messages", value: conversation.total },
             { label: "Session Started", value: formatDateTime(conversation.startedAt) },

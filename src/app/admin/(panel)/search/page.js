@@ -22,13 +22,13 @@ export default async function SearchPage({ searchParams }) {
       <div className="grid gap-4 lg:grid-cols-2">
         {result.groups.map((g) => (
           <Card key={g.key}>
-            <CardHeader title={g.label} actions={<Link href={g.href} className="text-[13px] font-medium text-brand-700 hover:underline">Open list</Link>} />
+            <CardHeader title={g.label} actions={<Link href={g.href} className="text-small font-medium text-brand-700 hover:underline">Open list</Link>} />
             <ul className="divide-y divide-line">
               {g.hits.map((h) => (
                 <li key={h.id}>
                   <Link href={h.href} className="block px-4 py-2.5 transition-colors hover:bg-surface-muted">
                     <span className="block truncate text-sm font-medium text-ink">{h.title}</span>
-                    <span className="block truncate text-[13px] text-ink-muted">{h.subtitle}</span>
+                    <span className="block truncate text-small text-ink-muted">{h.subtitle}</span>
                   </Link>
                 </li>
               ))}

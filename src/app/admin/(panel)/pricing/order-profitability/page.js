@@ -6,6 +6,7 @@ import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { QueryFilters } from "@/components/admin/parity/seller/query-filters";
+import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 export const metadata = { title: "Order Profitability Report" };
 
@@ -75,41 +76,28 @@ export default async function OrderProfitabilityPage({ searchParams }) {
         </StatGrid>
         <QueryFilters fields={fields} />
         <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-y border-line bg-surface-muted text-left text-xs font-medium text-ink-muted">
-                  <th scope="col" className="px-4 py-2.5">Order</th>
-                  <th scope="col" className="px-4 py-2.5">Product</th>
-                  <th scope="col" className="px-4 py-2.5">Vendor</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Target</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Achievable</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Achieved</th>
-                  <th scope="col" className="px-4 py-2.5 text-right">Variance</th>
-                  <th scope="col" className="px-4 py-2.5">Delivered</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {rows.map((r) => (
-                  <tr key={r.id} className="align-top hover:bg-surface-muted/60">
-                    <td className="px-4 py-2.5">
-                      <Link href={`/admin/orders/${r.orderId}`} className="font-medium text-brand-700 hover:underline">{r.orderId}</Link>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="block text-ink">{r.product}</span>
-                      <span className="block text-xs text-ink-muted">{r.sku}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-ink-soft">{r.vendor}</td>
-                    <td className="px-4 py-2.5 text-right tabular">{formatINR(r.contributionTarget)} <span className="text-xs text-ink-muted">({formatPercent(r.contributionTargetPct)})</span></td>
-                    <td className="px-4 py-2.5 text-right tabular">{r.contributionAchievable == null ? "—" : formatINR(r.contributionAchievable)}</td>
-                    <td className="px-4 py-2.5 text-right tabular font-medium text-ink">{formatINR(r.contributionAchieved)}</td>
-                    <td className={`px-4 py-2.5 text-right tabular ${varianceTone(r.contributionAchievedVariance)}`}>{formatINR(r.contributionAchievedVariance)}</td>
-                    <td className="px-4 py-2.5 text-ink-soft">{r.deliveredAt ? formatDateTime(r.deliveredAt) : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <MiniTable
+            rows={rows}
+            columns={[
+              { key: "order", label: "Order", render: (r) => <Link href={`/admin/orders/${r.orderId}`} className="font-medium text-brand-700 hover:underline">{r.orderId}</Link> },
+              {
+                key: "product",
+                label: "Product",
+                render: (r) => (
+                  <>
+                    <span className="block text-ink">{r.product}</span>
+                    <span className="block text-xs text-ink-muted">{r.sku}</span>
+                  </>
+                ),
+              },
+              { key: "vendor", label: "Vendor", render: (r) => <span className="text-ink-soft">{r.vendor}</span> },
+              { key: "target", label: "Target", align: "right", render: (r) => <>{formatINR(r.contributionTarget)} <span className="text-xs text-ink-muted">({formatPercent(r.contributionTargetPct)})</span></> },
+              { key: "achievable", label: "Achievable", align: "right", render: (r) => (r.contributionAchievable == null ? "—" : formatINR(r.contributionAchievable)) },
+              { key: "achieved", label: "Achieved", align: "right", render: (r) => <span className="font-medium text-ink">{formatINR(r.contributionAchieved)}</span> },
+              { key: "variance", label: "Variance", align: "right", render: (r) => <span className={varianceTone(r.contributionAchievedVariance)}>{formatINR(r.contributionAchievedVariance)}</span> },
+              { key: "delivered", label: "Delivered", render: (r) => <span className="text-ink-soft">{r.deliveredAt ? formatDateTime(r.deliveredAt) : "—"}</span> },
+            ]}
+          />
           {!rows.length && <p className="p-4 text-sm text-ink-muted">No order lines match this filter.</p>}
         </Card>
       </div>

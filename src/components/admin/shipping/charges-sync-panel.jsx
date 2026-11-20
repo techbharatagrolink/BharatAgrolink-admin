@@ -119,19 +119,19 @@ function JobCard({ job, canRun, busy, onRun, ranged, earliest }) {
         </dl>
 
         {!running && last?.ok && last.summary && (
-          <p className={`flex items-start gap-1.5 rounded-md px-3 py-2 text-[13px] ${last.warning ? "bg-warning-bg text-warning-ink" : "bg-success-bg text-success-ink"}`}>
+          <p className={`flex items-start gap-1.5 rounded-md px-3 py-2 text-small ${last.warning ? "bg-warning-bg text-warning-ink" : "bg-success-bg text-success-ink"}`}>
             {last.warning ? <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden /> : <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
             {last.summary}
           </p>
         )}
         {!running && last && !last.ok && last.error && (
-          <p className="flex items-start gap-1.5 rounded-md bg-danger-bg px-3 py-2 text-[13px] text-danger-ink">
+          <p className="flex items-start gap-1.5 rounded-md bg-danger-bg px-3 py-2 text-small text-danger-ink">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {last.error}
           </p>
         )}
         {job.blockedReason && (
-          <p className="flex items-start gap-1.5 rounded-md bg-warning-bg px-3 py-2 text-[13px] text-warning-ink">
+          <p className="flex items-start gap-1.5 rounded-md bg-warning-bg px-3 py-2 text-small text-warning-ink">
             <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {job.blockedReason}
           </p>
