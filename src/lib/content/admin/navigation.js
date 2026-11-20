@@ -241,6 +241,24 @@ export const navigation = [
           { key: "cms-notifications", label: "Push Notifications", href: "/admin/cms/notifications", permission: "cms.notifications" },
         ],
       },
+      {
+        // SEO & AI Command Center (/admin/seo API, task #104). admin_menus rows: API migration
+        // 2026-11-20-002-seo-command-center-admin-menu.sql. Every screen shares the menu link seo_command_center.php.
+        key: "seo-command-center",
+        label: "SEO & AI Center",
+        icon: "Target",
+        children: [
+          { key: "seo-overview", label: "CEO Overview", href: "/admin/seo", page: "seo_command_center.php", permission: "seo", icon: "LayoutDashboard" },
+          { key: "seo-search", label: "SEO & Google", href: "/admin/seo/search", page: "seo_command_center.php", permission: "seo", icon: "TrendingUp" },
+          { key: "seo-ai", label: "AI Recommendations", href: "/admin/seo/ai-visibility", page: "seo_command_center.php", permission: "seo", icon: "MessagesSquare" },
+          { key: "seo-orders", label: "Orders & Revenue", href: "/admin/seo/orders", page: "seo_command_center.php", permission: "seo", icon: "ShoppingCart" },
+          { key: "seo-health", label: "Website Health", href: "/admin/seo/website-health", page: "seo_command_center.php", permission: "seo", icon: "ShieldCheck" },
+          { key: "seo-product-data", label: "Product Data", href: "/admin/seo/product-data", page: "seo_command_center.php", permission: "seo", icon: "Boxes" },
+          { key: "seo-tasks", label: "Tasks & Team", href: "/admin/seo/tasks", page: "seo_command_center.php", permission: "seo", icon: "BadgeCheck" },
+          { key: "seo-reports", label: "SEO Reports", href: "/admin/seo/reports", page: "seo_command_center.php", permission: "seo", icon: "Receipt" },
+          { key: "seo-settings", label: "SEO Settings", href: "/admin/seo/settings", page: "seo_command_center.php", permission: "seo", icon: "Settings" },
+        ],
+      },
     ],
   },
   {

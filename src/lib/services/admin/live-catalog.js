@@ -130,6 +130,8 @@ const EXTRA_PAGES = {
   inventory: ["inventory_management.php", "manage_product.php"],
   // Monetization Center (banner ads): its own menu only, same rule as /admin/monetization in the API.
   monetization: ["monetization_center.php"],
+  // SEO & AI Command Center (task #104): its own menu only, same rule as /admin/seo in the API.
+  seo: ["seo_command_center.php"],
   pricing: ["price_calculator.php"],
   finance: ["finance.php", "payout_finance.php"],
   "finance.expenses": ["expense_limit_dashboard.php", "fixed_expenses.php"],
@@ -314,6 +316,8 @@ export function isLiveAdminPath(pathname) {
   if (path === "/admin/inventory" || path.startsWith("/admin/inventory/")) return true;
   // Monetization Center: every screen reads the live /admin/monetization API.
   if (path === "/admin/monetization" || path.startsWith("/admin/monetization/")) return true;
+  // SEO & AI Command Center: every screen reads the live /admin/seo API.
+  if (path === "/admin/seo" || path.startsWith("/admin/seo/")) return true;
   if (/^\/admin\/orders\/(?!new$)[^/]+$/.test(path)) return true;
   if (/^\/admin\/crm\/leads\/\d+$/.test(path)) return true;
   if (/^\/admin\/crm\/customer-360\/[^/]+$/.test(path)) return true;
