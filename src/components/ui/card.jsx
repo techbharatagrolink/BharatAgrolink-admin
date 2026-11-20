@@ -12,7 +12,7 @@ export function CardHeader({ title, description, actions, className, children })
         {description && <p className="mt-0.5 text-xs text-ink-muted">{description}</p>}
         {children}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="ba-phone-actions flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }

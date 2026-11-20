@@ -71,14 +71,14 @@ export function ExpensesManager({ data, can }) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-        <Input type="month" aria-label="Month" value={month} onChange={(e) => e.target.value && go({ month: e.target.value })} className="h-8 w-44" />
-        <ButtonLink href={`/admin/finance/expense-limits?month=${encodeURIComponent(month)}`} size="sm" variant="outline">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+        <Input type="month" aria-label="Month" value={month} onChange={(e) => e.target.value && go({ month: e.target.value })} className="col-span-2 h-9 sm:h-8 sm:w-44" />
+        <ButtonLink href={`/admin/finance/expense-limits?month=${encodeURIComponent(month)}`} size="sm" variant="outline" className={can.add ? "max-sm:h-9" : "col-span-2 max-sm:h-9"}>
           <Gauge className="size-4" aria-hidden />
           Limit Dashboard
         </ButtonLink>
         {can.add && (
-          <Button size="sm" variant="primary" onClick={() => open(null)}>
+          <Button size="sm" variant="primary" onClick={() => open(null)} className="max-sm:h-9">
             <Plus className="size-4" aria-hidden />
             Add spend
           </Button>

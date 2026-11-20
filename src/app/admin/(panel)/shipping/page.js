@@ -60,21 +60,21 @@ export default async function ShipmentsPage({ searchParams }) {
         {shiprocket ? (
           <ShiprocketFilters values={{ q, ...sr, from: dateFrom, to: dateTo }} statuses={result.ok ? result.data.statuses : []} />
         ) : (
-          <form className="flex flex-wrap items-end gap-2 border-b border-line px-4 py-3" action="/admin/shipping">
+          <form className="grid grid-cols-2 items-end gap-2 border-b border-line px-4 py-3 sm:flex sm:flex-wrap" action="/admin/shipping">
             <input type="hidden" name="tab" value={tab} />
-            <label className="min-w-56 flex-1 space-y-1 text-xs text-ink-muted">
+            <label className="col-span-2 min-w-0 space-y-1 text-xs text-ink-muted sm:min-w-56 sm:flex-1">
               Search
               <Input name="q" defaultValue={q} placeholder="Order ID, AWB, invoice, customer, mobile" />
             </label>
-            <label className="space-y-1 text-xs text-ink-muted">
+            <label className="min-w-0 space-y-1 text-xs text-ink-muted">
               From
               <Input type="date" name="from" defaultValue={dateFrom} />
             </label>
-            <label className="space-y-1 text-xs text-ink-muted">
+            <label className="min-w-0 space-y-1 text-xs text-ink-muted">
               To
               <Input type="date" name="to" defaultValue={dateTo} />
             </label>
-            <Button type="submit" size="md">Filter</Button>
+            <Button type="submit" size="md" className={q || dateFrom || dateTo ? undefined : "col-span-2 sm:col-span-1"}>Filter</Button>
             {(q || dateFrom || dateTo) && <ButtonLink href={`/admin/shipping?tab=${tab}`} variant="ghost">Reset</ButtonLink>}
           </form>
         )}

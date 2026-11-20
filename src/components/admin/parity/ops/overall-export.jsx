@@ -22,11 +22,14 @@ export function OverallExport({ from, to }) {
 
   return (
     <>
-      <Button onClick={() => run("overall", exportOverallAction)} loading={busy === "overall"} disabled={Boolean(busy)}>
-        <Download className="size-4" aria-hidden /> Export CSV
+      {/* Phones: shorter labels so both buttons fit side by side (full names stay for screen readers). */}
+      <Button onClick={() => run("overall", exportOverallAction)} loading={busy === "overall"} disabled={Boolean(busy)} aria-label="Export CSV">
+        <Download className="size-4" aria-hidden /> Export<span className="max-sm:hidden"> CSV</span>
       </Button>
-      <Button onClick={() => run("agents", exportAllAgentsAction)} loading={busy === "agents"} disabled={Boolean(busy)}>
-        <Download className="size-4" aria-hidden /> Export All Agents CSV
+      <Button onClick={() => run("agents", exportAllAgentsAction)} loading={busy === "agents"} disabled={Boolean(busy)} aria-label="Export All Agents CSV">
+        <Download className="size-4" aria-hidden />
+        <span className="sm:hidden">All agents</span>
+        <span className="max-sm:hidden">Export All Agents CSV</span>
       </Button>
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,21 @@ import { saveZonesAction } from "@/lib/actions/admin/parity/crm";
 export function AgentStatusFilter({ filters }) {
   const { get, setParams, pending } = useQueryState();
   const active = get("status") || "all";
+  // Phones: one swipeable row instead of 5 wrapped rows; the selected chip is scrolled into view.
+  const rowRef = useRef(null);
+  useEffect(() => {
+    const row = rowRef.current;
+    const chip = row?.querySelector("[aria-pressed=\"true\"]");
+    if (!row || !chip || row.scrollWidth <= row.clientWidth) return;
+    row.scrollTo({ left: chip.offsetLeft - row.clientWidth / 2 + chip.offsetWidth / 2, behavior: "smooth" });
+  }, [active]);
   return (
-    <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Lead status">
+    <div
+      ref={rowRef}
+      className="relative mb-3 flex flex-wrap gap-1.5 max-sm:-mx-3 max-sm:snap-x max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-3 max-sm:pb-1 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden"
+      role="group"
+      aria-label="Lead status"
+    >
       {[{ value: "all", label: "All" }, ...filters].map((f) => (
         <button
           key={f.value}
@@ -25,7 +38,7 @@ export function AgentStatusFilter({ filters }) {
           aria-pressed={active === f.value}
           onClick={() => setParams({ status: f.value === "all" ? "" : f.value })}
           className={cn(
-            "h-8 rounded-full border px-3 text-small font-medium transition-colors",
+            "h-8 shrink-0 snap-start rounded-full border px-3 text-small font-medium whitespace-nowrap transition-colors",
             active === f.value ? "border-brand-600 bg-brand-600 text-brand-fg" : "border-line-strong bg-surface text-ink-soft hover:bg-surface-muted",
           )}
         >

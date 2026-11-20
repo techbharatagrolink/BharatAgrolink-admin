@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -52,14 +53,31 @@ function toUser(data, token) {
   };
 }
 
+// The API's database is remote and now and then drops a connection, so a single /me call can fail
+// with a 5xx (or no response at all) even though the session is fine. Those are retried briefly;
+// 401/403 (bad or expired session) are never retried and still send the admin to the login page.
+const PROFILE_RETRY_DELAYS_MS = [300, 900, 2000];
+const isTransient = (error) => !(error instanceof ApiError) || error.status >= 500;
+
 async function profileFor(token) {
-  const { data } = await api("admin/auth/me", { token });
-  return toUser(data, token);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const { data } = await api("admin/auth/me", { token });
+      return toUser(data, token);
+    } catch (error) {
+      if (!isTransient(error) || attempt >= PROFILE_RETRY_DELAYS_MS.length) {
+        if (isTransient(error)) console.warn(`[admin auth] GET admin/auth/me failed after ${attempt + 1} tries: ${error?.message} (status ${error?.status ?? "no response"}, code ${error?.code ?? "-"}) details=${JSON.stringify(error?.details ?? null)}`);
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, PROFILE_RETRY_DELAYS_MS[attempt]));
+    }
+  }
 }
 
 export function dropAdminProfile() {}
 
-export async function getCurrentAdmin() {
+// cache(): the layout and the page both ask for the admin; one /me call per request serves both.
+export const getCurrentAdmin = cache(async () => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token || !TOKEN_RE.test(token)) return null;
@@ -69,7 +87,7 @@ export async function getCurrentAdmin() {
     if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return null;
     throw error;
   }
-}
+});
 
 export async function requireAdmin() {
   const user = await getCurrentAdmin();

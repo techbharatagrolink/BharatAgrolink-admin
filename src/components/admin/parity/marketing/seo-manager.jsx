@@ -98,24 +98,24 @@ export function SeoManager({ items, meta, q, can, siteUrl }) {
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <form
-            className="flex items-center gap-2"
+            className="flex min-w-0 items-center gap-2 max-sm:w-full"
             onSubmit={(e) => {
               e.preventDefault();
               go({ q: search.trim(), page: null });
             }}
           >
-            <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, heading or slug" aria-label="Search pages" className="h-8 w-64" />
-            <Button size="sm" type="submit" variant="outline">
+            <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, heading or slug" aria-label="Search pages" className="h-8 w-64 max-sm:h-9 max-sm:w-auto max-sm:flex-1" />
+            <Button size="sm" type="submit" variant="outline" aria-label="Search" className="max-sm:size-9 max-sm:px-0">
               <Search className="size-4" aria-hidden />
-              Search
+              <span className="max-sm:sr-only">Search</span>
             </Button>
           </form>
-          <div className="flex items-center gap-2 text-sm text-ink-muted">
+          <div className="flex items-center gap-2 text-sm text-ink-muted max-sm:w-full">
             <span>Show</span>
-            <Select value={String(meta.limit)} onChange={(e) => go({ limit: e.target.value, page: null })} options={PER_PAGE} aria-label="Entries per page" className="w-20" />
-            <span>entries</span>
+            <Select value={String(meta.limit)} onChange={(e) => go({ limit: e.target.value, page: null })} options={PER_PAGE} aria-label="Entries per page" className="w-20 shrink-0" />
+            <span className="max-[359px]:hidden">entries</span>
             {can.add && (
-              <Button size="sm" variant="primary" onClick={() => open(null)}>
+              <Button size="sm" variant="primary" onClick={() => open(null)} className="max-sm:ml-auto max-sm:h-9">
                 <Plus className="size-4" aria-hidden />
                 Add page
               </Button>

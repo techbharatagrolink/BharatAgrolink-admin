@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowUp, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { isLiveAdminPath } from "@/lib/services/admin/live-catalog";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
@@ -45,33 +45,6 @@ function saveRail(value) {
 }
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** Floating "back to top" button, shown once the page has been scrolled a fair way. */
-function BackToTop() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setShow(window.scrollY > 600);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return (
-    <button
-      type="button"
-      onClick={() => window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" })}
-      aria-label="Back to top"
-      title="Back to top"
-      tabIndex={show ? 0 : -1}
-      aria-hidden={!show}
-      className={cn(
-        "fixed right-4 bottom-4 z-40 flex size-11 items-center justify-center rounded-full bg-brand-600 text-brand-fg shadow-[var(--shadow-pop)] transition-all duration-200 hover:bg-brand-700 active:scale-95 sm:right-6 sm:bottom-6",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
-      )}
-    >
-      <ArrowUp className="size-5" aria-hidden />
-    </button>
-  );
-}
 
 export function AdminShell({ user, navigation, badges, notifications, children }) {
   const mainRef = useRef(null);
@@ -117,7 +90,6 @@ export function AdminShell({ user, navigation, badges, notifications, children }
           {children}
         </main>
       </div>
-      <BackToTop />
     </div>
   );
 }

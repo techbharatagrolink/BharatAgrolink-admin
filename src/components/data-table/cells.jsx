@@ -217,7 +217,7 @@ export function Cell({ column, row, activeLineId, onPickLine }) {
     content = hasValue ? (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold tabular",
+          "inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold tabular",
           isAlert
             ? "bg-rose-100 text-rose-800 border border-rose-300 shadow-sm"
             : "bg-emerald-50 text-emerald-800 border border-emerald-200"

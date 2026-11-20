@@ -8,7 +8,7 @@ import { formatNumber } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Drawer } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Notice } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
@@ -61,8 +61,10 @@ function AddAddressDrawer({ open, onClose }) {
     router.refresh();
   }
 
+  // Centred popup (bottom sheet on phones) rather than a side drawer.
   return (
-    <Drawer
+    <Dialog
+      size="lg"
       open={open}
       onClose={onClose}
       title="Add Pickup Address"
@@ -76,10 +78,10 @@ function AddAddressDrawer({ open, onClose }) {
         </>
       }
     >
-      <form id="pickup-address-form" onSubmit={submit} className="grid grid-cols-2 gap-3">
-        {error && <Notice tone="danger" className="col-span-2">{error}</Notice>}
+      <form id="pickup-address-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {error && <Notice tone="danger" className="sm:col-span-2">{error}</Notice>}
         {FIELDS.map((f) => (
-          <Field key={f.key} label={f.label} required={f.required} className={f.wide ? "col-span-2" : undefined}>
+          <Field key={f.key} label={f.label} required={f.required} className={f.wide ? "sm:col-span-2" : undefined}>
             {({ id }) => (
               <Input
                 id={id}
@@ -98,7 +100,7 @@ function AddAddressDrawer({ open, onClose }) {
           {({ id }) => <Select id={id} value={values.addressType} onChange={(e) => setValues((v) => ({ ...v, addressType: e.target.value }))} placeholder="Select type" options={[{ value: "vendor", label: "Vendor" }]} />}
         </Field>
       </form>
-    </Drawer>
+    </Dialog>
   );
 }
 

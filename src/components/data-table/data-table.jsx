@@ -240,7 +240,15 @@ export function DataTable({
           {(search || filters.length > 0 || dateRange || !inlineToolbar) && (
             <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
           )}
-          <div className={cn("flex min-w-0 flex-wrap items-center gap-2", !inlineToolbar && "shrink-0")}>
+          {/* Phones: the action buttons form one even row of equal-width buttons (wrapping to a second row only
+              when there are many). Wider custom toolbar pieces (filter groups, inputs) take a full row. */}
+          <div
+            className={cn(
+              "flex min-w-0 flex-wrap items-center gap-2",
+              "ba-phone-actions",
+              !inlineToolbar && "shrink-0",
+            )}
+          >
             {toolbar}
             <Popover
               label="Choose columns"
@@ -385,15 +393,29 @@ export function DataTable({
               const view = viewOf(row);
               const href = resolveHref(rowHref, row);
               const actions = rowActions.filter((a) => matchesWhen(a, row));
-              const [lead, ...rest] = visible;
+              const [lead, ...others] = visible;
+              // The first status column rides in the card header (badge), the rest become label/value lines.
+              const statusCol = others.find((column) => column.type === "status");
+              // Fields with no value ("—" lines such as an unanswered "Admin reply") are left out of the phone card.
+              const isEmpty = (column) => {
+                const value = view[column.key];
+                return value == null || value === "" || (Array.isArray(value) && value.length === 0);
+              };
+              const rest = others.filter((column) => column !== statusCol && !isEmpty(column));
+              // Short values (counts, %, amounts, IDs) become compact 2-up tiles; long ones keep full-width lines.
+              const isShort = (column) => !column.wrap && !column.sub && column.type !== "image" && typeof view[column.key] !== "object" && String(view[column.key]).length <= 12;
+              // A lone short value is just a line (a single tile box looks odd).
+              const shortOnes = rest.filter(isShort);
+              const tiles = shortOnes.length > 1 ? shortOnes : [];
+              const lines = rest.filter((column) => !tiles.includes(column));
               return (
-                <li key={key} className={cn("px-3 py-3", selected.includes(key) && "bg-brand-50/60")}>
+                <li key={key} className={cn("px-3 py-3 transition-colors sm:px-4", selected.includes(key) && "bg-brand-50/60")}>
                   <div className="flex items-start gap-2.5">
                     {showSelection && (
                       <Checkbox className="mt-0.5" aria-label={`Select ${key}`} checked={selected.includes(key)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
                     )}
                     {showSerial && <span className="shrink-0 pt-px text-xs text-ink-muted tabular">{serialOf(index)}.</span>}
-                    <div className="min-w-0 flex-1 text-table">
+                    <div className="min-w-0 flex-1 text-table [&_.truncate]:whitespace-normal">
                       {lead &&
                         (href && !lead.href && lead.type !== "image" ? (
                           <Link href={href} className="block font-medium break-words text-brand-700 hover:underline">
@@ -406,14 +428,41 @@ export function DataTable({
                           </div>
                         ))}
                     </div>
+                    {statusCol && (
+                      <div className="max-w-[45%] shrink-0 pt-px text-right">
+                        <Cell column={statusCol} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
+                      </div>
+                    )}
                     {hasRowActions && <div className="-mt-1 -mr-1 shrink-0">{actionsMenu(key, actions)}</div>}
                   </div>
-                  {rest.length > 0 && (
-                    <dl className={cn("mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-table", showSelection && "pl-7")}>
-                      {rest.map((column) => (
-                        <div key={column.key} className={cn("min-w-0", column.wrap && "col-span-2")}>
-                          <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">{column.label}</dt>
-                          <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">
+                  {lines.length > 0 && (
+                    <dl className="mt-2.5 grid gap-x-6 rounded-lg bg-surface-muted/60 px-3 py-1 text-table sm:grid-cols-2">
+                      {lines.map((column) =>
+                        column.wrap ? (
+                          // Long text keeps a full-width block: label on top, text underneath.
+                          <div key={column.key} className="min-w-0 border-b border-line/60 py-1.5 last:border-0 sm:col-span-2">
+                            <dt className="text-small text-ink-muted">{column.label}</dt>
+                            <dd className="mt-0.5 min-w-0 break-words text-ink [&_.truncate]:whitespace-normal">
+                              <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
+                            </dd>
+                          </div>
+                        ) : (
+                          <div key={column.key} className="flex min-w-0 items-start justify-between gap-3 border-b border-line/60 py-1.5 last:border-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-0">
+                            <dt className="max-w-[40%] shrink-0 pt-px text-small leading-snug text-ink-muted">{column.label}</dt>
+                            <dd className="flex min-w-0 flex-1 justify-end text-right leading-snug break-words text-ink [&_.truncate]:whitespace-normal">
+                              <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
+                            </dd>
+                          </div>
+                        ),
+                      )}
+                    </dl>
+                  )}
+                  {tiles.length > 0 && (
+                    <dl className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line/60 bg-line/60 text-table sm:grid-cols-3">
+                      {tiles.map((column, index) => (
+                        <div key={column.key} className={cn("min-w-0 bg-surface-muted px-3 py-2", tiles.length % 2 === 1 && index === tiles.length - 1 && "col-span-2 sm:col-span-1")}>
+                          <dt className="truncate text-small text-ink-muted">{column.label}</dt>
+                          <dd className="mt-0.5 min-w-0 font-medium break-words text-ink tabular [&_.truncate]:whitespace-normal">
                             <Cell column={column} row={view} activeLineId={picks[key]?.id} onPickLine={pickLine} />
                           </dd>
                         </div>
@@ -434,7 +483,7 @@ export function DataTable({
       </div>
 
       <div className="flex flex-col gap-2 border-t border-line px-3 py-2.5 text-small text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-        <p className="tabular">
+        <p className="text-center tabular sm:text-left">
           {data.total === 0 ? "No results" : `Showing ${formatNumber(from)}–${formatNumber(to)} of ${formatNumber(data.total)}`}
           {filteredCount != null && (
             <>
@@ -446,18 +495,18 @@ export function DataTable({
             </>
           )}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
           <label className="hidden items-center gap-2 sm:flex">
             <span>Rows</span>
             <Select aria-label="Rows per page" className="w-20" value={String(data.pageSize)} options={pageSizes.map(String)} onChange={(e) => setParams({ pageSize: e.target.value })} />
           </label>
-          <Button size="icon-sm" onClick={() => setParams({ page: data.page - 1 }, { resetPage: false })} disabled={data.page <= 1 || pending} aria-label="Previous page">
+          <Button size="icon-sm" className="max-sm:size-10" onClick={() => setParams({ page: data.page - 1 }, { resetPage: false })} disabled={data.page <= 1 || pending} aria-label="Previous page">
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="min-w-20 text-center tabular">
+          <span className="min-w-20 text-center font-medium text-ink-soft tabular">
             Page {data.page} / {data.pageCount}
           </span>
-          <Button size="icon-sm" onClick={() => setParams({ page: data.page + 1 }, { resetPage: false })} disabled={data.page >= data.pageCount || pending} aria-label="Next page">
+          <Button size="icon-sm" className="max-sm:size-10" onClick={() => setParams({ page: data.page + 1 }, { resetPage: false })} disabled={data.page >= data.pageCount || pending} aria-label="Next page">
             <ChevronRight className="size-4" />
           </Button>
         </div>

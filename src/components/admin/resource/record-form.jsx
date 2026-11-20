@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Drawer } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { FileInput } from "@/components/ui/file-input";
 import { Notice } from "@/components/ui/page";
@@ -81,8 +81,10 @@ export function RecordFormDrawer({ open, onClose, title, description, fields: al
   };
 
   const formId = "record-form";
+  // Centred popup (bottom sheet on phones) rather than a side drawer.
   return (
-    <Drawer
+    <Dialog
+      size="lg"
       open={open}
       onClose={onClose}
       title={title}
@@ -174,6 +176,6 @@ export function RecordFormDrawer({ open, onClose, title, description, fields: al
           </Field>
         )}
       </form>
-    </Drawer>
+    </Dialog>
   );
 }

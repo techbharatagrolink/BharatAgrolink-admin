@@ -15,12 +15,13 @@ import { convertQuotationAction, decideQuotationAction } from "@/lib/actions/adm
 const APPROVAL_TONE = { pending: "warning", blocked: "danger", approved: "success", auto_approved: "success", rejected: "danger" };
 const HEALTH_RING = { success: "border-success-ink/30", warning: "border-warning-ink/30", danger: "border-danger-ink/30" };
 
-function Kpi({ label, value, sub, tone }) {
+function Kpi({ label, value, sub, tone, className }) {
+  // Phones: text wraps instead of being cut off ("Newrise Tec…").
   return (
-    <div className={cn("min-w-0 rounded-lg border border-line p-3", tone && HEALTH_RING[tone])}>
+    <div className={cn("min-w-0 rounded-lg border border-line p-3", tone && HEALTH_RING[tone], className)}>
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className="mt-0.5 truncate text-subheading font-semibold text-ink tabular">{value}</p>
-      {sub && <p className="truncate text-xs text-ink-muted">{sub}</p>}
+      <p className="mt-0.5 truncate text-subheading font-semibold text-ink tabular max-sm:whitespace-normal max-sm:break-words">{value}</p>
+      {sub && <p className="truncate text-xs text-ink-muted max-sm:whitespace-normal max-sm:break-words">{sub}</p>}
     </div>
   );
 }
@@ -73,7 +74,7 @@ export function ApprovalCard({ quote, rules, canDecide }) {
       </div>
       <CardBody className="space-y-3">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
-          <Kpi label="Buyer" value={quote.buyer} sub={quote.mobile} />
+          <Kpi label="Buyer" value={quote.buyer} sub={quote.mobile} className="max-sm:col-span-2" />
           <Kpi label="Quote Value" value={formatINR(quote.value)} sub={`${quote.lines} line(s)`} />
           <Kpi label="Platform Revenue" value={formatINR(quote.platformRevenue)} sub={`${formatPercent(quote.takeRatePct)} take rate`} />
           <Kpi label="Contribution Margin" value={formatINR(quote.contribution)} sub={`${formatPercent(quote.cmPct)} CM · floor ${formatPercent(rules.minCmPct, 0)}`} tone={quote.cmHealth} />
@@ -84,26 +85,27 @@ export function ApprovalCard({ quote, rules, canDecide }) {
             Last note: <em>{quote.note}</em>
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink size="sm" href={`/admin/b2b/quotations?q=${encodeURIComponent(quote.number)}`}>
+        {/* Phones: decision first (reason, then Approve | Reject), "Open quotation" last; all full width. */}
+        <div className="flex flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-stretch">
+          <ButtonLink size="sm" href={`/admin/b2b/quotations?q=${encodeURIComponent(quote.number)}`} className="max-sm:order-last max-sm:h-9">
             <Eye className="size-3.5" aria-hidden /> Open quotation
           </ButtonLink>
           {quote.awaiting && canDecide && (
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for the decision (required)" aria-label={`Reason for ${quote.number}`} maxLength={1000} className="h-8 min-w-60 flex-1" />
-              <Button size="sm" variant="primary" onClick={() => decide("approved")} loading={pending && busy === "approved"} disabled={pending}>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-2">
+              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for the decision (required)" aria-label={`Reason for ${quote.number}`} maxLength={1000} className="h-8 flex-1 max-sm:col-span-2 max-sm:h-9 sm:min-w-60" />
+              <Button size="sm" variant="primary" onClick={() => decide("approved")} loading={pending && busy === "approved"} disabled={pending} className="max-sm:h-9">
                 <Check className="size-3.5" aria-hidden /> Approve
               </Button>
-              <Button size="sm" variant="danger" onClick={() => decide("rejected")} loading={pending && busy === "rejected"} disabled={pending}>
+              <Button size="sm" variant="danger" onClick={() => decide("rejected")} loading={pending && busy === "rejected"} disabled={pending} className="max-sm:h-9">
                 <X className="size-3.5" aria-hidden /> Reject
               </Button>
             </div>
           )}
           {quote.awaiting && !canDecide && <span className="text-xs text-ink-muted">Awaiting a decision from someone with approval rights.</span>}
           {quote.readyToConvert && canDecide && (
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <Input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} placeholder="Buyer PO number (optional)" aria-label={`PO number for ${quote.number}`} maxLength={100} className="h-8 min-w-48 flex-1" />
-              <Button size="sm" variant="primary" onClick={convert} loading={pending && busy === "convert"} disabled={pending || quote.needsPayment}>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-stretch">
+              <Input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} placeholder="Buyer PO number (optional)" aria-label={`PO number for ${quote.number}`} maxLength={100} className="h-8 flex-1 max-sm:h-9 sm:min-w-48" />
+              <Button size="sm" variant="primary" onClick={convert} loading={pending && busy === "convert"} disabled={pending || quote.needsPayment} className="max-sm:h-9">
                 <FileOutput className="size-3.5" aria-hidden /> Convert to Order
               </Button>
             </div>

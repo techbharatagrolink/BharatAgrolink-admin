@@ -64,7 +64,7 @@ function loadRazorpay() {
 
 // onCreated(id) / onCreateAnother(): optional hooks for the "Create order" popup on All Orders. Without
 // them (the /admin/orders/new page) the form behaves as before — "Create another order" reloads the page.
-export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother }) {
+export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother, toolbarStart = null }) {
   const { notify } = useToast();
   const [customerQuery, setCustomerQuery] = useState("");
   const [customers, setCustomers] = useState([]);
@@ -392,7 +392,9 @@ export function ManualOrderForm({ leadCode = "", onCreated, onCreateAnother }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      {/* toolbarStart: extra page buttons that share this row on phones (e.g. "Attempts"). */}
+      <div className="ba-phone-actions flex justify-end gap-2">
+        {toolbarStart}
         <Button type="button" variant="primary" size="sm" onClick={() => setCustomerModal(true)}><UserPlus className="size-3.5" /> New customer</Button>
       </div>
       {formError && <Notice tone="danger">{formError}</Notice>}

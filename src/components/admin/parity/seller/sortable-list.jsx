@@ -59,12 +59,12 @@ export function SortableList({ items, getKey, onChange, renderItem, disabled = f
           )}
           <div className="min-w-0 flex-1">{renderItem(item, index)}</div>
           {!disabled && (
-            <div className="flex shrink-0 gap-0.5">
-              <button type="button" onClick={() => onChange(moveItem(items, index, index - 1))} disabled={index === 0} className="rounded p-1 text-ink-muted hover:bg-neutral-bg hover:text-ink disabled:opacity-30" aria-label="Move up">
-                <ArrowUp className="size-3.5" />
+            <div className="flex shrink-0 gap-0.5 max-sm:gap-1">
+              <button type="button" onClick={() => onChange(moveItem(items, index, index - 1))} disabled={index === 0} className="rounded p-1 text-ink-muted hover:bg-neutral-bg hover:text-ink disabled:opacity-30 max-sm:flex max-sm:size-9 max-sm:items-center max-sm:justify-center max-sm:rounded-md max-sm:border max-sm:border-line" aria-label="Move up">
+                <ArrowUp className="size-3.5 max-sm:size-4" />
               </button>
-              <button type="button" onClick={() => onChange(moveItem(items, index, index + 1))} disabled={index === items.length - 1} className="rounded p-1 text-ink-muted hover:bg-neutral-bg hover:text-ink disabled:opacity-30" aria-label="Move down">
-                <ArrowDown className="size-3.5" />
+              <button type="button" onClick={() => onChange(moveItem(items, index, index + 1))} disabled={index === items.length - 1} className="rounded p-1 text-ink-muted hover:bg-neutral-bg hover:text-ink disabled:opacity-30 max-sm:flex max-sm:size-9 max-sm:items-center max-sm:justify-center max-sm:rounded-md max-sm:border max-sm:border-line" aria-label="Move down">
+                <ArrowDown className="size-3.5 max-sm:size-4" />
               </button>
             </div>
           )}

@@ -137,6 +137,12 @@ function DataCell({ data, col, lead }) {
           {formatCellValue(col, view)}
           {col.sub && view[col.sub] && <span className="block truncate text-xs font-normal text-ink-muted">{view[col.sub]}</span>}
         </Link>
+      ) : col.wrap ? (
+        // Long wrapped text (e.g. pack-size stock, notes) is capped at 3 lines so one cell can't make the
+        // whole row tall; hovering shows the full text.
+        <div className="line-clamp-3" title={typeof view[col.key] === "string" ? view[col.key] : undefined}>
+          <Cell column={col} row={view} activeLineId={g.picks[key]?.id} onPickLine={g.pickLine} />
+        </div>
       ) : (
         <Cell column={col} row={view} activeLineId={g.picks[key]?.id} onPickLine={g.pickLine} />
       )}

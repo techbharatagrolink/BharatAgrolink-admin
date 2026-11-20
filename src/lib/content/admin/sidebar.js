@@ -214,11 +214,17 @@ function uniqueByHref(leaves) {
 
 const FALLBACK = [{ section: null, items: [{ key: "menu-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }] }];
 
+// Display names shown instead of the admin_menus (Menu Master) name. Display only: the database row,
+// its link and permissions are unchanged.
+const MENU_DISPLAY_NAMES = { "Delhivery Orders": "Delivery Orders", "Delhivery Serviceability": "Delivery Serviceability" };
+const withDisplayNames = (nodes) =>
+  (nodes ?? []).map((node) => ({ ...node, name: MENU_DISPLAY_NAMES[String(node.name ?? "").trim()] ?? node.name, children: node.children ? withDisplayNames(node.children) : node.children }));
+
 /** `items` is the API tree: [{ id, name, link, route, icon, actions, children }]. */
 export function buildSidebar(items) {
   const sections = [];
 
-  for (const top of items ?? []) {
+  for (const top of withDisplayNames(items)) {
     if (!top.children?.length) {
       sections.push({ section: null, items: [toLeaf(top)] });
       continue;
