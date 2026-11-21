@@ -92,6 +92,7 @@ export const navigation = [
           { key: "products-with-services", label: "Products with Services", href: "/admin/products/with-services", permission: "products" },
           { key: "pricing-cost-config", label: "Cost & Margin Management", href: "/admin/pricing/cost-config", page: "product_cost_management.php", permission: "pricing.costConfig" },
           { key: "pricing-cost-management", label: "Cost Management", href: "/admin/pricing/cost-management", permission: "products" },
+          { key: "pricing-proposals", label: "Pricing Proposals", href: "/admin/pricing/proposals", permission: "products" },
           { key: "pricing-take-rate-services", label: "Take-Rate Service Rule", href: "/admin/pricing/take-rate-services", permission: "products" },
           { key: "pricing-profitability-audit", label: "Profitability Audit", href: "/admin/pricing/profitability-audit", permission: "products" },
           { key: "pricing-order-profitability", label: "Order Profitability", href: "/admin/pricing/order-profitability", permission: "products" },
