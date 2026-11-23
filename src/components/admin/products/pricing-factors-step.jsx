@@ -15,6 +15,12 @@ const MODES = [
   ["FROM_ACTUALS", "Rebuild from actuals", "Take rate is solved from edited actuals and the target margin."],
 ];
 
+/** How % seller services are charged (product_service_charges.service_basis); every price below follows it. */
+const SERVICE_BASES = [
+  ["ORDER_VALUE", "Sale price", "Services are added on top: the display price (customer price) rises, the seller's NRV stays."],
+  ["NRV", "NRV", "Display price stays the same: the services are taken out of the seller's NRV."],
+];
+
 /** "6.5" -> 650 without floating point; null when not a percentage with up to 2 decimals. */
 function pctToBps(value) {
   const match = /^(-?)(\d{1,3})(?:\.(\d{0,2}))?$/.exec(String(value ?? "").trim());
@@ -323,6 +329,35 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
         </div>
       </div>
 
+      {(!creating || parcel?.vendorId) && (
+        <div className="space-y-1.5" data-testid="service-basis">
+          <p className="text-sm font-semibold text-ink">
+            Seller services are charged on
+            {isVariant && <span className="ml-2 text-xs font-normal text-ink-muted">Set on the base product; applies to every variation.</span>}
+          </p>
+          <div className="grid grid-cols-1 gap-2 @lg:grid-cols-2" role="radiogroup" aria-label="Seller services are charged on">
+            {SERVICE_BASES.map(([value, label, hint]) => {
+              const active = draft.serviceBasis === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={!canEdit || isVariant}
+                  onClick={() => update({ serviceBasis: value })}
+                  className={`w-full min-w-0 rounded-lg border-2 px-4 py-3 text-left disabled:cursor-not-allowed ${active ? "border-brand-600 bg-brand-50" : "border-line hover:border-ink-muted"} ${!canEdit || isVariant ? "opacity-80" : ""}`}
+                >
+                  <span className={`block text-base ${active ? "font-semibold text-brand-700" : "font-medium text-ink"}`}>{label}</span>
+                  <span className="block text-xs break-words text-ink-muted">{hint}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-ink-muted">A % service is always a % of the sale price. Fixed ₹ per unit charges are not affected. Every price on this step follows this choice.</p>
+        </div>
+      )}
+
       <div className="grid gap-3 @sm:grid-cols-2 @3xl:grid-cols-4">
         <Field label="MRP (₹)" required>{({ id }) => <Input id={id} inputMode="decimal" value={draft.mrp} onChange={(e) => update({ mrp: e.target.value })} disabled={!canEdit} />}</Field>
         <Field label="NRV (₹)" required hint="What the seller receives, before services. Whole rupees.">{({ id }) => <Input id={id} inputMode="numeric" value={draft.nrv} onChange={(e) => update({ nrv: e.target.value })} disabled={!canEdit} />}</Field>
@@ -364,7 +399,11 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
             <div className="space-y-2 rounded-lg border border-line p-3" data-testid="seller-services">
               <div>
                 <p className="text-sm font-medium text-ink">Seller services</p>
-                <p className="text-xs text-ink-muted">A % service is always a % of the sale price. Sale price: the service is added on top, so the display price rises and the service charge stays the take rate %. NRV: the display price stays the same and the services are taken out of the seller&apos;s NRV.</p>
+                <p className="text-xs text-ink-muted">
+                  {draft.serviceBasis === "NRV"
+                    ? "Charged on NRV (chosen at the top): ticked services are taken out of the seller's NRV; the display price stays the same."
+                    : "Charged on the sale price (chosen at the top): ticked services are added on top of the display price; the seller's NRV stays the same."}
+                </p>
               </div>
               {isVariant && <p className="text-xs text-ink-muted">Services ticked here apply to this variation only.</p>}
               {(servicesInfo?.available?.length ?? 0) === 0 ? (
@@ -393,19 +432,6 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                     );
                   })}
                 </ul>
-              )}
-              {!isVariant && (
-                <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-2 text-xs" disabled={!canEdit}>
-                  <legend className="sr-only">Percentage service charges are worked out on</legend>
-                  <span className="font-medium text-ink">Services are charged</span>
-                  {[["ORDER_VALUE", "Sale price", "Added on top of the sale price"], ["NRV", "NRV", "Taken out of the seller's NRV; the sale price stays the same"]].map(([value, label, hint]) => (
-                    <label key={value} title={hint} className="flex cursor-pointer items-center gap-1.5">
-                      <input type="radio" name="service-basis" className="accent-brand-600" value={value} checked={draft.serviceBasis === value} onChange={() => update({ serviceBasis: value })} />
-                      <span className="text-ink">{label}</span>
-                    </label>
-                  ))}
-                  <span className="text-ink-muted">Fixed ₹ per unit charges are not affected.</span>
-                </fieldset>
               )}
               <div className="grid gap-x-4 gap-y-0.5 border-t border-line pt-2 text-xs @md:grid-cols-3">
                 {draft.serviceBasis === "NRV" ? (

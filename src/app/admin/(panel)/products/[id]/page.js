@@ -15,6 +15,7 @@ import { PricingBreakdown, PricingPanel } from "@/components/admin/products/pric
 import { ProductStatusActions, StockControl } from "@/components/admin/products/product-controls";
 import { resourceFallback } from "@/components/admin/resource/resource-fallback";
 import { StaticGrid } from "@/components/data-table/static-grid";
+import { ButtonLink } from "@/components/ui/button";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -118,7 +119,18 @@ export default async function ProductDetailPage({ params, searchParams }) {
   const pricingFactors = await pricingFactorsEnabled(user);
 
   if (canEdit && options) {
-    return <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} pricingFactors={pricingFactors} canEditPricing={canPage(user, "manage_product.php", "edit")} />;
+    return (
+      <>
+        {canPage(user, "manage_product.php", "edit") && (
+          <div className="mb-3 flex justify-end">
+            <ButtonLink href={`/admin/pricing/proposals/new?productId=${encodeURIComponent(p.id)}`} size="sm">
+              Propose services to vendor
+            </ButtonLink>
+          </div>
+        )}
+        <ProductEditor product={p} options={options} vendorName={vendor?.name || p.vendor} pricingFactors={pricingFactors} canEditPricing={canPage(user, "manage_product.php", "edit")} />
+      </>
+    );
   }
 
   const isTakeRateAlert = p.takeRate != null && Number(p.takeRate) > 0 && Number(p.takeRate) < 35;
