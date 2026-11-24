@@ -113,7 +113,7 @@ function FactorCard({ code, label, targetPct, targetAmount, actual, achievement,
           <dd className="text-sm tabular-nums text-ink">{targetAmount}</dd>
         </div>
         <div className="col-span-2 min-w-0">
-          <dt className="text-xs text-ink-muted">Actual ₹</dt>
+          <dt className="text-xs text-ink-muted">Achievable ₹</dt>
           <dd className="mt-1 min-w-0">{actual}</dd>
         </div>
         <div>
@@ -270,6 +270,8 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
   const result = preview?.result ?? pricing.result;
   // Per-service amounts and charge text follow the live preview (the basis radio changes them).
   const servicesInfo = preview?.services ?? pricing.services;
+  // Services with a ₹0 / 0% charge change nothing, so they are not listed; one already ticked stays so it can be unticked.
+  const shownServices = (servicesInfo?.available ?? []).filter((s) => Number(s.chargeValue) > 0 || draft.serviceCodes.includes(s.code));
   const resultFactors = new Map((result.factors || []).map((f) => [f.code, f]));
   const config = pricing.config;
   const isVariant = variantId !== 0;
@@ -406,11 +408,11 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                 </p>
               </div>
               {isVariant && <p className="text-xs text-ink-muted">Services ticked here apply to this variation only.</p>}
-              {(servicesInfo?.available?.length ?? 0) === 0 ? (
-                <p className="text-xs text-ink-muted">This seller has no Active services to select.</p>
+              {shownServices.length === 0 ? (
+                <p className="text-xs text-ink-muted">This seller has no Active services with a charge to select.</p>
               ) : (
                 <ul className="grid gap-1.5 @lg:grid-cols-2">
-                  {servicesInfo.available.map((s) => {
+                  {shownServices.map((s) => {
                     const checked = draft.serviceCodes.includes(s.code);
                     // Follows the radio at once: the % text and the amount are worked out here from the chosen basis
                     // (NRV, or the display price shown below); the server's totals follow a moment later.
@@ -510,7 +512,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                   <th className="py-2 pr-2 font-medium">Cost factor</th>
                   <th className="py-2 pr-2 text-right font-medium" title="Percent of the take-rate amount (display price − NRV − services)">Target % <span className="font-normal">of take amt</span></th>
                   <th className="py-2 pr-2 text-right font-medium">Target ₹</th>
-                  <th className="py-2 pr-2 font-medium">Actual ₹</th>
+                  <th className="py-2 pr-2 font-medium"><span className="inline-block w-28 text-right">Achievable ₹</span></th>
                   <th className="py-2 pr-2 text-right font-medium">Achievement</th>
                   <th className="py-2 text-right font-medium">Variance ₹</th>
                 </tr>
@@ -534,18 +536,21 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                   <td className="py-2 pr-2 text-right tabular-nums">{bpsToPct(result.marginTargetBps ?? config.defaultTargetMarginBps)}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">{money(result.marginTargetAmount)}</td>
                   <td className="py-2 pr-2">
-                    <div className={`w-28 text-right tabular-nums ${result.platformMarginBps < 0 ? "text-danger-ink" : ""}`}>{money(result.platformMargin)}</div>
+                    {/* Same box as the Achievable input (w-28, px-3) so the amounts line up under the input values. */}
+                    <div className={`w-28 px-3 text-right tabular-nums ${result.platformMarginBps < 0 ? "text-danger-ink" : ""}`}>{money(result.platformMargin)}</div>
                   </td>
                   <td className="py-2 pr-2 text-right"><Badge tone={marginAchievementTone(result.platformMarginBps, result.marginTargetBps ?? config.defaultTargetMarginBps)}>{bpsToPct(result.platformMarginBps)}</Badge></td>
                   <td className={`py-2 text-right tabular-nums ${marginVarianceClass(result.marginVarianceAmount)}`}>{result.marginVarianceAmount ?? "—"}</td>
                 </tr>
               </tbody>
               <tfoot>
-                <tr className="text-sm font-semibold">
+                <tr className="border-t border-line-strong text-sm font-semibold">
                   <td className="py-2 pr-2">Total</td>
                   <td />
                   <td className="py-2 pr-2 text-right tabular-nums">{money(result.totalFactorTarget)}</td>
-                  <td className="py-2 pr-2 tabular-nums">{money(result.totalFactorActual)}</td>
+                  <td className="py-2 pr-2">
+                    <div className="w-28 px-3 text-right tabular-nums">{money(result.totalFactorActual)}</div>
+                  </td>
                   <td />
                   <td className={`py-2 text-right tabular-nums ${varianceClass(subtractMoney(result.totalFactorTarget, result.totalFactorActual))}`}>{subtractMoney(result.totalFactorTarget, result.totalFactorActual)}</td>
                 </tr>
