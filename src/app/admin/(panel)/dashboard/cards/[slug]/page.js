@@ -90,6 +90,7 @@ const TOTALS = {
   "unique-visitors": (d) => [{ label: "Unique visitors", value: formatNumber(d.customers.uniqueVisitors), delta: d.customers.uniqueVisitorsPct }],
   "web-visitors": (d) => [{ label: "Web unique visitors", value: formatNumber(d.customers.webUniqueVisitors ?? d.customers.uniqueVisitors), delta: d.customers.webUniqueVisitorsPct ?? d.customers.uniqueVisitorsPct }],
   "page-views": (d) => [{ label: "Total page views", value: formatNumber(d.customers.totalPageViews ?? 0), delta: d.customers.totalPageViewsPct }],
+  "new-registrations": (d) => [{ label: "New registrations", value: formatNumber(d.customers.registrations), delta: d.customers.registrationsPct }],
   "ordering-customers": (d) => [{ label: "Ordering customers", value: formatNumber(d.customers.ordering) }],
   "prepaid-orders": (d) => modeTotals(mode(d, "Prepaid")),
   "partial-orders": (d) => modeTotals(mode(d, "Partial")),
@@ -259,6 +260,8 @@ export default async function DashboardCardPage({ params, searchParams }) {
             ? "Search visitor name, phone, device, or state..."
             : slug === "page-views"
             ? "Search page title, URL path, or type..."
+            : slug === "new-registrations"
+            ? "Search customer name, mobile, email, city, or state..."
             : "Search order ID, customer, mobile, AWB, product, agent, seller..."
         }
         filters={
