@@ -88,6 +88,8 @@ const TOTALS = {
   "top-products": (d) => [{ label: "Top product (units)", value: formatNumber(d.marketplace.topProduct?.units ?? 0), hint: d.marketplace.topProduct?.name }],
   "top-locations": (d) => [{ label: "Top location (orders)", value: formatNumber(d.marketplace.topLocation?.orders ?? 0), hint: d.marketplace.topLocation ? `${d.marketplace.topLocation.city}, ${d.marketplace.topLocation.state}` : undefined }],
   "unique-visitors": (d) => [{ label: "Unique visitors", value: formatNumber(d.customers.uniqueVisitors), delta: d.customers.uniqueVisitorsPct }],
+  "web-visitors": (d) => [{ label: "Web unique visitors", value: formatNumber(d.customers.webUniqueVisitors ?? d.customers.uniqueVisitors), delta: d.customers.webUniqueVisitorsPct ?? d.customers.uniqueVisitorsPct }],
+  "page-views": (d) => [{ label: "Total page views", value: formatNumber(d.customers.totalPageViews ?? 0), delta: d.customers.totalPageViewsPct }],
   "ordering-customers": (d) => [{ label: "Ordering customers", value: formatNumber(d.customers.ordering) }],
   "prepaid-orders": (d) => modeTotals(mode(d, "Prepaid")),
   "partial-orders": (d) => modeTotals(mode(d, "Partial")),
@@ -252,7 +254,13 @@ export default async function DashboardCardPage({ params, searchParams }) {
         columns={tableColumns(data.columns)}
         pageSizes={PAGE_SIZES}
         columnFilters={true}
-        search="Search order ID, customer, mobile, AWB, product, agent, seller..."
+        search={
+          slug === "web-visitors"
+            ? "Search visitor name, phone, device, or state..."
+            : slug === "page-views"
+            ? "Search page title, URL path, or type..."
+            : "Search order ID, customer, mobile, AWB, product, agent, seller..."
+        }
         filters={
           slug === "total-sales-b2c"
             ? [
