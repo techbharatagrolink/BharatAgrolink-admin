@@ -63,19 +63,19 @@ export default async function OrderInsightsPage() {
         ) : (
           <>
             <StatGrid className="sm:grid-cols-3 lg:grid-cols-3">
-              <StatCard label="RTO orders" value={formatNumber(rto.data.orders)} hint="Orders with a product in an RTO status" icon={RotateCcw} tone="danger" href="/admin/rto" />
-              <StatCard label="RTO rate" value={`${rto.data.rate}%`} hint="Of all orders" icon={TrendingDown} tone={rto.data.rate > 10 ? "danger" : "warning"} />
+              <StatCard label="RTO sub-orders" value={formatNumber(rto.data.orders)} hint="All days · same as the dashboard RTO card" icon={RotateCcw} tone="danger" href="/admin/dashboard/order-status/rto?preset=all" />
+              <StatCard label="RTO rate" value={`${rto.data.rate}%`} hint="RTO ÷ (Delivered + RTO), all days" icon={TrendingDown} tone={rto.data.rate > 10 ? "danger" : "warning"} href="/admin/dashboard/order-status/final-rto?preset=all" />
               <StatCard
                 label="Average delivery time"
                 value={delivery.error ? "—" : `${delivery.data?.averageDeliveryDays ?? 0} days`}
-                hint={delivery.error ? "Delivery summary unavailable" : `${formatNumber(delivery.data?.deliveredOrders ?? 0)} delivered orders with a delivery date`}
+                hint={delivery.error ? "Delivery summary unavailable" : `${formatNumber(delivery.data?.deliveredOrders ?? 0)} delivered sub-orders (all days)`}
                 icon={CalendarClock}
                 tone="info"
               />
             </StatGrid>
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <Card>
-                <CardHeader title="RTO by status" description="Orders that have a product in each RTO status" />
+                <CardHeader title="RTO by status" description="RTO sub-orders by their line status" />
                 <CardBody>{rto.data.orders ? <HBarList data={rto.data.byStatus} format={formatNumber} /> : <p className="text-sm text-ink-muted">No RTO orders.</p>}</CardBody>
               </Card>
               <Card>

@@ -56,7 +56,6 @@ import { Notice } from "@/components/ui/page";
 export const metadata = { title: "Main Dashboard" };
 
 const inr = (v) => formatINR(v, { compact: true });
-const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
 
 function Grid({ children, className }) {
   return <div className={cn("z-stagger grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
@@ -182,7 +181,7 @@ export default async function MainDashboardPage({ searchParams }) {
             <StatCard
               label="RTO charges"
               value={inr(sales.rtoCharges)}
-              hint={sales.rtoSubOrders == null ? "Courier freight per RTO sub-order" : `${formatNumber(sales.rtoSubOrders)} RTO sub-orders · freight × 1`}
+              hint="Courier freight on returned parcels, by RTO date"
               icon={RotateCcw}
               tone="danger"
               href={card("rto-charges")}
@@ -210,9 +209,6 @@ export default async function MainDashboardPage({ searchParams }) {
           <OrderStatusOverview
             summary={status}
             params={params}
-            performanceExtra={
-              <StatCard label="RTO rate (event dates)" value={pctText(orders.rtoRate)} hint={orders.rtoRateBreakdown?.formula ?? "TRTO / (TIN + TOFD + TD + TRTO)"} icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
-            }
             extra={
               <>
                 <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />

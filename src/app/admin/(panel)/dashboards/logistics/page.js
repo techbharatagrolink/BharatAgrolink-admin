@@ -16,18 +16,21 @@ export default async function LogisticsDashboardPage({ searchParams }) {
   const result = await getLogisticsDashboard(range, user).then((data) => ({ data }), (error) => ({ error }));
   if (result.error) return (<><PageHeader title="Logistics & Operations Dashboard" /><ApiUnavailable error={result.error} what="the logistics dashboard" /></>);
   const d = result.data;
+  // Opens the same records as the main dashboard's cards, for this page's date range.
+  const statusHref = (drill) => `/admin/dashboard/order-status/${drill}?${new URLSearchParams({ from: d.filters.from, to: d.filters.to, type: "b2c" })}`;
+  const pct = (v) => (v == null ? "N/A" : `${v}%`);
   return (
     <>
       <PageHeader
         title="Logistics & Operations Dashboard"
-        description="Shipping queue, courier performance, NDR and RTO across NimbusPost, Shiprocket and Delhivery."
+        description="Shipping queue, courier performance, NDR and RTO. Figures are B2C sub-orders by order date, the same as the main dashboard; RTO rate = RTO ÷ (Delivered + RTO)."
         actions={<RangeSwitch pathname="/admin/dashboards/logistics" ranges={RANGES} active={d.period.value} />}
       />
       <StatGrid className="xl:grid-cols-6">
         <StatCard label="Ready to ship" value={formatNumber(d.stats.readyToShip)} tone="warning" href="/admin/shipping" />
-        <StatCard label="In transit" value={formatNumber(d.stats.inTransit)} tone="info" />
+        <StatCard label="In transit" value={formatNumber(d.stats.inTransit)} hint={`+ ${formatNumber(d.stats.outForDelivery)} out for delivery`} tone="info" href={statusHref("in-transit")} />
         <StatCard label="Open NDR" value={formatNumber(d.stats.ndrOpen)} tone="warning" href="/admin/operations/ndr" />
-        <StatCard label="RTO rate" value={`${d.stats.rtoPct}%`} tone={d.stats.rtoPct > 10 ? "danger" : "neutral"} href="/admin/rto" />
+        <StatCard label="RTO rate" value={pct(d.stats.rtoPct)} hint={`${formatNumber(d.stats.rto)} RTO ÷ (${formatNumber(d.stats.delivered)} delivered + RTO)`} tone={d.stats.rtoPct > 10 ? "danger" : "neutral"} href={statusHref("final-rto")} />
         <StatCard label="Weight disputes" value={formatNumber(d.stats.weightDisputes)} href="/admin/shipping/weight-discrepancy" />
         <StatCard label="Open escalations" value={formatNumber(d.stats.escalations)} tone="danger" href="/admin/operations" />
       </StatGrid>
@@ -39,7 +42,7 @@ export default async function LogisticsDashboardPage({ searchParams }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Shipments by zone" />
+          <CardHeader title="Sub-orders by zone" />
           <CardBody>
             <HBarList data={d.byZone} format={formatNumber} />
           </CardBody>
@@ -50,11 +53,11 @@ export default async function LogisticsDashboardPage({ searchParams }) {
         <MiniTable
           columns={[
             { key: "courier", label: "Courier" },
-            { key: "shipments", label: "Shipments", align: "right", render: (r) => formatNumber(r.shipments) },
+            { key: "shipments", label: "Sub-orders", align: "right", render: (r) => formatNumber(r.shipments) },
             { key: "delivered", label: "Delivered", align: "right", render: (r) => formatNumber(r.delivered) },
-            { key: "deliveredPct", label: "Delivered %", align: "right", render: (r) => `${r.deliveredPct}%` },
+            { key: "deliveredPct", label: "Final delivery %", align: "right", render: (r) => pct(r.deliveredPct) },
             { key: "rto", label: "RTO", align: "right", render: (r) => formatNumber(r.rto) },
-            { key: "rtoPct", label: "RTO %", align: "right", render: (r) => <span className={r.rtoPct > 10 ? "font-medium text-danger-ink" : undefined}>{r.rtoPct}%</span> },
+            { key: "rtoPct", label: "RTO rate", align: "right", render: (r) => <span className={r.rtoPct > 10 ? "font-medium text-danger-ink" : undefined}>{pct(r.rtoPct)}</span> },
           ]}
           rows={d.couriers}
         />

@@ -24,6 +24,8 @@ const STATUS_CARD_DRILLS = {
   "rejected-orders": "rejected",
   "cancelled-orders": "cancelled",
   "rto-orders": "rto",
+  // "RTO rate" everywhere = Final RTO rate R / (D + R).
+  "rto-rate": "final-rto",
 };
 const STATUS_OPTIONS = [
   { value: "Delivered", label: "Delivered" },
@@ -80,7 +82,7 @@ const TOTALS = {
   "pg-charges": (d) => [{ label: "PG charges", value: formatINR(d.sales.pgCharges) }],
   "prepaid-partial": (d) => [{ label: "Prepaid / partial", value: formatINR(d.sales.prepaidPartial) }],
   tcs: (d) => [{ label: "TCS", value: formatINR(d.sales.tcs) }],
-  "rto-charges": (d) => [{ label: "RTO charges", value: formatINR(d.sales.rtoCharges) }, { label: "RTO sub-orders", value: formatNumber(d.sales.rtoSubOrders) }],
+  "rto-charges": (d) => [{ label: "RTO charges", value: formatINR(d.sales.rtoCharges) }, { label: "Parcels charged", value: formatNumber(d.sales.rtoSubOrders), hint: "Returned parcels with freight, by RTO date" }],
   "total-orders": (d) => [{ label: "Total orders", value: formatNumber(d.orders.total), delta: d.deltas.totalOrders }],
   "accepted-orders": (d) => [{ label: "Accepted", value: formatNumber(d.orders.accepted) }],
   "rejected-orders": (d) => [{ label: "Rejected", value: formatNumber(d.orders.rejected) }],

@@ -31,18 +31,16 @@ async function paymentMix(token) {
 }
 
 async function rtoAnalysis(token) {
-  const [summary, list, all] = await Promise.all([
+  const [summary, list] = await Promise.all([
     api("admin/orders/rto-summary", { token }),
     api("admin/orders", { token, query: { status: "RTO", limit: 20, page: 1, sort: "created", dir: "desc" } }),
-    api("admin/orders", { token, query: { limit: 1, page: 1 } }),
   ]);
   const s = summary.data || {};
-  const counts = new Map((s.byStatus || []).map((r) => [r.status, r.orders]));
-  const totalOrders = all.meta?.total ?? 0;
+  // Count = RTO sub-orders and rate = Final RTO rate R / (D + R), both from the API: the same figures as the dashboards.
   return {
     orders: s.orders ?? 0,
-    rate: totalOrders ? Math.round(((s.orders ?? 0) / totalOrders) * 1000) / 10 : 0,
-    byStatus: RTO_STATUSES.map((status) => ({ label: status, value: counts.get(status) || 0 })),
+    rate: s.rate ?? 0,
+    byStatus: (s.byStatus || []).map((r) => ({ label: r.status, value: r.orders })),
     byResponsible: (s.byResponsible || []).map((r) => ({ label: r.responsible, value: r.orders })),
     recent: (list.data || []).map((o) => ({
       id: o.orderId ?? o.id,
