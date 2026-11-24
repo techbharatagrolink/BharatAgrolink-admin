@@ -69,7 +69,15 @@ export default async function B2bQuotationPage({ params }) {
             <Badge tone="neutral">Buyer: {BUYER_SIDE[d.customerStatus] ?? d.customerStatus}</Badge>
           </>
         }
-        actions={<ButtonLink href="/admin/b2b/quotations" size="sm">Back to quotations</ButtonLink>}
+        actions={
+          <>
+            {/* Buyer-facing document: buyer-safe fields only, watermarked unless it is a live offer. */}
+            <ButtonLink href={`/admin/b2b/quotations/${d.id}/document`} target="_blank" rel="noopener" prefetch={false} size="sm" variant="primary">
+              Preview / PDF
+            </ButtonLink>
+            <ButtonLink href="/admin/b2b/quotations" size="sm">Back to quotations</ButtonLink>
+          </>
+        }
       />
 
       <div className="space-y-4">
