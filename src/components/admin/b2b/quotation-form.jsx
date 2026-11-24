@@ -10,32 +10,40 @@ import { formatINR } from "@/lib/format";
 
 const emptyLine = { productId: 0, variantId: 0, sku: "", name: "", quantity: 1, unitPrice: 0, gstPct: 0, stock: 0 };
 
-export function QuotationForm({ options }) {
-  const [buyerQuery, setBuyerQuery] = useState("");
+/**
+ * Create a quotation, or (reviseOf + initial) a new version of one: the API keeps the old version
+ * as it was (superseded) and prices the new one again (spec C6). `initial` is the detail API's
+ * formValues with display fields (name, gstPct, stock) on each line.
+ */
+export function QuotationForm({ options, initial = null, reviseOf = null }) {
+  const start = (value, fallback) => (initial && value != null ? String(value) : fallback);
+  const [buyerQuery, setBuyerQuery] = useState(initial ? (initial.businessName ? `${initial.businessName} (${initial.customerName})` : initial.customerName || "") : "");
   const [buyers, setBuyers] = useState([]);
   const [productQuery, setProductQuery] = useState("");
   const [products, setProducts] = useState([]);
-  const [customerId, setCustomerId] = useState(0);
-  const [customerName, setCustomerName] = useState("");
-  const [customerMobile, setCustomerMobile] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [gstin, setGstin] = useState("");
-  const [customerTypeId, setCustomerTypeId] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [district, setDistrict] = useState("");
-  const [state, setState] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMode, setPaymentMode] = useState("Prepaid");
-  const [advancePct, setAdvancePct] = useState("0");
-  const [creditDays, setCreditDays] = useState("0");
-  const [validUntil, setValidUntil] = useState(options.validUntil || "");
-  const [lines, setLines] = useState([]);
-  const [shippingCost, setShippingCost] = useState("0");
-  const [shippingManual, setShippingManual] = useState(false);
-  const [handlingCharges, setHandlingCharges] = useState("0");
-  const [pgCharges, setPgCharges] = useState("0");
-  const [claimsRisk, setClaimsRisk] = useState("0");
-  const [remarks, setRemarks] = useState("");
+  const [customerId, setCustomerId] = useState(initial?.customerId ?? 0);
+  const [customerName, setCustomerName] = useState(initial?.customerName ?? "");
+  const [customerMobile, setCustomerMobile] = useState(initial?.customerMobile ?? "");
+  const [businessName, setBusinessName] = useState(initial?.businessName ?? "");
+  const [gstin, setGstin] = useState(initial?.gstin ?? "");
+  const [customerTypeId, setCustomerTypeId] = useState(start(initial?.customerTypeId, ""));
+  const [pincode, setPincode] = useState(initial?.pincode ?? "");
+  const [district, setDistrict] = useState(initial?.district ?? "");
+  const [state, setState] = useState(initial?.state ?? "");
+  const [deliveryAddress, setDeliveryAddress] = useState(initial?.deliveryAddress ?? "");
+  const [paymentMode, setPaymentMode] = useState(initial?.paymentMode ?? "Prepaid");
+  const [advancePct, setAdvancePct] = useState(start(initial?.advancePct, "0"));
+  const [creditDays, setCreditDays] = useState(start(initial?.creditDays, "0"));
+  // Blank = the default validity (24 hours); a revision gets a fresh validity too.
+  const [validUntil, setValidUntil] = useState(initial ? "" : options.validUntil || "");
+  const [lines, setLines] = useState(initial?.lines ?? []);
+  const [shippingCost, setShippingCost] = useState(start(initial?.shippingCost, "0"));
+  const [shippingManual, setShippingManual] = useState(Boolean(initial));
+  const [handlingCharges, setHandlingCharges] = useState(start(initial?.handlingCharges, "0"));
+  const [pgCharges, setPgCharges] = useState(start(initial?.pgCharges, "0"));
+  const [claimsRisk, setClaimsRisk] = useState(start(initial?.claimsRiskAmount, "0"));
+  const otherCharges = Number(initial?.otherCharges) || 0;
+  const [remarks, setRemarks] = useState(initial?.remarks ?? "");
   const [error, setError] = useState("");
   const [details, setDetails] = useState([]);
   const [saved, setSaved] = useState(null);
@@ -125,7 +133,7 @@ export function QuotationForm({ options }) {
         handlingCharges: Number(handlingCharges) || 0,
         pgCharges: Number(pgCharges) || 0,
         claimsRiskAmount: Number(claimsRisk) || 0,
-        otherCharges: 0,
+        otherCharges,
         validUntil,
         remarks,
         lines: lines.filter((line) => line.productId > 0).map((line) => ({
@@ -135,7 +143,7 @@ export function QuotationForm({ options }) {
           quantity: Number(line.quantity) || 0,
           unitPrice: Number(line.unitPrice) || 0,
         })),
-      });
+      }, reviseOf);
       if (!result.ok) {
         setError(result.message || "The quotation could not be saved.");
         setDetails(result.details || []);
@@ -158,9 +166,13 @@ export function QuotationForm({ options }) {
         </div>
       )}
       {saved && (
-        <div className="rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm text-ink">
+        <div className="rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm text-ink" role="status">
           {saved.message} {saved.quotationNumber && <span className="font-mono">{saved.quotationNumber}</span>}{" "}
-          <Link href="/admin/b2b/quotations" className="font-medium text-brand-700 hover:underline">Back to quotations</Link>
+          {saved.id ? (
+            <Link href={`/admin/b2b/quotations/${saved.id}`} className="font-medium text-brand-700 hover:underline">Open quotation</Link>
+          ) : (
+            <Link href="/admin/b2b/quotations" className="font-medium text-brand-700 hover:underline">Back to quotations</Link>
+          )}
         </div>
       )}
 
@@ -207,7 +219,9 @@ export function QuotationForm({ options }) {
             <Field label="Advance payment %"><Input type="number" min="0" max="100" step="0.01" value={advancePct} onChange={(e) => setAdvancePct(e.target.value)} /></Field>
           )}
           <Field label="Credit days"><Input type="number" min="0" value={creditDays} onChange={(e) => setCreditDays(e.target.value)} /></Field>
-          <Field label="Valid until"><Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} /></Field>
+          <Field label="Valid until" hint={`Leave blank for ${options.validityHours ?? 24} hours from saving. A date means the end of that day.`}>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          </Field>
           {type && <p className="sm:col-span-2 lg:col-span-3 text-xs text-ink-muted">Minimum order value {formatINR(type.minOrderValue)}. Current product subtotal {formatINR(subtotal)}. {type.moqDescription || `MOQ ${type.minMoqBoxes}`}</p>}
         </CardBody>
       </Card>
@@ -314,8 +328,10 @@ export function QuotationForm({ options }) {
       </Card>
 
       <div className="flex items-center justify-between gap-3">
-        <ButtonLink href="/admin/b2b/quotations" variant="secondary">Cancel</ButtonLink>
-        <Button type="submit" variant="primary" loading={saving} disabled={!customerId || lines.length === 0}>Create quotation</Button>
+        <ButtonLink href={reviseOf ? `/admin/b2b/quotations/${reviseOf}` : "/admin/b2b/quotations"} variant="secondary">Cancel</ButtonLink>
+        <Button type="submit" variant="primary" loading={saving} disabled={!customerId || lines.length === 0 || Boolean(reviseOf && saved)}>
+          {reviseOf ? "Save as new version" : "Create quotation"}
+        </Button>
       </div>
     </form>
   );

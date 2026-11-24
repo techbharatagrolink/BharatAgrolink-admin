@@ -332,5 +332,6 @@ export function isLiveAdminPath(pathname) {
   if (/^\/admin\/support\/[^/]+$/.test(path)) return true;
   if (/^\/admin\/b2b\/buyers\/[^/]+$/.test(path)) return true;
   if (/^\/admin\/b2b\/orders\/[^/]+$/.test(path)) return true;
+  if (/^\/admin\/b2b\/quotations\/\d+(\/revise)?$/.test(path)) return true;
   return /^\/admin\/roles\/(?!menus$)[^/]+$/.test(path);
 }

@@ -2,7 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { assertPermission } from "@/lib/auth/session";
-import { createOrder, createQuotation, searchOrderBuyers, searchOrderProducts, searchQuotationBuyers, searchQuotationProducts, startOrderPayment } from "@/lib/services/admin/b2b-screens";
+import {
+  cancelQuotation,
+  createOrder,
+  createQuotation,
+  recalculateQuotation,
+  reviseQuotation,
+  searchOrderBuyers,
+  searchOrderProducts,
+  searchQuotationBuyers,
+  searchQuotationProducts,
+  startOrderPayment,
+} from "@/lib/services/admin/b2b-screens";
+
+const quotePaths = (...ids) => {
+  revalidatePath("/admin/b2b/quotations");
+  for (const id of ids) if (id) revalidatePath(`/admin/b2b/quotations/${id}`);
+};
 
 export async function searchB2bBuyers(q) {
   const gate = await assertPermission("b2b.quotations", "add");
@@ -16,11 +32,28 @@ export async function searchB2bQuoteProducts(q) {
   return searchQuotationProducts(q, gate.user);
 }
 
-export async function saveB2bQuotation(body) {
+/** Creates a quotation, or with reviseOf a new version of that quotation (the API re-checks everything). */
+export async function saveB2bQuotation(body, reviseOf = null) {
   const gate = await assertPermission("b2b.quotations", "add");
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
-  const result = await createQuotation(body, gate.user);
-  if (result.ok) revalidatePath("/admin/b2b/quotations");
+  const result = reviseOf ? await reviseQuotation(reviseOf, body, gate.user) : await createQuotation(body, gate.user);
+  if (result.ok) quotePaths(reviseOf, result.id);
+  return result;
+}
+
+export async function recalculateB2bQuotation(id) {
+  const gate = await assertPermission("b2b.quotations", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recalculateQuotation(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function cancelB2bQuotation(id, reason) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await cancelQuotation(id, { reason: String(reason ?? "").trim() }, gate.user);
+  if (result.ok) quotePaths(id);
   return result;
 }
 
