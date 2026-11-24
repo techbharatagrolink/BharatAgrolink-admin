@@ -105,6 +105,7 @@ export const resourceRoutes = {
   "/admin/b2b/settlements": "b2b.settlements",
   "/admin/b2b/claims": "b2b.claims",
   "/admin/b2b/alerts": "b2b.alerts",
+  "/admin/b2b/sku-links": "b2b.skuLinks",
   "/admin/bulk-orders": "bulk",
   "/admin/bulk-orders/warehouses": "bulk.warehouses",
 

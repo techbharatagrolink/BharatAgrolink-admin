@@ -305,7 +305,11 @@ export function QuotationForm({ options }) {
           <Field label="PG / collection"><Input type="number" min="0" step="0.01" value={pgCharges} onChange={(e) => setPgCharges(e.target.value)} /></Field>
           <Field label="Claims / risk"><Input type="number" min="0" step="0.01" value={claimsRisk} onChange={(e) => setClaimsRisk(e.target.value)} /></Field>
           <Field label="Remarks" className="sm:col-span-2 lg:col-span-4"><Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} /></Field>
-          <p className="sm:col-span-2 lg:col-span-4 text-xs text-ink-muted">CM floor {options.minCmPct}%. Quotes under that floor are saved as approval pending.</p>
+          <p className="sm:col-span-2 lg:col-span-4 text-xs text-ink-muted">
+            {options.targetCmPct != null
+              ? `CM target ${options.targetCmPct}%, floor ${options.minCmPct}% (on the value before GST). Quotes from ${options.minCmPct}% to below ${options.targetCmPct}% wait for manager approval; below ${options.minCmPct}% they are ${options.cmExceptionEnabled ? "sent for a B2B Manager exception" : "blocked"}. Net shipping above ${options.shippingReviewPct ?? 5}% also needs approval.`
+              : `CM floor ${options.minCmPct}%. Quotes under that floor are saved as approval pending.`}
+          </p>
         </CardBody>
       </Card>
 

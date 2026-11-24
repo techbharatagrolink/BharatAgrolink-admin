@@ -300,6 +300,7 @@ export const navigation = [
           { key: "b2b-quote-new", label: "Create Quotation", href: "/admin/b2b/quotations/new", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations", action: "add" },
           { key: "b2b-catalog", label: "Catalog / Products", href: "/admin/b2b/catalog", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
           { key: "b2b-catalog-generate", label: "Generate Catalogue", href: "/admin/b2b/catalog/generate", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
+          { key: "b2b-sku-links", label: "SKU Links & Case Sizes", href: "/admin/b2b/sku-links", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
           { key: "b2b-orders", label: "B2B Orders List", href: "/admin/b2b/orders", page: "b2b_orders/b2b_order_list.php", permission: "b2b.orders" },
           { key: "b2b-approvals", label: "Approvals", href: "/admin/b2b/approvals", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
           { key: "b2b-reports", label: "B2B Reports", href: "/admin/b2b/reports", page: "b2b_orders/reports.php", permission: "b2b.reports" },
