@@ -92,6 +92,7 @@ export const navigation = [
           { key: "products-with-services", label: "Products with Services", href: "/admin/products/with-services", permission: "products" },
           { key: "pricing-cost-config", label: "Cost & Margin Management", href: "/admin/pricing/cost-config", page: "product_cost_management.php", permission: "pricing.costConfig" },
           { key: "pricing-cost-management", label: "Cost Management", href: "/admin/pricing/cost-management", permission: "products" },
+          { key: "pricing-proposals", label: "Pricing Proposals", href: "/admin/pricing/proposals", permission: "products" },
           { key: "pricing-take-rate-services", label: "Take-Rate Service Rule", href: "/admin/pricing/take-rate-services", permission: "products" },
           { key: "pricing-profitability-audit", label: "Profitability Audit", href: "/admin/pricing/profitability-audit", permission: "products" },
           { key: "pricing-order-profitability", label: "Order Profitability", href: "/admin/pricing/order-profitability", permission: "products" },
@@ -239,6 +240,24 @@ export const navigation = [
           { key: "cms-faqs", label: "FAQs", href: "/admin/cms/faqs", permission: "cms" },
           { key: "cms-footer", label: "Footer Links", href: "/admin/cms/footer", permission: "cms" },
           { key: "cms-notifications", label: "Push Notifications", href: "/admin/cms/notifications", permission: "cms.notifications" },
+        ],
+      },
+      {
+        // SEO & AI Command Center (/admin/seo API, task #104). admin_menus rows: API migration
+        // 2026-11-20-002-seo-command-center-admin-menu.sql. Every screen shares the menu link seo_command_center.php.
+        key: "seo-command-center",
+        label: "SEO & AI Center",
+        icon: "Target",
+        children: [
+          { key: "seo-overview", label: "CEO Overview", href: "/admin/seo", page: "seo_command_center.php", permission: "seo", icon: "LayoutDashboard" },
+          { key: "seo-search", label: "SEO & Google", href: "/admin/seo/search", page: "seo_command_center.php", permission: "seo", icon: "TrendingUp" },
+          { key: "seo-ai", label: "AI Recommendations", href: "/admin/seo/ai-visibility", page: "seo_command_center.php", permission: "seo", icon: "MessagesSquare" },
+          { key: "seo-orders", label: "Orders & Revenue", href: "/admin/seo/orders", page: "seo_command_center.php", permission: "seo", icon: "ShoppingCart" },
+          { key: "seo-health", label: "Website Health", href: "/admin/seo/website-health", page: "seo_command_center.php", permission: "seo", icon: "ShieldCheck" },
+          { key: "seo-product-data", label: "Product Data", href: "/admin/seo/product-data", page: "seo_command_center.php", permission: "seo", icon: "Boxes" },
+          { key: "seo-tasks", label: "Tasks & Team", href: "/admin/seo/tasks", page: "seo_command_center.php", permission: "seo", icon: "BadgeCheck" },
+          { key: "seo-reports", label: "SEO Reports", href: "/admin/seo/reports", page: "seo_command_center.php", permission: "seo", icon: "Receipt" },
+          { key: "seo-settings", label: "SEO Settings", href: "/admin/seo/settings", page: "seo_command_center.php", permission: "seo", icon: "Settings" },
         ],
       },
     ],
