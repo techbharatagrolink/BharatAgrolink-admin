@@ -11,11 +11,13 @@ import {
   ClipboardList,
   CreditCard,
   Eye,
+  Globe,
   HandCoins,
   IndianRupee,
   Landmark,
   Layers,
   MapPin,
+  MousePointerClick,
   Package,
   PackageCheck,
   PackageX,
@@ -27,6 +29,7 @@ import {
   ShoppingCart,
   Sigma,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   Store,
   TrendingDown,
@@ -240,13 +243,187 @@ export default async function MainDashboardPage({ searchParams }) {
       )}
 
       {showCustomers && (
-      <DashboardSection id="customers" index={indexOf("customers")} title="Customer & visitor analytics" summary={`${formatNumber(customers.ordering)} ordering customers · ${formatNumber(customers.registrations)} new registrations`}>
+      <DashboardSection
+        id="customers"
+        index={indexOf("customers")}
+        title="Customer & visitor analytics"
+        note={customers.activeNow > 0 ? `🟢 ${formatNumber(customers.activeNow)} online right now` : undefined}
+        summary={`${formatNumber(customers.webUniqueVisitors ?? customers.uniqueVisitors)} visitors · 🌐 ${formatNumber(customers.platformSplit?.web ?? (customers.webUniqueVisitors ?? customers.uniqueVisitors))} Web · 📱 ${formatNumber(customers.platformSplit?.app ?? 0)} App · ${formatNumber(customers.totalPageViews ?? 0)} views`}
+      >
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
-          <StatCard label="Unique visitors" value={formatNumber(customers.uniqueVisitors)} delta={customers.uniqueVisitorsPct} hint={customers.visitorsCompareLabel || "Buyers and new accounts"} icon={Eye} tone="neutral" href={card("unique-visitors")} />
-          <StatCard label="New registrations" value={formatNumber(customers.registrations)} delta={customers.registrationsPct} hint="Signed up in this period" icon={UserPlus} tone="info" href="/admin/customers" />
-          <StatCard label="Total registered users" value={formatNumber(customers.totalRegistered)} hint="All customer accounts" icon={Users} href="/admin/customers" />
-          <StatCard label="Ordering customers" value={formatNumber(customers.ordering)} hint="Placed at least one order" icon={ShoppingCart} tone="brand" href={card("ordering-customers")} />
+          <StatCard
+            label="Total visitors"
+            value={formatNumber(customers.webUniqueVisitors ?? customers.uniqueVisitors)}
+            delta={customers.webUniqueVisitorsPct ?? customers.uniqueVisitorsPct}
+            hint={customers.platformSplit?.app ? `🌐 ${formatNumber(customers.platformSplit.web)} web · 📱 ${formatNumber(customers.platformSplit.app)} app` : (customers.newVisitors != null ? `${formatNumber(customers.newVisitors)} new · ${formatNumber(customers.returningVisitors)} returning` : "Distinct browsing visitors")}
+            icon={Eye}
+            tone="neutral"
+            href={card("web-visitors")}
+          />
+          <StatCard
+            label="Total page & screen views"
+            value={formatNumber(customers.totalPageViews ?? 0)}
+            delta={customers.totalPageViewsPct}
+            hint="Storefront & mobile app impressions"
+            icon={MousePointerClick}
+            tone="brand"
+            href={card("page-views")}
+          />
+          <StatCard
+            label="New registrations"
+            value={formatNumber(customers.registrations)}
+            delta={customers.registrationsPct}
+            hint="Signed up in this period"
+            icon={UserPlus}
+            tone="info"
+            href="/admin/customers"
+          />
+          <StatCard
+            label="Ordering customers"
+            value={formatNumber(customers.ordering)}
+            hint={customers.funnel ? `${customers.funnel.conversionRate}% visitor conversion` : "Placed at least one order"}
+            icon={ShoppingCart}
+            tone="warning"
+            href={card("ordering-customers")}
+          />
         </Grid>
+
+        {((customers.topStates && customers.topStates.length > 0) || customers.funnel) && (
+          <div className="mt-3 grid gap-3 sm:gap-4 lg:grid-cols-3">
+            {customers.funnel && (
+              <div className="rounded-xl border border-[var(--z-line)] bg-[var(--z-card)] p-4 shadow-sm">
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--z-line)] mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-[var(--z-ink)]">Conversion Funnel</h4>
+                    <p className="text-xs text-[var(--z-muted)]">Visitors to completed orders</p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
+                    {customers.funnel.conversionRate}% overall
+                  </span>
+                </div>
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex justify-between text-xs font-medium text-[var(--z-ink)] mb-1">
+                      <span>1. Total Visitors</span>
+                      <span className="font-mono">{formatNumber(customers.funnel.visitors)}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                      <div className="h-full bg-brand-500 rounded-full" style={{ width: "100%" }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-medium text-[var(--z-ink)] mb-1">
+                      <span>2. Cart Activity</span>
+                      <span className="font-mono">{formatNumber(customers.funnel.cartUsers)} ({customers.funnel.visitors > 0 ? Math.round((customers.funnel.cartUsers / customers.funnel.visitors) * 100) : 0}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min(100, customers.funnel.visitors > 0 ? (customers.funnel.cartUsers / customers.funnel.visitors) * 100 : 0)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-medium text-[var(--z-ink)] mb-1">
+                      <span>3. New Registrations</span>
+                      <span className="font-mono">{formatNumber(customers.funnel.registrations)} ({customers.funnel.visitors > 0 ? Math.round((customers.funnel.registrations / customers.funnel.visitors) * 100) : 0}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, customers.funnel.visitors > 0 ? (customers.funnel.registrations / customers.funnel.visitors) * 100 : 0)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-medium text-[var(--z-ink)] mb-1">
+                      <span>4. Ordering Customers</span>
+                      <span className="font-mono">{formatNumber(customers.funnel.buyers)} ({customers.funnel.conversionRate}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, customers.funnel.conversionRate)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Website & Mobile App Split */}
+            <div className="rounded-xl border border-[var(--z-line)] bg-[var(--z-card)] p-4 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--z-line)] mb-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--z-ink)]">Website & App Split</h4>
+                  <p className="text-xs text-[var(--z-muted)]">Traffic channel distribution</p>
+                </div>
+                <span className="text-xs text-[var(--z-muted)]">Web vs Mobile App</span>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-[var(--z-ink)]">
+                      <Globe className="h-3.5 w-3.5 text-blue-600" />
+                      Website (Storefront)
+                    </span>
+                    <span className="font-mono text-[var(--z-muted)]">
+                      {formatNumber(customers.platformSplit?.web ?? (customers.webUniqueVisitors ?? customers.uniqueVisitors))} visitors · {formatNumber(customers.platformSplit?.webViews ?? customers.totalPageViews)} views
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 rounded-full"
+                      style={{
+                        width: `${Math.round(((customers.platformSplit?.web ?? 1) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-[var(--z-ink)]">
+                      <Smartphone className="h-3.5 w-3.5 text-emerald-600" />
+                      Mobile App (Android/iOS)
+                    </span>
+                    <span className="font-mono text-[var(--z-muted)]">
+                      {formatNumber(customers.platformSplit?.app ?? 0)} visitors · {formatNumber(customers.platformSplit?.appViews ?? 0)} views
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600 rounded-full"
+                      style={{
+                        width: `${Math.round(((customers.platformSplit?.app ?? 0) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {customers.topStates && customers.topStates.length > 0 && (
+              <div className="rounded-xl border border-[var(--z-line)] bg-[var(--z-card)] p-4 shadow-sm">
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--z-line)] mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-[var(--z-ink)]">Top Visitor States</h4>
+                    <p className="text-xs text-[var(--z-muted)]">Geographic distribution of visitors</p>
+                  </div>
+                  <span className="text-xs text-[var(--z-muted)]">By unique visitors</span>
+                </div>
+                <div className="space-y-2">
+                  {customers.topStates.map((st, i) => {
+                    const maxV = customers.topStates[0]?.visitors || 1;
+                    const pctBar = Math.round((st.visitors / maxV) * 100);
+                    return (
+                      <div key={st.state || i} className="space-y-1">
+                        <div className="flex justify-between text-xs text-[var(--z-ink)]">
+                          <span className="font-medium">{st.state || "Unknown"}</span>
+                          <span className="font-mono text-[var(--z-muted)]">{formatNumber(st.visitors)} visitors · {formatNumber(st.views)} views</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
+                          <div className="h-full bg-brand-600 rounded-full" style={{ width: `${pctBar}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </DashboardSection>
       )}
 
