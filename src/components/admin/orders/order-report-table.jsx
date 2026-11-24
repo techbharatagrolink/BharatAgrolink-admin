@@ -14,8 +14,23 @@ import { useToast } from "@/components/ui/toast";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
-const MONEY = new Set(["deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
-const PERCENT = new Set(["commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
+/** Cost factors of the product Pricing & Tax step, one column group each (API fields cf_<CODE>_<Part>). */
+const COST_FACTORS = [
+  ["SHIPPING", "Shipping"],
+  ["PG_COD", "Payment gateway / COD"],
+  ["PACKAGING", "Packaging"],
+  ["RTO_CLAIMS", "RTO & claims"],
+  ["PAYMENT_DISCOUNT", "Partial Payment"],
+  ["PAYMENT_DISCOUNTS", "Pre Paid Payment"],
+];
+const FACTOR_PARTS = [["TargetPct", "Target %"], ["Target", "Target ₹"], ["Achievable", "Achievable ₹"], ["AchievementPct", "Achievement %"], ["Variance", "Variance ₹"]];
+const factorKey = (code, part) => `cf_${code}_${part}`;
+const FACTOR_COLUMNS = COST_FACTORS.flatMap(([code, name]) => FACTOR_PARTS.map(([part, label]) => [factorKey(code, part), `${name} ${label}`]));
+const FACTOR_MONEY = COST_FACTORS.flatMap(([code]) => ["Target", "Achievable", "Variance"].map((part) => factorKey(code, part)));
+const FACTOR_PERCENT = COST_FACTORS.flatMap(([code]) => ["TargetPct", "AchievementPct"].map((part) => factorKey(code, part)));
+
+const MONEY = new Set([...FACTOR_MONEY, "deliveryCharge", "price", "taxable", "discount", "advance", "codShipping", "commission", "gstOnCommission", "adAmount", "officeAmount", "profitAmount", "otherCharges", "gstOther", "cgst", "sgst", "igst", "gross", "unitNrv", "totalNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl", "rtoCharge", "costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costFactorsTotal", "costMargin", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costTcsBalance", "costSellerPayout", "advanceAmount", "prepaidPartialDiscount", "shippingCharges", "codHandlingCharges", "totalShippingCharges", "razorpayCharges", "contributionTarget", "contributionAchievable", "contributionAchievableVariance", "contributionAchieved", "contributionAchievedVariance"]);
+const PERCENT = new Set([...FACTOR_PERCENT, "commissionPct", "adPct", "officePct", "profitPct", "costTakeRatePct", "costMarginPct", "costAdjustedMarginPct", "contributionTargetPct", "contributionAchievablePct", "contributionAchievedPct"]);
 
 const COLUMNS = [
   ["sr", "Sr No"], ["id", "Item ID"], ["orderId", "Order ID"], ["customer", "Customer Name"], ["customerState", "Customer State"],
@@ -46,13 +61,20 @@ const COLUMNS = [
   ["costShippingActual", "Pricing shipping actual"], ["costShippingDiff", "Pricing shipping difference"], ["costAdjustedMargin", "Pricing adjusted contribution margin"],
   ["costAdjustedMarginPct", "Pricing adjusted contribution margin %"], ["costTcsBalance", "Pricing TCS balance retained"], ["costSellerPayout", "Pricing seller payout"],
   ["costFactors", "Pricing cost factors"],
+  ...FACTOR_COLUMNS,
 ];
 
 const LABEL = Object.fromEntries(COLUMNS);
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const SHORT_LABEL = { customerPaymentType: "Payment", contributionAchieved: "Achieved Contribution", contributionAchievedPct: "Achieved %" };
+const SHORT_LABEL = {
+  customerPaymentType: "Payment",
+  contributionAchieved: "Achieved Contribution",
+  contributionAchievedPct: "Achieved %",
+  // Inside a "Cost factor: <name>" group the header only needs the part; the full name stays in the tooltip.
+  ...Object.fromEntries(COST_FACTORS.flatMap(([code]) => FACTOR_PARTS.map(([part, label]) => [factorKey(code, part), label]))),
+};
 
 /** Column groups (grid header groups, mobile card sections): [title, key columns, the rest]. Every column is always shown. */
 const GROUPS = [
@@ -65,6 +87,8 @@ const GROUPS = [
   // ["Commission & expenses", ["commission"], ["commissionPct", "gstOnCommission", "adPct", "adAmount", "officePct", "officeAmount", "profitPct", "profitAmount", "otherCharges", "gstOther"]],
   ["NRV & payout", ["totalNrv"], ["unitNrv", "bsa", "serviceExcl", "serviceGst", "serviceIncl"]],
   ["Contribution", ["contributionAchieved", "contributionAchievedPct"], ["contributionTarget", "contributionTargetPct", "contributionAchievable", "contributionAchievablePct", "contributionAchievableVariance", "contributionAchievedVariance", "contributionBreakdown"]],
+  // One group per cost factor, like the Pricing & Tax step's table: Target %, Target ₹, Achievable ₹, Achievement %, Variance ₹.
+  ...COST_FACTORS.map(([code, name]) => [`Cost factor: ${name}`, [factorKey(code, "Achievable"), factorKey(code, "Variance")], [factorKey(code, "TargetPct"), factorKey(code, "Target"), factorKey(code, "AchievementPct")]]),
   ["Pricing & tax (product)", ["costMargin", "costMarginPct"], ["costDisplayPrice", "costTaxable", "costTcs", "costNrv", "costServiceCharge", "costScGst", "costNetServiceCharge", "costTakeRatePct", "costFactorsTotal", "costCourier", "costCourierCharge", "costShippingActual", "costShippingDiff", "costAdjustedMargin", "costAdjustedMarginPct", "costTcsBalance", "costSellerPayout", "costFactors"]],
 ];
 const WIDTH = { balInvoice: 170, product: 240, contributionBreakdown: 380, costFactors: 320, customer: 170, vendor: 170, courier: 170 };
