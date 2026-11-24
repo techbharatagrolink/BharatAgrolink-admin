@@ -1,7 +1,5 @@
 import Link from "next/link";
 import {
-  Ban,
-  BadgePercent,
   Boxes,
   Building2,
   CalendarClock,
@@ -16,7 +14,6 @@ import {
   Landmark,
   Layers,
   MapPin,
-  Package,
   PackageCheck,
   PackageX,
   PieChart,
@@ -36,7 +33,6 @@ import {
   UserPlus,
   Users,
   Wallet,
-  XCircle,
 } from "lucide-react";
 import { checkPermission } from "@/lib/auth/session";
 import { can, canCard, canPage, SALES_CARD_SLUGS } from "@/lib/auth/permissions";
@@ -53,13 +49,14 @@ import { AlertList } from "@/components/admin/dashboard/range-switch";
 import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters";
 import { DashboardAccordion, DashboardSection } from "@/components/admin/dashboard/dashboard-accordion";
 import { cn } from "@/lib/utils";
+import { getOrderStatusSummary } from "@/lib/services/admin/order-status";
+import { OrderStatusOverview } from "@/components/admin/dashboard/order-status-overview";
+import { Notice } from "@/components/ui/page";
 
 export const metadata = { title: "Main Dashboard" };
 
 const inr = (v) => formatINR(v, { compact: true });
 const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
-/* "29.77% of sub-orders · shipped / in transit" for a status card */
-const subShare = (pct, text) => (pct == null ? text[0].toUpperCase() + text.slice(1) : `${pct}% of sub-orders · ${text}`);
 
 function Grid({ children, className }) {
   return <div className={cn("z-stagger grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
@@ -77,11 +74,15 @@ export default async function MainDashboardPage({ searchParams }) {
   }
   const params = await searchParams;
   const showFixed = can(user, "finance.expenses");
-  const [result, fixedResult] = await Promise.all([
+  const showOrdersOverview = canPage(user, "#dashboard_orders_overview");
+  const [result, fixedResult, statusResult] = await Promise.all([
     getMainDashboard(params, user).then((data) => ({ data }), (error) => ({ error })),
     // Fixed Expenses page cards for the current month (that page's default view).
     showFixed ? getFixedExpenses({ pageSize: "10" }, user) : null,
+    // Order Analytics V2.0: one bucket per sub-order, same filters as the dashboard.
+    showOrdersOverview ? getOrderStatusSummary(params, user).then((data) => ({ data }), (error) => ({ error })) : null,
   ]);
+  const status = statusResult?.data;
   if (result.error) return (<><PageHeader title="Main Dashboard" /><ApiUnavailable error={result.error} what="the main dashboard" /></>);
   const d = result.data;
   const { sales, orders, shipping, marketplace, customers, finance, deltas } = d;
@@ -99,7 +100,6 @@ export default async function MainDashboardPage({ searchParams }) {
   // showSales is true if at least one card is visible to the role.
   const anySalesCardVisible = SALES_CARD_SLUGS.some((slug) => canCard(user, slug));
   const showSales = anySalesCardVisible;
-  const showOrdersOverview = canPage(user, "#dashboard_orders_overview");
   const showShipping = canPage(user, "#dashboard_logistics_overview");
   const showMarketplace = canPage(user, "#dashboard_products_overview");
   const showCustomers = canPage(user, "#dashboard_customers_overview");
@@ -193,26 +193,38 @@ export default async function MainDashboardPage({ searchParams }) {
       )}
 
       {showOrdersOverview && (
-      <DashboardSection id="orders" index={indexOf("orders")} title="Orders overview" note="status counts are sub-orders" summary={`${formatNumber(orders.total)} orders · ${formatNumber(orders.subOrders)} sub-orders · ${formatNumber(orders.delivered)} delivered · RTO ${pctText(orders.rtoRate)}`}>
-        <Grid>
-          <StatCard label="Total orders" value={formatNumber(orders.total)} delta={deltas.totalOrders} hint={vs ?? "B2C + B2B"} icon={ClipboardList} href={card("total-orders")} />
-          <StatCard label="Accepted" value={formatNumber(orders.accepted)} hint={subShare(orders.acceptedPct, "accepted by vendors")} icon={CheckCircle2} href={card("accepted-orders")} />
-          <StatCard label="Rejected" value={formatNumber(orders.rejected)} hint={subShare(orders.rejectedPct, "rejected by vendors")} icon={XCircle} tone="danger" href={card("rejected-orders")} />
-          <StatCard label="Sub-orders" value={formatNumber(orders.subOrders)} hint={`One per seller in an order · ${formatNumber(orders.total)} orders`} icon={Layers} tone="neutral" href={card("sub-orders")} />
-          <StatCard label="Processing" value={formatNumber(orders.processing)} hint={subShare(orders.processingPct, "not yet delivered")} icon={Package} tone="warning" href={showOrders ? "/admin/orders" : undefined} />
-          <StatCard label="Shipped" value={formatNumber(orders.shipped)} hint={subShare(orders.shippedPct, "shipped / in transit")} icon={Truck} tone="info" href={card("shipped")} />
-          <StatCard label="Delivered" value={formatNumber(orders.delivered)} hint={subShare(orders.deliveredPct, "delivered")} icon={PackageCheck} href={card("delivered-orders")} />
-          <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />
-          <StatCard label="AOV (delivered)" value={formatINR(orders.aovDelivered)} hint="Average delivered order value" icon={PieChart} tone="info" />
-          <StatCard label="Cancelled" value={formatNumber(orders.cancelled)} hint={subShare(orders.cancellationRate, "cancelled")} icon={Ban} tone="danger" href={card("cancelled-orders")} />
-          <StatCard label="Cancellation rate" value={pctText(orders.cancellationRate)} hint="Cancelled sub-orders ÷ all sub-orders" icon={BadgePercent} tone={orders.cancellationRate > 8 ? "danger" : "warning"} />
-          <StatCard label="RTO orders" value={formatNumber(orders.rto)} hint={`RTO sub-orders${orders.rtoOrders != null ? ` · ${formatNumber(orders.rtoOrders)} orders` : ""}`} icon={RotateCcw} tone="danger" href={card("rto-orders")} />
-          <StatCard label="RTO rate" value={pctText(orders.rtoRate)} hint="RTO sub-orders ÷ all sub-orders" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
-          <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
-          <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" href={card("new-orders")} />
-          <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} href={card("repeat-orders")} />
-          <StatCard label="Repeat customer %" value={`${orders.repeatCustomerPct}%`} hint="Customers who ordered again" icon={Users} tone="info" href={card("repeat-customers")} />
-        </Grid>
+      <DashboardSection
+        id="orders"
+        index={indexOf("orders")}
+        title="Orders overview"
+        note="current status · B2C sub-orders"
+        summary={
+          status?.applicable
+            ? `${formatNumber(status.totals.orders)} orders · ${formatNumber(status.totals.subOrders)} sub-orders · ${formatNumber(status.overview.dispatched)} dispatched · ${status.buckets.find((b) => b.key === "D").display} delivered`
+            : `${formatNumber(orders.total)} orders · ${formatNumber(orders.subOrders)} sub-orders`
+        }
+      >
+        {statusResult?.error && <ApiUnavailable error={statusResult.error} what="the order status overview" />}
+        {status && !status.applicable && <Notice tone="info" title="B2C sub-orders only">{status.reason}</Notice>}
+        {status?.applicable && (
+          <OrderStatusOverview
+            summary={status}
+            params={params}
+            performanceExtra={
+              <StatCard label="RTO rate (event dates)" value={pctText(orders.rtoRate)} hint={orders.rtoRateBreakdown?.formula ?? "TRTO / (TIN + TOFD + TD + TRTO)"} icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
+            }
+            extra={
+              <>
+                <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />
+                <StatCard label="AOV (delivered)" value={formatINR(orders.aovDelivered)} hint="Average delivered order value" icon={PieChart} tone="info" />
+                <StatCard label="Returned" value={formatNumber(orders.returned)} hint="Return requests raised" icon={Undo2} tone="warning" href="/admin/returns" />
+                <StatCard label="New order %" value={`${orders.newOrderPct}%`} hint="First order by the customer" icon={Sparkles} tone="info" href={card("new-orders")} />
+                <StatCard label="Repeat orders" value={formatNumber(orders.repeatOrders)} hint="From returning customers" icon={Repeat} href={card("repeat-orders")} />
+                <StatCard label="Repeat customer %" value={`${orders.repeatCustomerPct}%`} hint="Customers who ordered again" icon={Users} tone="info" href={card("repeat-customers")} />
+              </>
+            }
+          />
+        )}
       </DashboardSection>
       )}
 
@@ -294,7 +306,13 @@ export default async function MainDashboardPage({ searchParams }) {
         </div>
         <div className="mt-3 grid gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-2">
           <Widget title="Order status distribution" description="Sub-orders in this period" bodyClassName="px-5 pt-2 pb-5">
-            <StatusMixView data={d.statusMix} label="Order status distribution" centerValue={formatNumber(orders.subOrders)} centerLabel="sub-orders" />
+            {/* Same buckets as the Orders overview: each sub-order once (falls back to raw line statuses if that call failed). */}
+            <StatusMixView
+              data={status?.applicable ? status.buckets.filter((b) => b.count > 0).map((b) => ({ label: b.label, value: b.count })) : d.statusMix}
+              label="Order status distribution"
+              centerValue={formatNumber(status?.applicable ? status.totals.subOrders : orders.subOrders)}
+              centerLabel="sub-orders"
+            />
           </Widget>
           <Widget title="Revenue mix" description="Where the money in this period comes from" bodyClassName="px-5 pt-2 pb-5">
             {d.revenueMix.some((r) => r.value > 0) ? <HBarList data={d.revenueMix} format={inr} /> : <p className="text-sm text-[var(--z-muted)]">No revenue in this period.</p>}

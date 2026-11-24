@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
 import { can, canCard } from "@/lib/auth/permissions";
 import { ApiError } from "@/lib/api";
 import { dashboardFilterHref, getDashboardCard, getMainDashboard } from "@/lib/services/admin/main-dashboard";
+import { getOrderStatusSummary, snapshotHash } from "@/lib/services/admin/order-status";
 import { formatINR, formatNumber } from "@/lib/format";
 import { PageHeader, StatCard } from "@/components/ui/page";
 import { ButtonLink } from "@/components/ui/button";
@@ -13,6 +14,17 @@ import { DashboardFilters } from "@/components/admin/dashboard/dashboard-filters
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 
 const PAGE_SIZES = [20, 25, 50, 100];
+// Status cards now open the Order Analytics V2.0 lists (one bucket per sub-order), the same records the dashboard counts.
+// Mirrors STATUS_CARD_DRILLS in the API (dashboard-cards.service.js).
+const STATUS_CARD_DRILLS = {
+  "sub-orders": "total",
+  "accepted-orders": "total",
+  shipped: "active",
+  "delivered-orders": "delivered",
+  "rejected-orders": "rejected",
+  "cancelled-orders": "cancelled",
+  "rto-orders": "rto",
+};
 const STATUS_OPTIONS = [
   { value: "Delivered", label: "Delivered" },
   { value: "Shipped", label: "Shipped" },
@@ -94,17 +106,45 @@ const TOTALS = {
   "cod-orders": (d) => modeTotals(mode(d, "COD")),
 };
 
-function cardTotals(slug, dashboard, recordCount, query = {}) {
+/*
+ * Total sales (B2C): the sub-order status tiles use the Order Analytics V2.0 figures (each sub-order once)
+ * and open the exact records behind each count, like the main dashboard cards.
+ */
+function statusTiles(status, query) {
+  const T = status.totals.subOrders;
+  const b = Object.fromEntries(status.buckets.map((x) => [x.key, x]));
+  const href = (drill) => {
+    const base = dashboardFilterHref(`/admin/dashboard/order-status/${drill}`, query);
+    return `${base}${base.includes("?") ? "&" : "?"}snap=${snapshotHash(status.snapshot.id)}`;
+  };
+  const share = (n) => (T > 0 ? `${((n / T) * 100).toFixed(2)}% of sub-orders` : "N/A");
+  return [
+    { label: "Sub-orders", value: formatNumber(T), hint: "One per seller in an order", tone: "info", href: href("total") },
+    { label: "Delivered", value: formatNumber(b.D.count), hint: share(b.D.count), tone: "success", href: href("delivered") },
+    { label: "Active shipments", value: formatNumber(status.overview.activeShipments), hint: `In Transit + OFD · ${share(status.overview.activeShipments)}`, tone: "info", href: href("active") },
+    { label: "Cancelled", value: formatNumber(b.C.count), hint: share(b.C.count), tone: "danger", href: href("cancelled") },
+    { label: "RTO", value: formatNumber(b.R.count), hint: share(b.R.count), tone: "warning", href: href("rto") },
+  ];
+}
+
+function cardTotals(slug, dashboard, recordCount, query = {}, status = null) {
   let totals = [];
   try {
     totals = (dashboard && TOTALS[slug]?.(dashboard)) || [];
   } catch {
     totals = [];
   }
+  if (slug === "total-sales-b2c" && status?.applicable) {
+    // Replace the old status tiles (Sub-orders, Delivered, Shipped, Cancelled, RTO orders); keep the money tiles.
+    const OLD = new Set(["Sub-orders", "Delivered", "Shipped", "Cancelled", "RTO orders"]);
+    const keep = totals.filter((t) => !OLD.has(t.label));
+    const tiles = statusTiles(status, query);
+    totals = [...keep.slice(0, 2), ...tiles, ...keep.slice(2)];
+  }
   if (slug === "total-sales-b2c") {
     const curStatus = String(query?.status || "").trim().toLowerCase();
     totals = totals.map((t) => {
-      if (t.status === undefined) return t;
+      if (t.status === undefined || (status?.applicable && t.label !== "RTO amount")) return t;
       const isActive = t.status ? curStatus === t.status.toLowerCase() : !curStatus;
       return {
         ...t,
@@ -152,6 +192,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
   const { slug } = await params;
   if (!/^[a-z0-9-]{1,40}$/.test(slug || "")) notFound();
   const query = await searchParams;
+  if (STATUS_CARD_DRILLS[slug]) redirect(dashboardFilterHref(`/admin/dashboard/order-status/${STATUS_CARD_DRILLS[slug]}`, query));
   const { user, allowed } = await checkPermission("dashboard.main");
   if (!allowed || !canCard(user, slug)) {
     return (
@@ -165,6 +206,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
   let data;
   // The main dashboard supplies the card's headline total and filter options; the card list still loads if it fails.
   const dashboardPromise = getMainDashboard(query, user).catch(() => null);
+  const statusPromise = slug === "total-sales-b2c" ? getOrderStatusSummary(query, user).catch(() => null) : null;
   try {
     data = await getDashboardCard(slug, query, user);
   } catch (error) {
@@ -178,7 +220,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
   }
 
   const dashboard = await dashboardPromise;
-  const totals = cardTotals(slug, dashboard, data.total, query);
+  const totals = cardTotals(slug, dashboard, data.total, query, await statusPromise);
   const allowOrders = can(user, "orders");
   const allowB2B = can(user, "b2b.orders");
 
