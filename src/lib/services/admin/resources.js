@@ -216,6 +216,7 @@ export async function exportResource(key, searchParams, user) {
       const { data } = await api(`admin${spec.exportPath ?? spec.path}/export`, { token: user.token, query: listQuery(searchParams) });
       let rows = data?.rows || (Array.isArray(data) ? data : []);
       if (resource.decorate) rows = rows.map(resource.decorate);
+      console.info(`[Audit] User ${user?.email || user?.id} exported resource "${key}" (${rows.length} rows)`);
       return { ok: true, rows, truncated: rows.length >= EXPORT_MAX_ROWS };
     } catch (error) {
       if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
@@ -249,6 +250,7 @@ export async function exportResource(key, searchParams, user) {
     }
 
     if (resource.decorate) rawRows = rawRows.map(resource.decorate);
+    console.info(`[Audit] User ${user?.email || user?.id} exported resource "${key}" (${rawRows.length} rows)`);
     return { ok: true, rows: rawRows, truncated: total > EXPORT_MAX_ROWS };
   } catch (error) {
     return fail(error);

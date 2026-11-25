@@ -45,6 +45,7 @@ export default async function MonetizationPlacementsPage() {
         />
         <MiniTable
           empty="No placements yet."
+          exportName="ad-placements"
           columns={[
             {
               key: "name",

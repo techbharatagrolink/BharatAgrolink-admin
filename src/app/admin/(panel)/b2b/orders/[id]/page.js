@@ -83,6 +83,7 @@ export default async function B2BOrderPage({ params }) {
               ]}
               rows={data.payments}
               empty="No payments recorded."
+              exportName={`b2b-order-${order.id}-payments`}
             />
           </Card>
           {data.settlements.length > 0 && (
@@ -97,6 +98,7 @@ export default async function B2BOrderPage({ params }) {
                   { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
                 ]}
                 rows={data.settlements}
+                exportName={`b2b-order-${order.id}-settlements`}
               />
             </Card>
           )}
@@ -112,6 +114,7 @@ export default async function B2BOrderPage({ params }) {
                   { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
                 ]}
                 rows={data.claims}
+                exportName={`b2b-order-${order.id}-claims`}
               />
             </Card>
           )}

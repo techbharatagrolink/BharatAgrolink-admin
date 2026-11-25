@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { IntegrationBadge, RangeNote, SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 import { AiRunButton } from "@/components/admin/seo/ai-run-button";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "AI Recommendations" };
 
@@ -74,7 +75,24 @@ export default async function SeoAiVisibilityPage({ searchParams }) {
         <CardHeader
           title="Prompts and latest ChatGPT answers"
           description={`${active.length} active prompts. Latest answer per prompt, whatever its date.`}
-          actions={page.canEdit && chatgpt?.state !== "not_connected" ? <AiRunButton promptCount={active.length} running={running} /> : null}
+          actions={
+            <div className="flex items-center gap-2">
+              <ExportButton
+                name="seo-ai-visibility-prompts"
+                columns={[
+                  { label: "Prompt", value: (p) => p.prompt_text },
+                  { label: "Intent", value: (p) => p.intent },
+                  { label: "Language", value: (p) => p.language },
+                  { label: "Active", value: (p) => (p.is_active ? "Yes" : "No") },
+                  { label: "ChatGPT Result", value: (p) => p.latest_answer?.result || "Not checked" },
+                  { label: "Position", value: (p) => p.latest_answer?.brand_position || "" },
+                  { label: "Checked At", value: (p) => p.latest_answer?.checked_at || "" },
+                ]}
+                rows={d.prompts}
+              />
+              {page.canEdit && chatgpt?.state !== "not_connected" ? <AiRunButton promptCount={active.length} running={running} /> : null}
+            </div>
+          }
         />
         {d.prompts.length ? (
           <div className="overflow-x-auto">

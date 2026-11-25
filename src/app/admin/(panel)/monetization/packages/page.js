@@ -39,6 +39,7 @@ export default async function MonetizationPackagesPage() {
           actions={canAdd ? <ServiceEditor button={{ label: "New ad type" }} /> : null}
         />
         <MiniTable
+          exportName="ad-services"
           columns={[
             {
               key: "name",
@@ -77,6 +78,7 @@ export default async function MonetizationPackagesPage() {
         />
         <MiniTable
           empty="No packages yet."
+          exportName="ad-packages"
           columns={[
             {
               key: "name",

@@ -8,6 +8,7 @@ import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { RangeFilter } from "@/components/admin/parity/marketing/range-filter";
 import { Markdown } from "@/components/admin/parity/marketing/markdown";
 import { formatStamp } from "@/components/admin/parity/marketing/format";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "CEO Decision Matrix" };
 
@@ -75,7 +76,24 @@ export default async function CeoMatrixPage({ searchParams }) {
       <RangeFilter presets={PRESETS} active={d.from ? "calendar" : ""} from={d.from ?? ""} to={d.to ?? ""} />
 
       <Card className="mt-4">
-        <CardHeader title="📊 Current business status" />
+        <CardHeader
+          title="📊 Current business status"
+          actions={
+            <ExportButton
+              name={`ceo-matrix-status-${d.from || "lifetime"}`}
+              headers={["Metric", "Value", "Status / Change"]}
+              matrix={[
+                ["Orders", d.current.orders, orders?.text || "—"],
+                ["Sales (₹)", d.current.revenue, revenue?.text || "—"],
+                ["RTO %", `${d.current.rtoPercentage.toFixed(2)}%`, rto?.text || "—"],
+                ["Profit", d.current.profit, profitStatus],
+                ["Alerts", d.alerts.length ? d.alerts.join("; ") : "None", d.alerts.length ? "Emergency" : "All Clear"],
+                ["Business Status", d.businessStatus, ""],
+                ["CEO Action Required", d.ceoAction, ""],
+              ]}
+            />
+          }
+        />
         <CardBody className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <StatusItem label="Orders" value={formatNumber(d.current.orders)} change={orders?.text} good={orders?.good} />

@@ -16,7 +16,7 @@ export default async function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports" description="Open a report, filter it by date, status or vendor, then use Export CSV. Exports run on the server with your permissions and are logged." />
+      <PageHeader title="Reports" description="Open a report, filter it by date, status or vendor, then use the Export (CSV / Excel) button. Exports are restricted to Super Admins, run securely on the server, and are logged for auditing." />
       {groups.length ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {groups.map((g) => (

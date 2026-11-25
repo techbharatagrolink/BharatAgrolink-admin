@@ -144,21 +144,39 @@ function SalesByLeadsDialog({ type, onClose }) {
             <p className="text-micro font-semibold tracking-wide uppercase opacity-80">Total Sales</p>
             <p className="text-2xl font-bold tabular">{d ? formatINR(d.totalSales) : "—"}</p>
           </div>
-          {type === "total" && (
-            <div className="flex flex-wrap items-end gap-2">
-              <Field label="From Date">
-                {({ id }) => <input id={id} type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
-              </Field>
-              <Field label="To Date">
-                {({ id }) => <input id={id} type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
-              </Field>
-              {(range.from || range.to) && (
-                <Button size="sm" onClick={() => setRange({ from: "", to: "" })}>
-                  Clear
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex flex-wrap items-end gap-2">
+            {type === "total" && (
+              <>
+                <Field label="From Date">
+                  {({ id }) => <input id={id} type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
+                </Field>
+                <Field label="To Date">
+                  {({ id }) => <input id={id} type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
+                </Field>
+                {(range.from || range.to) && (
+                  <Button size="sm" onClick={() => setRange({ from: "", to: "" })}>
+                    Clear
+                  </Button>
+                )}
+              </>
+            )}
+            {d?.rows?.length > 0 && (
+              <ExportButton
+                name={`sales-by-leads-${type}`}
+                columns={[
+                  { label: "Agent Name", value: (r) => r.name },
+                  { label: "Role", value: (r) => r.role },
+                  { label: "Total Leads", value: (r) => r.totalLeads },
+                  { label: "Converted Leads", value: (r) => r.converted },
+                  { label: "Total Revenue (₹)", value: (r) => r.revenue },
+                  { label: "Avg Amount/Lead (₹)", value: (r) => r.avgPerLead },
+                  { label: "Conversion Rate (%)", value: (r) => r.rate },
+                  { label: "Status", value: (r) => r.status },
+                ]}
+                rows={d.rows}
+              />
+            )}
+          </div>
         </div>
         {state.loading ? (
           <Spinner />

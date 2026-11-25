@@ -52,6 +52,7 @@ export default async function OperationsCenterPage() {
             ]}
             rows={d.escalations}
             empty="No open escalations."
+            exportName="open-escalations"
           />
         </Card>
         <Card>
@@ -66,6 +67,7 @@ export default async function OperationsCenterPage() {
             ]}
             rows={d.breached}
             empty="Nothing breached. Good work."
+            exportName="sla-breached"
           />
         </Card>
       </div>

@@ -61,6 +61,7 @@ export default async function SalesDashboardPage() {
               { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
             ]}
             rows={d.payouts}
+            exportName="sales-payout-summary"
           />
         </Card>
       )}

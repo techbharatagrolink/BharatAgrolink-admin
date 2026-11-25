@@ -10,6 +10,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
+import { ExportButton } from "@/components/data-table/export-button";
 import { rupees } from "./format";
 
 const EMPTY = { bucket: "", amount: "", spendDate: "", campaignName: "", vendorName: "", invoiceNumber: "", notes: "" };
@@ -111,7 +112,24 @@ export function ExpensesManager({ data, can }) {
       </Card>
 
       <Card className="mt-4">
-        <CardHeader title="Entries" />
+        <CardHeader
+          title="Entries"
+          actions={
+            <ExportButton
+              name={`marketing-expenses-${month}`}
+              columns={[
+                { label: "Date", value: (r) => r.spendDate || "" },
+                { label: "Category", value: (r) => r.bucketLabel || "" },
+                { label: "Campaign", value: (r) => r.campaignName || "" },
+                { label: "Vendor", value: (r) => r.vendorName || "" },
+                { label: "Invoice Number", value: (r) => r.invoiceNumber || "" },
+                { label: "Amount (₹)", value: (r) => r.amount },
+                { label: "Notes", value: (r) => r.notes || "" },
+              ]}
+              rows={rows}
+            />
+          }
+        />
         <div className="hidden overflow-x-auto xl:block">
           <table className="w-full text-sm">
             <caption className="sr-only">Marketing spend entries for {month}</caption>

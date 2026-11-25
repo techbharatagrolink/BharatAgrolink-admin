@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { csvText, csvCell, plainValue, exportFileName, exportMatrix } from "../src/lib/csv.js";
+import { canExport, EXPORT_DENIED } from "../src/lib/auth/permissions.js";
 
 test.describe("Export Utilities Unit & Permission Checks", () => {
   test("plainValue and csvCell sanitize formula injections", () => {
@@ -65,5 +66,17 @@ test.describe("Export Utilities Unit & Permission Checks", () => {
     const formattedDate = "25 Nov 2026, 13:45";
     const cell = csvCell(formattedDate);
     expect(cell).toBe(`"'${formattedDate}"`);
+  });
+
+  test("canExport strictly enforces Super Admin role only", () => {
+    expect(canExport({ role: { superAdmin: true } })).toBe(true);
+    expect(canExport({ superAdmin: true })).toBe(true);
+    expect(canExport({ role: { superAdmin: false, name: "Manager" } })).toBe(false);
+    expect(canExport({ role: { name: "Operations Lead" } })).toBe(false);
+    expect(canExport({ role: { name: "Sales Executive" } })).toBe(false);
+    expect(canExport({})).toBe(false);
+    expect(canExport(null)).toBe(false);
+    expect(canExport(undefined)).toBe(false);
+    expect(EXPORT_DENIED).toBe("Only a super admin can export data.");
   });
 });

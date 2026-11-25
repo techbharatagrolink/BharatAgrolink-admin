@@ -23,7 +23,7 @@ export function can(user, permission, action = "view") {
  * re-checks it with `assertExport` (lib/auth/session.js).
  */
 export function canExport(user) {
-  return Boolean(user?.role?.superAdmin);
+  return Boolean(user?.role?.superAdmin || user?.superAdmin);
 }
 
 export const EXPORT_DENIED = "Only a super admin can export data.";

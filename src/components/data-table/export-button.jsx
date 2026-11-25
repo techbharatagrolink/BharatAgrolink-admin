@@ -45,6 +45,7 @@ export function ExportButton({ name, headers, matrix, columns, rows, load, label
       } else {
         downloadCsv(exportFileName(name, "csv"), csvText(sheet.headers, sheet.rows));
       }
+      console.info(`[Audit] Export completed: "${name || "dataset"}" (${sheet.rows.length} rows, format: ${format.toUpperCase()})`);
       notify(
         truncated
           ? { message: `Exported the first ${formatNumber(sheet.rows.length)} rows (${format.toUpperCase()}). Narrow the filters to export the rest.`, tone: "info" }

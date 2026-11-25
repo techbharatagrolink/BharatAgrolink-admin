@@ -60,6 +60,7 @@ export default async function ProductsDashboardPage() {
           ]}
           rows={d.pending}
           empty="No products are waiting for approval."
+          exportName="products-pending-approval"
         />
       </Card>
     </>

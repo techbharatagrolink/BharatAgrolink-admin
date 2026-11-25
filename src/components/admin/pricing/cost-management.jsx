@@ -11,6 +11,7 @@ import { StatCard, StatGrid } from "@/components/ui/page";
 import { useToast } from "@/components/ui/toast";
 import { formatINR, formatNumber } from "@/lib/format";
 import { deleteCostFactorAction, saveCostFactorAction, savePricingConfigAction } from "@/lib/actions/admin/pricing-factors";
+import { ExportButton } from "@/components/data-table/export-button";
 
 const STATUS_FILTERS = [
   ["all", "All"],
@@ -192,7 +193,22 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
       </StatGrid>
 
       <Card>
-        <CardHeader title="Cost factors" description="Each factor's target is a % of the display price. Changing a target applies to a product the next time its price is saved." />
+        <CardHeader
+          title="Cost factors"
+          description="Each factor's target is a % of the display price. Changing a target applies to a product the next time its price is saved."
+          actions={
+            <ExportButton
+              name="cost-factors-master"
+              columns={[
+                { label: "Code", value: (f) => f.code },
+                { label: "Label", value: (f) => f.label },
+                { label: "Target %", value: (f) => bpsToPct(f.defaultTargetBps) },
+                { label: "Active", value: (f) => (f.active ? "Yes" : "No") },
+              ]}
+              rows={factors}
+            />
+          }
+        />
         <div>
           <div className="hidden border-y border-line bg-surface-muted px-3 py-2 text-xs text-ink-muted xl:grid xl:grid-cols-[70px_minmax(0,1fr)_90px_80px_70px_90px_90px_100px_auto] xl:items-center xl:gap-3">
             <span className="font-medium">Code</span>
@@ -215,7 +231,29 @@ export function CostManagement({ summary, meta, factors, config, filters, permis
       <ConfigCard key={config.configId} config={config} canEdit={permissions.edit} onSaved={refresh} />
 
       <Card>
-        <CardHeader title="Contribution margin" description="Lowest contribution margin first. Open a product to change its take rate or actual costs in Step 3." />
+        <CardHeader
+          title="Contribution margin"
+          description="Lowest contribution margin first. Open a product to change its take rate or actual costs in Step 3."
+          actions={
+            <ExportButton
+              name={`cost-management-${filters.status}`}
+              columns={[
+                { label: "Product", value: (r) => r.name },
+                { label: "Variant", value: (r) => r.variant || "" },
+                { label: "SKU", value: (r) => r.sku || r.productId },
+                { label: "Mode", value: (r) => (r.mode === "FROM_ACTUALS" ? "From actuals" : "Take rate") },
+                { label: "Take Rate (%)", value: (r) => r.takeRate },
+                { label: "NRV (₹)", value: (r) => r.nrv },
+                { label: "Display Price (₹)", value: (r) => r.displayPrice },
+                { label: "Net Service Charge (₹)", value: (r) => r.netServiceCharge },
+                { label: "Actual Costs (₹)", value: (r) => r.actualTotal },
+                { label: "Contribution Margin (₹)", value: (r) => r.margin },
+                { label: "Margin %", value: (r) => (r.marginBps != null ? (r.marginBps / 100).toFixed(2) + "%" : "") },
+              ]}
+              rows={summary.rows}
+            />
+          }
+        />
         <div className="flex flex-wrap items-end gap-2 border-b border-line p-3">
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); go({ q: query.trim(), page: "1" }); }}>
             <Input aria-label="Search products" value={query} placeholder="Product id, name or SKU" onChange={(e) => setQuery(e.target.value)} />

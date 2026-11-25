@@ -57,6 +57,7 @@ export default async function LogisticsDashboardPage({ searchParams }) {
             { key: "rtoPct", label: "RTO %", align: "right", render: (r) => <span className={r.rtoPct > 10 ? "font-medium text-danger-ink" : undefined}>{r.rtoPct}%</span> },
           ]}
           rows={d.couriers}
+          exportName="courier-performance"
         />
       </Card>
     </>
