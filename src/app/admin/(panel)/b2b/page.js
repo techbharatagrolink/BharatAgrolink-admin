@@ -38,6 +38,10 @@ export default async function B2BDashboardPage() {
         <StatCard label="Buyers" value={s.buyers} tone="neutral" href="/admin/b2b/buyers" />
         <StatCard label="Credit outstanding" value={formatINR(s.outstanding, { compact: true })} tone="warning" href="/admin/b2b/payments" />
         <StatCard label="Overdue payments" value={formatINR(s.overdue, { compact: true })} tone="danger" href="/admin/b2b/payments?status=Overdue" />
+        <StatCard label="Dispatch breached" value={s.dispatchBreached ?? 0} hint="Past expected dispatch date" tone={s.dispatchBreached ? "danger" : "neutral"} href="/admin/b2b/alerts" />
+        {s.lowCmOrders != null && <StatCard label="Low-CM live orders" value={s.lowCmOrders} hint="Below minimum CM" tone={s.lowCmOrders ? "warning" : "neutral"} href="/admin/b2b/alerts" />}
+        <StatCard label="Net shipping" value={`${s.shippingPct ?? 0}%`} hint="Shipping cost / ex-GST GMV, live orders" tone="info" />
+        <StatCard label="Open alerts" value={s.openAlerts ?? 0} hint="RFQ SLA, CM, dispatch, payment, credit, buyer cadence, stock" tone={s.openAlerts ? "warning" : "neutral"} href="/admin/b2b/alerts" />
       </StatGrid>
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card>

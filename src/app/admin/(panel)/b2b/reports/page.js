@@ -16,6 +16,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const monthLabel = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 const right = (key, label, render) => ({ key, label, align: "right", render });
+const pctOrDash = (v) => (v == null ? "—" : formatPercent(v, 1));
 
 export default async function B2bReportsPage({ searchParams }) {
   const { user, allowed } = await checkPermission("b2b.reports");
@@ -86,6 +87,22 @@ export default async function B2bReportsPage({ searchParams }) {
             />
           </Card>
         </div>
+        <Card>
+          <CardHeader title="Seller Scorecard (last 90 days)" />
+          <MiniTable
+            empty="No seller has B2B orders in this period"
+            rows={(r.sellerScorecard ?? []).map((c) => ({ ...c, id: `sc-${c.id}` }))}
+            columns={[
+              { key: "seller", label: "Seller" },
+              right("score", "Score", (c) => (c.score == null ? "Not enough data" : formatNumber(c.score))),
+              right("acceptance", "Acceptance", (c) => pctOrDash(c.metrics.acceptance)),
+              right("fillRate", "Fill rate", (c) => pctOrDash(c.metrics.fillRate)),
+              right("dispatchSla", "Dispatch SLA", (c) => pctOrDash(c.metrics.dispatchSla)),
+              right("claims", "Claim-free", (c) => pctOrDash(c.metrics.claims)),
+              right("responsiveness", "RFQ response", (c) => pctOrDash(c.metrics.responsiveness)),
+            ]}
+          />
+        </Card>
         {r.lostReasons.length > 0 && (
           <Card>
             <CardHeader title="Why Quotes Are Lost" />
