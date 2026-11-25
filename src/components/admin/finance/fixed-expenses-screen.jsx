@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { DataTable } from "@/components/data-table/data-table";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { RecordFormDrawer } from "@/components/admin/resource/record-form";
-import { fixedExpenseAction, saveFixedExpenseAction } from "@/lib/actions/admin/fixed-expenses";
+import { exportFixedExpensesAction, fixedExpenseAction, saveFixedExpenseAction } from "@/lib/actions/admin/fixed-expenses";
 
 // fixed_expenses.php category dropdown; categories already in use are added to it.
 const PHP_CATEGORIES = [
@@ -59,6 +59,22 @@ const COLUMNS = [
   { key: "status", label: "Status", type: "status" },
 ];
 
+/** A row with the Notes and Scope text the columns show (the table and its Export use the same). */
+function labelled(row, shortMonth, monthMode) {
+  return {
+    ...row,
+    detail: [row.notes, row.adjustmentNotes].filter(Boolean).join(" · "),
+    scopeLabel:
+      row.kind === "override"
+        ? `Override for ${shortMonth} (Base: ${formatINR(row.baseAmount)})`
+        : row.kind === "monthly"
+          ? `Only ${shortMonth}`
+          : monthMode
+            ? "Every Month (Recurring)"
+            : "Every Month (Recurring Master)",
+  };
+}
+
 /** fixed_expenses.php: month view with adjustments, the master recurring baseline, KPI cards and the year strip. */
 export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
   const router = useRouter();
@@ -68,22 +84,11 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
   const { monthMode, month, currentMonth, kpis, calendar } = view;
   const shortMonth = monthMode ? monthName(month, "short") : "";
 
-  const rows = useMemo(
-    () =>
-      view.rows.map((row) => ({
-        ...row,
-        detail: [row.notes, row.adjustmentNotes].filter(Boolean).join(" · "),
-        scopeLabel:
-          row.kind === "override"
-            ? `Override for ${shortMonth} (Base: ${formatINR(row.baseAmount)})`
-            : row.kind === "monthly"
-              ? `Only ${shortMonth}`
-              : monthMode
-                ? "Every Month (Recurring)"
-                : "Every Month (Recurring Master)",
-      })),
-    [view.rows, shortMonth, monthMode],
-  );
+  const rows = useMemo(() => view.rows.map((row) => labelled(row, shortMonth, monthMode)), [view.rows, shortMonth, monthMode]);
+  const exportRows = async (params) => {
+    const result = await exportFixedExpensesAction(params);
+    return result.ok ? { ...result, rows: result.rows.map((row) => labelled(row, shortMonth, monthMode)) } : result;
+  };
 
   const categoryOptions = useMemo(() => {
     const known = new Set(PHP_CATEGORIES.map((c) => c.value));
@@ -282,6 +287,8 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
         rowActions={rowActions}
         onAction={onAction}
         onCustomAction={onCustomAction}
+        onExport={exportRows}
+        exportName={monthMode ? `fixed-expenses-${month}` : "fixed-expenses"}
         emptyTitle="No fixed expenses found"
         emptyDescription="Click above to add your first expense."
       />

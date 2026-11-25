@@ -2,6 +2,8 @@
 
 import { Fragment, useState } from "react";
 import { DataTable, download, toCsv } from "@/components/data-table/data-table";
+import { useCanExport } from "@/components/admin/shell/admin-user";
+import { exportFileName } from "@/lib/csv";
 import { useToast } from "@/components/ui/toast";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { Select } from "@/components/ui/form";
@@ -239,6 +241,7 @@ const SELECTED_EXPORT = [{ id: "export-selected", label: "Export selected", kind
 
 export function GeoTable({ kind, data, options }) {
   const { notify } = useToast();
+  const canExport = useCanExport();
   // the tables have no primary key (s_no repeats), so a row is keyed by its place on this page
   const offset = (data.page - 1) * data.pageSize;
   const raw = data.rows.map((r, i) => ({ ...r, rowId: String(offset + i + 1) }));
@@ -248,7 +251,7 @@ export function GeoTable({ kind, data, options }) {
   const exportSelected = (_action, ids, _rows, done) => {
     const picked = raw.filter((r) => ids.includes(r.rowId));
     if (picked.length === 0) return notify({ message: "Tick rows on this page to export them.", tone: "error" });
-    download(`geographical-${kind}-selected-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(COLUMNS[kind], picked));
+    download(exportFileName(`geographical-${kind}-selected`), toCsv(COLUMNS[kind], picked));
     notify({ message: `Exported ${picked.length} selected rows.` });
     done();
   };
@@ -261,7 +264,7 @@ export function GeoTable({ kind, data, options }) {
       columns={columns}
       data={shown}
       rowKey="rowId"
-      bulkActions={SELECTED_EXPORT}
+      bulkActions={canExport ? SELECTED_EXPORT : []}
       onCustomAction={exportSelected}
       search={SEARCH[kind]}
       toolbar={<GeoFilters kind={kind} options={options} />}

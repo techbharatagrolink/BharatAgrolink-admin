@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { convertBulkAction, convertEngagementAction } from "@/lib/actions/admin/parity/crm";
+import { convertBulkAction, convertEngagementAction, exportCrmListAction } from "@/lib/actions/admin/parity/crm";
 import { UrlInput } from "./url-input";
 
 const TYPE_LABELS = { cart: "Cart Tracking", viewed: "Recently Viewed" };
@@ -56,6 +56,8 @@ export function EngagementTable({ data, canConvert }) {
       rowActions={canConvert ? [{ id: "convert", label: "Convert", confirm: convertConfirm("engagement") }] : []}
       bulkActions={canConvert ? [{ id: "convert", label: "Convert Selected to Leads", confirm: convertConfirm() }] : []}
       onAction={onAction}
+      onExport={(params) => exportCrmListAction("engagement", params)}
+      exportName="crm-engagement"
       emptyTitle="No engagement data found"
     />
   );
@@ -109,6 +111,8 @@ export function BulkInquiryTable({ data, agents, canConvert }) {
         }
         onAction={(_action, ids) => convertBulkAction(ids)}
         onCustomAction={(_action, ids, _rows, clear) => (setAgentId(""), setAssign({ ids, clear }))}
+        onExport={(params) => exportCrmListAction("bulk", params)}
+        exportName="crm-bulk-inquiries"
         emptyTitle="No bulk inquiries found"
       />
       <Dialog

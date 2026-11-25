@@ -459,6 +459,9 @@ export const b2bOpsResources = {
     permission: "support.settings",
     collection: "supportSla",
     api: "GET/PATCH /api/admin/support/sla",
+    // /admin/support/sla is its own screen (support-sla service, not the resource list): its summary tables
+    // export from there and the tickets from Support Tickets.
+    exportable: false,
     columns: [
       { key: "rule", label: "Rule", emphasis: true },
       { key: "department", label: "Department" },

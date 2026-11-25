@@ -2,16 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown, ArrowUp, Columns3, Download, ListFilter } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Columns3, Download, FileSpreadsheet, FileText, ListFilter } from "lucide-react";
 import { exportDeliveredAction } from "@/lib/actions/admin/parity/ops";
+import { useCanExport } from "@/components/admin/shell/admin-user";
 import { formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/form";
+import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
-import { DELIVERED_COLUMNS, PER_PAGE, deliveredCsv, downloadText } from "./delivered-config";
+import { downloadXlsx, exportFileName } from "@/lib/csv";
+import { DELIVERED_COLUMNS, PER_PAGE, deliveredCsv, deliveredMatrix, downloadText } from "./delivered-config";
 
 const DEFAULT_ON = DELIVERED_COLUMNS.filter((c) => c.on).map((c) => c.key);
 const money = (v) => `₹ ${(Number(v) || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
@@ -31,6 +34,7 @@ export function DeliveredTable({ table }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { notify } = useToast();
+  const canExport = useCanExport();
   const [visible, setVisible] = useState(DEFAULT_ON);
   const [chooser, setChooser] = useState(false);
   const [columnSearch, setColumnSearch] = useState("");
@@ -60,13 +64,23 @@ export function DeliveredTable({ table }) {
     else go({ sort: key, order: "DESC", page: 1 });
   }
 
-  async function exportCsv() {
+  async function runExport(format = "csv") {
     setExporting(true);
     const result = await exportDeliveredAction(Object.fromEntries(searchParams.entries()));
     setExporting(false);
     if (!result.ok) return notify({ message: result.message, tone: "error" });
-    downloadText(result.data.filename, deliveredCsv(result.data.rows));
-    if (result.data.truncated) notify({ message: `Export stopped at ${formatNumber(result.data.rows.length)} rows. Narrow the filters to export the rest.`, tone: "info" });
+    const { headers, rows: dataRows } = deliveredMatrix(result.data.rows);
+    if (format === "xlsx") {
+      await downloadXlsx(exportFileName("delivered_orders", "xlsx"), headers, dataRows);
+    } else {
+      downloadText(result.data.filename, deliveredCsv(result.data.rows));
+    }
+    notify({
+      message: result.data.truncated
+        ? `Export stopped at ${formatNumber(result.data.rows.length)} rows (${format.toUpperCase()}). Narrow the filters to export the rest.`
+        : `Exported ${formatNumber(result.data.rows.length)} rows (${format.toUpperCase()}).`,
+      tone: result.data.truncated ? "info" : "success",
+    });
   }
 
   const toggle = (key) => setVisible((v) => (v.includes(key) ? v.filter((k) => k !== key) : DELIVERED_COLUMNS.filter((c) => c.key === key || v.includes(c.key)).map((c) => c.key)));
@@ -120,9 +134,39 @@ export function DeliveredTable({ table }) {
               )}
             </div>
             <Select aria-label="Rows per page" value={String(table.perPage)} onChange={(e) => go({ perPage: e.target.value, page: 1 })} options={PER_PAGE.map((n) => ({ value: String(n), label: `${n} / page` }))} className="w-28" />
-            <Button size="sm" onClick={exportCsv} loading={exporting}>
-              <Download className="size-4" aria-hidden /> Export<span className="max-sm:hidden"> CSV</span>
-            </Button>
+            {canExport && (
+              <Popover
+                panelClassName="w-40"
+                trigger={({ toggle, props }) => (
+                  <Button size="sm" onClick={toggle} loading={exporting} {...props}>
+                    {!exporting && <Download className="size-4" aria-hidden />} Export <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                  </Button>
+                )}
+              >
+                <ul className="py-1">
+                  <li>
+                    <button
+                      type="button"
+                      data-close
+                      onClick={() => runExport("csv")}
+                      className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                    >
+                      <FileText className="size-4 text-ink-muted" /> CSV (.csv)
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-close
+                      onClick={() => runExport("xlsx")}
+                      className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                    >
+                      <FileSpreadsheet className="size-4 text-success-ink" /> Excel (.xlsx)
+                    </button>
+                  </li>
+                </ul>
+              </Popover>
+            )}
           </>
         }
       />

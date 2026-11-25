@@ -1,7 +1,7 @@
 "use server";
 
 import { ApiError } from "@/lib/api";
-import { assertPermission, getCurrentAdmin } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
 import { exportPayoutSummary, listPayoutSummary } from "@/lib/services/admin/payout-summary";
 
 /** Plain string params only, capped like the URL filters. */
@@ -25,7 +25,7 @@ export async function payoutSummaryListAction(params) {
 }
 
 export async function payoutSummaryExportAction(params) {
-  const user = await getCurrentAdmin();
-  if (!user) return { ok: false, message: "Your session has expired. Please log in again." };
-  return exportPayoutSummary(cleanParams(params), user);
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  return exportPayoutSummary(cleanParams(params), auth.user);
 }

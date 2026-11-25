@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
-import { writeStock } from "@/lib/services/admin/inventory";
+import { assertExport, assertPermission } from "@/lib/auth/session";
+import { loadStock, writeStock } from "@/lib/services/admin/inventory";
+import { EXPORT_MAX_ROWS } from "@/lib/csv";
 
 /*
  * Inventory Management writes. The permission is checked here and again by the API; every stock
@@ -56,4 +57,27 @@ export async function bulkStockAction(input) {
 /** Outcome after the team called the customer of a short paid order. */
 export async function resolveShortfallAction(id, input) {
   return run(`shortfalls/${int(id)}/resolve`, { body: { resolution: str(input?.resolution), note: str(input?.note) || undefined } });
+}
+
+/**
+ * Stock History export: every movement of the tab on screen (stock changes, or the opening balances),
+ * newest first, read 200 at a time through the movement feed's `beforeId` cursor. Super admins only.
+ */
+export async function exportStockMovementsAction(input) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const base = input?.view === "opening" ? { type: "OPENING" } : { changesOnly: "1" };
+  const LIMIT = 200;
+  const rows = [];
+  let beforeId;
+  while (rows.length < EXPORT_MAX_ROWS) {
+    const page = await loadStock(auth.user, "movements", { ...base, limit: LIMIT, beforeId });
+    if (page.error) return { ok: false, message: page.error.message || "The stock history could not be loaded." };
+    const batch = Array.isArray(page.data) ? page.data : [];
+    rows.push(...batch);
+    if (batch.length < LIMIT) return { ok: true, rows, truncated: false };
+    beforeId = batch.at(-1)?.id;
+    if (beforeId == null) break;
+  }
+  return { ok: true, rows: rows.slice(0, EXPORT_MAX_ROWS), truncated: true };
 }

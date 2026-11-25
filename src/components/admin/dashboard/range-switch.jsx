@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { StaticGrid } from "@/components/data-table/static-grid";
+import { ExportBar } from "@/components/data-table/export-button";
+import { exportMatrix, plainValue, textOf } from "@/lib/csv";
 
 export function RangeSwitch({ pathname, ranges, active }) {
   return (
@@ -40,8 +42,32 @@ export function AlertList({ alerts }) {
   );
 }
 
-export function MiniTable({ columns, rows, empty = "No records." }) {
+/**
+ * Export value of a MiniTable cell when the page gives no `exportColumns`: a plain number stays a number
+ * (₹ 1,234 -> 1234) when the cell shows it, otherwise the cell's text, otherwise the raw field.
+ */
+function cellExportValue(column, row) {
+  if (column.exportValue) return column.exportValue(row);
+  const raw = row[column.key];
+  if (!column.render) return raw;
+  const text = textOf(column.render(row));
+  if (typeof raw === "number" && Number.isFinite(raw) && /\d/.test(text)) return raw;
+  return text || plainValue(raw);
+}
+
+/**
+ * Compact table. `exportName` adds an Export (CSV) bar above it with these rows: pass it only for admins who
+ * may export (`canExport(user)`), as the rows are handed to the browser for the file. `exportColumns`
+ * ([{ label, value(row) }]) sets the file's columns; otherwise each column's cell is used (see cellExportValue).
+ */
+export function MiniTable({ columns, rows, empty = "No records.", exportName, exportColumns }) {
   if (!rows.length) return <p className="px-4 py-6 text-center text-sm text-ink-muted">{empty}</p>;
+  const sheet = exportName
+    ? exportMatrix(
+        exportColumns ?? columns.filter((c) => c.export !== false).map((c) => ({ label: typeof c.label === "string" ? c.label : c.key, value: (row) => cellExportValue(c, row) })),
+        rows,
+      )
+    : null;
   const [lead, ...others] = columns;
   // Phone cards (same style as the main tables): a "Status" column rides in the card header,
   // the rest are label-left / value-right lines in a soft panel (long text keeps a full-width block).
@@ -50,6 +76,7 @@ export function MiniTable({ columns, rows, empty = "No records." }) {
   const cell = (c, row) => (c.render ? c.render(row) : (row[c.key] ?? "—"));
   return (
     <>
+      {sheet && <ExportBar name={exportName} headers={sheet.headers} matrix={sheet.rows} />}
       <ul className="divide-y divide-line md:hidden">
         {rows.map((row, i) => (
           <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3 sm:px-4">

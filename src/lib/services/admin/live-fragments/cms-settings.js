@@ -1,14 +1,15 @@
 /**
  * Live admin paths for CMS lists, settings, roles, minimums, expense caps and the NRV calculator.
  * Merge `resources` into LIVE_RESOURCES and `livePaths` into LIVE_ADMIN_PATHS.
- * cms.pages is not a second writer: the list service adapts /admin/custom-pages.
+ * cms.pages is not a second writer: the list service adapts /admin/custom-pages. Its Export reads the
+ * resource engine's /admin/cms/pages/export (same pages_custom rows and permission page).
  */
 export const resources = {
   "cms.banners": { path: "/cms/banners", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeSections": { path: "/cms/home-sections", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeBanners": { path: "/cms/home-sections/banners", page: "newhomepage_website.php", permission: "cms" },
   "cms.homeSectionItems": { path: "/cms/home-sections/items", page: "newhomepage_website.php", permission: "cms" },
-  "cms.pages": { path: "/custom-pages", page: "pages_custom.php", permission: "cms.pages" },
+  "cms.pages": { path: "/custom-pages", exportPath: "/cms/pages", page: "pages_custom.php", permission: "cms.pages" },
   "cms.notifications": { path: "/cms/notifications", page: "notification.php", permission: "cms.notifications" },
 };
 

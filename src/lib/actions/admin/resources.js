@@ -1,7 +1,7 @@
 "use server";
 
 import { getResource } from "@/lib/content/admin/resources";
-import { getCurrentAdmin } from "@/lib/auth/session";
+import { assertExport, getCurrentAdmin } from "@/lib/auth/session";
 import { exportResource, runResourceAction, saveResourceRecord } from "@/lib/services/admin/resources";
 
 const expired = { ok: false, message: "Your session has expired. Please log in again." };
@@ -29,11 +29,11 @@ export async function resourceActionAction(key, actionId, ids, reason, value) {
 }
 
 export async function resourceExportAction(key, params) {
-  const user = await getCurrentAdmin();
-  if (!user) return expired;
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
   const resourceKey = cleanKey(key);
   if (!resourceKey) return { ok: false, message: "Invalid request." };
-  return exportResource(resourceKey, cleanParams(params), user);
+  return exportResource(resourceKey, cleanParams(params), auth.user);
 }
 
 export async function resourceSaveAction(key, id, input, reason) {

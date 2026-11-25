@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { can, pageKey } from "./permissions";
+import { can, canExport, EXPORT_DENIED, pageKey } from "./permissions";
 import { permissionPages } from "@/lib/services/admin/live-catalog";
 
 /**
@@ -106,5 +106,13 @@ export async function assertPermission(permission, action) {
   const user = await getCurrentAdmin();
   if (!user) return { ok: false, user: null, message: "Your session has expired. Please log in again." };
   if (!can(user, permission, action)) return { ok: false, user, message: "You do not have permission to perform this action." };
+  return { ok: true, user };
+}
+
+/** For export server actions and download routes: super admins only (see `canExport`). */
+export async function assertExport() {
+  const user = await getCurrentAdmin();
+  if (!user) return { ok: false, user: null, status: 401, message: "Your session has expired. Please log in again." };
+  if (!canExport(user)) return { ok: false, user, status: 403, message: EXPORT_DENIED };
   return { ok: true, user };
 }

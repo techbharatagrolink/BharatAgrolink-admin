@@ -1,6 +1,5 @@
-import { Download } from "lucide-react";
 import { loadStock, stockFilters } from "@/lib/services/admin/inventory";
-import { buttonClasses } from "@/components/ui/button";
+import { RouteExportDropdown } from "@/components/data-table/export-button";
 import { Card } from "@/components/ui/card";
 import { inventoryPage, LoadError } from "@/components/admin/inventory/inventory-page";
 import { Pager, StockFilters, StockTable } from "@/components/admin/inventory/stock-views";
@@ -14,10 +13,8 @@ export default async function StockListPage({ searchParams }) {
     title: "All Stock",
     description: "Every sellable product and pack size. Available = on hand − reserved for open orders − safety stock.",
     actions: (
-      // Route handler download (the token stays on the server).
-      <a href={`/admin/inventory/export?${exportQuery}`} className={buttonClasses({ size: "sm" })}>
-        <Download className="size-4" aria-hidden /> Export CSV
-      </a>
+      // Route handler download (CSV & Excel, super admins only)
+      <RouteExportDropdown href={`/admin/inventory/export?${exportQuery}`} label="Export" />
     ),
   });
   if (denied) return denied;

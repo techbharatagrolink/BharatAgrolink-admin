@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startRouteProgress } from "@/components/admin/shell/route-progress";
 import { useMemo, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight, Columns3, Copy, Download, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Copy, Download, FileSpreadsheet, FileText, Loader2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/states";
 import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
+import { useCanExport } from "@/components/admin/shell/admin-user";
+import { csvText, downloadCsv, downloadXlsx, exportFileName, formatExportDate } from "@/lib/csv";
 import { Cell, formatCellValue, resolveHref } from "./cells";
 import { ClearFiltersButton, FilterBar } from "./filter-bar";
 import { applyColumnFilters, columnFilterActive } from "./column-filter";
@@ -29,21 +31,48 @@ function matchesWhen(action, row) {
   return true;
 }
 
+// Amounts, counts and percentages stay plain numbers in the file (no \u20b9, digit grouping or rounding to
+// whole rupees) so Excel can add them up; the unit moves to the column header instead.
+const NUMERIC_TYPES = new Set(["currency", "contributionMargin", "number", "percent", "takeRate"]);
+const UNITS = { currency: "\u20b9", contributionMargin: "\u20b9", percent: "%", takeRate: "%" };
+
+function csvHeader(column) {
+  const unit = UNITS[column.type];
+  return unit && !String(column.label).includes(unit) ? `${column.label} (${unit})` : column.label;
+}
+
+function csvValue(column, row) {
+  const value = row[column.key];
+  if (value == null || value === "") return "";
+  if (NUMERIC_TYPES.has(column.type)) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : "";
+  }
+  if (column.type === "status") return column.labels?.[value] ?? String(value).replace(/_/g, " ");
+  // Mobile numbers must be exported raw and unmasked so users get accurate data without asterisks
+  if (column.type === "mobile") return String(value).replace(/\s+/g, " ").trim();
+  if (column.type === "boolean") return value ? "Yes" : "No";
+  if (column.type === "date" || column.type === "datetime" || /date|updated|created/i.test(column.key)) {
+    return formatExportDate(value);
+  }
+  if (column.type === "mono" || !column.type) {
+    if (value instanceof Date || (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value))) {
+      return formatExportDate(value);
+    }
+    return value;
+  }
+  const formatted = formatCellValue(column, row);
+  if (formatted === "—" || formatted === "-" || formatted == null) return "";
+  return formatted;
+}
+
+/** CSV text (with BOM) of `rows` under `columns`, as the table's Export writes it. */
 export function toCsv(columns, rows) {
-  const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const header = columns.map((c) => escape(c.label)).join(",");
-  const body = rows.map((row) => columns.map((c) => escape(c.type === "status" || c.type === "mono" || !c.type ? row[c.key] : formatCellValue(c, row))).join(","));
-  return [header, ...body].join("\n");
+  return csvText(columns.map(csvHeader), rows.map((row) => columns.map((column) => csvValue(column, row))));
 }
 
 export function download(filename, text) {
-  const blob = new Blob(["\ufeff", text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadCsv(filename, text);
 }
 
 /**
@@ -83,6 +112,8 @@ export function DataTable({
 }) {
   const router = useRouter();
   const { notify } = useToast();
+  // Export and "Export selected" are for super admins only (the export actions re-check on the server).
+  const canExport = useCanExport();
   const { get, setParams, pending } = useQueryState();
   const [selected, setSelected] = useState([]);
   const [picks, setPicks] = useState({});
@@ -115,9 +146,15 @@ export function DataTable({
     ? rowActions.filter((a) => a.effect && !a.effect.remove && !a.href && a.kind !== "form" && !a.assign && a.tone !== "danger" && !a.confirm?.requireReason && !bulkActions.some((b) => b.id === a.id))
     : [];
 
-  const exportSelected = () => {
-    download(`${exportName || id}-selected-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(columns, selectedRows));
-    notify({ message: `Exported ${formatNumber(selectedRows.length)} selected row${selectedRows.length === 1 ? "" : "s"}.` });
+  const exportSelected = async (format = "csv") => {
+    if (format === "xlsx") {
+      const headers = columns.map(csvHeader);
+      const rowsData = selectedRows.map((row) => columns.map((column) => csvValue(column, row)));
+      await downloadXlsx(exportFileName(`${exportName || id}-selected`, "xlsx"), headers, rowsData);
+    } else {
+      download(exportFileName(`${exportName || id}-selected`, "csv"), toCsv(columns, selectedRows));
+    }
+    notify({ message: `Exported ${formatNumber(selectedRows.length)} selected row${selectedRows.length === 1 ? "" : "s"} (${format.toUpperCase()}).` });
   };
   const copyIds = async () => {
     // Real record IDs for rows on this page (some tables use an internal row key); keys for the rest.
@@ -168,18 +205,39 @@ export function DataTable({
     else runAction(action, ids);
   };
 
-  const exportCsv = async () => {
+  const exportData = async (format = "csv") => {
     setExporting(true);
     try {
+      let exportRows = rows;
+      let truncated = false;
+      let usedFallback = false;
       if (onExport) {
-        const result = await onExport(Object.fromEntries(new URLSearchParams(window.location.search)));
-        if (!result?.ok) throw new Error(result?.message);
-        const exported = columnFilters ? applyColumnFilters(result.rows, columns, colFilters) : result.rows;
-        download(`${exportName || id}-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(columns, exported));
-        notify({ message: `Exported ${formatNumber(exported.length)} rows.` });
-      } else {
-        download(`${exportName || id}-page.csv`, toCsv(columns, rows));
+        try {
+          const result = await onExport(Object.fromEntries(new URLSearchParams(window.location.search)));
+          if (result?.ok && Array.isArray(result.rows)) {
+            exportRows = columnFilters ? applyColumnFilters(result.rows, columns, colFilters) : result.rows;
+            truncated = Boolean(result.truncated);
+          } else {
+            usedFallback = true;
+          }
+        } catch {
+          usedFallback = true;
+        }
       }
+      const exportCols = visible.filter((c) => c.export !== false && c.key !== "actions");
+      const headers = exportCols.map(csvHeader);
+      const rowsData = exportRows.map((row) => exportCols.map((column) => csvValue(column, row)));
+      const baseName = onExport && !usedFallback ? (exportName || id) : `${exportName || id}-page`;
+      if (format === "xlsx") {
+        await downloadXlsx(exportFileName(baseName, "xlsx"), headers, rowsData);
+      } else {
+        download(exportFileName(baseName, "csv"), csvText(headers, rowsData));
+      }
+      notify(
+        truncated
+          ? { message: `Exported the first ${formatNumber(exportRows.length)} rows (${format.toUpperCase()}). Narrow the filters to export the rest.`, tone: "info" }
+          : { message: `Exported ${formatNumber(exportRows.length)} rows (${format.toUpperCase()}).`, tone: "success" },
+      );
     } catch (error) {
       notify({ message: error.message || "Export failed.", tone: "error" });
     } finally {
@@ -273,10 +331,38 @@ export function DataTable({
               </div>
             </Popover>
             {toolbarEnd}
-            {onExport !== undefined && (
-              <Button size="sm" onClick={exportCsv} loading={exporting}>
-                {!exporting && <Download className="size-4" aria-hidden />} Export
-              </Button>
+            {onExport !== undefined && canExport && (
+              <Popover
+                panelClassName="w-40"
+                trigger={({ toggle, props }) => (
+                  <Button size="sm" onClick={toggle} loading={exporting} {...props}>
+                    {!exporting && <Download className="size-4" aria-hidden />} Export <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                  </Button>
+                )}
+              >
+                <ul className="py-1">
+                  <li>
+                    <button
+                      type="button"
+                      data-close
+                      onClick={() => exportData("csv")}
+                      className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                    >
+                      <FileText className="size-4 text-ink-muted" /> CSV (.csv)
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      data-close
+                      onClick={() => exportData("xlsx")}
+                      className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                    >
+                      <FileSpreadsheet className="size-4 text-success-ink" /> Excel (.xlsx)
+                    </button>
+                  </li>
+                </ul>
+              </Popover>
             )}
           </div>
           {inlineToolbar && <ClearFiltersButton className="xl:basis-full" />}
@@ -312,10 +398,41 @@ export function DataTable({
               </Button>
             );
           })}
-          <Button size="xs" variant="secondary" onClick={exportSelected} disabled={selectedRows.length === 0} title={offPage > 0 ? "Exports the selected rows on this page" : undefined}>
-            <Download className="size-3.5" aria-hidden /> Export selected
-            {offPage > 0 && <span className="tabular opacity-75">({selectedRows.length})</span>}
-          </Button>
+          {canExport && (
+            <Popover
+              panelClassName="w-44"
+              trigger={({ toggle, props }) => (
+                <Button size="xs" variant="secondary" onClick={toggle} disabled={selectedRows.length === 0} title={offPage > 0 ? "Exports the selected rows on this page" : undefined} {...props}>
+                  <Download className="size-3.5" aria-hidden /> Export selected
+                  {offPage > 0 && <span className="tabular opacity-75">({selectedRows.length})</span>}
+                  <ChevronDown className="size-3 opacity-70" aria-hidden />
+                </Button>
+              )}
+            >
+              <ul className="py-1">
+                <li>
+                  <button
+                    type="button"
+                    data-close
+                    onClick={() => exportSelected("csv")}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-ink hover:bg-surface-muted"
+                  >
+                    <FileText className="size-3.5 text-ink-muted" /> CSV (.csv)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    data-close
+                    onClick={() => exportSelected("xlsx")}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-ink hover:bg-surface-muted"
+                  >
+                    <FileSpreadsheet className="size-3.5 text-success-ink" /> Excel (.xlsx)
+                  </button>
+                </li>
+              </ul>
+            </Popover>
+          )}
           <Button size="xs" variant="secondary" onClick={copyIds}>
             <Copy className="size-3.5" aria-hidden /> Copy IDs
           </Button>

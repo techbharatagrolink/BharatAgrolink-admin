@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { checkPermission } from "@/lib/auth/session";
-import { can, canCard } from "@/lib/auth/permissions";
+import { can, canCard, canExport } from "@/lib/auth/permissions";
+import { exportDashboardCardAction } from "@/lib/actions/admin/dashboard";
 import { ApiError } from "@/lib/api";
 import { dashboardFilterHref, getDashboardCard, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { formatINR, formatNumber } from "@/lib/format";
@@ -278,6 +279,7 @@ export default async function DashboardCardPage({ params, searchParams }) {
               ]
             : []
         }
+        onExport={canExport(user) ? exportDashboardCardAction.bind(null, slug) : undefined}
         exportName={`dashboard-${slug}`}
         emptyTitle="No records in this period."
         emptyDescription="Try another period or status from the filters."

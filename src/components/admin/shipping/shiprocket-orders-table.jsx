@@ -14,6 +14,9 @@ import { useToast } from "@/components/ui/toast";
 import { formatINR } from "@/lib/format";
 import { cancelShiprocketOrdersAction, cancelShiprocketShipmentsAction, shiprocketReportDocumentAction, trackShiprocketAwbsAction } from "@/lib/actions/admin/shipping";
 import { ShiprocketBulkTrackingDialog, ShiprocketOrderDialog, ShiprocketTrackingDialog, listTone, openInTab } from "./shiprocket-dialogs";
+import { useCanExport } from "@/components/admin/shell/admin-user";
+import { ExportButton } from "@/components/data-table/export-button";
+import { SHIPROCKET_COLUMNS } from "./shipments-export";
 
 const unique = (list) => [...new Set(list.filter(Boolean))];
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -65,6 +68,7 @@ function RowActions({ row, onTrack, onDetails }) {
 export function ShiprocketOrdersTable({ rows, canEdit }) {
   const router = useRouter();
   const { notify } = useToast();
+  const canExport = useCanExport();
   const [selected, setSelected] = useState([]);
   const [details, setDetails] = useState(null);
   const [tracking, setTracking] = useState(null);
@@ -144,6 +148,16 @@ export function ShiprocketOrdersTable({ rows, canEdit }) {
           <Button size="xs" onClick={track} disabled={running || !trackAwbs.length}>Track ({trackAwbs.length})</Button>
           {canEdit && <Button size="xs" variant="danger-outline" disabled={!orderIds.length} onClick={() => setConfirm("orders")}>Cancel orders ({orderIds.length})</Button>}
           {canEdit && <Button size="xs" variant="danger-outline" disabled={!cancelAwbs.length} onClick={() => setConfirm("shipments")}>Cancel shipments ({cancelAwbs.length})</Button>}
+          {canExport && (
+            <ExportButton
+              name="shiprocket-orders-selected"
+              label="Export selected"
+              columns={SHIPROCKET_COLUMNS}
+              rows={picked}
+              size="xs"
+              variant="secondary"
+            />
+          )}
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
         </div>
       )}

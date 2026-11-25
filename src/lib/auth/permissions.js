@@ -18,6 +18,17 @@ export function can(user, permission, action = "view") {
 }
 
 /**
+ * Data exports (CSV / Excel downloads of admin lists and reports) are for super admins only.
+ * Client code uses it to hide Export buttons; every export server action and download route
+ * re-checks it with `assertExport` (lib/auth/session.js).
+ */
+export function canExport(user) {
+  return Boolean(user?.role?.superAdmin);
+}
+
+export const EXPORT_DENIED = "Only a super admin can export data.";
+
+/**
  * PHP grant key for an admin_menus link: its file name with query or #anchor, as the API's pageKey.
  * '#dashboard_*' anchors (the Main Dashboard's Sales/Orders/Shipping/Product & Location Overview
  * sections) keep their own distinct key rather than collapsing into "dashboard.php", so each one

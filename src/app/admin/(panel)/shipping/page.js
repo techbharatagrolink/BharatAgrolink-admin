@@ -1,4 +1,6 @@
 import { checkPermission } from "@/lib/auth/session";
+import { canExport } from "@/lib/auth/permissions";
+import { ShipmentsExport } from "@/components/admin/shipping/shipments-export";
 import { SHIPMENT_TABS, SHIPROCKET_PAGE_SIZES, canShip, listShipments, listShiprocketOrders } from "@/lib/services/admin/shipping";
 import { formatNumber } from "@/lib/format";
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
@@ -54,6 +56,7 @@ export default async function ShipmentsPage({ searchParams }) {
       <PageHeader
         title="Shipments"
         description="One row per order and vendor parcel. Book couriers, print labels, sync courier status and cancel shipments."
+        actions={canExport(user) ? <ShipmentsExport params={{ tab, q, from: dateFrom, to: dateTo, ...(shiprocket ? sr : {}) }} /> : null}
       />
       <LinkTabs tabs={SHIPMENT_TABS.map((t) => ({ ...t, href: href({ tab: t.value }), count: t.value === tab && result.ok ? formatNumber(total) : null }))} active={tab} />
       <Card>

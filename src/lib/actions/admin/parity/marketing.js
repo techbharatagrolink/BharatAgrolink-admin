@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
 import {
   createCalendarEvent,
   createMarketingExpense,
@@ -184,7 +184,7 @@ export async function deleteMarketingExpenseAction(expenseId) {
 const ENGAGEMENT_KEYS = ["q", "userType", "type", "date", "sort", "dir", "f_phone", "f_fullname", "f_productName", "f_country", "f_region", "f_city"];
 
 export async function exportEngagementAction(kind, filters) {
-  const auth = await assertPermission("marketing.engagement", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   if (!KINDS.includes(kind)) return invalid();
   const query = {};

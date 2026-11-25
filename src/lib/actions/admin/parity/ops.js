@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
 import { calculateCost, checkPincode, checkServiceability, createPickupAddress, exportAllAgents, exportDelivered, exportOverall } from "@/lib/services/admin/parity/ops";
 import { deliveredQuery } from "@/components/admin/parity/ops/delivered-config";
 
@@ -68,7 +68,7 @@ export async function createPickupAddressAction(input) {
 }
 
 export async function exportDeliveredAction(params) {
-  const auth = await assertPermission("orders.delivered", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   const { page: _page, perPage: _perPage, ...query } = deliveredQuery(params);
   return exportDelivered(query, auth.user);
@@ -82,7 +82,7 @@ function range(input) {
 }
 
 export async function exportOverallAction(input) {
-  const auth = await assertPermission("operations.overall", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   const value = range(input);
   if (!value) return invalid("Dates must be YYYY-MM-DD.");
@@ -90,7 +90,7 @@ export async function exportOverallAction(input) {
 }
 
 export async function exportAllAgentsAction(input) {
-  const auth = await assertPermission("operations.overall", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   const value = range(input);
   if (!value) return invalid("Dates must be YYYY-MM-DD.");

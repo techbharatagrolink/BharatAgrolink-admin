@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
+import { collectPages } from "@/lib/services/admin/_export";
 import {
+  getB2bCatalog,
   assignCatalogUrl,
   clearCatalogUrl,
   convertQuotation,
@@ -266,6 +268,22 @@ export async function timelineFeedAction(input) {
 }
 
 /* -------------------------------------------------------------- B2B Catalog */
+
+/** Every B2B catalog product for the filters on screen (DataTable onExport). Super admins only. */
+export async function exportB2bCatalogAction(params) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const filters = {
+    q: str(params?.q, 120) || undefined,
+    category: positiveId(params?.category) ?? undefined,
+    seller: str(params?.seller, 100) || undefined,
+    status: ["1", "0", "draft"].includes(params?.status) ? params.status : undefined,
+  };
+  return collectPages(async (page, pageSize) => {
+    const data = await getB2bCatalog({ ...filters, page, pageSize }, auth.user);
+    return { rows: data?.rows, total: data?.total };
+  });
+}
 
 export async function b2bCatalogAction(actionId, ids, extra = {}) {
   const action = { delete: "delete", "assign-url": "edit", "clear-url": "edit" }[actionId];

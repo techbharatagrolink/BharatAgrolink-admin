@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye, FileSpreadsheet, MessageCircle, RefreshCw, ShoppingCart, SlidersHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, Download, Eye, FileSpreadsheet, FileText, MessageCircle, RefreshCw, ShoppingCart, SlidersHorizontal } from "lucide-react";
 import { exportEngagementAction } from "@/lib/actions/admin/parity/marketing";
+import { useCanExport } from "@/components/admin/shell/admin-user";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/form";
+import { Popover } from "@/components/ui/popover";
 import { EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
+import { downloadXlsx } from "@/lib/csv";
 import { csvText, downloadText, formatStamp, todayIso } from "./format";
 import { WhatsAppDialog } from "./whatsapp-dialog";
 
@@ -71,12 +74,12 @@ const CSV = {
   cart: {
     file: "cart_tracking",
     headers: ["ID", "User ID", "Phone", "Customer Name", "Country", "Region", "City", "Product Name", "Quantity", "Type", "Created At"],
-    row: (r) => [r.id, r.userId ?? "", r.guest ? "N/A" : r.phone ?? "", r.guest ? "Guest" : r.fullname ?? "", r.country ?? "", region(r) ?? "N/A", r.city ?? "", r.productName ?? "", r.qty, r.tracking ? "Tracking Cart" : "Checkout Cart", stamp(r.createdAt)],
+    row: (r) => [r.id, r.userId ?? "", r.guest ? "" : r.phone ?? "", r.guest ? "Guest" : r.fullname ?? "", r.country ?? "", region(r) ?? "", r.city ?? "", r.productName ?? "", r.qty, r.tracking ? "Tracking Cart" : "Checkout Cart", stamp(r.createdAt)],
   },
   viewed: {
     file: "recently_viewed_products",
     headers: ["ID", "User ID", "Phone", "Customer Name", "Country", "Region", "City", "Product Name", "Views", "First Viewed", "Last Viewed"],
-    row: (r) => [r.id, r.userId ?? "", r.guest ? "N/A" : r.phone ?? "", r.guest ? "Guest" : r.fullname ?? "", r.country ?? "", region(r) ?? "N/A", r.city ?? "", r.productName ?? "", r.views, stamp(r.viewedAt), stamp(r.lastViewedAt)],
+    row: (r) => [r.id, r.userId ?? "", r.guest ? "" : r.phone ?? "", r.guest ? "Guest" : r.fullname ?? "", r.country ?? "", region(r) ?? "", r.city ?? "", r.productName ?? "", r.views, stamp(r.viewedAt), stamp(r.lastViewedAt)],
   },
 };
 
@@ -89,6 +92,7 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { notify } = useToast();
+  const canExport = useCanExport();
   const [quick, setQuick] = useState(filters.q ?? "");
   const [columnFilters, setColumnFilters] = useState(() => Object.fromEntries(COLUMN_FILTERS.map((k) => [k, filters[`f_${k}`] ?? ""])));
   const [showFilters, setShowFilters] = useState(COLUMN_FILTERS.some((k) => filters[`f_${k}`]));
@@ -125,15 +129,20 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
     setTimeout(() => setRefreshing(false), 600);
   }
 
-  async function exportCsv() {
+  async function runExport(format = "csv") {
     setExporting(true);
     const result = await exportEngagementAction(kind, filters);
     setExporting(false);
     if (!result.ok) return notify({ title: "Export failed", message: result.message, tone: "error" });
     if (!result.data.rows.length) return notify({ message: "No data to export.", tone: "info" });
     const spec = CSV[kind];
-    downloadText(`${spec.file}_${todayIso()}.csv`, csvText(spec.headers, result.data.rows.map(spec.row)));
-    notify({ message: `Exported ${formatNumber(result.data.rows.length)} rows.`, tone: "success" });
+    const dataRows = result.data.rows.map(spec.row);
+    if (format === "xlsx") {
+      await downloadXlsx(`${spec.file}_${todayIso()}.xlsx`, spec.headers, dataRows);
+    } else {
+      downloadText(`${spec.file}_${todayIso()}.csv`, csvText(spec.headers, dataRows));
+    }
+    notify({ message: `Exported ${formatNumber(result.data.rows.length)} rows (${format.toUpperCase()}).`, tone: "success" });
   }
 
   const start = (data.page - 1) * data.pageSize;
@@ -224,9 +233,39 @@ export function EngagementSection({ kind, prefix, data, filters, canSend }) {
           {!refreshing && <RefreshCw className="size-4" aria-hidden />}
           <span className="max-sm:sr-only">Refresh</span>
         </Button>
-        <Button variant="primary" onClick={exportCsv} loading={exporting} title="Export to CSV" aria-label="Export to CSV" className="max-sm:w-9 max-sm:px-0">
-          <FileSpreadsheet className="size-4" aria-hidden />
-        </Button>
+        {canExport && (
+          <Popover
+            panelClassName="w-40"
+            trigger={({ toggle, props }) => (
+              <Button variant="primary" onClick={toggle} loading={exporting} title="Export options" aria-label="Export options" className="max-sm:w-9 max-sm:px-0" {...props}>
+                <Download className="size-4" aria-hidden />
+              </Button>
+            )}
+          >
+            <ul className="py-1">
+              <li>
+                <button
+                  type="button"
+                  data-close
+                  onClick={() => runExport("csv")}
+                  className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                >
+                  <FileText className="size-4 text-ink-muted" /> CSV (.csv)
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-close
+                  onClick={() => runExport("xlsx")}
+                  className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                >
+                  <FileSpreadsheet className="size-4 text-success-ink" /> Excel (.xlsx)
+                </button>
+              </li>
+            </ul>
+          </Popover>
+        )}
       </div>
 
       <div className="flex justify-end px-3 pt-2">

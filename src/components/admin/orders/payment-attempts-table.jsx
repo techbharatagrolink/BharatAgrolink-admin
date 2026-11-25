@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Script from "next/script";
 import { formatINR } from "@/lib/format";
 import { GridTable } from "@/components/data-table/grid-table";
+import { ExportButton } from "@/components/data-table/export-button";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/form";
@@ -23,6 +24,22 @@ const STATUSES = [
   { value: "Payment Expired", label: "Expired" },
   { value: "Payment Captured - Order Pending", label: "Captured – Order Pending" },
   { value: "Placed", label: "Placed" },
+];
+
+/* Export (super admins only): every attempt loaded for the status tab on screen. */
+const EXPORT_COLUMNS = [
+  { label: "Order ID", value: (row) => row.orderId },
+  { label: "Pending order ID", value: (row) => row.pendingOrderId },
+  { label: "Customer", value: (row) => row.customerName },
+  { label: "Phone", value: (row) => row.customerPhone },
+  { label: "City", value: (row) => row.customerCity },
+  { label: "Mode", value: (row) => String(row.paymentMode || "").toUpperCase() },
+  { label: "Amount (₹)", value: (row) => row.amount },
+  { label: "Status", value: (row) => row.status },
+  { label: "Razorpay order", value: (row) => row.razorpayOrderId },
+  { label: "Payment ID", value: (row) => row.razorpayPaymentId },
+  { label: "Updated", value: (row) => row.updatedAt },
+  { label: "Reason", value: (row) => row.failureReason },
 ];
 
 const STATUS_TONE = {
@@ -404,6 +421,9 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
             </button>
           );
         })}
+        <div className="ml-auto">
+          <ExportButton name={activeStatus ? `payment-attempts-${activeStatus}` : "payment-attempts"} columns={EXPORT_COLUMNS} rows={rows} />
+        </div>
       </div>
 
       {rows.length === 0 && <p className="text-center py-10 text-ink-muted rounded-xl border border-line bg-surface">No payment attempts found.</p>}

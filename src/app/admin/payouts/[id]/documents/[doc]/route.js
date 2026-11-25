@@ -1,5 +1,6 @@
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { apiBase } from "@/lib/api";
+import { exportDenied } from "@/lib/admin-file-proxy";
 
 /*
  * Vendor Payout Items downloads with the admin session token:
@@ -28,7 +29,12 @@ export async function GET(request, { params }) {
   }
 
   let path;
-  if (doc === "export") path = `admin/payouts/${id}/items/export`;
+  if (doc === "export") {
+    // The items sheet is a data export: super admins only. The other documents stay with the payout page.
+    const denied = await exportDenied();
+    if (denied) return denied;
+    path = `admin/payouts/${id}/items/export`;
+  }
   else if (DOCS.has(doc)) path = `admin/payouts/${id}/documents/${doc}`;
   else return text("Unknown document.", 404);
 
