@@ -12,6 +12,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { OrderActions, OrderSellers } from "@/components/admin/b2b/order-actions";
+import { OrderLogistics } from "@/components/admin/b2b/order-logistics";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -189,6 +190,8 @@ export default async function B2BOrderPage({ params }) {
             />
           </Card>
         </div>
+
+        <OrderLogistics orderId={d.id} logistics={d.logistics ?? null} />
 
         <Card>
           <CardHeader title="Sellers" description="Each seller confirms its part of the order before stock is reserved." />

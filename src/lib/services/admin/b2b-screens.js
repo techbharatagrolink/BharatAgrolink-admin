@@ -154,6 +154,53 @@ export async function recordOrderSeller(id, sellerId, body, user) {
   }
 }
 
+/** Logistics (subtask 10): rate options for the order's unshipped (or chosen) packages. */
+export async function getShipmentOptions(id, packageIds, user) {
+  try {
+    const query = packageIds?.length ? { packageIds: packageIds.join(",") } : {};
+    const { data } = await api(`admin/b2b/orders/${orderRef(id)}/shipment-options`, { token: user.token, query });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "Rate options could not be loaded.");
+  }
+}
+
+export async function bookOrderShipment(id, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/orders/${orderRef(id)}/shipments`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The shipment could not be booked.");
+  }
+}
+
+export async function updateShipment(shipmentId, action, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/shipments/${quoteId(shipmentId)}/actions/${encodeURIComponent(action)}`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The shipment could not be updated.");
+  }
+}
+
+export async function recordShipmentFreight(shipmentId, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/shipments/${quoteId(shipmentId)}/freight`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The freight could not be saved.");
+  }
+}
+
+export async function setShipmentProof(shipmentId, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/shipments/${quoteId(shipmentId)}/proof`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The proof could not be saved.");
+  }
+}
+
 export async function getOrderForm(user) {
   const { data } = await api("admin/b2b/orders/form", { token: user.token });
   return data;

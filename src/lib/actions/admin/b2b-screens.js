@@ -10,6 +10,11 @@ import {
   createQuotationLink,
   recordOrderSeller,
   transitionOrder,
+  bookOrderShipment,
+  getShipmentOptions,
+  recordShipmentFreight,
+  setShipmentProof,
+  updateShipment,
   resolveQuotationChange,
   sendQuotationWhatsApp,
   recalculateQuotation,
@@ -107,6 +112,45 @@ export async function transitionB2bOrder(id, action, body = {}) {
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await transitionOrder(id, action, body, gate.user);
   if (result.ok) orderPaths(id);
+  return result;
+}
+
+/** Logistics (subtask 10). Capabilities (logistics.book / shipment.edit / logistics.freight) are checked by the API. */
+export async function loadB2bShipmentOptions(id, packageIds) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  return getShipmentOptions(id, packageIds, gate.user);
+}
+
+export async function bookB2bShipment(id, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await bookOrderShipment(id, body, gate.user);
+  if (result.ok) orderPaths(id);
+  return result;
+}
+
+export async function updateB2bShipment(orderId, shipmentId, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await updateShipment(shipmentId, action, body, gate.user);
+  if (result.ok) orderPaths(orderId);
+  return result;
+}
+
+export async function recordB2bShipmentFreight(orderId, shipmentId, amount, invoiceRef) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recordShipmentFreight(shipmentId, { amount: Number(amount), invoiceRef: String(invoiceRef ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(orderId);
+  return result;
+}
+
+export async function setB2bShipmentProof(orderId, shipmentId, podUrl) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await setShipmentProof(shipmentId, { podUrl: String(podUrl ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(orderId);
   return result;
 }
 

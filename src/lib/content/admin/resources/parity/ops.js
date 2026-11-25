@@ -112,7 +112,7 @@ export const resources = {
     search: "AWB/LR, carrier or order",
     exportable: true,
     filters: [{ key: "mode", label: "Mode", options: ["Courier", "Surface cargo", "PTL", "FTL", "Transporter"] }],
-    tabs: { field: "status", values: ["Created", "Pickup scheduled", "Picked", "In transit", "Delayed", "Out for delivery", "Delivered", "RTO"] },
+    tabs: { field: "status", values: ["Created", "Pickup scheduled", "Picked", "In transit", "Delayed", "Out for delivery", "Delivered", "RTO", "Lost", "Damaged", "Cancelled"] },
     defaultSort: "id:desc",
     columns: [
       { key: "orderNumber", label: "Order", type: "mono", href: "/admin/b2b/orders/{orderId}" },
