@@ -87,6 +87,7 @@ const NON_SALES_CARD_SECTION = {
   "unique-visitors": "#dashboard_customers_overview",
   "web-visitors": "#dashboard_customers_overview",
   "page-views": "#dashboard_customers_overview",
+  "new-registrations": "#dashboard_customers_overview",
   "ordering-customers": "#dashboard_customers_overview",
   // Payments
   "prepaid-orders": "#dashboard_payments_overview",

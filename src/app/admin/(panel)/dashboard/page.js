@@ -276,7 +276,7 @@ export default async function MainDashboardPage({ searchParams }) {
             hint="Signed up in this period"
             icon={UserPlus}
             tone="info"
-            href="/admin/customers"
+            href={card("new-registrations")}
           />
           <StatCard
             label="Ordering customers"
