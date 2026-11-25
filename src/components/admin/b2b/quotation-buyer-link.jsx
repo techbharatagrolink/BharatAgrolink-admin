@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createB2bQuotationLink, resolveB2bQuotationChange } from "@/lib/actions/admin/b2b-screens";
+import { completeB2bQuotationFollowup, createB2bQuotationLink, resolveB2bQuotationChange, sendB2bQuotationWhatsApp } from "@/lib/actions/admin/b2b-screens";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -14,15 +14,18 @@ import { formatDateTime, formatINR } from "@/lib/format";
 const CHANGE_LABEL = { QUANTITY: "Quantity", PRODUCT: "Product", PRICE: "Price", DELIVERY_ADDRESS: "Delivery address", OTHER: "Other" };
 const REVOKED = { NEW_LINK: "replaced by a newer link", SUPERSEDED: "quotation replaced", CANCELLED: "quotation cancelled", MANUAL: "revoked" };
 
-/**
- * Buyer link card (spec C6): create the link (the full URL is shown once, then only its last
- * characters), share it on WhatsApp from the sales person's phone, see whether the buyer opened it,
- * and handle the buyer's change requests.
- */
 const PAYMENT_TONE = { PAID: "success", CREATED: "neutral", FAILED: "danger", REFUND_DUE: "warning" };
 const PAYMENT_LABEL = { PAID: "Paid", CREATED: "Started", FAILED: "Failed", REFUND_DUE: "Refund due" };
+// Provider status (spec C7): "Queued" = AiSensy accepted it, not yet delivered.
+const MESSAGE_TONE = { QUEUED: "neutral", SENT: "info", DELIVERED: "info", READ: "success", FAILED: "danger" };
+const MESSAGE_LABEL = { QUEUED: "Queued", SENT: "Sent", DELIVERED: "Delivered", READ: "Read", FAILED: "Failed" };
 
-export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUntil, link, changeRequests, payments = [], action, canEdit }) {
+/**
+ * Buyer link card (spec C6): send the quotation on WhatsApp (approved template) or create the link
+ * (the full URL is shown once, then only its last characters) and share it from the sales person's
+ * phone; see whether the buyer opened it, payments, change requests and automatic follow-ups.
+ */
+export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUntil, link, changeRequests, payments = [], whatsapp = null, followups = [], action, canEdit }) {
   const router = useRouter();
   const [busy, start] = useTransition();
   const [created, setCreated] = useState(null);
@@ -41,6 +44,14 @@ export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUn
     });
 
   const createLink = () => run(() => createB2bQuotationLink(id), (res) => setCreated(res));
+  const sendWhatsApp = () =>
+    run(
+      () => sendB2bQuotationWhatsApp(id),
+      (res) => {
+        setCreated(res);
+        if (!res.whatsapp?.sent) setMessage({ tone: "warning", text: res.message });
+      },
+    );
 
   const copy = async () => {
     try {
@@ -103,18 +114,67 @@ export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUn
           <p className="text-sm text-ink-muted">No buyer link yet.</p>
         )}
 
+        {whatsapp?.last && (
+          <p className="flex items-center gap-2 text-sm">
+            <span className="text-ink-muted">WhatsApp</span>
+            <Badge tone={MESSAGE_TONE[whatsapp.last.status] ?? "neutral"}>{MESSAGE_LABEL[whatsapp.last.status] ?? whatsapp.last.status}</Badge>
+            <span className="text-xs text-ink-muted">{formatDateTime(whatsapp.last.at)}</span>
+          </p>
+        )}
+
         {canEdit && action && (
-          <Button
-            size="sm"
-            variant={link ? "secondary" : "primary"}
-            disabled={busy || !action.allowed}
-            title={action.allowed ? undefined : action.reason}
-            onClick={() => (link?.active ? setConfirm({ kind: "link" }) : createLink())}
-          >
-            {link ? "Create a new link" : "Create buyer link"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {whatsapp?.enabled && (
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={busy || !action.allowed}
+                title={action.allowed ? undefined : action.reason}
+                onClick={() => (link?.active ? setConfirm({ kind: "whatsapp" }) : sendWhatsApp())}
+              >
+                Send on WhatsApp
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant={link || whatsapp?.enabled ? "secondary" : "primary"}
+              disabled={busy || !action.allowed}
+              title={action.allowed ? undefined : action.reason}
+              onClick={() => (link?.active ? setConfirm({ kind: "link" }) : createLink())}
+            >
+              {link ? "Create a new link" : "Create buyer link"}
+            </Button>
+          </div>
         )}
         {action && !action.allowed && <p className="text-xs text-ink-muted">{action.reason}</p>}
+        {whatsapp && !whatsapp.enabled && canEdit && (
+          <p className="text-xs text-ink-muted">WhatsApp sending starts once the approved template is configured. Until then, create a link and use Share on WhatsApp.</p>
+        )}
+
+        {followups.length > 0 && (
+          <div className="space-y-2 border-t border-line pt-3">
+            <p className="text-sm font-medium text-ink">
+              Follow-ups {followups.some((f) => !f.done) && <Badge tone="warning">{followups.filter((f) => !f.done).length} open</Badge>}
+            </p>
+            {followups.map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line p-2 text-sm">
+                <span>
+                  {f.subject}
+                  <span className="block text-xs text-ink-muted">{formatDateTime(f.createdAt)}{f.done ? ` · ${f.outcome}` : ""}</span>
+                </span>
+                {f.done ? (
+                  <Badge tone="neutral">Done</Badge>
+                ) : (
+                  canEdit && (
+                    <Button size="sm" variant="secondary" disabled={busy} onClick={() => setConfirm({ kind: "followup", taskId: f.id })}>
+                      Mark done
+                    </Button>
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {payments.length > 0 && (
           <div className="space-y-2 border-t border-line pt-3">
@@ -176,6 +236,27 @@ export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUn
         description="The link the buyer already has will stop working. Share the new one with them."
         confirmLabel="Create new link"
         tone="warning"
+        loading={busy}
+      />
+      <ConfirmDialog
+        open={confirm?.kind === "whatsapp"}
+        onClose={() => setConfirm(null)}
+        onConfirm={sendWhatsApp}
+        title="Send this quotation on WhatsApp?"
+        description="A new link is sent to the buyer's mobile; the link they already have stops working."
+        confirmLabel="Send on WhatsApp"
+        tone="warning"
+        loading={busy}
+      />
+      <ConfirmDialog
+        open={confirm?.kind === "followup"}
+        onClose={() => setConfirm(null)}
+        onConfirm={(outcome) => run(() => completeB2bQuotationFollowup(id, confirm.taskId, outcome))}
+        title="Mark this follow-up done?"
+        description="Write what was done, for example: called the buyer, will order next week."
+        confirmLabel="Mark done"
+        tone="warning"
+        requireReason
         loading={busy}
       />
       <ConfirmDialog

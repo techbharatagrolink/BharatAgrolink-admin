@@ -6,8 +6,10 @@ import {
   cancelQuotation,
   createOrder,
   createQuotation,
+  completeQuotationFollowup,
   createQuotationLink,
   resolveQuotationChange,
+  sendQuotationWhatsApp,
   recalculateQuotation,
   reviseQuotation,
   searchOrderBuyers,
@@ -63,6 +65,22 @@ export async function createB2bQuotationLink(id) {
   const gate = await assertPermission("b2b.quotations", "edit");
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await createQuotationLink(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function sendB2bQuotationWhatsApp(id) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await sendQuotationWhatsApp(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function completeB2bQuotationFollowup(id, taskId, outcome) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await completeQuotationFollowup(id, taskId, String(outcome ?? "").trim(), gate.user);
   if (result.ok) quotePaths(id);
   return result;
 }

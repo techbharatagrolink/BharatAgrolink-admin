@@ -95,6 +95,25 @@ export async function createQuotationLink(id, user) {
   }
 }
 
+/** WhatsApp (spec C6): a new buyer link + the approved template. The link is returned even if sending fails. */
+export async function sendQuotationWhatsApp(id, user) {
+  try {
+    const { data } = await api(`admin/b2b/quotations/${quoteId(id)}/send-whatsapp`, { token: user.token, method: "POST", body: {} });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The quotation could not be sent on WhatsApp.");
+  }
+}
+
+export async function completeQuotationFollowup(id, taskId, outcome, user) {
+  try {
+    const { data } = await api(`admin/b2b/quotations/${quoteId(id)}/followups/${quoteId(taskId)}`, { token: user.token, method: "POST", body: { outcome } });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The follow-up could not be updated.");
+  }
+}
+
 export async function resolveQuotationChange(id, changeId, body, user) {
   try {
     const { data } = await api(`admin/b2b/quotations/${quoteId(id)}/change-requests/${quoteId(changeId)}`, { token: user.token, method: "POST", body });
