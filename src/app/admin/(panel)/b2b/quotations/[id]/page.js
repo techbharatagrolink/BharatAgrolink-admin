@@ -185,6 +185,7 @@ export default async function B2bQuotationPage({ params }) {
           validUntil={d.validUntil}
           link={d.customerLink ?? null}
           changeRequests={d.changeRequests ?? []}
+          payments={d.payments ?? []}
           action={d.actions.shareLink}
           canEdit={can(user, "b2b.quotations", "edit")}
         />

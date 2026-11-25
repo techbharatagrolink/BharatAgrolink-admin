@@ -9,7 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/form";
 import { Notice } from "@/components/ui/page";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatINR } from "@/lib/format";
 
 const CHANGE_LABEL = { QUANTITY: "Quantity", PRODUCT: "Product", PRICE: "Price", DELIVERY_ADDRESS: "Delivery address", OTHER: "Other" };
 const REVOKED = { NEW_LINK: "replaced by a newer link", SUPERSEDED: "quotation replaced", CANCELLED: "quotation cancelled", MANUAL: "revoked" };
@@ -19,7 +19,10 @@ const REVOKED = { NEW_LINK: "replaced by a newer link", SUPERSEDED: "quotation r
  * characters), share it on WhatsApp from the sales person's phone, see whether the buyer opened it,
  * and handle the buyer's change requests.
  */
-export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUntil, link, changeRequests, action, canEdit }) {
+const PAYMENT_TONE = { PAID: "success", CREATED: "neutral", FAILED: "danger", REFUND_DUE: "warning" };
+const PAYMENT_LABEL = { PAID: "Paid", CREATED: "Started", FAILED: "Failed", REFUND_DUE: "Refund due" };
+
+export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUntil, link, changeRequests, payments = [], action, canEdit }) {
   const router = useRouter();
   const [busy, start] = useTransition();
   const [created, setCreated] = useState(null);
@@ -112,6 +115,28 @@ export function QuotationBuyerLink({ id, number, buyerName, buyerMobile, validUn
           </Button>
         )}
         {action && !action.allowed && <p className="text-xs text-ink-muted">{action.reason}</p>}
+
+        {payments.length > 0 && (
+          <div className="space-y-2 border-t border-line pt-3">
+            <p className="text-sm font-medium text-ink">Buyer payments</p>
+            {payments.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line p-2 text-sm">
+                <span>
+                  {formatINR(p.amount)} · {p.purpose === "ADVANCE" ? "advance" : "full"}
+                  <span className="block font-mono text-xs text-ink-muted">{p.razorpayPaymentId || p.razorpayOrderId}</span>
+                  {p.failureReason && <span className="block text-xs text-ink-muted">{p.failureReason}</span>}
+                </span>
+                <span className="text-right">
+                  <Badge tone={PAYMENT_TONE[p.status] ?? "neutral"}>{PAYMENT_LABEL[p.status] ?? p.status}</Badge>
+                  <span className="block text-xs text-ink-muted">{formatDateTime(p.paidAt || p.createdAt)}</span>
+                </span>
+              </div>
+            ))}
+            {payments.some((p) => p.status === "REFUND_DUE") && (
+              <p className="text-xs text-warning-ink">Money was received without a new order (the quotation already had an order or was withdrawn). Finance must refund it.</p>
+            )}
+          </div>
+        )}
 
         {changeRequests.length > 0 && (
           <div className="space-y-2 border-t border-line pt-3">
