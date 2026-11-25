@@ -6,6 +6,8 @@ import {
   cancelQuotation,
   createOrder,
   createQuotation,
+  createQuotationLink,
+  resolveQuotationChange,
   recalculateQuotation,
   reviseQuotation,
   searchOrderBuyers,
@@ -53,6 +55,22 @@ export async function cancelB2bQuotation(id, reason) {
   const gate = await assertPermission("b2b.quotations", "edit");
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await cancelQuotation(id, { reason: String(reason ?? "").trim() }, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function createB2bQuotationLink(id) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await createQuotationLink(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function resolveB2bQuotationChange(id, changeId, status, note) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await resolveQuotationChange(id, changeId, { status, note: String(note ?? "").trim() }, gate.user);
   if (result.ok) quotePaths(id);
   return result;
 }

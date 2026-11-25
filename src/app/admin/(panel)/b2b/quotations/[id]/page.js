@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { QuotationActions } from "@/components/admin/b2b/quotation-actions";
+import { QuotationBuyerLink } from "@/components/admin/b2b/quotation-buyer-link";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -22,6 +23,7 @@ const STATE_TONE = {
   sent: "info",
   viewed: "info",
   converted: "success",
+  accepted: "success",
   approval_pending: "warning",
   change_requested: "warning",
   blocked: "danger",
@@ -106,6 +108,16 @@ export default async function B2bQuotationPage({ params }) {
           </Notice>
         )}
         {d.state.code === "cancelled" && d.lostNote && <Notice tone="info" title="Cancelled">{d.lostNote}</Notice>}
+        {d.acceptedAt && (
+          <Notice tone="success" title="Accepted by the buyer">
+            The buyer verified the OTP, confirmed the delivery address and accepted on {formatDateTime(d.acceptedAt)}. This version can no longer be revised.
+          </Notice>
+        )}
+        {d.state.code === "change_requested" && (
+          <Notice tone="warning" title="The buyer asked for a change">
+            See the request under Buyer link. Revise the quotation or close the request so the buyer can accept.
+          </Notice>
+        )}
 
         <StatGrid>
           <StatCard label="Total payable" value={formatINR(d.totals.totalPayable)} hint={`Value ex-GST ${formatINR(d.totals.valueExGst)} · GST ${formatINR(d.totals.gst)}`} />
@@ -164,6 +176,18 @@ export default async function B2bQuotationPage({ params }) {
             </CardBody>
           </Card>
         </div>
+
+        <QuotationBuyerLink
+          id={d.id}
+          number={d.number}
+          buyerName={d.buyer.name || d.buyer.businessName}
+          buyerMobile={d.buyer.mobile}
+          validUntil={d.validUntil}
+          link={d.customerLink ?? null}
+          changeRequests={d.changeRequests ?? []}
+          action={d.actions.shareLink}
+          canEdit={can(user, "b2b.quotations", "edit")}
+        />
 
         <Card>
           <CardHeader title="Line items" description="Rates exclude GST. Commercial values were calculated on the server when the quotation was saved." />

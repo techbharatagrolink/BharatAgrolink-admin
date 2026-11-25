@@ -84,7 +84,7 @@ export function QuotationActions({ id, actions, can }) {
         onClose={() => setConfirm(null)}
         onConfirm={() => run(() => resourceActionAction("b2b.quotations", "send", [id]))}
         title="Mark this quotation as sent?"
-        description="It becomes a fixed offer: later changes create a new version. (WhatsApp sending comes with the customer link.)"
+        description="It becomes a fixed offer: later changes create a new version. Use this only when you gave the offer outside the system; to let the buyer view and accept online, create a buyer link instead."
         confirmLabel="Mark as sent"
         tone="warning"
         loading={busy}

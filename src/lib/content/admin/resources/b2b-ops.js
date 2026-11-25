@@ -85,7 +85,7 @@ export const b2bOpsResources = {
     searchFields: ["number", "rfqId", "buyer"],
     filterFields: ["status", "approval", "owner"],
     filters: [{ key: "approval", label: "Approval", options: ["Approval Pending", "Blocked", "Auto-approved", "Approved", "Rejected"] }],
-    tabs: { field: "status", values: ["Approval Pending", "Blocked", "Approved", "Sent", "Viewed", "Expired", "Converted", "Rejected", "Superseded", "Cancelled"] },
+    tabs: { field: "status", values: ["Approval Pending", "Blocked", "Approved", "Sent", "Viewed", "Change Requested", "Accepted", "Expired", "Converted", "Rejected", "Superseded", "Cancelled"] },
     rowHref: "/admin/b2b/quotations/{id}",
     defaultSort: "createdAt:desc",
     columns: [

@@ -85,6 +85,25 @@ export async function cancelQuotation(id, body, user) {
   }
 }
 
+/** Buyer link (spec C6): the raw URL comes back once; a new link revokes the earlier one. */
+export async function createQuotationLink(id, user) {
+  try {
+    const { data } = await api(`admin/b2b/quotations/${quoteId(id)}/share-link`, { token: user.token, method: "POST", body: {} });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The buyer link could not be created.");
+  }
+}
+
+export async function resolveQuotationChange(id, changeId, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/quotations/${quoteId(id)}/change-requests/${quoteId(changeId)}`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The change request could not be updated.");
+  }
+}
+
 export async function getOrderForm(user) {
   const { data } = await api("admin/b2b/orders/form", { token: user.token });
   return data;
