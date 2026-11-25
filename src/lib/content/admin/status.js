@@ -18,6 +18,13 @@ map.set("Hidden", "neutral");
 map.set("High", "danger");
 map.set("overdue", "danger");
 map.set("upcoming", "info");
+// B2B order states (b2b-order-state.js in the API).
+map.set("gate_pending", "warning");
+map.set("seller_pending", "warning");
+map.set("reserved", "info");
+map.set("claim_hold", "danger");
+map.set("rto", "danger");
+map.set("closed", "neutral");
 
 export function statusTone(status) {
   if (status == null) return "neutral";

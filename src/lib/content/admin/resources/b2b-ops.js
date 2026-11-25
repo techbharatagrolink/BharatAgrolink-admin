@@ -108,7 +108,7 @@ export const b2bOpsResources = {
   },
   "b2b.orders": {
     title: "B2B Orders",
-    description: "Order numbers BAL-B2B-xxxxx. Status: confirmed → processing → packed → dispatched → in_transit → delivered (cancel/return need a reason).",
+    description: "Order numbers BAL-B2B-xxxxx. Flow: payment/credit gate → confirmed → sellers accept → stock reserved → packing → ready to ship → dispatched → in transit → delivered → closed. Open an order to move it; cancel, hold and RTO need a reason.",
     permission: "b2b.orders",
     headerActions: [{ label: "Create order", href: "/admin/b2b/orders/new", permission: "b2b.orders", action: "add", primary: true }],
     collection: "b2bOrders",
@@ -118,7 +118,7 @@ export const b2bOpsResources = {
     searchFields: ["id", "buyer", "seller", "awb"],
     filterFields: ["status", "paymentStatus"],
     filters: [{ key: "paymentStatus", label: "Payment", options: ["Pending", "Partial", "Paid", "Overdue"] }],
-    tabs: { field: "status", values: ["confirmed", "processing", "packed", "dispatched", "in_transit", "delivered", "returned", "cancelled"] },
+    tabs: { field: "status", values: ["gate_pending", "confirmed", "seller_pending", "reserved", "processing", "packed", "dispatched", "in_transit", "delivered", "claim_hold", "rto", "closed", "returned", "cancelled"] },
     rowHref: "/admin/b2b/orders/{id}",
     defaultSort: "createdAt:desc",
     exportable: true,

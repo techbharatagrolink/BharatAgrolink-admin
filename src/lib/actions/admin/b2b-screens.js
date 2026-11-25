@@ -8,6 +8,8 @@ import {
   createQuotation,
   completeQuotationFollowup,
   createQuotationLink,
+  recordOrderSeller,
+  transitionOrder,
   resolveQuotationChange,
   sendQuotationWhatsApp,
   recalculateQuotation,
@@ -90,6 +92,29 @@ export async function resolveB2bQuotationChange(id, changeId, status, note) {
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await resolveQuotationChange(id, changeId, { status, note: String(note ?? "").trim() }, gate.user);
   if (result.ok) quotePaths(id);
+  return result;
+}
+
+const orderPaths = (id) => {
+  revalidatePath("/admin/b2b/orders");
+  revalidatePath("/admin/b2b/ops-queue");
+  if (id) revalidatePath(`/admin/b2b/orders/${id}`);
+};
+
+/** Order transition (subtask 8). The API checks the state, the B2B capability and the guards. */
+export async function transitionB2bOrder(id, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await transitionOrder(id, action, body, gate.user);
+  if (result.ok) orderPaths(id);
+  return result;
+}
+
+export async function recordB2bOrderSeller(id, sellerId, decision, note) {
+  const gate = await assertPermission("b2b.orders", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recordOrderSeller(id, sellerId, { decision, note: String(note ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(id);
   return result;
 }
 

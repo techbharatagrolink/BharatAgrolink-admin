@@ -123,6 +123,37 @@ export async function resolveQuotationChange(id, changeId, body, user) {
   }
 }
 
+const orderRef = (id) => encodeURIComponent(String(id ?? "").trim().slice(0, 80));
+
+/** Order detail with lifecycle (subtask 8): lines, sellers, stages, history, allowed actions. null on 404. */
+export async function getOrderLifecycle(id, user) {
+  try {
+    const { data } = await api(`admin/b2b/orders/${orderRef(id)}/detail`, { token: user.token });
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function transitionOrder(id, action, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/orders/${orderRef(id)}/actions/${encodeURIComponent(action)}`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The order could not be updated.");
+  }
+}
+
+export async function recordOrderSeller(id, sellerId, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/orders/${orderRef(id)}/sellers/${quoteId(sellerId)}`, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The seller answer could not be saved.");
+  }
+}
+
 export async function getOrderForm(user) {
   const { data } = await api("admin/b2b/orders/form", { token: user.token });
   return data;
