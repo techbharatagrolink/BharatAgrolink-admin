@@ -24,8 +24,6 @@ const STATUS_CARD_DRILLS = {
   "rejected-orders": "rejected",
   "cancelled-orders": "cancelled",
   "rto-orders": "rto",
-  // "RTO rate" everywhere = Final RTO rate R / (D + R).
-  "rto-rate": "final-rto",
 };
 const STATUS_OPTIONS = [
   { value: "Delivered", label: "Delivered" },
@@ -92,7 +90,7 @@ const TOTALS = {
   "delivered-gross": (d) => [{ label: "Delivered gross", value: formatINR(d.orders.deliveredGross), delta: d.deltas.deliveredGross }, { label: "AOV (delivered)", value: formatINR(d.orders.aovDelivered) }],
   "cancelled-orders": (d) => [{ label: "Cancelled sub-orders", value: formatNumber(d.orders.cancelled) }, { label: "Cancellation rate", value: pctText(d.orders.cancellationRate) }],
   "rto-orders": (d) => [{ label: "RTO sub-orders", value: formatNumber(d.orders.rto) }, { label: "RTO rate", value: pctText(d.orders.rtoRate) }],
-  "rto-rate": (d) => [{ label: "RTO rate", value: pctText(d.orders.rtoRate) }, { label: "RTO sub-orders", value: formatNumber(d.orders.rto) }, { label: "All sub-orders", value: formatNumber(d.orders.subOrders) }],
+  "rto-rate": (d) => [{ label: "RTO rate (event dates)", value: pctText(d.orders.rtoRate), hint: "TRTO ÷ (TIN + TOFD + TD + TRTO)" }, { label: "RTO (TRTO)", value: formatNumber(d.orders.rtoRateBreakdown?.rto ?? 0), hint: "By RTO date" }, { label: "TIN + TOFD + TD + TRTO", value: formatNumber(d.orders.rtoRateBreakdown?.base ?? 0), hint: "Each by its own date" }],
   "new-orders": (d) => [{ label: "New order %", value: `${d.orders.newOrderPct}%` }],
   "repeat-orders": (d) => [{ label: "Repeat orders", value: formatNumber(d.orders.repeatOrders) }],
   "repeat-customers": (d) => [{ label: "Repeat customer %", value: `${d.orders.repeatCustomerPct}%` }],

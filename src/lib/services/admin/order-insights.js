@@ -36,7 +36,7 @@ async function rtoAnalysis(token) {
     api("admin/orders", { token, query: { status: "RTO", limit: 20, page: 1, sort: "created", dir: "desc" } }),
   ]);
   const s = summary.data || {};
-  // Count = RTO sub-orders and rate = Final RTO rate R / (D + R), both from the API: the same figures as the dashboards.
+  // Count = RTO sub-orders and rate = RTO % (R / T), both from the API: the same figures as the dashboards.
   return {
     orders: s.orders ?? 0,
     rate: s.rate ?? 0,

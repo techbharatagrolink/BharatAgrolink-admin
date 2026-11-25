@@ -23,14 +23,14 @@ export default async function LogisticsDashboardPage({ searchParams }) {
     <>
       <PageHeader
         title="Logistics & Operations Dashboard"
-        description="Shipping queue, courier performance, NDR and RTO. Figures are B2C sub-orders by order date, the same as the main dashboard; RTO rate = RTO ÷ (Delivered + RTO)."
+        description="Shipping queue, courier performance, NDR and RTO. Figures are B2C sub-orders by order date, the same as the main dashboard; RTO % = RTO ÷ all sub-orders."
         actions={<RangeSwitch pathname="/admin/dashboards/logistics" ranges={RANGES} active={d.period.value} />}
       />
       <StatGrid className="xl:grid-cols-6">
         <StatCard label="Ready to ship" value={formatNumber(d.stats.readyToShip)} tone="warning" href="/admin/shipping" />
         <StatCard label="In transit" value={formatNumber(d.stats.inTransit)} hint={`+ ${formatNumber(d.stats.outForDelivery)} out for delivery`} tone="info" href={statusHref("in-transit")} />
         <StatCard label="Open NDR" value={formatNumber(d.stats.ndrOpen)} tone="warning" href="/admin/operations/ndr" />
-        <StatCard label="RTO rate" value={pct(d.stats.rtoPct)} hint={`${formatNumber(d.stats.rto)} RTO ÷ (${formatNumber(d.stats.delivered)} delivered + RTO)`} tone={d.stats.rtoPct > 10 ? "danger" : "neutral"} href={statusHref("final-rto")} />
+        <StatCard label="RTO %" value={pct(d.stats.rtoPct)} hint={`${formatNumber(d.stats.rto)} RTO ÷ ${formatNumber(d.stats.subOrders)} sub-orders`} tone={d.stats.rtoPct > 10 ? "danger" : "neutral"} href={statusHref("rto")} />
         <StatCard label="Weight disputes" value={formatNumber(d.stats.weightDisputes)} href="/admin/shipping/weight-discrepancy" />
         <StatCard label="Open escalations" value={formatNumber(d.stats.escalations)} tone="danger" href="/admin/operations" />
       </StatGrid>
@@ -55,9 +55,9 @@ export default async function LogisticsDashboardPage({ searchParams }) {
             { key: "courier", label: "Courier" },
             { key: "shipments", label: "Sub-orders", align: "right", render: (r) => formatNumber(r.shipments) },
             { key: "delivered", label: "Delivered", align: "right", render: (r) => formatNumber(r.delivered) },
-            { key: "deliveredPct", label: "Final delivery %", align: "right", render: (r) => pct(r.deliveredPct) },
+            { key: "deliveredPct", label: "Delivered %", align: "right", render: (r) => pct(r.deliveredPct) },
             { key: "rto", label: "RTO", align: "right", render: (r) => formatNumber(r.rto) },
-            { key: "rtoPct", label: "RTO rate", align: "right", render: (r) => <span className={r.rtoPct > 10 ? "font-medium text-danger-ink" : undefined}>{pct(r.rtoPct)}</span> },
+            { key: "rtoPct", label: "RTO %", align: "right", render: (r) => <span className={r.rtoPct > 10 ? "font-medium text-danger-ink" : undefined}>{pct(r.rtoPct)}</span> },
           ]}
           rows={d.couriers}
         />

@@ -56,6 +56,7 @@ import { Notice } from "@/components/ui/page";
 export const metadata = { title: "Main Dashboard" };
 
 const inr = (v) => formatINR(v, { compact: true });
+const pctText = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${v}%`);
 
 function Grid({ children, className }) {
   return <div className={cn("z-stagger grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 2xl:grid-cols-5", className)}>{children}</div>;
@@ -209,6 +210,11 @@ export default async function MainDashboardPage({ searchParams }) {
           <OrderStatusOverview
             summary={status}
             params={params}
+            performanceExtra={
+              canCard(user, "rto-rate") && (
+                <StatCard label="RTO rate (event dates)" value={pctText(orders.rtoRate)} hint="TRTO ÷ (TIN + TOFD + TD + TRTO), each by its own date · not RTO %" icon={TrendingDown} tone={orders.rtoRate > 10 ? "danger" : "warning"} href={card("rto-rate")} />
+              )
+            }
             extra={
               <>
                 <StatCard label="Delivered gross" value={inr(orders.deliveredGross)} delta={deltas.deliveredGross} hint={vs ?? "Delivered sales value"} icon={IndianRupee} href={card("delivered-gross")} />

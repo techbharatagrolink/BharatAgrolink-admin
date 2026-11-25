@@ -64,7 +64,7 @@ export default async function OrderInsightsPage() {
           <>
             <StatGrid className="sm:grid-cols-3 lg:grid-cols-3">
               <StatCard label="RTO sub-orders" value={formatNumber(rto.data.orders)} hint="All days · same as the dashboard RTO card" icon={RotateCcw} tone="danger" href="/admin/dashboard/order-status/rto?preset=all" />
-              <StatCard label="RTO rate" value={`${rto.data.rate}%`} hint="RTO ÷ (Delivered + RTO), all days" icon={TrendingDown} tone={rto.data.rate > 10 ? "danger" : "warning"} href="/admin/dashboard/order-status/final-rto?preset=all" />
+              <StatCard label="RTO %" value={`${rto.data.rate}%`} hint="RTO ÷ all sub-orders, all days" icon={TrendingDown} tone={rto.data.rate > 10 ? "danger" : "warning"} href="/admin/dashboard/order-status/rto?preset=all" />
               <StatCard
                 label="Average delivery time"
                 value={delivery.error ? "—" : `${delivery.data?.averageDeliveryDays ?? 0} days`}
