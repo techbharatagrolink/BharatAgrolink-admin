@@ -29,6 +29,9 @@ const STAGE_TONE = {
   closed: "neutral",
 };
 
+const STOCK_TONE = { PENDING: "info", COMMITTED: "success", EXPIRED: "warning", RELEASED: "neutral", NONE: "neutral" };
+const STOCK_LABEL = { PENDING: "Held", COMMITTED: "Dispatched (left stock)", EXPIRED: "Hold expired", RELEASED: "Released", NONE: "Not reserved" };
+
 // Spec §10 flow, for the progress strip.
 const FLOW = [
   ["confirmedAt", "Confirmed"],
@@ -105,7 +108,7 @@ export default async function B2BOrderPage({ params }) {
           </CardBody>
         </Card>
 
-        <OrderActions id={d.id} actions={d.actions} />
+        <OrderActions id={d.id} actions={d.actions} packageTypes={d.packageTypes ?? []} suggestion={d.packingSuggestion ?? null} />
 
         <div className="grid gap-4 xl:grid-cols-3">
           <Card>
@@ -156,6 +159,37 @@ export default async function B2BOrderPage({ params }) {
           </Card>
         </div>
 
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card>
+            <CardHeader title="Stock" description="Held in the inventory B2B pool from Stock reserved until dispatch." />
+            <CardBody>
+              <DescriptionList
+                columns={1}
+                items={[
+                  { label: "Hold", value: <Badge tone={STOCK_TONE[d.stock?.status] ?? "neutral"}>{STOCK_LABEL[d.stock?.status] ?? d.stock?.status ?? "—"}</Badge> },
+                  d.stock?.holdUntil && d.stock.status === "PENDING" && { label: "Held until", value: formatDateTime(d.stock.holdUntil) },
+                  d.stock?.committedAt && { label: "Left stock", value: formatDateTime(d.stock.committedAt) },
+                  d.stock?.reservationRef && { label: "Reference", value: <span className="font-mono text-xs">{d.stock.reservationRef}</span> },
+                ]}
+              />
+              {d.stock?.status === "EXPIRED" && <p className="mt-2 text-xs text-warning-ink">The hold expired. Dispatch takes a new hold first and stops if the stock is gone.</p>}
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Packages" description="Recorded at Packed. Chargeable = the higher of actual and volumetric weight." />
+            <MiniTable
+              columns={[
+                { key: "code", label: "Package", render: (r) => (r.originalPack ? "Original pack" : `${r.code} · ${r.type}`) },
+                { key: "dims", label: "L × W × H cm", render: (r) => (r.lengthCm ? `${r.lengthCm} × ${r.widthCm} × ${r.heightCm}` : "—") },
+                { key: "weightKg", label: "Actual kg", align: "right", render: (r) => formatNumber(r.weightKg) },
+                { key: "chargeableKg", label: "Chargeable kg", align: "right", render: (r) => formatNumber(r.chargeableKg) },
+              ]}
+              rows={d.packages ?? []}
+              empty="Not packed yet."
+            />
+          </Card>
+        </div>
+
         <Card>
           <CardHeader title="Sellers" description="Each seller confirms its part of the order before stock is reserved." />
           <CardBody>
@@ -171,6 +205,12 @@ export default async function B2BOrderPage({ params }) {
               { key: "seller", label: "Seller" },
               { key: "quantity", label: "Qty", align: "right", render: (r) => formatNumber(r.quantity) },
               { key: "dispatchedQty", label: "Dispatched", align: "right", render: (r) => formatNumber(r.dispatchedQty) },
+              {
+                key: "available",
+                label: "Available / held",
+                align: "right",
+                render: (r) => (r.stockConfigured ? `${formatNumber(r.available)} / ${formatNumber(r.heldForOrder)}` : <span className="text-danger-ink">No stock record</span>),
+              },
               { key: "rate", label: "Rate", align: "right", render: (r) => formatINR(r.rate) },
               { key: "total", label: "Total", align: "right", render: (r) => formatINR(r.total) },
               ...(showCost ? [{ key: "unitCost", label: "Seller cost / unit", align: "right", render: (r) => formatINR(r.unitCost) }] : []),

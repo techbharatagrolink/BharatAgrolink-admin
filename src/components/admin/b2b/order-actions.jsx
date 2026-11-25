@@ -34,27 +34,55 @@ function useRun() {
  * Order action bar (spec C7, §22). Only actions possible in the current state are shown; a
  * disabled button says why (role, payment, sellers). The API checks everything again.
  */
-export function OrderActions({ id, actions }) {
+const BLANK_PACKAGE = { packageCode: "", originalPack: false, lengthCm: "", widthCm: "", heightCm: "", weightKg: "", contents: "" };
+
+export function OrderActions({ id, actions, packageTypes = [], suggestion = null }) {
   const { busy, result, run } = useRun();
   const [open, setOpen] = useState(null);
   const [form, setForm] = useState({ reason: "", awbNumber: "", courierName: "" });
+  const [packages, setPackages] = useState([{ ...BLANK_PACKAGE }]);
 
   const visible = ORDER.filter((k) => actions?.[k]?.inState);
   const current = open ? actions[open] : null;
-  const needsForm = current && (current.needsReason || current.needs.length > 0);
-  const valid = !current || ((!current.needsReason || form.reason.trim().length >= 5) && current.needs.every((f) => form[f].trim()));
+  const isBag = (code) => packageTypes.find((t) => t.code === code)?.type === "Bag";
+  const packageOk = (p) =>
+    Number(p.weightKg) > 0 && (p.originalPack || p.packageCode) && (isBag(p.packageCode) || [p.lengthCm, p.widthCm, p.heightCm].every((v) => Number(v) > 0));
+  const needsForm = current && (current.needsReason || current.needs.length > 0 || current.packing);
+  const valid =
+    !current ||
+    ((!current.needsReason || form.reason.trim().length >= 5) && current.needs.every((f) => form[f].trim()) && (!current.packing || (packages.length > 0 && packages.every(packageOk))));
 
   const click = (key) => {
     const a = actions[key];
     setForm({ reason: "", awbNumber: "", courierName: "" });
-    if (a.needsReason || a.needs.length) setOpen(key);
+    setPackages([{ ...BLANK_PACKAGE }]);
+    if (a.needsReason || a.needs.length || a.packing) setOpen(key);
     else run(() => transitionB2bOrder(id, key));
   };
   const submit = () =>
     run(
-      () => transitionB2bOrder(id, open, { reason: form.reason.trim(), awbNumber: form.awbNumber.trim(), courierName: form.courierName.trim() }),
+      () =>
+        transitionB2bOrder(id, open, {
+          reason: form.reason.trim(),
+          awbNumber: form.awbNumber.trim(),
+          courierName: form.courierName.trim(),
+          ...(current?.packing
+            ? {
+                packages: packages.map((p) => ({
+                  packageCode: p.originalPack ? "" : p.packageCode,
+                  originalPack: p.originalPack,
+                  lengthCm: Number(p.lengthCm) || undefined,
+                  widthCm: Number(p.widthCm) || undefined,
+                  heightCm: Number(p.heightCm) || undefined,
+                  weightKg: Number(p.weightKg),
+                  contents: p.contents.trim(),
+                })),
+              }
+            : {}),
+        }),
       () => setOpen(null),
     );
+  const setPackage = (i, patch) => setPackages((list) => list.map((p, j) => (j === i ? { ...p, ...patch } : p)));
 
   if (!visible.length) return <p className="text-sm text-ink-muted">This order is closed: no further steps.</p>;
 
@@ -106,6 +134,7 @@ export function OrderActions({ id, actions }) {
       <Dialog
         open={Boolean(needsForm)}
         onClose={() => setOpen(null)}
+        size={current?.packing ? "lg" : "md"}
         title={current?.label}
         description={open === "cancel" ? "The order and its lines are cancelled. Money already received is flagged for refund." : open === "release_gate" ? "Payment is not received: confirm only when Finance approved credit." : undefined}
         footer={
@@ -118,6 +147,66 @@ export function OrderActions({ id, actions }) {
         }
       >
         <div className="space-y-3">
+          {current?.packing && (
+            <div className="space-y-3">
+              {suggestion && (suggestion.originalCases?.length > 0 || suggestion.loose) && (
+                <Notice tone="info" title="Suggested packing">
+                  <ul className="list-disc pl-5">
+                    {suggestion.originalCases?.map((c) => (
+                      <li key={c.name}>{c.name}: {c.cases} original case{c.cases === 1 ? "" : "s"} of {c.unitsPerCase}</li>
+                    ))}
+                    {suggestion.loose && (
+                      <li>
+                        Loose items ({suggestion.loose.lines} line{suggestion.loose.lines === 1 ? "" : "s"}{suggestion.loose.weightKg ? `, about ${suggestion.loose.weightKg} kg` : ""})
+                        {suggestion.loose.packageCode ? `: ${suggestion.loose.packages} × ${suggestion.loose.packageCode}` : ": choose a carton or bag"}
+                      </li>
+                    )}
+                  </ul>
+                  <p className="mt-1 text-xs">Record what was really packed. Do not pack liquids with seeds in the same carton.</p>
+                </Notice>
+              )}
+              {packages.map((p, i) => (
+                <div key={i} className="space-y-2 rounded-md border border-line p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-ink">Package {i + 1}</span>
+                    <span className="flex items-center gap-3">
+                      <label className="flex items-center gap-1 text-xs text-ink-soft">
+                        <input type="checkbox" checked={p.originalPack} onChange={(e) => setPackage(i, { originalPack: e.target.checked })} /> Original manufacturer pack
+                      </label>
+                      {packages.length > 1 && (
+                        <Button size="sm" variant="ghost" onClick={() => setPackages((list) => list.filter((_, j) => j !== i))}>Remove</Button>
+                      )}
+                    </span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-6">
+                    {!p.originalPack && (
+                      <Field label="Type" className="sm:col-span-2">
+                        {({ id: fid }) => (
+                          <select id={fid} className="h-9 w-full rounded-md border border-line bg-surface px-2 text-sm" value={p.packageCode} onChange={(e) => setPackage(i, { packageCode: e.target.value })}>
+                            <option value="">Choose…</option>
+                            {packageTypes.map((t) => (
+                              <option key={t.code} value={t.code}>{t.code} · {t.type}{t.capacityKg ? ` (up to ${t.capacityKg} kg)` : ""}</option>
+                            ))}
+                          </select>
+                        )}
+                      </Field>
+                    )}
+                    {!isBag(p.packageCode) &&
+                      [["lengthCm", "L cm"], ["widthCm", "W cm"], ["heightCm", "H cm"]].map(([k, label]) => (
+                        <Field key={k} label={label}>
+                          {({ id: fid }) => <Input id={fid} inputMode="decimal" value={p[k]} onChange={(e) => setPackage(i, { [k]: e.target.value })} />}
+                        </Field>
+                      ))}
+                    <Field label="Weight kg">
+                      {({ id: fid }) => <Input id={fid} inputMode="decimal" value={p.weightKg} onChange={(e) => setPackage(i, { weightKg: e.target.value })} />}
+                    </Field>
+                  </div>
+                  <Input placeholder="Contents (optional)" value={p.contents} maxLength={400} onChange={(e) => setPackage(i, { contents: e.target.value })} />
+                </div>
+              ))}
+              <Button size="sm" variant="secondary" onClick={() => setPackages((list) => [...list, { ...BLANK_PACKAGE }])}>Add package</Button>
+            </div>
+          )}
           {current?.needs.includes("awbNumber") && (
             <Field label="AWB / LR number" required>
               {({ id: fid }) => <Input id={fid} value={form.awbNumber} maxLength={80} onChange={(e) => setForm({ ...form, awbNumber: e.target.value })} />}
