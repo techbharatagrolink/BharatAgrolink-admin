@@ -24,6 +24,14 @@ import {
   searchQuotationBuyers,
   searchQuotationProducts,
   startOrderPayment,
+  allocateReceipt,
+  decideBuyerCredit,
+  recordReceipt,
+  recordRefund,
+  requestBuyerCredit,
+  reverseReceipt,
+  setBuyerCreditStatus,
+  settlementAction,
 } from "@/lib/services/admin/b2b-screens";
 
 const quotePaths = (...ids) => {
@@ -159,6 +167,85 @@ export async function recordB2bOrderSeller(id, sellerId, decision, note) {
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await recordOrderSeller(id, sellerId, { decision, note: String(note ?? "").trim() }, gate.user);
   if (result.ok) orderPaths(id);
+  return result;
+}
+
+// --- Payment, credit and settlement (subtask 11). Finance capabilities are checked by the API. ---
+
+const buyerPaths = (buyerId) => {
+  revalidatePath("/admin/b2b/buyers");
+  if (buyerId) revalidatePath(`/admin/b2b/buyers/${buyerId}`);
+  revalidatePath("/admin/b2b/credit-requests");
+};
+const financePaths = (orderId) => {
+  orderPaths(orderId);
+  revalidatePath("/admin/b2b/payments");
+  revalidatePath("/admin/b2b/receivables");
+  revalidatePath("/admin/b2b/settlements");
+};
+const deny = (gate) => ({ ok: false, message: gate.message, details: [] });
+
+export async function requestB2bCredit(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await requestBuyerCredit(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function decideB2bCredit(buyerId, requestId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await decideBuyerCredit(requestId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function setB2bCreditStatus(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await setBuyerCreditStatus(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function recordB2bReceipt(orderId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await recordReceipt(body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function allocateB2bReceipt(orderId, paymentId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await allocateReceipt(paymentId, body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function reverseB2bReceipt(orderId, paymentId, reason) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await reverseReceipt(paymentId, { reason: String(reason ?? "").trim() }, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function recordB2bRefund(orderId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await recordRefund(body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function updateB2bSettlement(orderId, settlementId, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await settlementAction(settlementId, action, body, gate.user);
+  if (result.ok) financePaths(orderId);
   return result;
 }
 

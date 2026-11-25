@@ -13,6 +13,7 @@ import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { OrderActions, OrderSellers } from "@/components/admin/b2b/order-actions";
 import { OrderLogistics } from "@/components/admin/b2b/order-logistics";
+import { OrderFinance, OrderSettlements } from "@/components/admin/b2b/order-finance";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -193,6 +194,9 @@ export default async function B2BOrderPage({ params }) {
 
         <OrderLogistics orderId={d.id} logistics={d.logistics ?? null} />
 
+        <OrderFinance orderId={d.id} buyerId={d.buyer?.id ?? null} finance={d.finance ?? null} />
+        <OrderSettlements orderId={d.id} settlements={d.settlements ?? null} />
+
         <Card>
           <CardHeader title="Sellers" description="Each seller confirms its part of the order before stock is reserved." />
           <CardBody>
@@ -256,7 +260,8 @@ export default async function B2BOrderPage({ params }) {
                 </CardBody>
               </Card>
             )}
-            {legacy?.settlements?.length > 0 && (
+            {/* The ledger-based cards above replace these once the order has them (subtask 11). */}
+            {!d.settlements && legacy?.settlements?.length > 0 && (
               <Card>
                 <CardHeader title="Seller settlement" />
                 <MiniTable
@@ -282,7 +287,7 @@ export default async function B2BOrderPage({ params }) {
                 />
               </Card>
             )}
-            {d.payments.length > 0 && (
+            {!d.finance && d.payments.length > 0 && (
               <Card>
                 <CardHeader title="Payments received" />
                 <MiniTable

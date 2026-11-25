@@ -201,6 +201,38 @@ export async function setShipmentProof(shipmentId, body, user) {
   }
 }
 
+// --- Payment, credit and settlement (subtask 11). Finance capabilities are checked by the API. ---
+
+/** The buyer's credit account, position, requests and history; null on 404 / no access. */
+export async function getBuyerCredit(buyerId, user) {
+  try {
+    const { data } = await api(`admin/b2b/buyers/${quoteId(buyerId)}/credit`, { token: user.token });
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+}
+
+const post = async (path, body, user, fallback) => {
+  try {
+    const { data } = await api(path, { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, fallback);
+  }
+};
+
+export const requestBuyerCredit = (buyerId, body, user) => post(`admin/b2b/buyers/${quoteId(buyerId)}/credit-requests`, body, user, "The credit request could not be sent.");
+export const decideBuyerCredit = (requestId, body, user) => post(`admin/b2b/credit-requests/${quoteId(requestId)}/decision`, body, user, "The credit request could not be decided.");
+export const setBuyerCreditStatus = (buyerId, body, user) => post(`admin/b2b/buyers/${quoteId(buyerId)}/credit-status`, body, user, "The credit status could not be changed.");
+export const recordReceipt = (body, user) => post("admin/b2b/finance/receipts", body, user, "The payment could not be recorded.");
+export const allocateReceipt = (paymentId, body, user) => post(`admin/b2b/finance/receipts/${quoteId(paymentId)}/allocate`, body, user, "The payment could not be allocated.");
+export const reverseReceipt = (paymentId, body, user) => post(`admin/b2b/finance/receipts/${quoteId(paymentId)}/reverse`, body, user, "The payment could not be reversed.");
+export const recordRefund = (body, user) => post("admin/b2b/finance/refunds", body, user, "The refund could not be recorded.");
+export const settlementAction = (id, action, body, user) =>
+  post(`admin/b2b/finance/settlements/${quoteId(id)}/actions/${encodeURIComponent(action)}`, body, user, "The settlement could not be updated.");
+
 export async function getOrderForm(user) {
   const { data } = await api("admin/b2b/orders/form", { token: user.token });
   return data;

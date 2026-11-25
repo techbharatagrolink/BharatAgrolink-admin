@@ -218,7 +218,13 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
           {paymentMode === "Partial Advance" && (
             <Field label="Advance payment %"><Input type="number" min="0" max="100" step="0.01" value={advancePct} onChange={(e) => setAdvancePct(e.target.value)} /></Field>
           )}
-          <Field label="Credit days"><Input type="number" min="0" value={creditDays} onChange={(e) => setCreditDays(e.target.value)} /></Field>
+          <Field
+            label="Credit days"
+            required={paymentMode === "Credit"}
+            hint={paymentMode === "Credit" ? `Only for a buyer with credit approved by Finance (${(options.creditDayOptions ?? [7, 15, 30]).join(" / ")} days or custom). The limit is checked when the order is confirmed.` : undefined}
+          >
+            <Input type="number" min="0" value={creditDays} onChange={(e) => setCreditDays(e.target.value)} />
+          </Field>
           <Field label="Valid until" hint={`Leave blank for ${options.validityHours ?? 24} hours from saving. A date means the end of that day.`}>
             <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
           </Field>
