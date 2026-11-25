@@ -295,6 +295,7 @@ export const navigation = [
         children: [
           { key: "b2b-dashboard", label: "B2B Dashboard", href: "/admin/b2b", page: "b2b_orders/index.php", permission: "b2b" },
           { key: "b2b-buyers", label: "Buyers", href: "/admin/b2b/buyers", page: "b2b_orders/buyers.php", permission: "b2b.buyers" },
+          { key: "b2b-workspace", label: "Sales Workspace", href: "/admin/b2b/workspace", page: "b2b_orders/buyers.php", permission: "b2b.buyers" },
           { key: "b2b-rfqs", label: "RFQs", href: "/admin/b2b/rfqs", page: "b2b_orders/rfqs.php", permission: "b2b.rfqs", badge: "openRfqs" },
           { key: "b2b-quotations", label: "B2B Quotations", href: "/admin/b2b/quotations", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations" },
           { key: "b2b-quote-new", label: "Create Quotation", href: "/admin/b2b/quotations/new", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations", action: "add" },

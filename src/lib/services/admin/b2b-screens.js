@@ -273,3 +273,31 @@ export async function createOrder(body, user) {
     return failure(error, "The order could not be booked.");
   }
 }
+
+// --- Buyer & lead management (task #107 subtask 2): CRM fields, activities, follow-ups, sales workspace.
+export async function getCrmOptions(user) {
+  try {
+    const { data } = await api("admin/b2b/crm/options", { token: user.token });
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+}
+
+export async function getSalesWorkspace(user, scope) {
+  const { data } = await api(`admin/b2b/crm/workspace${scope === "team" ? "?scope=team" : ""}`, { token: user.token });
+  return data;
+}
+
+export async function updateBuyerCrm(buyerId, body, user) {
+  try {
+    const { data } = await api(`admin/b2b/buyers/${quoteId(buyerId)}`, { token: user.token, method: "PATCH", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The buyer could not be updated.");
+  }
+}
+
+export const logBuyerActivity = (buyerId, body, user) => post(`admin/b2b/buyers/${quoteId(buyerId)}/activities`, body, user, "The activity could not be saved.");
+export const completeFollowupTask = (taskId, body, user) => post(`admin/b2b/followups/${quoteId(taskId)}/done`, body, user, "The follow-up could not be closed.");

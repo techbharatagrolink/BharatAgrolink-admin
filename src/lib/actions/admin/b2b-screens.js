@@ -32,6 +32,9 @@ import {
   reverseReceipt,
   setBuyerCreditStatus,
   settlementAction,
+  updateBuyerCrm,
+  logBuyerActivity,
+  completeFollowupTask,
 } from "@/lib/services/admin/b2b-screens";
 
 const quotePaths = (...ids) => {
@@ -272,5 +275,36 @@ export async function saveB2bOrder(body) {
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await createOrder(body, gate.user);
   if (result.ok) revalidatePath("/admin/b2b/orders");
+  return result;
+}
+
+// --- Buyer & lead management (subtask 2).
+export async function updateB2bBuyerCrm(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await updateBuyerCrm(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function logB2bBuyerActivity(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await logBuyerActivity(buyerId, body, gate.user);
+  if (result.ok) {
+    buyerPaths(buyerId);
+    revalidatePath("/admin/b2b/workspace");
+  }
+  return result;
+}
+
+export async function completeB2bFollowup(taskId, outcome, buyerId) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await completeFollowupTask(taskId, { outcome }, gate.user);
+  if (result.ok) {
+    revalidatePath("/admin/b2b/workspace");
+    if (buyerId) buyerPaths(buyerId);
+  }
   return result;
 }
