@@ -307,6 +307,7 @@ export const b2bOpsResources = {
       { key: "caseVerification", label: "Case size", type: "status" },
       { key: "moqQty", label: "MOQ", type: "number", sub: "moqType" },
       { key: "floorPrice", label: "Floor price", type: "currency", sortable: true, requires: "b2b.margin" },
+      { key: "regulated", label: "Regulated" },
     ],
     noAdd: true,
     rowActions: [
@@ -365,6 +366,19 @@ export const b2bOpsResources = {
         },
         { name: "orderMultiple", label: "Order multiple (pieces)", type: "number", min: 1, max: 100000, hint: "Buyer quantity must be a whole multiple of this, usually the units per case." },
         { name: "floorPrice", label: "Floor price (₹ per piece, ex-GST)", type: "number", min: 0, requires: "b2b.margin", hint: "Quotes priced below this are blocked. Leave empty for no floor." },
+        { name: "regulated", label: "Regulated product", type: "select", options: [{ value: "No", label: "No" }, { value: "Yes", label: "Yes – needs a verified seller authorization" }], hint: "Only sellers with a verified, unexpired authorization for the delivery state can offer it (Seller Authorizations)." },
+        {
+          name: "regulationType",
+          label: "Regulation",
+          type: "select",
+          options: [
+            { value: "", label: "—" },
+            { value: "insecticide", label: "Insecticide" },
+            { value: "fertilizer", label: "Fertilizer" },
+            { value: "seed", label: "Seed" },
+            { value: "other", label: "Other" },
+          ],
+        },
         { name: "verificationNote", label: "Note", type: "textarea", rows: 2, maxLength: 500 },
       ],
     },

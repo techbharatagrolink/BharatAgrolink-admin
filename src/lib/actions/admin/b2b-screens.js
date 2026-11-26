@@ -384,3 +384,97 @@ export async function setB2bRfqOfferListing(id, quoteItemId, body) {
   if (result.ok) rfqPaths(id);
   return result;
 }
+
+// --- Supplier procurement RFQ and authorizations (task #107 subtask 4 part 2).
+const procPaths = (id) => {
+  revalidatePath("/admin/b2b/procurement");
+  if (id) revalidatePath(`/admin/b2b/procurement/${id}`);
+};
+
+export async function saveB2bSupplierRfq(body) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.createSupplierRfq(body, gate.user);
+  if (result.ok) procPaths(result.id);
+  return result;
+}
+
+export async function moveB2bSupplierRfq(id, action) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.moveSupplierRfq(id, action, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function getB2bProcurementSellers() {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  try {
+    return { ok: true, sellers: await rfqApi.getProcurementSellers(gate.user) };
+  } catch (error) {
+    return { ok: false, message: error?.message || "Could not load the sellers." };
+  }
+}
+
+export async function inviteB2bSuppliers(id, sellerIds) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.inviteSupplierSellers(id, sellerIds, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function searchB2bProcurementListings(sellerId, q) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, listings: [] };
+  return rfqApi.searchProcurementListings(sellerId, q, gate.user);
+}
+
+export async function recordB2bSupplierResponse(id, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.recordSupplierResponse(id, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function mapB2bSupplierResponseListing(id, responseId, itemId, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.mapSupplierResponseListing(id, responseId, itemId, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function reviewB2bSupplierResponse(id, responseId, body) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.reviewSupplierResponse(id, responseId, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function activateB2bSupplierRates(id, responseId) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.activateSupplierRates(id, responseId, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function createB2bSupplierAuthorization(body) {
+  const gate = await assertPermission("b2b.catalog", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.createSupplierAuthorization(body, gate.user);
+  if (result.ok) revalidatePath("/admin/b2b/authorizations");
+  return result;
+}
+
+export async function decideB2bSupplierAuthorization(id, body) {
+  const gate = await assertPermission("b2b.catalog", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.decideSupplierAuthorization(id, body, gate.user);
+  if (result.ok) revalidatePath("/admin/b2b/authorizations");
+  return result;
+}

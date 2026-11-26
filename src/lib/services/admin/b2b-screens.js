@@ -385,3 +385,57 @@ export const inviteRfqSellers = (id, sellerIds, user) => post(`${rfqPath(id)}/se
 export const saveRfqSourcing = (id, body, user) => post(`${rfqPath(id)}/sourcing`, body, user, "The sourcing could not be saved.");
 export const setRfqOfferListing = (id, quoteItemId, body, user) =>
   post(`${rfqPath(id)}/offers/${quoteId(quoteItemId)}/listing`, body, user, "The listing could not be set.");
+
+// --- Supplier procurement RFQ and authorizations (task #107 subtask 4 part 2; spec C1, C9, A2).
+const procPath = (id) => `admin/b2b/procurement/rfqs/${quoteId(id)}`;
+
+export async function getProcurementOptions(user) {
+  const { data } = await api("admin/b2b/procurement/options", { token: user.token });
+  return data;
+}
+
+export async function listSupplierRfqs(query, user) {
+  const { data } = await api("admin/b2b/procurement/rfqs", { token: user.token, query });
+  return data;
+}
+
+export async function getSupplierRfq(id, user) {
+  try {
+    const { data } = await api(procPath(id), { token: user.token });
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function getProcurementSellers(user) {
+  const { data } = await api("admin/b2b/procurement/sellers", { token: user.token });
+  return data;
+}
+
+export async function searchProcurementListings(sellerId, q, user) {
+  try {
+    const { data } = await api(`admin/b2b/procurement/sellers/${quoteId(sellerId)}/listings`, { token: user.token, query: { q } });
+    return { ok: true, listings: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Listing search failed."), listings: [] };
+  }
+}
+
+export const createSupplierRfq = (body, user) => post("admin/b2b/procurement/rfqs", body, user, "The supplier RFQ could not be saved.");
+export const moveSupplierRfq = (id, action, user) => post(`${procPath(id)}/actions/${encodeURIComponent(action)}`, {}, user, "That did not work.");
+export const inviteSupplierSellers = (id, sellerIds, user) => post(`${procPath(id)}/invite`, { sellerIds }, user, "The suppliers could not be invited.");
+export const recordSupplierResponse = (id, body, user) => post(`${procPath(id)}/responses`, body, user, "The response could not be saved.");
+export const mapSupplierResponseListing = (id, responseId, itemId, body, user) =>
+  post(`${procPath(id)}/responses/${quoteId(responseId)}/items/${quoteId(itemId)}/listing`, body, user, "The listing could not be set.");
+export const reviewSupplierResponse = (id, responseId, body, user) => post(`${procPath(id)}/responses/${quoteId(responseId)}/review`, body, user, "The review could not be saved.");
+export const activateSupplierRates = (id, responseId, user) => post(`${procPath(id)}/responses/${quoteId(responseId)}/activate-rates`, {}, user, "The rates could not be activated.");
+
+export async function listSupplierAuthorizations(query, user) {
+  const { data } = await api("admin/b2b/authorizations", { token: user.token, query });
+  return data;
+}
+
+export const createSupplierAuthorization = (body, user) => post("admin/b2b/authorizations", body, user, "The authorization could not be saved.");
+export const decideSupplierAuthorization = (id, body, user) => post(`admin/b2b/authorizations/${quoteId(id)}/decision`, body, user, "The decision could not be saved.");
