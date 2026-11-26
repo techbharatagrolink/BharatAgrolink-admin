@@ -60,6 +60,7 @@ export default async function CrmDashboardPage() {
             ]}
             rows={d.followUps}
             empty="No pending follow-ups."
+            exportName="crm-upcoming-followups"
           />
         </Card>
         {!d.scoped && (
@@ -74,6 +75,7 @@ export default async function CrmDashboardPage() {
                 { key: "value", label: "Order value", align: "right", render: (r) => formatINR(r.value) },
               ]}
               rows={d.leaderboard}
+              exportName="crm-executive-leaderboard"
             />
           </Card>
         )}

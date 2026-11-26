@@ -51,6 +51,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
               ]}
               rows={data.orders}
               empty="No orders yet."
+              exportName={`customer-${c.id}-orders`}
             />
           </Card>
           <Card>
@@ -64,6 +65,7 @@ export default async function CustomerDetailPage({ params, searchParams }) {
               ]}
               rows={data.returns}
               empty="No returns."
+              exportName={`customer-${c.id}-returns`}
             />
           </Card>
         </div>

@@ -1,8 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentAdmin } from "@/lib/auth/session";
+import { assertExport, getCurrentAdmin } from "@/lib/auth/session";
+import { collectPages } from "@/lib/services/admin/_export";
 import {
+  SHIPMENT_TABS,
+  listShipments,
+  listShiprocketOrders,
   availableCouriers,
   bulkCouriers,
   bulkCreate,
@@ -212,4 +216,32 @@ export async function syncVisibleOrdersAction(orderIds) {
     refresh(list);
   }
   return { ok: result.ok, changed, message: result.message };
+}
+
+const YMD = /^\d{4}-\d{2}-\d{2}$/;
+// Shiprocket rows come from Shiprocket's own API (rate-limited), so its export stops earlier.
+const SHIPROCKET_EXPORT_MAX = 2000;
+
+/** Every parcel (or Shiprocket order) of the Shipments tab and filters on screen. Super admins only. */
+export async function exportShipmentsAction(input) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const tab = SHIPMENT_TABS.some((t) => t.value === input?.tab) ? input.tab : "to_ship";
+  const q = str(input?.q, 100);
+  const from = YMD.test(str(input?.from, 10)) ? str(input.from, 10) : undefined;
+  const to = YMD.test(str(input?.to, 10)) ? str(input.to, 10) : undefined;
+  if (tab === "shiprocket") {
+    const filters = { from, to, search: q || undefined, status: str(input?.status, 50) || undefined, pickupLocation: str(input?.pickup, 100) || undefined, sort: input?.sort === "ASC" ? "ASC" : "DESC" };
+    return collectPages(
+      async (page) => {
+        const result = await listShiprocketOrders({ ...filters, page, perPage: "100" }, auth.user);
+        return result.ok ? { rows: result.data?.rows, total: result.data?.total } : result;
+      },
+      { pageSize: 100, maxRows: SHIPROCKET_EXPORT_MAX },
+    );
+  }
+  return collectPages(async (page, limit) => {
+    const result = await listShipments({ tab, q, dateFrom: from, dateTo: to, page, limit }, auth.user);
+    return result.ok ? { rows: result.data, total: result.meta?.total } : result;
+  });
 }

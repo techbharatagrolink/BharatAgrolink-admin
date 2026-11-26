@@ -8,6 +8,7 @@ import { formatDateTime, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 import { ProductCheckButton } from "@/components/admin/seo/product-check-button";
+import { RouteExportDropdown } from "@/components/data-table/export-button";
 import { NewTaskButton } from "@/components/admin/seo/task-editor";
 
 export const metadata = { title: "Product Data" };
@@ -93,10 +94,7 @@ export default async function SeoProductDataPage({ searchParams }) {
         <p className="text-xs text-ink-muted">{L ? `Last checked ${formatDateTime(L.completedAt)} · ${formatNumber(L.products)} live products. Not tied to the date filter.` : "No product check has run yet."}</p>
         <div className="flex flex-wrap gap-2">
           {L && (
-            <a href={exportHref} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted">
-              <Download className="size-4" aria-hidden />
-              Download CSV
-            </a>
+            <RouteExportDropdown href={exportHref} label="Export" />
           )}
           {page.canEdit && <ProductCheckButton running={d.running} />}
         </div>

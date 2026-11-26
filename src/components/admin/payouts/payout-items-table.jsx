@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Ban, ChevronLeft, ChevronRight, Download, FileText, History, ImageIcon, Pencil, Play, RefreshCw, Wallet } from "lucide-react";
 import { useQueryState } from "@/components/data-table/use-query-state";
+import { useCanExport } from "@/components/admin/shell/admin-user";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
 import { Badge, StatusBadge } from "@/components/ui/badge";
@@ -139,6 +140,7 @@ const thBase = "border-b border-line bg-surface-muted px-3 text-left text-xs fon
 
 export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
   const router = useRouter();
+  const canExport = useCanExport();
   const { setParams, pending } = useQueryState();
   const query = data.query;
   const [draft, setDraft] = useState(() => draftFrom(query));
@@ -246,9 +248,11 @@ export function PayoutItemsTable({ payoutId, data, cycles, canEdit }) {
           <Button size="sm" variant="secondary" onClick={() => router.refresh()} loading={pending}>
             <RefreshCw className="size-4" aria-hidden /> Refresh
           </Button>
-          <a href={`${base}/export?${qs}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
-            <Download className="size-4" aria-hidden /> Export Excel
-          </a>
+          {canExport && (
+            <a href={`${base}/export?${qs}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+              <Download className="size-4" aria-hidden /> Export Excel
+            </a>
+          )}
           {canEdit && (
             <Button size="sm" variant="primary" disabled={!selectedRows.length} onClick={() => openPay(selectedRows)} title={selectedRows.length ? undefined : "Select pending items first"}>
               <Wallet className="size-4" aria-hidden /> Add Payment{selectedRows.length ? ` (${selectedRows.length})` : ""}

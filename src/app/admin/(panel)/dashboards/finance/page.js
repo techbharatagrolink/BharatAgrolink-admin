@@ -73,6 +73,7 @@ export default async function FinanceDashboardPage({ searchParams }) {
           ]}
           rows={d.payoutQueue}
           empty="No unpaid payouts."
+          exportName="finance-payout-queue"
         />
       </Card>
     </>

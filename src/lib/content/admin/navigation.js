@@ -398,7 +398,7 @@ export const navigation = [
         icon: "Truck",
         children: [
           { key: "shipping-shipments", label: "Shiprocket Orders", href: "/admin/shipping", page: "shiprocket_orders_report.php", permission: "shipping", badge: "pendingShipments" },
-          { key: "shipping-delhivery", label: "Delhivery Orders", href: "/admin/shipping/delhivery", page: "shipment_order_delhivery.php", permission: "shipping.delhivery" },
+          { key: "shipping-delhivery", label: "Delivery Orders", href: "/admin/shipping/delhivery", page: "shipment_order_delhivery.php", permission: "shipping.delhivery" },
           { key: "shipping-charges-sync", label: "Courier Charges Sync", href: "/admin/shipping/charges-sync", permission: "shipping" },
           { key: "shipping-weight", label: "Weight Discrepancy", href: "/admin/shipping/weight-discrepancy", page: "weight_discrapancy.php", permission: "shipping.weight" },
           { key: "returns-all", label: "Return Shipments", href: "/admin/returns", page: "manage_returns.php", permission: "returns", badge: "pendingReturns" },
@@ -414,7 +414,7 @@ export const navigation = [
         icon: "MapPin",
         children: [
           { key: "shipping-pincodes", label: "Shiprocket Serviceability", href: "/admin/shipping/pincodes", page: "courier_serviceability.php", permission: "shipping.pincodes" },
-          { key: "shipping-delhivery-pincodes", label: "Delhivery Serviceability", href: "/admin/shipping/delhivery-serviceability", page: "servicebilty_delhivery.php", permission: "shipping.delhiveryPincodes" },
+          { key: "shipping-delhivery-pincodes", label: "Delivery Serviceability", href: "/admin/shipping/delhivery-serviceability", page: "servicebilty_delhivery.php", permission: "shipping.delhiveryPincodes" },
           { key: "shipping-courier-slabs", label: "Courier Cost Slab", href: "/admin/shipping/courier-slabs", page: "courier_cost_slab_master.php", permission: "shipping.rates" },
           { key: "shipping-other-charges", label: "Other Charges", href: "/admin/shipping/other-charges", permission: "shipping.rates" },
         ],

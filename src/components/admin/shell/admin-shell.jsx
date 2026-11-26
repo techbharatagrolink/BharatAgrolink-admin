@@ -2,12 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowUp, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { isLiveAdminPath } from "@/lib/services/admin/live-catalog";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { useProfitabilityAlerts } from "./use-profitability-alerts";
+import { AdminUserProvider } from "./admin-user";
 
 const TABLET_QUERY = "(max-width: 1023px)";
 
@@ -46,33 +47,6 @@ function saveRail(value) {
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Floating "back to top" button, shown once the page has been scrolled a fair way. */
-function BackToTop() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setShow(window.scrollY > 600);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return (
-    <button
-      type="button"
-      onClick={() => window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" })}
-      aria-label="Back to top"
-      title="Back to top"
-      tabIndex={show ? 0 : -1}
-      aria-hidden={!show}
-      className={cn(
-        "fixed right-4 bottom-4 z-40 flex size-11 items-center justify-center rounded-full bg-brand-600 text-brand-fg shadow-[var(--shadow-pop)] transition-all duration-200 hover:bg-brand-700 active:scale-95 sm:right-6 sm:bottom-6",
-        show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
-      )}
-    >
-      <ArrowUp className="size-5" aria-hidden />
-    </button>
-  );
-}
-
 export function AdminShell({ user, navigation, badges, notifications, children }) {
   const mainRef = useRef(null);
   useProfitabilityAlerts();
@@ -98,26 +72,27 @@ export function AdminShell({ user, navigation, badges, notifications, children }
   const toggleRail = () => (isTablet ? setTabletRail(!rail) : saveRail(!rail));
 
   return (
-    <div className="min-h-dvh">
-      <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[80] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm">
-        Skip to content
-      </a>
-      <Sidebar navigation={navigation} badges={badges} rail={rail} onToggleRail={toggleRail} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
-      <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", rail ? "md:pl-16" : "md:pl-[264px]")} inert={mobileOpen || undefined}>
-        <Header user={user} navigation={navigation} notifications={notifications} badges={badges} rail={rail} onToggleRail={toggleRail} onOpenMobile={() => setMobileOpen(true)} />
-        {showGap && (
-          <div className="border-b border-warning-ink/15 bg-warning-bg px-3 py-1.5 text-label text-warning-ink sm:px-5">
-            <p className="mx-auto flex max-w-[1600px] items-center gap-2">
-              <Info className="size-3.5 shrink-0" aria-hidden />
-              <span>This page is not connected to the admin API yet.</span>
-            </p>
-          </div>
-        )}
-        <main ref={mainRef} id="admin-main" className="mx-auto w-full max-w-[1600px] min-w-0 flex-1 px-3 py-5 sm:px-5 lg:px-6">
-          {children}
-        </main>
+    <AdminUserProvider user={user}>
+      <div className="min-h-dvh">
+        <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[80] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-sm">
+          Skip to content
+        </a>
+        <Sidebar navigation={navigation} badges={badges} rail={rail} onToggleRail={toggleRail} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+        <div className={cn("flex min-h-dvh min-w-0 flex-col transition-[padding] duration-200", rail ? "md:pl-16" : "md:pl-[264px]")} inert={mobileOpen || undefined}>
+          <Header user={user} navigation={navigation} notifications={notifications} badges={badges} rail={rail} onToggleRail={toggleRail} onOpenMobile={() => setMobileOpen(true)} />
+          {showGap && (
+            <div className="border-b border-warning-ink/15 bg-warning-bg px-3 py-1.5 text-label text-warning-ink sm:px-5">
+              <p className="mx-auto flex max-w-[1600px] items-center gap-2">
+                <Info className="size-3.5 shrink-0" aria-hidden />
+                <span>This page is not connected to the admin API yet.</span>
+              </p>
+            </div>
+          )}
+          <main ref={mainRef} id="admin-main" className="mx-auto w-full max-w-[1600px] min-w-0 flex-1 px-3 py-5 sm:px-5 lg:px-6">
+            {children}
+          </main>
+        </div>
       </div>
-      <BackToTop />
-    </div>
+    </AdminUserProvider>
   );
 }

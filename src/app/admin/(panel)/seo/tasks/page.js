@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 import { EditTaskButton, MilestoneButton, MODULE_OPTIONS, NewTaskButton, PRIORITY_OPTIONS, STATUS_OPTIONS } from "@/components/admin/seo/task-editor";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "Tasks & Team" };
 
@@ -52,7 +53,24 @@ export default async function SeoTasksPage({ searchParams }) {
           <CardHeader
             title="Priority action tasks"
             description={`${list.length} ${filtered ? "matching" : ""} tasks · open first, soonest due first.`}
-            actions={page.canAdd ? <NewTaskButton owners={ownerList} milestones={ms} /> : null}
+            actions={
+              <div className="flex items-center gap-2">
+                <ExportButton
+                  name="seo-tasks"
+                  columns={[
+                    { label: "Task", value: (t) => t.title },
+                    { label: "Module", value: (t) => label(MODULE_OPTIONS, t.module) },
+                    { label: "Priority", value: (t) => t.priority },
+                    { label: "Status", value: (t) => t.status },
+                    { label: "Owner", value: (t) => t.ownerName || "" },
+                    { label: "Due Date", value: (t) => t.dueDate || "" },
+                    { label: "Estimated Impact", value: (t) => t.impact || "" },
+                  ]}
+                  rows={list}
+                />
+                {page.canAdd ? <NewTaskButton owners={ownerList} milestones={ms} /> : null}
+              </div>
+            }
           />
           <form method="get" className="flex flex-wrap items-end gap-2 border-b border-line px-4 py-2.5 text-xs">
             <FilterSelect name="status" label="Status" value={filters.status} options={STATUS_OPTIONS} />

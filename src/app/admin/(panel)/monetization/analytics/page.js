@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { LinkTabs, StatCard, StatGrid } from "@/components/ui/page";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
+import { RouteExportDropdown } from "@/components/data-table/export-button";
 import { monetizationPage, LoadError } from "@/components/admin/monetization/monetization-page";
 
 export const metadata = { title: "Ad Performance" };
@@ -93,9 +94,9 @@ export default async function AdPerformancePage({ searchParams }) {
         <Link href={`/admin/monetization/analytics?groupBy=${groupBy}`} className="h-9 px-2 text-sm leading-9 text-ink-muted hover:text-ink">
           Clear
         </Link>
-        <a href={`/admin/monetization/analytics/export?${qs({})}`} className="ml-auto inline-flex h-9 items-center rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium text-ink hover:bg-surface-muted">
-          Download CSV (Excel)
-        </a>
+        <div className="ml-auto">
+          <RouteExportDropdown href={`/admin/monetization/analytics/export?${qs({})}`} label="Export" />
+        </div>
       </form>
       {error ? (
         <LoadError error={error} what="the ad performance" />

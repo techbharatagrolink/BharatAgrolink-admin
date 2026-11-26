@@ -74,6 +74,7 @@ export default async function MonetizationOverviewPage({ searchParams }) {
               { key: "revenue", label: "Revenue", align: "right", render: (r) => formatINR(r.revenue) },
             ]}
             rows={o.byService.map((r) => ({ ...r, id: r.serviceId }))}
+            exportName="ad-revenue-by-type"
           />
         </Card>
         <Card className="min-w-0">
@@ -95,6 +96,7 @@ export default async function MonetizationOverviewPage({ searchParams }) {
               { key: "revenue", label: "Revenue", align: "right", render: (r) => formatINR(r.revenue) },
             ]}
             rows={o.bySeller.map((r) => ({ ...r, id: r.sellerId }))}
+            exportName="ad-revenue-by-seller"
           />
         </Card>
       </div>
@@ -109,6 +111,7 @@ export default async function MonetizationOverviewPage({ searchParams }) {
             { key: "revenue", label: "Revenue", align: "right", render: (r) => formatINR(r.revenue) },
           ]}
           rows={o.byDay.map((r) => ({ ...r, id: r.day }))}
+          exportName="ad-revenue-by-day"
         />
       </Card>
     </>

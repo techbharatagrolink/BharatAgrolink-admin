@@ -39,6 +39,7 @@ export default async function SellerDashboardPage() {
               { key: "score", label: "Score", align: "right", render: (r) => <span className="font-semibold text-ink">{r.score}</span> },
             ]}
             rows={d.top}
+            exportName="top-vendors"
           />
         </Card>
         <Card>
@@ -57,6 +58,7 @@ export default async function SellerDashboardPage() {
             { key: "score", label: "Score", align: "right" },
           ]}
           rows={d.bottom}
+          exportName="lowest-score-vendors"
         />
       </Card>
     </>

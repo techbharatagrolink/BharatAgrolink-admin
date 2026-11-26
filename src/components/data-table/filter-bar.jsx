@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CalendarRange, Check, ChevronDown, Search, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { CalendarRange, Check, ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/form";
 import { Popover } from "@/components/ui/popover";
@@ -97,11 +97,11 @@ export function DateRangeFilter({ label = "Date" }) {
   const preset = get("range") || (get("from") || get("to") ? "custom" : "");
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <div className="relative">
+      <div className="relative w-full lg:w-auto">
         <CalendarRange className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
         <Select
           aria-label={`${label} range`}
-          className="w-44 [&_select]:pl-8"
+          className="w-full lg:w-44 [&_select]:pl-8 [&>button]:pl-8"
           value={preset}
           placeholder={`${label}: all time`}
           options={DATE_PRESETS}
@@ -161,7 +161,7 @@ export function TextFilter({ name, label }) {
   );
 }
 
-export function SelectFilter({ name, label, options, className = "w-full sm:w-44" }) {
+export function SelectFilter({ name, label, options, className = "w-full lg:w-44" }) {
   const { get, setParams } = useQueryState();
   return (
     <Select
@@ -193,7 +193,8 @@ export function MultiSelectFilter({ name, label, options }) {
     <Popover
       align="left"
       label={label}
-      className="w-full sm:w-52"
+      sheetOnPhone
+      className="w-full lg:w-52"
       trigger={({ toggle: open, props }) => (
         <button
           type="button"
@@ -262,21 +263,64 @@ export function ClearFiltersButton({ className }) {
 
 /** Reusable filter row: search, selects and date range, all synced to the URL. hideClear leaves "Clear filters" to the caller. */
 export function FilterBar({ search, filters = [], dateRange, children, className, hideClear = false }) {
+  const { searchParams } = useQueryState();
+  const hasFilters = filters.length > 0 || Boolean(dateRange);
+  const activeCount =
+    filters.filter((f) => searchParams.get(f.key)).length + (dateRange && (searchParams.get("range") || searchParams.get("from") || searchParams.get("to")) ? 1 : 0);
+  // Phones: filters fold behind a "Filters" button (open by default when one is already applied).
+  const [toggled, setToggled] = useState(null);
+  // Only worth folding when there is a search box to sit beside, or more than two filters.
+  const collapsible = Boolean(search) || filters.length + (dateRange ? 1 : 0) > 2;
+  const open = !collapsible || (toggled ?? activeCount > 0);
+  const panelId = useId();
   return (
     <div className={cn("flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center", className)}>
-      {search && <SearchInput placeholder={typeof search === "object" && search ? search.placeholder : search} className="lg:w-72" />}
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-        {filters.map((f) =>
+      {(search || (hasFilters && collapsible)) && (
+        <div className="flex min-w-0 gap-2 lg:contents">
+          {search && <SearchInput placeholder={typeof search === "object" && search ? search.placeholder : search} className="flex-1 lg:w-72 lg:flex-none" />}
+          {hasFilters && collapsible && (
+            <button
+              type="button"
+              onClick={() => setToggled(!open)}
+              aria-expanded={open}
+              aria-controls={panelId}
+              className={cn(
+                "relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-small font-medium transition-colors sm:hidden",
+                // Beside a search box it shrinks to an icon on narrow phones; on its own it fills the row with its label.
+                search ? "max-[419px]:w-9 max-[419px]:justify-center max-[419px]:px-0" : "w-full justify-center",
+                open ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-strong bg-surface text-ink hover:bg-surface-muted",
+              )}
+            >
+              <SlidersHorizontal className="size-4" aria-hidden />
+              {/* Narrow phones: icon only (count badge on the corner) so the search box keeps its room. */}
+              <span className={search ? "max-[419px]:sr-only" : undefined}>Filters</span>
+              {activeCount > 0 && <span className={cn("flex size-5 items-center justify-center rounded-full bg-brand-600 text-micro font-semibold text-brand-fg", search && "max-[419px]:absolute max-[419px]:-top-1.5 max-[419px]:-right-1.5 max-[419px]:size-4")}>{activeCount}</span>}
+            </button>
+          )}
+        </div>
+      )}
+      {hasFilters && (
+      <div id={panelId} className={cn("grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] lg:flex lg:flex-wrap lg:items-center", open ? "ui-pop" : "max-sm:hidden")}>
+        {filters.map((f, index) => (
+          // Phones: filters pair up; a leftover one takes the full row (the date filter always does).
+          <div key={f.key} className={cn("min-w-0 lg:contents", filters.length % 2 === 1 && index === filters.length - 1 && "max-sm:col-span-2")}>
+          {
           f.type === "text" ? (
             <TextFilter key={f.key} name={f.key} label={f.label} />
           ) : f.type === "multi" ? (
             <MultiSelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
           ) : (
             <SelectFilter key={f.key} name={f.key} label={f.label} options={f.options} />
-          )
+          )}
+          </div>
+        ))}
+        {dateRange && (
+          <div className="min-w-0 max-sm:col-span-2 lg:contents">
+            <DateRangeFilter label={typeof dateRange === "string" ? dateRange : "Date"} />
+          </div>
         )}
       </div>
-      {dateRange && <DateRangeFilter label={typeof dateRange === "string" ? dateRange : "Date"} />}
+      )}
       {children}
       {!hideClear && <ClearFiltersButton />}
     </div>

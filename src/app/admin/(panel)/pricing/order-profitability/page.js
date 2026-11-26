@@ -78,6 +78,7 @@ export default async function OrderProfitabilityPage({ searchParams }) {
         <Card>
           <MiniTable
             rows={rows}
+            exportName="order-profitability"
             columns={[
               { key: "order", label: "Order", render: (r) => <Link href={`/admin/orders/${r.orderId}`} className="font-medium text-brand-700 hover:underline">{r.orderId}</Link> },
               {

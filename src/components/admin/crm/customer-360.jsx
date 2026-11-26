@@ -235,6 +235,7 @@ export function Customer360View({ data }) {
               ]}
               rows={data.orders.map((o) => ({ ...o, id: o.orderId }))}
               empty="No orders."
+              exportName={`customer-${data.customer.id}-order-history`}
             />
           </Card>
 
@@ -252,6 +253,7 @@ export function Customer360View({ data }) {
               ]}
               rows={data.products.map((p) => ({ ...p, id: p.productId || p.sku }))}
               empty="No products."
+              exportName={`customer-${data.customer.id}-products`}
             />
           </Card>
 
@@ -269,6 +271,7 @@ export function Customer360View({ data }) {
               ]}
               rows={e.interestedNotBought.map((v) => ({ ...v, id: v.productId }))}
               empty="Every product this customer opened was also bought, or no product opens are tracked."
+              exportName={`customer-${data.customer.id}-interested-products`}
             />
           </Card>
 
@@ -283,6 +286,7 @@ export function Customer360View({ data }) {
               ]}
               rows={e.topTerms.map((t) => ({ ...t, id: t.term }))}
               empty="No searches tracked for this customer."
+              exportName={`customer-${data.customer.id}-search-terms`}
             />
           </Card>
 
@@ -300,6 +304,7 @@ export function Customer360View({ data }) {
                   ]}
                   rows={data.returns}
                   empty="No returns."
+                  exportName={`customer-${data.customer.id}-returns`}
                 />
               </Card>
               <div className="grid gap-4 lg:grid-cols-2">

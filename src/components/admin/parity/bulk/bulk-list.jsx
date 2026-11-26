@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react";
 import { formatNumber } from "@/lib/format";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
 /** Filter bar of the bulk_orders list pages: every field is a query-string parameter. */
 export function BulkFilters({ fields, values }) {
@@ -14,6 +15,16 @@ export function BulkFilters({ fields, values }) {
   const pathname = usePathname();
   const [draft, setDraft] = useState(() => Object.fromEntries(fields.map((f) => [f.key, values[f.key] ?? ""])));
   const active = fields.some((f) => values[f.key]);
+  // Phones / tablets: pair like with like so From / To dates always sit together. A text box with a
+  // long hint, or a leftover field of its kind, takes the full row.
+  const ofType = (type) => fields.filter((f) => (type === "text" ? f.type !== "select" && f.type !== "date" : f.type === type));
+  const fullRow = new Set();
+  for (const type of ["text", "select", "date"]) {
+    const group = ofType(type);
+    const pairable = type === "text" ? group.filter((f) => String(f.placeholder ?? f.label ?? "").length <= 18) : group;
+    for (const f of group) if (!pairable.includes(f)) fullRow.add(f);
+    if (pairable.length % 2 === 1) fullRow.add(pairable[pairable.length - 1]);
+  }
 
   function apply(event) {
     event.preventDefault();
@@ -24,9 +35,10 @@ export function BulkFilters({ fields, values }) {
   }
 
   return (
-    <form onSubmit={apply} className="grid grid-cols-1 gap-2 rounded-xl border border-line bg-surface p-3 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
+    // Phones / tablets: fields pair up two per row (see fullRow above), then a full-width Filter / Clear row.
+    <form onSubmit={apply} className="grid grid-cols-2 gap-2 rounded-xl border border-line bg-surface p-3 max-lg:grid-flow-row-dense lg:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
       {fields.map((f) => (
-        <label key={f.key} className="min-w-0 text-xs font-medium text-ink-muted">
+        <label key={f.key} className={cn("min-w-0 text-xs font-medium text-ink-muted", fullRow.has(f) && "max-lg:col-span-2")}>
           {f.label}
           {f.type === "select" ? (
             <Select className="mt-1 w-full" value={draft[f.key]} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} options={[{ value: "", label: f.all ?? "All" }, ...f.options]} />
@@ -35,7 +47,7 @@ export function BulkFilters({ fields, values }) {
           )}
         </label>
       ))}
-      <div className="flex items-end gap-2">
+      <div className="col-span-2 flex items-end gap-2 lg:col-span-1 max-sm:[&>*]:flex-1">
         <Button type="submit" variant="primary" size="sm" className="h-9">
           <Search className="size-4" aria-hidden /> Filter
         </Button>

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { StaticGrid } from "@/components/data-table/static-grid";
+import { ExportBar } from "@/components/data-table/export-button";
+import { exportMatrix, plainValue, textOf } from "@/lib/csv";
 
 export function RangeSwitch({ pathname, ranges, active }) {
   return (
@@ -40,25 +42,63 @@ export function AlertList({ alerts }) {
   );
 }
 
-export function MiniTable({ columns, rows, empty = "No records." }) {
+/**
+ * Export value of a MiniTable cell when the page gives no `exportColumns`: a plain number stays a number
+ * (₹ 1,234 -> 1234) when the cell shows it, otherwise the cell's text, otherwise the raw field.
+ */
+function cellExportValue(column, row) {
+  if (column.exportValue) return column.exportValue(row);
+  const raw = row[column.key];
+  if (!column.render) return raw;
+  const text = textOf(column.render(row));
+  if (typeof raw === "number" && Number.isFinite(raw) && /\d/.test(text)) return raw;
+  return text || plainValue(raw);
+}
+
+/**
+ * Compact table. `exportName` adds an Export (CSV) bar above it with these rows: pass it only for admins who
+ * may export (`canExport(user)`), as the rows are handed to the browser for the file. `exportColumns`
+ * ([{ label, value(row) }]) sets the file's columns; otherwise each column's cell is used (see cellExportValue).
+ */
+export function MiniTable({ columns, rows, empty = "No records.", exportName, exportColumns }) {
   if (!rows.length) return <p className="px-4 py-6 text-center text-sm text-ink-muted">{empty}</p>;
-  const [lead, ...rest] = columns;
+  const sheet = exportName
+    ? exportMatrix(
+        exportColumns ?? columns.filter((c) => c.export !== false).map((c) => ({ label: typeof c.label === "string" ? c.label : c.key, value: (row) => cellExportValue(c, row) })),
+        rows,
+      )
+    : null;
+  const [lead, ...others] = columns;
+  // Phone cards (same style as the main tables): a "Status" column rides in the card header,
+  // the rest are label-left / value-right lines in a soft panel (long text keeps a full-width block).
+  const statusCol = others.find((c) => c.key === "status" || (typeof c.label === "string" && c.label.toLowerCase() === "status"));
+  const rest = others.filter((c) => c !== statusCol);
+  const cell = (c, row) => (c.render ? c.render(row) : (row[c.key] ?? "—"));
   return (
     <>
+      {sheet && <ExportBar name={exportName} headers={sheet.headers} matrix={sheet.rows} />}
       <ul className="divide-y divide-line md:hidden">
         {rows.map((row, i) => (
-          <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3">
-            <div className="min-w-0 text-table">
-              <div className="font-medium break-words text-ink">{lead.render ? lead.render(row) : row[lead.key]}</div>
+          <li key={`${row.id ?? "row"}-${i}`} className="px-3 py-3 sm:px-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 font-medium break-words text-ink">{cell(lead, row)}</div>
+              {statusCol && <div className="shrink-0 text-right">{cell(statusCol, row)}</div>}
             </div>
             {rest.length > 0 && (
-              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 text-table">
-                {rest.map((c) => (
-                  <div key={c.key} className={cn("min-w-0", c.wrap && "col-span-2")}>
-                    <dt className="text-micro font-medium tracking-wide text-ink-muted uppercase">{c.label}</dt>
-                    <dd className="mt-0.5 min-w-0 break-words text-ink-soft [&_.truncate]:whitespace-normal">{c.render ? c.render(row) : row[c.key]}</dd>
-                  </div>
-                ))}
+              <dl className="mt-2 grid gap-x-6 rounded-lg bg-surface-muted/60 px-3 py-1 text-table sm:grid-cols-2">
+                {rest.map((c) =>
+                  c.wrap ? (
+                    <div key={c.key} className="min-w-0 border-b border-line/60 py-1.5 last:border-0 sm:col-span-2">
+                      <dt className="text-small text-ink-muted">{c.label}</dt>
+                      <dd className="mt-0.5 min-w-0 break-words text-ink [&_.truncate]:whitespace-normal">{cell(c, row)}</dd>
+                    </div>
+                  ) : (
+                    <div key={c.key} className="flex min-w-0 items-start justify-between gap-3 border-b border-line/60 py-1.5 last:border-0">
+                      <dt className="max-w-[40%] shrink-0 pt-px text-small leading-snug text-ink-muted">{c.label}</dt>
+                      <dd className="flex min-w-0 flex-1 flex-col items-end text-right leading-snug break-words text-ink [&_.truncate]:whitespace-normal">{cell(c, row)}</dd>
+                    </div>
+                  ),
+                )}
               </dl>
             )}
           </li>

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
 import {
   addBulkOrderRemark,
   checkBulkServiceability,
@@ -11,6 +11,8 @@ import {
   deleteBulkOrder,
   deleteBulkQuotation,
   exportBulkOrders,
+  getBulkQuotations,
+  getBulkShipments,
   getBulkOrderLabel,
   getBulkOrderTracking,
   lookupBulkPincode,
@@ -20,6 +22,7 @@ import {
   updateBulkOrderStatus,
   updateBulkWaybill,
 } from "@/lib/services/admin/parity/bulk";
+import { collectPages } from "@/lib/services/admin/_export";
 
 const invalid = (message = "Invalid request.") => ({ ok: false, message });
 const str = (v, max = 120) => (typeof v === "string" || typeof v === "number" ? String(v).trim().slice(0, max) : "");
@@ -34,12 +37,37 @@ function refresh(orderId) {
 }
 
 export async function exportBulkOrdersAction(filters) {
-  const auth = await assertPermission("bulk.orders", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   const query = {};
   for (const key of ["orderId", "customer", "status"]) if (str(filters?.[key])) query[key] = str(filters[key]);
   for (const key of ["from", "to"]) if (YMD.test(str(filters?.[key], 10))) query[key] = str(filters[key], 10);
   return exportBulkOrders(query, auth.user);
+}
+
+/** Every quotation for the filters on screen (Export, super admins only). */
+export async function exportBulkQuotationsAction(filters) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const query = {};
+  for (const key of ["q", "status", "converted"]) if (str(filters?.[key])) query[key] = str(filters[key]);
+  for (const key of ["from", "to"]) if (YMD.test(str(filters?.[key], 10))) query[key] = str(filters[key], 10);
+  return collectPages(async (page, pageSize) => {
+    const data = await getBulkQuotations({ ...query, page, pageSize }, auth.user);
+    return { rows: data?.rows, total: data?.total };
+  });
+}
+
+/** Every bulk shipment for the filters on screen (Export, super admins only). */
+export async function exportBulkShipmentsAction(filters) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const query = {};
+  for (const key of ["q", "orderId", "waybill", "status"]) if (str(filters?.[key])) query[key] = str(filters[key]);
+  return collectPages(async (page, pageSize) => {
+    const data = await getBulkShipments({ ...query, page, pageSize }, auth.user);
+    return { rows: data?.rows, total: data?.total };
+  });
 }
 
 export async function bulkOrderTrackingAction(orderId) {

@@ -29,6 +29,7 @@ export default async function VendorProfitabilityPage() {
       <Card>
         <MiniTable
           rows={rows.map((r) => ({ ...r, id: r.vendorId }))}
+          exportName="vendor-profitability"
           columns={[
             { key: "vendor", label: "Vendor", render: (r) => <Link href={`/admin/vendors/${r.vendorId}`} className="font-medium text-brand-700 hover:underline">{r.vendor}</Link> },
             { key: "products", label: "Priced products", align: "right", render: (r) => formatNumber(r.products) },

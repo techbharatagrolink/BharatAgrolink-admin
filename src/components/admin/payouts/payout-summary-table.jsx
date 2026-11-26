@@ -6,6 +6,7 @@ import { CalendarRange, ChevronLeft, ChevronRight, Download, Eye, FileSpreadshee
 import { DataTable } from "@/components/data-table/data-table";
 import { SearchInput, SelectFilter } from "@/components/data-table/filter-bar";
 import { useQueryState } from "@/components/data-table/use-query-state";
+import { useCanExport } from "@/components/admin/shell/admin-user";
 import { Checkbox, Input, Select } from "@/components/ui/form";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
@@ -81,6 +82,7 @@ function exportHref(path, filters, searchParams, format, payoutIds = [], columns
  * leaving every column ticked (or none) downloads every column, same as before this existed.
  */
 export function ExportMenu({ label, title, path, filters, payoutIds = [], columns }) {
+  const canExport = useCanExport();
   const { searchParams, pending } = useQueryState();
   const allKeys = useMemo(() => (columns ?? []).map((c) => c.value), [columns]);
   const [picked, setPicked] = useState(null);
@@ -95,6 +97,8 @@ export function ExportMenu({ label, title, path, filters, payoutIds = [], column
       return cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
     });
   const chosen = selected.length && selected.length < allKeys.length ? selected : null;
+  // Exports are for super admins only (the download routes re-check).
+  if (!canExport) return null;
   return (
     <Popover
       label={`${label}: choose columns and format`}

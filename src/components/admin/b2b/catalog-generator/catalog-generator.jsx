@@ -161,6 +161,8 @@ export function CatalogGenerator({ boot }) {
   const [frameReady, setFrameReady] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  // Phones show the preview box only once a catalogue has been generated (the empty box was just noise).
+  const [generated, setGenerated] = useState(false);
 
   const frameRef = useRef(null);
   const translateRef = useRef(null);
@@ -330,8 +332,10 @@ export function CatalogGenerator({ boot }) {
     const list = nextProducts.filter((p) => fresh.has(p.id));
     const pages = draw(list);
     translateRef.current?.refresh();
+    setGenerated(true);
     notify({ message: `Catalogue generated — ${list.length} products across ${pages} pages.` });
-    frameRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Wait a frame so the (phone) preview box is visible before scrolling to it.
+    requestAnimationFrame(() => frameRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
   const print = async () => {
@@ -364,13 +368,15 @@ export function CatalogGenerator({ boot }) {
         title="Catalogue Generator"
         description={`${boot.branding?.name || "Bharat Agrolink"} · B2B Sales Tool`}
         actions={
-          <>
-            <Select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGES.map(([value, label]) => ({ value, label }))} className="w-44" />
-            <Badge tone="neutral">{count} product{count === 1 ? "" : "s"} selected</Badge>
-            <ButtonLink href="/admin/b2b/catalog" size="sm">Back to Catalog</ButtonLink>
-            <Button size="sm" variant="primary" onClick={print}>Print / Save as PDF</Button>
-            {waButton()}
-          </>
+          // Phones: language + Back side by side, the count underneath; Print / WhatsApp live in the
+          // pinned panel below (they were shown twice). Wider screens: one row as before.
+          <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-2">
+            <Select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGES.map(([value, label]) => ({ value, label }))} className="w-44 max-sm:w-full" />
+            <Badge tone="neutral" className="max-sm:order-last max-sm:col-span-2 max-sm:justify-self-start">{count} product{count === 1 ? "" : "s"} selected</Badge>
+            <ButtonLink href="/admin/b2b/catalog" size="sm" className="max-sm:h-9">Back to Catalog</ButtonLink>
+            <Button size="sm" variant="primary" onClick={print} className="max-sm:hidden">Print / Save as PDF</Button>
+            {waButton({ className: "max-sm:hidden" })}
+          </div>
         }
       />
 
@@ -447,13 +453,20 @@ export function CatalogGenerator({ boot }) {
                 <Input type="number" min={2} max={12} step={1} value={perPageInput} onChange={(e) => setPerPageInput(e.target.value)} onBlur={onPerPage} onKeyDown={(e) => e.key === "Enter" && onPerPage()} className="h-8 w-16 text-center" />
               </label>
               <Button variant="primary" className="w-full" loading={generating} onClick={generate}>Generate catalogue</Button>
-              <Button variant="secondary" className="w-full" onClick={print}>Print / Save as PDF</Button>
-              {waButton({ className: "w-full", size: "md" })}
+              {/* Phones: Print and WhatsApp side by side to keep this pinned panel short. */}
+              <div className="grid gap-2 max-sm:grid-cols-2">
+                <Button variant="secondary" className="w-full max-sm:px-2" onClick={print}>
+                  <span className="sm:hidden">Print / PDF</span>
+                  <span className="max-sm:hidden">Print / Save as PDF</span>
+                </Button>
+                {waButton({ className: "w-full max-sm:px-2", size: "md" })}
+              </div>
             </CardBody>
           </Card>
         </aside>
 
-        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-line">
+        {/* Kept mounted (print / WhatsApp read from it); only hidden on phones until generated. */}
+        <div className={cn("min-w-0 flex-1 overflow-hidden rounded-xl border border-line", !generated && "max-sm:hidden")}>
           <iframe
             ref={frameRef}
             title="Catalogue preview"

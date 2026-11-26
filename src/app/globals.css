@@ -465,6 +465,36 @@
 .ui-stagger > :nth-child(5) { animation-delay: 140ms; }
 .ui-stagger > :nth-child(n + 6) { animation-delay: 175ms; }
 
+/* Quick pop-in for things that appear on click (chips, added rows, opened panels). */
+@keyframes ui-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ui-pop {
+  animation: ui-pop 0.18s ease-out both;
+}
+
+/* Phone bottom sheets slide up from the bottom edge. */
+@keyframes ui-sheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.ui-sheet {
+  animation: ui-sheet 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
 /* Skeleton shimmer (replaces a flat pulse). */
 @keyframes ui-shimmer {
   from {
@@ -508,6 +538,8 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .ui-stagger > *,
+  .ui-pop,
+  .ui-sheet,
   .ui-shimmer,
   .ui-indeterminate {
     animation: none;
@@ -633,5 +665,74 @@ html {
   select,
   textarea {
     font-size: var(--fs-input);
+  }
+}
+
+/* ---- Phone button rows (table toolbars, page header actions) --------------------------------
+   On phones the buttons sit in one even row of equal-width buttons instead of wrapping unevenly.
+   Wider pieces (filter groups, inputs, forms) take a full row. Below 360px the small icons hide
+   so three buttons still fit on one line. Tablet and desktop are unchanged. */
+@media (max-width: 639.98px) {
+  /* Only rows that actually hold buttons/links (a text-only slot, e.g. a month label, stays as it is). */
+  .ba-phone-actions:has(> button, > a, > .relative > button) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr));
+    gap: 0.375rem;
+    width: 100%;
+  }
+  .ba-phone-actions > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .ba-phone-actions > div:not(.relative),
+  .ba-phone-actions > input,
+  .ba-phone-actions > form {
+    grid-column: 1 / -1;
+  }
+  .ba-phone-actions > button,
+  .ba-phone-actions > a,
+  .ba-phone-actions > .relative > button {
+    width: 100%;
+    padding-inline: 0.5rem;
+  }
+}
+/* Only rows of three or more buttons drop their icons on very narrow screens; two always fit. */
+@media (max-width: 359.98px) {
+  .ba-phone-actions:has(> :nth-child(3)) > button > svg:not(.animate-spin),
+  .ba-phone-actions:has(> :nth-child(3)) > a > svg,
+  .ba-phone-actions:has(> :nth-child(3)) > .relative > button > svg {
+    display: none;
+  }
+}
+
+/* Phones: date / month boxes use less inner padding so "dd-mm-yyyy" fits beside the calendar icon,
+   even when two of them share a row. */
+@media (max-width: 639.98px) {
+  input[type="date"],
+  input[type="month"] {
+    padding-inline: 0.5rem;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
+    margin-inline-start: 2px;
+    padding: 0;
+  }
+}
+
+/* Phones: placeholder hints are a size smaller than typed text so they fit in half-width boxes
+   ("Search Order ID", "Customer Name"), and end with an ellipsis if they still do not fit. Typed
+   text stays 16px, so iPhones do not zoom in on focus (only the input font size triggers that). */
+@media (max-width: 639.98px) {
+  input::placeholder,
+  textarea::placeholder {
+    font-size: 0.875rem;
+  }
+  input:placeholder-shown {
+    text-overflow: ellipsis;
+  }
+  /* Date / month boxes: their "dd-mm-yyyy" text is the browser date display, not a placeholder. */
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="month"]::-webkit-datetime-edit {
+    font-size: 0.875rem;
   }
 }

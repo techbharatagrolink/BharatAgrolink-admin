@@ -39,10 +39,10 @@ export function LeadSheetBar({ target }) {
           <h2 className="text-sm font-semibold text-ink">{target.name} · Daily Sales Target</h2>
           <p className="text-xs text-ink-muted">Today {target.date}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-ink">Monthly Goal: {money(target.monthlyTarget)}</span>
-          <span className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-ink">Weekly Goal: {money(target.weeklyGoal)}</span>
-          <Button size="sm" variant="secondary" onClick={() => syncAisensyAction().then((result) => {
+        <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
+          <span className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-ink max-sm:text-center">Monthly Goal: {money(target.monthlyTarget)}</span>
+          <span className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-ink max-sm:text-center">Weekly Goal: {money(target.weeklyGoal)}</span>
+          <Button size="sm" variant="secondary" className="max-sm:col-span-2 max-sm:h-9" onClick={() => syncAisensyAction().then((result) => {
             if (!result?.ok) notify({ message: result?.message || "AiSensy sync failed.", tone: "error" });
             else {
               notify({ message: result.allowed === false ? "AiSensy sync runs for admins and managers." : `Synced. ${result.created || 0} new, ${result.updated || 0} updated.`, tone: "success" });

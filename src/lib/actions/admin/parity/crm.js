@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertPermission } from "@/lib/auth/session";
+import { assertExport, assertPermission } from "@/lib/auth/session";
 import {
   addLead,
   agentLeadAction,
@@ -9,17 +9,25 @@ import {
   convertEngagement,
   deadLeadAction,
   exportTracking,
+  getAgentLeads,
   getAgentPerformance,
+  getBulkInquiries,
   getCustomerReport,
+  getDeadLeads,
+  getEngagement,
   getLeadReports,
   getLeadTimeline,
+  getRequestedLeads,
   getSalesByLeads,
   getTrackingCustomers,
+  getUnassignedLeads,
   importLeads,
   requestedLeadAction,
   saveAgentZones,
   unassignedLeadAction,
 } from "@/lib/services/admin/parity/crm";
+import { collectPages } from "@/lib/services/admin/_export";
+import { listQuery } from "@/components/admin/parity/crm/query";
 
 const invalid = (message = "Invalid request.") => ({ ok: false, message });
 const str = (v, max = 200) => (typeof v === "string" || typeof v === "number" ? String(v).trim().slice(0, max) : "");
@@ -146,8 +154,31 @@ export async function customerReportAction(permission, mobile) {
 
 const TRACKING_KEYS = ["view", "sort", "activity", "term", "product", "sku", "phone", "name", "userType", "source", "device", "city", "minTimes", "from", "to"];
 
+/* CRM lists without an API export: the list endpoint, read 100 rows at a time with the page's own filters. */
+const EXPORT_LISTS = {
+  requested: { fetch: getRequestedLeads, extra: ["agent"] },
+  dead: { fetch: getDeadLeads, extra: ["agent"] },
+  unassigned: { fetch: getUnassignedLeads, extra: [] },
+  agent: { fetch: getAgentLeads, extra: ["status"] },
+  engagement: { fetch: getEngagement, extra: ["type"] },
+  bulk: { fetch: getBulkInquiries, extra: ["state"] },
+};
+
+/** Every row of a CRM lead sheet / Convert tab for the filters on screen (DataTable onExport). Super admins only. */
+export async function exportCrmListAction(list, params) {
+  const auth = await assertExport();
+  if (!auth.ok) return auth;
+  const spec = Object.hasOwn(EXPORT_LISTS, list) ? EXPORT_LISTS[list] : null;
+  if (!spec) return invalid();
+  const { page: _page, pageSize: _pageSize, ...filters } = listQuery(params && typeof params === "object" ? params : {}, spec.extra);
+  return collectPages(async (page, pageSize) => {
+    const data = await spec.fetch({ ...filters, page, pageSize }, auth.user);
+    return { rows: data?.rows, total: data?.total };
+  });
+}
+
 export async function exportTrackingAction(params) {
-  const auth = await assertPermission("crm.tracking", "view");
+  const auth = await assertExport();
   if (!auth.ok) return auth;
   const query = Object.fromEntries(TRACKING_KEYS.map((k) => [k, str(params?.[k], 200)]).filter(([, v]) => v));
   const result = await exportTracking(query, auth.user);

@@ -63,6 +63,7 @@ export default async function BuyerDetailPage({ params }) {
               ]}
               rows={data.rfqs}
               empty="No RFQs from this buyer."
+              exportName={`buyer-${b.id}-rfqs`}
             />
           </Card>
           <Card>
@@ -77,6 +78,7 @@ export default async function BuyerDetailPage({ params }) {
               ]}
               rows={data.orders}
               empty="No orders yet."
+              exportName={`buyer-${b.id}-orders`}
             />
           </Card>
           {data.claims.length > 0 && (
@@ -90,6 +92,7 @@ export default async function BuyerDetailPage({ params }) {
                   { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
                 ]}
                 rows={data.claims}
+                exportName={`buyer-${b.id}-claims`}
               />
             </Card>
           )}

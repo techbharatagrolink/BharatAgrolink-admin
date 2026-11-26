@@ -54,11 +54,11 @@ export function FraudTables({ problemCustomers, topCustomers }) {
     <div className="mt-4 space-y-4">
       <Card>
         <CardHeader title="Customers with RTO/Cancelled Orders" />
-        <DataGrid columns={PROBLEM_COLUMNS} rows={problemCustomers} caption="Customers with RTO or cancelled orders" empty="No customers with RTO or cancelled orders." />
+        <DataGrid columns={PROBLEM_COLUMNS} rows={problemCustomers} caption="Customers with RTO or cancelled orders" empty="No customers with RTO or cancelled orders." exportName="fraud-problem-customers" />
       </Card>
       <Card>
         <CardHeader title="Customers with Most Orders" />
-        <DataGrid columns={TOP_COLUMNS} rows={topCustomers} caption="Customers with most orders" empty="No customer orders yet." />
+        <DataGrid columns={TOP_COLUMNS} rows={topCustomers} caption="Customers with most orders" empty="No customer orders yet." exportName="fraud-top-customers" />
       </Card>
     </div>
   );

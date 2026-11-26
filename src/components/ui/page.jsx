@@ -10,7 +10,7 @@ export function PageHeader({ title, description, actions, meta, className }) {
         {description && <p className="mt-1 max-w-3xl text-body text-ink-muted">{description}</p>}
         {meta && <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="ba-phone-actions flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
@@ -54,12 +54,12 @@ export function StatCard({ label, value, hint, delta, href, icon: Icon, tone = "
 }
 
 export function StatGrid({ children, className }) {
-  return <div className={cn("ui-stagger grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4", className)}>{children}</div>;
+  return <div className={cn("ui-stagger grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] lg:grid-cols-4", className)}>{children}</div>;
 }
 
 export function DescriptionList({ items, columns = 2, className }) {
   return (
-    <dl className={cn("grid gap-x-6 gap-y-3", columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : columns === 1 ? "" : "sm:grid-cols-2", className)}>
+    <dl className={cn("grid gap-x-6 gap-y-3", columns === 3 ? "grid-cols-2 lg:grid-cols-3" : columns === 1 ? "" : "grid-cols-2", className)}>
       {items.filter(Boolean).map((item) => (
         <div key={item.label} className="min-w-0">
           <dt className="text-xs text-ink-muted">{item.label}</dt>

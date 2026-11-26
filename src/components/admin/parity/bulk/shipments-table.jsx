@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Pencil } from "lucide-react";
-import { updateBulkWaybillAction } from "@/lib/actions/admin/parity/bulk";
+import { exportBulkShipmentsAction, updateBulkWaybillAction } from "@/lib/actions/admin/parity/bulk";
+import { ExportButton } from "@/components/data-table/export-button";
 import { inr } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,17 @@ import { GridTable } from "@/components/data-table/grid-table";
 import { BulkPager } from "./bulk-list";
 
 /** shipments.php grid (newest 1000 orders) with the "Update waybill" modal. */
+const EXPORT_COLUMNS = [
+  { label: "Order ID", value: (s) => s.orderId },
+  { label: "Waybill", value: (s) => s.waybillNo },
+  { label: "Customer", value: (s) => s.customerName },
+  { label: "From", value: (s) => s.from },
+  { label: "To", value: (s) => s.to },
+  { label: "Partner", value: (s) => s.partner },
+  { label: "Invoice (₹)", value: (s) => s.invoiceValue },
+  { label: "Status", value: (s) => s.status },
+];
+
 export function BulkShipmentsTable({ result, query, canEdit }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -39,7 +51,7 @@ export function BulkShipmentsTable({ result, query, canEdit }) {
 
   return (
     <Card>
-      <CardHeader title="Shipments" />
+      <CardHeader title="Shipments" actions={<ExportButton name="bulk-shipments" columns={EXPORT_COLUMNS} load={() => exportBulkShipmentsAction(query)} />} />
       {rows.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-ink-muted">No shipments match the filters.</p>
       ) : (

@@ -93,7 +93,7 @@ function draftFrom(pricing) {
 function SummaryRow({ label, value, hint, strong, tone }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className="min-w-0 text-xs text-ink-muted">{label}{hint && <span className="block text-micro">{hint}</span>}</span>
+      <span className="min-w-0 text-xs text-ink-muted">{label}{hint && <span className="block text-[11px]">{hint}</span>}</span>
       <span className={`shrink-0 text-right text-sm tabular-nums ${strong ? "font-semibold text-ink" : "text-ink-soft"} ${tone === "danger" ? "text-danger-ink" : tone === "warning" ? "text-warning-ink" : ""}`}>{value}</span>
     </div>
   );
@@ -426,7 +426,7 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
                         <label className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-xs ${checked ? "border-brand-600 bg-brand-50" : "border-line"} ${canEdit ? "" : "cursor-not-allowed opacity-70"}`}>
                           <span className="flex min-w-0 items-center gap-2">
                             <input type="checkbox" className="accent-brand-600" checked={checked} disabled={!canEdit} onChange={() => toggleService(s.code)} />
-                            <span className="min-w-0"><span className="block truncate font-medium text-ink">{s.name}</span><span className="block text-micro text-ink-muted">{s.category} · {chargeText}</span></span>
+                            <span className="min-w-0"><span className="block truncate font-medium text-ink">{s.name}</span><span className="block text-[11px] text-ink-muted">{s.category} · {chargeText}</span></span>
                           </span>
                           <span className="shrink-0 tabular-nums text-ink">{amount == null ? "—" : `${draft.serviceBasis === "NRV" ? "−" : "+"}${money(amount)}`}</span>
                         </label>
@@ -598,13 +598,13 @@ export function PricingFactorsStep({ productId, canEdit, onPriced, creating = fa
           )}
 
           {canEdit && creating && (
-            <p className="rounded-lg border border-line p-3 text-micro text-ink-muted">This price is stored when you save the product.</p>
+            <p className="rounded-lg border border-line p-3 text-[11px] text-ink-muted">This price is stored when you save the product.</p>
           )}
           {canEdit && !creating && (
             <div className="space-y-2 rounded-lg border border-line p-3">
               <Field label="Reason (optional)">{({ id }) => <Input id={id} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} placeholder="Why the price changed" />}</Field>
               <Button variant="primary" className="w-full" loading={pending} disabled={!canSave} onClick={save}>Save pricing</Button>
-              <p className="text-micro text-ink-muted">Saving writes the display price to the catalog and records a history entry.</p>
+              <p className="text-[11px] text-ink-muted">Saving writes the display price to the catalog and records a history entry.</p>
             </div>
           )}
 

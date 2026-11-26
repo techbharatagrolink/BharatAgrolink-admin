@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Repeat, Trash2 } from "lucide-react";
-import { convertBulkQuotationAction, deleteBulkQuotationAction } from "@/lib/actions/admin/parity/bulk";
+import { convertBulkQuotationAction, deleteBulkQuotationAction, exportBulkQuotationsAction } from "@/lib/actions/admin/parity/bulk";
+import { ExportButton } from "@/components/data-table/export-button";
 import { formatDate, inr } from "@/lib/format";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -15,6 +16,21 @@ import { GridTable } from "@/components/data-table/grid-table";
 import { BulkPager } from "./bulk-list";
 
 /** quotations.php grid with view, convert-to-order and delete. */
+const EXPORT_COLUMNS = [
+  { label: "Quotation #", value: (q) => q.quotationNumber },
+  { label: "Date", value: (q) => q.quotationDate },
+  { label: "Customer", value: (q) => q.customerName },
+  { label: "Mobile", value: (q) => q.customerMobile },
+  { label: "Email", value: (q) => q.customerEmail },
+  { label: "Company", value: (q) => q.customerCompany },
+  { label: "Invoice (₹)", value: (q) => q.invoiceValue },
+  { label: "Packages", value: (q) => q.noOfPackages },
+  { label: "Status", value: (q) => q.status },
+  { label: "Converted", value: (q) => (q.converted ? "Yes" : "No") },
+  { label: "Order ID", value: (q) => q.orderId },
+  { label: "Valid until", value: (q) => q.validUntil },
+];
+
 export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
   const router = useRouter();
   const { notify } = useToast();
@@ -40,7 +56,7 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
 
   return (
     <Card>
-      <CardHeader title="Quotations" />
+      <CardHeader title="Quotations" actions={<ExportButton name="bulk-quotations" columns={EXPORT_COLUMNS} load={() => exportBulkQuotationsAction(query)} />} />
       {rows.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-ink-muted">No quotations match the filters.</p>
       ) : (

@@ -5,6 +5,7 @@ import { LinkTabs } from "@/components/ui/page";
 import { EmptyState } from "@/components/ui/states";
 import { inventoryPage, LoadError } from "@/components/admin/inventory/inventory-page";
 import { MovementTable } from "@/components/admin/inventory/stock-views";
+import { MovementsExport } from "@/components/admin/inventory/movements-export";
 
 export const metadata = { title: "Stock History" };
 
@@ -21,6 +22,8 @@ export default async function StockHistoryPage({ searchParams }) {
   const { user, header, denied } = await inventoryPage({
     title: "Stock History",
     description: "Every stock change: adjustments, orders, cancellations and returns, with who made it and why. This log is append-only.",
+    // Super admins only (the button hides itself and the export action re-checks).
+    actions: <MovementsExport view={opening ? "opening" : "changes"} />,
   });
   if (denied) return denied;
   const moves = await loadStock(user, "movements", opening ? { limit: PAGE, beforeId, type: "OPENING" } : { limit: PAGE, beforeId, changesOnly: "1" });

@@ -116,25 +116,19 @@ export function deliveredQuery(params) {
   };
 }
 
-function cell(value) {
-  const text = value == null ? "" : String(value);
-  return /[",\n\r\t \\]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+import { csvText, downloadCsv, downloadXlsx, exportFileName } from "@/lib/csv";
+
+export function deliveredMatrix(rows) {
+  const headers = EXPORT_COLUMNS.map(([, label]) => label);
+  const data = rows.map((row) => EXPORT_COLUMNS.map(([key]) => row[key]));
+  return { headers, rows: data };
 }
 
-/** fputcsv-style CSV with a UTF-8 BOM, as the PHP export writes it. */
 export function deliveredCsv(rows) {
-  const lines = [EXPORT_COLUMNS.map(([, label]) => cell(label)).join(",")];
-  for (const row of rows) lines.push(EXPORT_COLUMNS.map(([key]) => cell(row[key])).join(","));
-  return `\uFEFF${lines.join("\n")}\n`;
+  const { headers, rows: data } = deliveredMatrix(rows);
+  return csvText(headers, data);
 }
 
-export function downloadText(filename, text, type = "text/csv;charset=utf-8") {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+export function downloadText(filename, text) {
+  downloadCsv(filename, text);
 }
