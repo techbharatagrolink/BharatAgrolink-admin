@@ -41,7 +41,7 @@ function one(value) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function dashboardQuery(params = {}) {
+function dashboardQuery(params = {}) {
   const query = {};
   for (const key of FILTER_KEYS) {
     const value = one(params?.[key])?.trim();
