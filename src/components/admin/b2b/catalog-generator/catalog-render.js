@@ -215,7 +215,46 @@ function pageFooterHtml(ctx) {
   `;
 }
 
-/** One pack shot beside a rounded spec card, alternating sides down the page. No pricing. */
+const RATE_PACKS = 3;
+const inr = (n) => (n === null || n === undefined ? "" : `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`);
+const caseLabel = (n) => (n >= 8 ? "8+ cases" : `${n} case${n > 1 ? "s" : ""}`);
+
+/** Pack name without the product name in front ("Product - 250GM (250GM X 8)" -> "250GM (250GM X 8)"). */
+function shortPack(pack, productName) {
+  const p = String(pack || "").replace(/\s+/g, " ").trim();
+  const name = String(productName || "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (name && p.toLowerCase().startsWith(name)) return p.slice(name.length).replace(/^[\s\-:]+/, "") || p;
+  const cut = p.lastIndexOf(" - ");
+  return cut > 0 ? p.slice(cut + 3) : p;
+}
+
+/**
+ * Buyer-facing commercial block (spec §5): pack, units per case, MOQ, B2B rate ex-GST (+ GST %) and the
+ * customer case rates 1 / 2 / 4 / 8+. Never cost, floor or margin (the API does not send them).
+ */
+function ratesHtml(product) {
+  const rows = (product.commercial || []).filter((c) => c.rate !== null && c.rate !== undefined);
+  if (!rows.length) return "";
+  const shown = rows.slice(0, RATE_PACKS);
+  const body = shown.map((c) => {
+    const moq = c.moq ? (c.moqType === "order_value" ? `Min order ${inr(c.moq)}` : `MOQ ${c.moq} ${c.moqType || c.unit}`) : "";
+    const cases = (c.caseRates || []).map((r) => `${caseLabel(r.minCases)} ${inr(r.rate)}`).join(" · ");
+    return `
+      <tr>
+        <td class="rate-table__pack">${escapeHtml(shortPack(c.pack, product.name))}${c.unitsPerCase ? `<span class="rate-table__sub">${c.unitsPerCase} per case</span>` : ""}${moq ? `<span class="rate-table__sub">${escapeHtml(moq)}</span>` : ""}</td>
+        <td class="rate-table__rate" translate="no">${inr(c.rate)}<span class="rate-table__sub">/${escapeHtml(c.unit)} + ${c.gstPct}% GST</span></td>
+        <td class="rate-table__cases" translate="no">${cases ? escapeHtml(cases) : "—"}</td>
+      </tr>`;
+  }).join("");
+  const more = rows.length > shown.length ? `<p class="rate-table__more">+${rows.length - shown.length} more pack${rows.length - shown.length > 1 ? "s" : ""}: ask for a quotation.</p>` : "";
+  return `
+    <table class="rate-table">
+      <thead><tr><th>Pack</th><th>B2B rate (ex-GST)</th><th>Case rates (per unit)</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>${more}`;
+}
+
+/** One pack shot beside a rounded spec card, alternating sides down the page; rates when ctx.showRates. */
 function createProductCard(ctx, product, index) {
   const row = ctx.doc.createElement("div");
   row.className = "spec-row" + (index % 2 === 1 ? " spec-row--flip" : "");
@@ -244,6 +283,7 @@ function createProductCard(ctx, product, index) {
         ${escapeHtml(product.name)}
       </h3>
       ${specRows ? `<dl class="spec-list">${specRows}</dl>` : ""}
+      ${ctx.showRates ? ratesHtml(product) : ""}
     </div>
   `;
 

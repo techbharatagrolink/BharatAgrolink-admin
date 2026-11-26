@@ -1630,6 +1630,28 @@ div.cover-logo {
 }
 .spec-list__key::after { content: ":"; float: right; }
 
+/* Buyer-facing rates (task #107, spec §5): compact so three products still fit an A4 page. */
+.rate-table {
+  width: 100%;
+  margin-top: 3mm;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--spec-ink);
+}
+.rate-table th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--spec-green-deep);
+  border-bottom: 1px solid var(--spec-green);
+  padding: 0.8mm 1mm;
+}
+.rate-table td { padding: 0.8mm 1mm; vertical-align: top; border-bottom: 1px solid #e5e7eb; }
+.rate-table tr:last-child td { border-bottom: 0; }
+.rate-table__rate { font-weight: 700; white-space: nowrap; }
+.rate-table__sub { display: block; font-weight: 400; color: var(--spec-ink-soft); }
+.rate-table__more { margin: 1mm 0 0; font-size: 8.5px; color: var(--spec-ink-soft); }
+
 .spec-list__val {
   font-family: var(--font-body);
   font-size: 11px;
