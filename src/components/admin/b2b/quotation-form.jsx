@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { saveB2bQuotation, searchB2bBuyers, searchB2bQuoteProducts } from "@/lib/actions/admin/b2b-screens";
+import { calculateB2bQuotePricing, saveB2bQuotation, searchB2bBuyers, searchB2bQuoteProducts } from "@/lib/actions/admin/b2b-screens";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -66,6 +66,30 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
   const [searchingBuyers, startBuyers] = useTransition();
   const [searchingProducts, startProducts] = useTransition();
   const [saving, startSave] = useTransition();
+  const [pricingBusy, startPricing] = useTransition();
+  const [pricingNote, setPricingNote] = useState(null);
+
+  // Pricing rules (spec C3): fills each line with the rule rate (base B2B price less the rule discount)
+  // and shows which rules applied. Lines are still editable; the server re-prices on save.
+  function applyRules() {
+    if (!customerTypeId || !lines.length) return;
+    startPricing(async () => {
+      const res = await calculateB2bQuotePricing({
+        customerId: Number(customerId) || undefined,
+        customerTypeId: Number(customerTypeId),
+        paymentMode,
+        lines: lines.map((l) => ({ productId: l.productId, variantId: l.variantId || 0, quantity: Number(l.quantity) || 1 })),
+      });
+      if (!res.ok) return setPricingNote({ tone: "error", text: res.message });
+      setLines((current) => current.map((l, i) => {
+        const r = res.lines?.[i];
+        if (!r || r.error || r.suggestedRate == null) return l;
+        return { ...l, unitPrice: r.suggestedRate, priceEdited: true, ruleNote: r.rulePct ? `${r.rulePct}% by ${r.rules.map((x) => `${x.name} (${x.levelLabel})`).join(" + ")}${r.capped ? " · capped at the customer type maximum" : ""}` : "No rule applies: base price" };
+      }));
+      const applied = (res.lines ?? []).filter((r) => r.rulePct > 0).length;
+      setPricingNote({ tone: "ok", text: `${applied} of ${res.lines?.length ?? 0} line(s) got a rule discount.${res.customerType?.maxDiscountPct ? ` ${res.customerType.name} maximum: ${res.customerType.maxDiscountPct}%.` : ""}${res.yourLimitPct != null ? ` Your limit: ${res.yourLimitPct}% (above the rules and your limit needs approval).` : ""}` });
+    });
+  }
 
   const type = options.customerTypes.find((item) => String(item.id) === String(customerTypeId));
   const subtotal = lines.reduce((sum, line) => sum + (Number(line.unitPrice) || 0) * (Number(line.quantity) || 0), 0);
@@ -283,6 +307,13 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
               </ul>
             )}
           </Field>
+          {lines.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" variant="secondary" loading={pricingBusy} disabled={!customerTypeId} onClick={applyRules}>Apply pricing rules</Button>
+              {!customerTypeId && <span className="text-xs text-ink-muted">Choose the customer type first.</span>}
+              {pricingNote && <span className={`text-xs ${pricingNote.tone === "error" ? "text-danger-ink" : "text-ink-muted"}`} role="status">{pricingNote.text}</span>}
+            </div>
+          )}
           {lines.length === 0 ? (
             <p className="text-sm text-ink-muted">No products yet. Search above to add a line.</p>
           ) : (
@@ -309,7 +340,7 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                         </td>
                         <td className="py-2 pr-3 tabular">{line.stock}</td>
                         <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></td>
-                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true, ruleNote: undefined })} />{line.ruleNote && <span className="mt-1 block max-w-[16rem] text-xs text-ink-muted">{line.ruleNote}</span>}</td>
                         <td className="py-2 pr-3 tabular">{line.gstPct}</td>
                         <td className="py-2"><Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button></td>
                       </tr>
@@ -339,7 +370,7 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                         <p className="text-sm text-ink tabular">{line.gstPct}</p>
                       </div>
                       <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></Field>
-                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></Field>
+                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true, ruleNote: undefined })} />{line.ruleNote && <span className="mt-1 block text-xs text-ink-muted">{line.ruleNote}</span>}</Field>
                     </div>
                   </div>
                 ))}

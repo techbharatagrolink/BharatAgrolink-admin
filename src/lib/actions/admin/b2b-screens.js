@@ -55,6 +55,13 @@ export async function searchB2bQuoteProducts(q) {
   return searchQuotationProducts(q, gate.user);
 }
 
+/** Rule discount and suggested rate per line (spec C3); the quotation is re-priced on the server when saved. */
+export async function calculateB2bQuotePricing(body) {
+  const gate = await assertPermission("b2b.quotations", "add");
+  if (!gate.ok) return { ok: false, message: gate.message };
+  return rfqApi.calculateQuotePricing(body, gate.user);
+}
+
 /** Creates a quotation, or with reviseOf a new version of that quotation (the API re-checks everything). */
 export async function saveB2bQuotation(body, reviseOf = null) {
   const gate = await assertPermission("b2b.quotations", "add");

@@ -35,6 +35,16 @@ export async function searchQuotationProducts(q, user) {
   }
 }
 
+/** Pricing rules (spec C3): rule discount and suggested rate per line for the buyer / type / payment mode. */
+export async function calculateQuotePricing(body, user) {
+  try {
+    const { data } = await api("admin/b2b/pricing/calculate", { token: user.token, method: "POST", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The pricing rules could not be applied.");
+  }
+}
+
 export async function createQuotation(body, user) {
   try {
     const { data } = await api("admin/b2b/quotations", { token: user.token, method: "POST", body });
