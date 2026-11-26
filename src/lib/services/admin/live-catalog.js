@@ -86,9 +86,13 @@ export const LIVE_RESOURCES = {
   "b2b.quotations": { path: "/b2b/quotations", page: "b2b_orders/b2b_quotations.php", permission: "b2b.quotations" },
   "b2b.orders": { path: "/b2b/orders", page: "b2b_orders/b2b_order_list.php", permission: "b2b.orders" },
   "b2b.payments": { path: "/b2b/payments", page: "b2b_orders/payments.php", permission: "b2b.finance" },
+  "b2b.receivables": { path: "/b2b/receivables", page: "b2b_orders/payments.php", permission: "b2b.finance" },
+  "b2b.creditRequests": { path: "/b2b/credit-requests", page: "b2b_orders/payments.php", permission: "b2b.finance" },
   "b2b.settlements": { path: "/b2b/settlements", page: "b2b_orders/settlements.php", permission: "b2b.finance" },
   "b2b.claims": { path: "/b2b/claims", page: "b2b_orders/claims.php", permission: "b2b.orders" },
   "b2b.alerts": { path: "/b2b/alerts", page: "b2b_orders/alerts.php", permission: "b2b" },
+  "b2b.skuLinks": { path: "/b2b/sku-links", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
+  "b2b.auditLog": { path: "/b2b/audit-log", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
   bulk: { path: "/bulk-orders/inquiries", page: "bulk_orders/bulk_inquiry.php", permission: "bulk" },
   "bulk.warehouses": { path: "/bulk-orders/warehouses", page: "bulk_orders/warehouses.php", permission: "bulk" },
   "operations.ndr": { path: "/operations/ndr", page: "operations_center/ndr_escalations.php", permission: "operations.center" },
@@ -274,9 +278,12 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/b2b/quotations",
   "/admin/b2b/orders",
   "/admin/b2b/payments",
+  "/admin/b2b/receivables",
+  "/admin/b2b/credit-requests",
   "/admin/b2b/settlements",
   "/admin/b2b/claims",
   "/admin/b2b/alerts",
+  "/admin/b2b/sku-links",
   "/admin/bulk-orders",
   "/admin/bulk-orders/warehouses",
   "/admin/operations",
@@ -330,5 +337,6 @@ export function isLiveAdminPath(pathname) {
   if (/^\/admin\/support\/[^/]+$/.test(path)) return true;
   if (/^\/admin\/b2b\/buyers\/[^/]+$/.test(path)) return true;
   if (/^\/admin\/b2b\/orders\/[^/]+$/.test(path)) return true;
+  if (/^\/admin\/b2b\/quotations\/\d+(\/revise)?$/.test(path)) return true;
   return /^\/admin\/roles\/(?!menus$)[^/]+$/.test(path);
 }

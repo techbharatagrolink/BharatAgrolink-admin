@@ -8,34 +8,58 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { formatINR } from "@/lib/format";
 
+// Case price slab (task #107 subtask 3): the largest 1 / 2 / 4 / 8+ case slab the quantity reaches, else the list price.
+function slabPrice(line, quantity) {
+  const perCase = Number(line.unitsPerCase) || 0;
+  if (!perCase || !line.caseSlabs?.length) return line.listPrice ?? line.unitPrice;
+  const cases = Number(quantity) / perCase;
+  const hit = line.caseSlabs.filter((s) => cases + 1e-9 >= s.minCases).sort((a, b) => b.minCases - a.minCases)[0];
+  return hit ? hit.rate : line.listPrice ?? line.unitPrice;
+}
+
+function CaseHint({ line }) {
+  const perCase = Number(line.unitsPerCase) || 0;
+  if (!perCase) return null;
+  const cases = Math.round((Number(line.quantity) / perCase) * 100) / 100;
+  return <span className="mt-0.5 block text-xs text-ink-muted">{cases} case{cases === 1 ? "" : "s"} of {perCase}{Number.isInteger(cases) ? "" : " · not whole cases"}</span>;
+}
+
 const emptyLine = { productId: 0, variantId: 0, sku: "", name: "", quantity: 1, unitPrice: 0, gstPct: 0, stock: 0 };
 
-export function QuotationForm({ options }) {
-  const [buyerQuery, setBuyerQuery] = useState("");
+/**
+ * Create a quotation, or (reviseOf + initial) a new version of one: the API keeps the old version
+ * as it was (superseded) and prices the new one again (spec C6). `initial` is the detail API's
+ * formValues with display fields (name, gstPct, stock) on each line.
+ */
+export function QuotationForm({ options, initial = null, reviseOf = null }) {
+  const start = (value, fallback) => (initial && value != null ? String(value) : fallback);
+  const [buyerQuery, setBuyerQuery] = useState(initial ? (initial.businessName ? `${initial.businessName} (${initial.customerName})` : initial.customerName || "") : "");
   const [buyers, setBuyers] = useState([]);
   const [productQuery, setProductQuery] = useState("");
   const [products, setProducts] = useState([]);
-  const [customerId, setCustomerId] = useState(0);
-  const [customerName, setCustomerName] = useState("");
-  const [customerMobile, setCustomerMobile] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [gstin, setGstin] = useState("");
-  const [customerTypeId, setCustomerTypeId] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [district, setDistrict] = useState("");
-  const [state, setState] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMode, setPaymentMode] = useState("Prepaid");
-  const [advancePct, setAdvancePct] = useState("0");
-  const [creditDays, setCreditDays] = useState("0");
-  const [validUntil, setValidUntil] = useState(options.validUntil || "");
-  const [lines, setLines] = useState([]);
-  const [shippingCost, setShippingCost] = useState("0");
-  const [shippingManual, setShippingManual] = useState(false);
-  const [handlingCharges, setHandlingCharges] = useState("0");
-  const [pgCharges, setPgCharges] = useState("0");
-  const [claimsRisk, setClaimsRisk] = useState("0");
-  const [remarks, setRemarks] = useState("");
+  const [customerId, setCustomerId] = useState(initial?.customerId ?? 0);
+  const [customerName, setCustomerName] = useState(initial?.customerName ?? "");
+  const [customerMobile, setCustomerMobile] = useState(initial?.customerMobile ?? "");
+  const [businessName, setBusinessName] = useState(initial?.businessName ?? "");
+  const [gstin, setGstin] = useState(initial?.gstin ?? "");
+  const [customerTypeId, setCustomerTypeId] = useState(start(initial?.customerTypeId, ""));
+  const [pincode, setPincode] = useState(initial?.pincode ?? "");
+  const [district, setDistrict] = useState(initial?.district ?? "");
+  const [state, setState] = useState(initial?.state ?? "");
+  const [deliveryAddress, setDeliveryAddress] = useState(initial?.deliveryAddress ?? "");
+  const [paymentMode, setPaymentMode] = useState(initial?.paymentMode ?? "Prepaid");
+  const [advancePct, setAdvancePct] = useState(start(initial?.advancePct, "0"));
+  const [creditDays, setCreditDays] = useState(start(initial?.creditDays, "0"));
+  // Blank = the default validity (24 hours); a revision gets a fresh validity too.
+  const [validUntil, setValidUntil] = useState(initial ? "" : options.validUntil || "");
+  const [lines, setLines] = useState(initial?.lines ?? []);
+  const [shippingCost, setShippingCost] = useState(start(initial?.shippingCost, "0"));
+  const [shippingManual, setShippingManual] = useState(Boolean(initial));
+  const [handlingCharges, setHandlingCharges] = useState(start(initial?.handlingCharges, "0"));
+  const [pgCharges, setPgCharges] = useState(start(initial?.pgCharges, "0"));
+  const [claimsRisk, setClaimsRisk] = useState(start(initial?.claimsRiskAmount, "0"));
+  const otherCharges = Number(initial?.otherCharges) || 0;
+  const [remarks, setRemarks] = useState(initial?.remarks ?? "");
   const [error, setError] = useState("");
   const [details, setDetails] = useState([]);
   const [saved, setSaved] = useState(null);
@@ -90,7 +114,9 @@ export function QuotationForm({ options }) {
   function addProduct(product) {
     setLines((current) => {
       if (current.some((line) => line.productId === product.productId && line.variantId === product.variantId)) return current;
-      return [...current, { ...emptyLine, ...product, quantity: Math.max(1, type?.minMoqBoxes || 1) }];
+      const quantity = Math.max(1, type?.minMoqBoxes || 1);
+      const line = { ...emptyLine, ...product, listPrice: product.unitPrice, quantity };
+      return [...current, { ...line, unitPrice: slabPrice(line, quantity) }];
     });
     setProductQuery("");
     setProducts([]);
@@ -98,6 +124,17 @@ export function QuotationForm({ options }) {
 
   function updateLine(index, patch) {
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+
+  // Quantity change re-applies the case slab rate until the user types their own rate on that line.
+  function setQuantity(index, quantity) {
+    setLines((current) =>
+      current.map((line, i) => {
+        if (i !== index) return line;
+        const next = { ...line, quantity };
+        return line.priceEdited || !line.caseSlabs?.length ? next : { ...next, unitPrice: slabPrice(line, quantity) };
+      }),
+    );
   }
 
   function submit(event) {
@@ -125,17 +162,20 @@ export function QuotationForm({ options }) {
         handlingCharges: Number(handlingCharges) || 0,
         pgCharges: Number(pgCharges) || 0,
         claimsRiskAmount: Number(claimsRisk) || 0,
-        otherCharges: 0,
+        otherCharges,
         validUntil,
         remarks,
+        // Created from an RFQ (subtask 4): the RFQ and, per sourced line, the chosen seller offer.
+        ...(initial?.rfqId ? { rfqId: initial.rfqId } : {}),
         lines: lines.filter((line) => line.productId > 0).map((line) => ({
           productId: line.productId,
           variantId: line.variantId || 0,
           sku: line.sku || "",
           quantity: Number(line.quantity) || 0,
           unitPrice: Number(line.unitPrice) || 0,
+          ...(line.sellerQuoteItemId ? { sellerQuoteItemId: line.sellerQuoteItemId } : {}),
         })),
-      });
+      }, reviseOf);
       if (!result.ok) {
         setError(result.message || "The quotation could not be saved.");
         setDetails(result.details || []);
@@ -158,9 +198,13 @@ export function QuotationForm({ options }) {
         </div>
       )}
       {saved && (
-        <div className="rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm text-ink">
+        <div className="rounded-lg border border-line bg-surface-muted px-3 py-2 text-sm text-ink" role="status">
           {saved.message} {saved.quotationNumber && <span className="font-mono">{saved.quotationNumber}</span>}{" "}
-          <Link href="/admin/b2b/quotations" className="font-medium text-brand-700 hover:underline">Back to quotations</Link>
+          {saved.id ? (
+            <Link href={`/admin/b2b/quotations/${saved.id}`} className="font-medium text-brand-700 hover:underline">Open quotation</Link>
+          ) : (
+            <Link href="/admin/b2b/quotations" className="font-medium text-brand-700 hover:underline">Back to quotations</Link>
+          )}
         </div>
       )}
 
@@ -206,8 +250,16 @@ export function QuotationForm({ options }) {
           {paymentMode === "Partial Advance" && (
             <Field label="Advance payment %"><Input type="number" min="0" max="100" step="0.01" value={advancePct} onChange={(e) => setAdvancePct(e.target.value)} /></Field>
           )}
-          <Field label="Credit days"><Input type="number" min="0" value={creditDays} onChange={(e) => setCreditDays(e.target.value)} /></Field>
-          <Field label="Valid until"><Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} /></Field>
+          <Field
+            label="Credit days"
+            required={paymentMode === "Credit"}
+            hint={paymentMode === "Credit" ? `Only for a buyer with credit approved by Finance (${(options.creditDayOptions ?? [7, 15, 30]).join(" / ")} days or custom). The limit is checked when the order is confirmed.` : undefined}
+          >
+            <Input type="number" min="0" value={creditDays} onChange={(e) => setCreditDays(e.target.value)} />
+          </Field>
+          <Field label="Valid until" hint={`Leave blank for ${options.validityHours ?? 24} hours from saving. A date means the end of that day.`}>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          </Field>
           {type && <p className="sm:col-span-2 lg:col-span-3 text-xs text-ink-muted">Minimum order value {formatINR(type.minOrderValue)}. Current product subtotal {formatINR(subtotal)}. {type.moqDescription || `MOQ ${type.minMoqBoxes}`}</p>}
         </CardBody>
       </Card>
@@ -252,11 +304,12 @@ export function QuotationForm({ options }) {
                       <tr key={`${line.productId}-${line.variantId}`} className="border-b border-line">
                         <td className="py-2 pr-3">
                           <span className="font-medium text-ink">{line.name}</span>
+                          {line.seller && <span className="block text-xs text-ink-muted">Sourced from {line.seller} (RFQ)</span>}
                           <span className="block font-mono text-xs text-ink-muted">{line.sku}</span>
                         </td>
                         <td className="py-2 pr-3 tabular">{line.stock}</td>
-                        <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></td>
-                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></td>
                         <td className="py-2 pr-3 tabular">{line.gstPct}</td>
                         <td className="py-2"><Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button></td>
                       </tr>
@@ -271,6 +324,7 @@ export function QuotationForm({ options }) {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate font-medium text-ink">{line.name}</p>
+                    {line.seller && <p className="text-xs text-ink-muted">Sourced from {line.seller} (RFQ)</p>}
                         <p className="font-mono text-xs text-ink-muted">{line.sku}</p>
                       </div>
                       <Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button>
@@ -284,8 +338,8 @@ export function QuotationForm({ options }) {
                         <p className="text-micro font-medium tracking-wide text-ink-muted uppercase">GST %</p>
                         <p className="text-sm text-ink tabular">{line.gstPct}</p>
                       </div>
-                      <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></Field>
-                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></Field>
+                      <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></Field>
+                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></Field>
                     </div>
                   </div>
                 ))}
@@ -305,13 +359,19 @@ export function QuotationForm({ options }) {
           <Field label="PG / collection"><Input type="number" min="0" step="0.01" value={pgCharges} onChange={(e) => setPgCharges(e.target.value)} /></Field>
           <Field label="Claims / risk"><Input type="number" min="0" step="0.01" value={claimsRisk} onChange={(e) => setClaimsRisk(e.target.value)} /></Field>
           <Field label="Remarks" className="sm:col-span-2 lg:col-span-4"><Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} /></Field>
-          <p className="sm:col-span-2 lg:col-span-4 text-xs text-ink-muted">CM floor {options.minCmPct}%. Quotes under that floor are saved as approval pending.</p>
+          <p className="sm:col-span-2 lg:col-span-4 text-xs text-ink-muted">
+            {options.targetCmPct != null
+              ? `CM target ${options.targetCmPct}%, floor ${options.minCmPct}% (on the value before GST). Quotes from ${options.minCmPct}% to below ${options.targetCmPct}% wait for manager approval; below ${options.minCmPct}% they are ${options.cmExceptionEnabled ? "sent for a B2B Manager exception" : "blocked"}. Net shipping above ${options.shippingReviewPct ?? 5}% also needs approval.`
+              : `CM floor ${options.minCmPct}%. Quotes under that floor are saved as approval pending.`}
+          </p>
         </CardBody>
       </Card>
 
       <div className="flex items-center justify-between gap-3">
-        <ButtonLink href="/admin/b2b/quotations" variant="secondary">Cancel</ButtonLink>
-        <Button type="submit" variant="primary" loading={saving} disabled={!customerId || lines.length === 0}>Create quotation</Button>
+        <ButtonLink href={reviseOf ? `/admin/b2b/quotations/${reviseOf}` : "/admin/b2b/quotations"} variant="secondary">Cancel</ButtonLink>
+        <Button type="submit" variant="primary" loading={saving} disabled={!customerId || lines.length === 0 || Boolean(reviseOf && saved)}>
+          {reviseOf ? "Save as new version" : "Create quotation"}
+        </Button>
       </div>
     </form>
   );

@@ -9,6 +9,9 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { PermissionDenied } from "@/components/ui/states";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
+import { getBuyerCredit, getCrmOptions } from "@/lib/services/admin/b2b-screens";
+import { BuyerCredit } from "@/components/admin/b2b/buyer-credit";
+import { BuyerActivity, BuyerCrmProfile } from "@/components/admin/b2b/buyer-crm";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -23,6 +26,13 @@ export default async function BuyerDetailPage({ params }) {
   if (!data) notFound();
   const { buyer: b, totals } = data;
   const showFinance = can(user, "b2b.finance") || can(user, "b2b.buyers", "edit");
+  // Credit account from the finance ledger (subtask 11); the API hides it from roles without access.
+  const credit = await getBuyerCredit(id, user).catch(() => null);
+  const position = credit?.position;
+  // Lead / CRM options (subtask 2); the page still works if they cannot be loaded.
+  const options = await getCrmOptions(user).catch(() => null);
+  const canEdit = can(user, "b2b.buyers", "edit");
+  const perf = data.performance;
 
   return (
     <>
@@ -30,10 +40,15 @@ export default async function BuyerDetailPage({ params }) {
       <StatGrid>
         <StatCard label="Lifetime GMV" value={formatINR(b.lifetimeGmv, { compact: true })} />
         <StatCard label="Orders here" value={data.orders.length} hint={formatINR(totals.orderValue, { compact: true })} tone="neutral" />
-        {showFinance && <StatCard label="Credit available" value={formatINR(b.availableCredit)} hint={`Limit ${formatINR(b.creditLimit)}`} tone="info" />}
+        {showFinance && position && (
+          <StatCard label="Credit available" value={position.status === "none" ? "No credit" : formatINR(position.available)} hint={position.status === "none" ? "Not approved by Finance" : `Limit ${formatINR(position.limit)} · ${position.days} days · ${position.statusLabel}`} tone="info" />
+        )}
+        {perf && <StatCard label="Delivered GMV" value={formatINR(perf.deliveredGmv, { compact: true })} hint={`AOV ${formatINR(perf.aov, { compact: true })}${perf.repeat ? " · repeat buyer" : ""}`} tone="neutral" />}
+        {perf && (perf.claims > 0 || perf.rtoReturns > 0) && <StatCard label="Claims / RTO" value={`${perf.claims} / ${perf.rtoReturns}`} tone="warning" />}
         {showFinance && <StatCard label="Outstanding" value={formatINR(b.outstanding)} hint={totals.overdue ? `${formatINR(totals.overdue)} overdue` : "Nothing overdue"} tone={totals.overdue ? "danger" : "warning"} />}
       </StatGrid>
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <div className="space-y-4">
         <Card>
           <CardHeader title="Profile" />
           <CardBody>
@@ -49,7 +64,11 @@ export default async function BuyerDetailPage({ params }) {
             />
           </CardBody>
         </Card>
+        <BuyerCrmProfile buyerId={id} crm={data.crm} can={{ ...data.crmCan, edit: canEdit }} options={options} lead={data.crmLead} />
+        <BuyerCredit buyerId={id} credit={credit} />
+        </div>
         <div className="min-w-0 space-y-4 xl:col-span-2">
+          <BuyerActivity buyerId={id} openTasks={data.openTasks} timeline={data.timeline} options={options} canLog={canEdit} />
           <Card>
             <CardHeader title="RFQs" />
             <MiniTable

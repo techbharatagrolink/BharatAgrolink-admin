@@ -2,7 +2,46 @@
 
 import { revalidatePath } from "next/cache";
 import { assertPermission } from "@/lib/auth/session";
-import { createOrder, createQuotation, searchOrderBuyers, searchOrderProducts, searchQuotationBuyers, searchQuotationProducts, startOrderPayment } from "@/lib/services/admin/b2b-screens";
+import {
+  cancelQuotation,
+  createOrder,
+  createQuotation,
+  completeQuotationFollowup,
+  createQuotationLink,
+  recordOrderSeller,
+  transitionOrder,
+  bookOrderShipment,
+  getShipmentOptions,
+  recordShipmentFreight,
+  setShipmentProof,
+  updateShipment,
+  resolveQuotationChange,
+  sendQuotationWhatsApp,
+  recalculateQuotation,
+  reviseQuotation,
+  searchOrderBuyers,
+  searchOrderProducts,
+  searchQuotationBuyers,
+  searchQuotationProducts,
+  startOrderPayment,
+  allocateReceipt,
+  decideBuyerCredit,
+  recordReceipt,
+  recordRefund,
+  requestBuyerCredit,
+  reverseReceipt,
+  setBuyerCreditStatus,
+  settlementAction,
+  updateBuyerCrm,
+  logBuyerActivity,
+  completeFollowupTask,
+} from "@/lib/services/admin/b2b-screens";
+import * as rfqApi from "@/lib/services/admin/b2b-screens";
+
+const quotePaths = (...ids) => {
+  revalidatePath("/admin/b2b/quotations");
+  for (const id of ids) if (id) revalidatePath(`/admin/b2b/quotations/${id}`);
+};
 
 export async function searchB2bBuyers(q) {
   const gate = await assertPermission("b2b.quotations", "add");
@@ -16,11 +55,207 @@ export async function searchB2bQuoteProducts(q) {
   return searchQuotationProducts(q, gate.user);
 }
 
-export async function saveB2bQuotation(body) {
+/** Creates a quotation, or with reviseOf a new version of that quotation (the API re-checks everything). */
+export async function saveB2bQuotation(body, reviseOf = null) {
   const gate = await assertPermission("b2b.quotations", "add");
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
-  const result = await createQuotation(body, gate.user);
-  if (result.ok) revalidatePath("/admin/b2b/quotations");
+  const result = reviseOf ? await reviseQuotation(reviseOf, body, gate.user) : await createQuotation(body, gate.user);
+  if (result.ok) quotePaths(reviseOf, result.id);
+  return result;
+}
+
+export async function recalculateB2bQuotation(id) {
+  const gate = await assertPermission("b2b.quotations", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recalculateQuotation(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function cancelB2bQuotation(id, reason) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await cancelQuotation(id, { reason: String(reason ?? "").trim() }, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function createB2bQuotationLink(id) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await createQuotationLink(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function sendB2bQuotationWhatsApp(id) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await sendQuotationWhatsApp(id, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function completeB2bQuotationFollowup(id, taskId, outcome) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await completeQuotationFollowup(id, taskId, String(outcome ?? "").trim(), gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+export async function resolveB2bQuotationChange(id, changeId, status, note) {
+  const gate = await assertPermission("b2b.quotations", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await resolveQuotationChange(id, changeId, { status, note: String(note ?? "").trim() }, gate.user);
+  if (result.ok) quotePaths(id);
+  return result;
+}
+
+const orderPaths = (id) => {
+  revalidatePath("/admin/b2b/orders");
+  revalidatePath("/admin/b2b/ops-queue");
+  if (id) revalidatePath(`/admin/b2b/orders/${id}`);
+};
+
+/** Order transition (subtask 8). The API checks the state, the B2B capability and the guards. */
+export async function transitionB2bOrder(id, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await transitionOrder(id, action, body, gate.user);
+  if (result.ok) orderPaths(id);
+  return result;
+}
+
+/** Logistics (subtask 10). Capabilities (logistics.book / shipment.edit / logistics.freight) are checked by the API. */
+export async function loadB2bShipmentOptions(id, packageIds, opts = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  return getShipmentOptions(id, packageIds, gate.user, { live: Boolean(opts.live), fromPincode: opts.fromPincode ?? "" });
+}
+
+export async function loadB2bShipmentTracking(shipmentId) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  return rfqApi.getShipmentTracking(shipmentId, gate.user);
+}
+
+export async function bookB2bShipment(id, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await bookOrderShipment(id, body, gate.user);
+  if (result.ok) orderPaths(id);
+  return result;
+}
+
+export async function updateB2bShipment(orderId, shipmentId, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await updateShipment(shipmentId, action, body, gate.user);
+  if (result.ok) orderPaths(orderId);
+  return result;
+}
+
+export async function recordB2bShipmentFreight(orderId, shipmentId, amount, invoiceRef) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recordShipmentFreight(shipmentId, { amount: Number(amount), invoiceRef: String(invoiceRef ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(orderId);
+  return result;
+}
+
+export async function setB2bShipmentProof(orderId, shipmentId, podUrl) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await setShipmentProof(shipmentId, { podUrl: String(podUrl ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(orderId);
+  return result;
+}
+
+export async function recordB2bOrderSeller(id, sellerId, decision, note) {
+  const gate = await assertPermission("b2b.orders", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  const result = await recordOrderSeller(id, sellerId, { decision, note: String(note ?? "").trim() }, gate.user);
+  if (result.ok) orderPaths(id);
+  return result;
+}
+
+// --- Payment, credit and settlement (subtask 11). Finance capabilities are checked by the API. ---
+
+const buyerPaths = (buyerId) => {
+  revalidatePath("/admin/b2b/buyers");
+  if (buyerId) revalidatePath(`/admin/b2b/buyers/${buyerId}`);
+  revalidatePath("/admin/b2b/credit-requests");
+};
+const financePaths = (orderId) => {
+  orderPaths(orderId);
+  revalidatePath("/admin/b2b/payments");
+  revalidatePath("/admin/b2b/receivables");
+  revalidatePath("/admin/b2b/settlements");
+};
+const deny = (gate) => ({ ok: false, message: gate.message, details: [] });
+
+export async function requestB2bCredit(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await requestBuyerCredit(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function decideB2bCredit(buyerId, requestId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await decideBuyerCredit(requestId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function setB2bCreditStatus(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await setBuyerCreditStatus(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function recordB2bReceipt(orderId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await recordReceipt(body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function allocateB2bReceipt(orderId, paymentId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await allocateReceipt(paymentId, body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function reverseB2bReceipt(orderId, paymentId, reason) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await reverseReceipt(paymentId, { reason: String(reason ?? "").trim() }, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function recordB2bRefund(orderId, body) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await recordRefund(body, gate.user);
+  if (result.ok) financePaths(orderId);
+  return result;
+}
+
+export async function updateB2bSettlement(orderId, settlementId, action, body = {}) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await settlementAction(settlementId, action, body, gate.user);
+  if (result.ok) financePaths(orderId);
   return result;
 }
 
@@ -47,5 +282,216 @@ export async function saveB2bOrder(body) {
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
   const result = await createOrder(body, gate.user);
   if (result.ok) revalidatePath("/admin/b2b/orders");
+  return result;
+}
+
+// --- Buyer & lead management (subtask 2).
+export async function updateB2bBuyerCrm(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await updateBuyerCrm(buyerId, body, gate.user);
+  if (result.ok) buyerPaths(buyerId);
+  return result;
+}
+
+export async function logB2bBuyerActivity(buyerId, body) {
+  const gate = await assertPermission("b2b.buyers", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await logBuyerActivity(buyerId, body, gate.user);
+  if (result.ok) {
+    buyerPaths(buyerId);
+    revalidatePath("/admin/b2b/workspace");
+  }
+  return result;
+}
+
+export async function completeB2bFollowup(taskId, outcome, buyerId) {
+  const gate = await assertPermission("b2b.buyers", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await completeFollowupTask(taskId, { outcome }, gate.user);
+  if (result.ok) {
+    revalidatePath("/admin/b2b/workspace");
+    if (buyerId) buyerPaths(buyerId);
+  }
+  return result;
+}
+
+// --- Buyer RFQ, seller sourcing (task #107 subtask 4).
+const rfqPaths = (id) => {
+  revalidatePath("/admin/b2b/rfqs");
+  if (id) revalidatePath(`/admin/b2b/rfqs/${id}`);
+};
+
+export async function searchB2bRfqBuyers(q) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, buyers: [] };
+  return rfqApi.searchRfqBuyers(q, gate.user);
+}
+
+export async function searchB2bRfqProducts(q) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, products: [] };
+  return rfqApi.searchRfqProducts(q, gate.user);
+}
+
+/** Creates an RFQ, or with rfqId saves the edit (the API checks everything again). */
+export async function saveB2bRfq(body, rfqId = null) {
+  const gate = await assertPermission("b2b.rfqs", rfqId ? "edit" : "add");
+  if (!gate.ok) return deny(gate);
+  const result = rfqId ? await rfqApi.updateRfq(rfqId, body, gate.user) : await rfqApi.createRfq(body, gate.user);
+  if (result.ok) rfqPaths(rfqId || result.id);
+  return result;
+}
+
+export async function openB2bRfq(id) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.openRfq(id, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function getB2bRfqSellerMatches(id) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  try {
+    return { ok: true, ...(await rfqApi.getRfqSellerMatches(id, gate.user)) };
+  } catch (error) {
+    return { ok: false, message: error?.message || "Could not load the sellers." };
+  }
+}
+
+export async function inviteB2bRfqSellers(id, sellerIds) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.inviteRfqSellers(id, sellerIds, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function saveB2bRfqSourcing(id, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.saveRfqSourcing(id, body, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function searchB2bRfqSellerListings(id, sellerId, q) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, listings: [] };
+  return rfqApi.searchRfqSellerListings(id, sellerId, q, gate.user);
+}
+
+export async function setB2bRfqOfferListing(id, quoteItemId, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.setRfqOfferListing(id, quoteItemId, body, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+// --- Supplier procurement RFQ and authorizations (task #107 subtask 4 part 2).
+const procPaths = (id) => {
+  revalidatePath("/admin/b2b/procurement");
+  if (id) revalidatePath(`/admin/b2b/procurement/${id}`);
+};
+
+export async function saveB2bSupplierRfq(body) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.createSupplierRfq(body, gate.user);
+  if (result.ok) procPaths(result.id);
+  return result;
+}
+
+export async function moveB2bSupplierRfq(id, action) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.moveSupplierRfq(id, action, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function getB2bProcurementSellers() {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  try {
+    return { ok: true, sellers: await rfqApi.getProcurementSellers(gate.user) };
+  } catch (error) {
+    return { ok: false, message: error?.message || "Could not load the sellers." };
+  }
+}
+
+export async function inviteB2bSuppliers(id, sellerIds) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.inviteSupplierSellers(id, sellerIds, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function searchB2bProcurementListings(sellerId, q) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, listings: [] };
+  return rfqApi.searchProcurementListings(sellerId, q, gate.user);
+}
+
+export async function recordB2bSupplierResponse(id, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.recordSupplierResponse(id, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function mapB2bSupplierResponseListing(id, responseId, itemId, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.mapSupplierResponseListing(id, responseId, itemId, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function reviewB2bSupplierResponse(id, responseId, body) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.reviewSupplierResponse(id, responseId, body, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function activateB2bSupplierRates(id, responseId) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.activateSupplierRates(id, responseId, gate.user);
+  if (result.ok) procPaths(id);
+  return result;
+}
+
+export async function createB2bSupplierAuthorization(body) {
+  const gate = await assertPermission("b2b.catalog", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.createSupplierAuthorization(body, gate.user);
+  if (result.ok) revalidatePath("/admin/b2b/authorizations");
+  return result;
+}
+
+export async function decideB2bSupplierAuthorization(id, body) {
+  const gate = await assertPermission("b2b.catalog", "view");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.decideSupplierAuthorization(id, body, gate.user);
+  if (result.ok) revalidatePath("/admin/b2b/authorizations");
+  return result;
+}
+
+export async function saveB2bCaseSlabs(sourceType, sourceId, body) {
+  const gate = await assertPermission("b2b.catalog", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.saveCaseSlabs(sourceType, sourceId, body, gate.user);
+  if (result.ok) {
+    revalidatePath(`/admin/b2b/case-rates/${sourceType}/${sourceId}`);
+    revalidatePath("/admin/b2b/sku-links");
+  }
   return result;
 }

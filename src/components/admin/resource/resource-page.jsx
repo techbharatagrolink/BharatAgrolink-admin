@@ -91,7 +91,8 @@ export async function ResourcePage({ resourceKey, pathname, searchParams, action
           columnFilters: resource.columnFilters,
           rowHref: resource.rowHref,
           exportable: resource.exportable,
-          form: resource.form ? { title: resource.form.title, fields: resource.form.fields, requireReason: resource.form.requireReason } : null,
+          // `requires` on a form field hides it like a column (e.g. B2B floor price without margin rights); the API ignores it too.
+          form: resource.form ? { title: resource.form.title, fields: resource.form.fields.filter((field) => columnVisible(user, field)), requireReason: resource.form.requireReason } : null,
         }}
         data={tableData}
         canAdd={Boolean(resource.form) && can(user, resource.permission, "add") && !resource.noAdd}

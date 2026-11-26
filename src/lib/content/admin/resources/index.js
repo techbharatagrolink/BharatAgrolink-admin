@@ -110,9 +110,13 @@ export const resourceRoutes = {
   "/admin/b2b/quotations": "b2b.quotations",
   "/admin/b2b/orders": "b2b.orders",
   "/admin/b2b/payments": "b2b.payments",
+  "/admin/b2b/receivables": "b2b.receivables",
+  "/admin/b2b/credit-requests": "b2b.creditRequests",
   "/admin/b2b/settlements": "b2b.settlements",
   "/admin/b2b/claims": "b2b.claims",
   "/admin/b2b/alerts": "b2b.alerts",
+  "/admin/b2b/sku-links": "b2b.skuLinks",
+  "/admin/b2b/audit-log": "b2b.auditLog",
   "/admin/bulk-orders": "bulk",
   "/admin/bulk-orders/warehouses": "bulk.warehouses",
 
