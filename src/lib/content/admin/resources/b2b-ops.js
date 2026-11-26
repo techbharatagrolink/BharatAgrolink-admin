@@ -18,6 +18,32 @@ export const b2bOpsResources = {
       { key: "owner", label: "Owner", options: execs },
     ],
     rowHref: "/admin/b2b/buyers/{id}",
+    // Bulk assign / bulk follow-up (task #107 subtask 2). Assigning is for managers (checked by the API).
+    bulkActions: [
+      {
+        id: "assignOwner",
+        label: "Assign owner…",
+        permission: "edit",
+        assign: { field: "owner", label: "Owner", optionsFrom: "lookup:b2b-owners" },
+        confirm: { title: "Assign the selected buyers?", description: "The owner sees them in their buyers list and Sales Workspace." },
+      },
+      {
+        id: "scheduleFollowup",
+        label: "Schedule follow-up…",
+        permission: "edit",
+        assign: {
+          field: "followUp",
+          label: "Follow up",
+          options: [
+            { value: "0", label: "Today" },
+            { value: "1", label: "Tomorrow" },
+            { value: "3", label: "In 3 days" },
+            { value: "7", label: "In 7 days" },
+          ],
+        },
+        confirm: { title: "Schedule a follow-up for the selected buyers?", description: "One follow-up task per buyer, at 10:00, for the buyer's owner." },
+      },
+    ],
     defaultSort: "lifetimeGmv:desc",
     columns: [
       { key: "firm", label: "Buyer", sub: "id" },
