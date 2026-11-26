@@ -87,6 +87,21 @@ export default async function CaseRatesPage({ params }) {
         )}
       </Card>
 
+      <Card className="mt-3 p-4">
+        <h2 className="mb-2 font-semibold">Seller batches &amp; warehouse</h2>
+        <MiniTable
+          columns={[
+            { key: "batchNo", label: "Batch", render: (b) => <span className="font-mono text-xs">{b.batchNo}</span> },
+            { key: "seller", label: "Seller" },
+            { key: "qty", label: "Units", align: "right" },
+            { key: "expiryDate", label: "Expiry", render: (b) => <span className={b.expired ? "text-danger-ink" : ""}>{formatDate(b.expiryDate)}{b.expired ? " (expired)" : ""}</span> },
+            { key: "warehouseName", label: "Warehouse", render: (b) => [b.warehouseName, b.warehousePincode].filter(Boolean).join(", ") || "—" },
+          ]}
+          rows={data.batches ?? []}
+          empty="The seller has not listed batches for this pack."
+        />
+      </Card>
+
       {data.history.length > 0 && (
         <Card className="mt-3 p-4">
           <h2 className="mb-2 font-semibold">Earlier rates</h2>
