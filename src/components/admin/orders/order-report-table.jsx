@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { StatusBadge } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { gridTheme } from "@/components/data-table/ag-data-grid";
+import { ColumnFilter, applyColumnFilters, columnFilterActive, columnValueOptions } from "@/components/data-table/column-filter";
+import { ColumnMenu } from "@/components/data-table/column-menu";
+import { cn } from "@/lib/utils";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
@@ -95,30 +99,102 @@ const GROUPS = [
 const WIDTH = { balInvoice: 170, product: 240, contributionBreakdown: 380, costFactors: 320, customer: 170, vendor: 170, courier: 170 };
 const TEXT_TIP = new Set(["product", "contributionBreakdown", "costFactors", "courier", "vendor"]);
 
-const gridTheme = themeQuartz.withParams({
-  backgroundColor: "var(--surface)",
-  foregroundColor: "var(--ink-soft)",
-  headerBackgroundColor: "var(--surface-muted)",
-  headerTextColor: "var(--ink-muted)",
-  borderColor: "var(--line)",
-  accentColor: "var(--brand-600)",
-  oddRowBackgroundColor: "var(--surface)",
-  fontSize: 12.5,
-  headerFontSize: 12,
-  rowHeight: 34,
-  headerHeight: 34,
-  wrapperBorderRadius: 0,
-  wrapperBorder: false,
-});
+// The shared admin grid look (as every other AG Grid table), a little tighter as this report has ~120 columns.
+const reportTheme = gridTheme.withParams({ rowHeight: 44, headerHeight: 46 });
+const LINK_KEYS = new Set(["manageHref", "customerInvoiceHref", "vendorInvoiceHref"]);
+const DATE_KEYS = new Set(["createdAt", "deliveredAt", "rtoDate"]);
+const isNumeric = (key) => MONEY.has(key) || PERCENT.has(key) || key === "qty" || key === "sr";
+
+/** Column description the shared header filter understands ({ key, label, type }). */
+const FILTER_COLUMNS = Object.fromEntries(
+  COLUMNS.map(([key, label]) => [
+    key,
+    { key, label, type: MONEY.has(key) ? "currency" : PERCENT.has(key) ? "percent" : key === "qty" || key === "sr" ? "number" : DATE_KEYS.has(key) ? "date" : undefined, filter: !LINK_KEYS.has(key) },
+  ]),
+);
+
+/** The text a cell shows, for the filter checklist. */
+function cellText(row, key) {
+  const value = row[key];
+  if (value == null || value === "") return "";
+  if (key === "createdAt" || key === "deliveredAt") return formatDate(value);
+  if (key === "rtoDate") return formatDateTime(value);
+  if (MONEY.has(key)) return formatINR(value);
+  if (PERCENT.has(key)) return `${Number(value).toFixed(2)}%`;
+  if (key === "qty" || key === "sr") return formatNumber(value);
+  return String(value);
+}
+
+const ReportGrid = createContext(null);
+// Kept constant: a new object each render would make AG Grid re-apply the defaults and lose column widths.
+const DEFAULT_COL_DEF = { sortable: true, resizable: true, suppressMovable: false, suppressHeaderMenuButton: true };
+
+/**
+ * Header of every report column, as in the other admin tables: the name (click to sort ↑ / ↓ / off on the
+ * loaded page), then the filter (value checklist + condition) and the ⋮ column menu on the right.
+ */
+function ReportHeader({ column, api, displayName }) {
+  const g = useContext(ReportGrid);
+  const key = column.getColId();
+  const col = FILTER_COLUMNS[key] ?? { key, label: displayName };
+  const right = isNumeric(key);
+  const [sort, setSortState] = useState(column.getSort() ?? "");
+  useEffect(() => {
+    const update = () => setSortState(column.getSort() ?? "");
+    column.addEventListener("sortChanged", update);
+    return () => column.removeEventListener("sortChanged", update);
+  }, [column]);
+  const setSort = (dir) => api.applyColumnState({ state: [{ colId: key, sort: dir || null }], defaultState: { sort: null } });
+  const SortIcon = !sort ? ArrowUpDown : sort === "asc" ? ArrowUp : ArrowDown;
+  const filterable = col.filter !== false;
+  const options = filterable ? columnValueOptions(col, g.allRows, (row) => cellText(row, key)) : null;
+
+  return (
+    <div className="flex w-full min-w-0 items-center gap-1 text-label font-semibold tracking-[0.04em] uppercase select-none" aria-sort={sort ? (sort === "asc" ? "ascending" : "descending") : undefined}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.currentTarget.blur();
+          setSort(sort === "" ? "asc" : sort === "asc" ? "desc" : "");
+        }}
+        title={`Sort by ${col.label}`}
+        className={cn("group mr-auto inline-flex min-w-0 cursor-pointer items-center gap-1.5 uppercase transition-colors", right && "ml-auto mr-0", sort ? "font-bold text-ink" : "text-ink-muted hover:text-ink")}
+      >
+        <span className="truncate">{displayName}</span>
+        <SortIcon className={cn("size-3.5 shrink-0", sort ? "stroke-[2.5] text-brand-600" : "text-ink-muted/50 group-hover:text-ink")} aria-hidden />
+      </button>
+      <div className="ml-1 flex shrink-0 items-center gap-0.5">
+        {filterable && <ColumnFilter column={col} filter={g.colFilters[key]} options={options} onChange={(value) => g.setColFilter(key, value)} />}
+        <ColumnMenu
+          api={api}
+          column={column}
+          col={col}
+          sortable
+          sortDir={sort}
+          onSort={setSort}
+          allColumns={g.allColumns}
+          hiddenKeys={g.hidden}
+          onToggleColumn={g.toggleColumn}
+          onReset={g.reset}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** "Sr No" header: centred, no tools. */
+const SerialHeader = () => <span className="w-full text-center text-label font-medium tracking-[0.02em] uppercase">Sr No</span>;
 
 function column(key) {
-  const numeric = MONEY.has(key) || PERCENT.has(key) || key === "qty" || key === "sr";
+  const numeric = isNumeric(key);
   return {
     colId: key,
     field: key,
     headerName: SHORT_LABEL[key] ?? LABEL[key],
     headerTooltip: LABEL[key],
-    width: WIDTH[key] ?? (numeric ? 130 : 150),
+    headerComponent: ReportHeader,
+    width: WIDTH[key] ?? (numeric ? 150 : 170),
+    minWidth: 110,
     type: numeric ? "rightAligned" : undefined,
     valueGetter: numeric ? (params) => (params.data[key] == null || params.data[key] === "" ? null : Number(params.data[key])) : undefined,
     cellRenderer: (params) => cell(params.data, key),
@@ -226,12 +302,42 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const [form, setForm] = useState({});
   const [pending, startTransition] = useTransition();
   const { rows, total, page, pageCount } = report;
+  const apiRef = useRef(null);
+  const [colFilters, setColFilters] = useState({});
+  const [hidden, setHidden] = useState([]);
+
+  // Header filters work on the loaded page, instantly (as in the other admin tables).
+  const shownRows = useMemo(() => applyColumnFilters(rows, Object.values(FILTER_COLUMNS), colFilters), [rows, colFilters]);
+  const filteredCount = Object.values(colFilters).some(columnFilterActive) ? shownRows.length : null;
+
+  const grid = useMemo(
+    () => ({
+      allRows: rows,
+      colFilters,
+      setColFilter: (key, value) => setColFilters((current) => ({ ...current, [key]: value })),
+      allColumns: COLUMNS.filter(([key]) => key !== "sr").map(([key, label]) => ({ key, label })),
+      hidden,
+      toggleColumn: (key, show) => {
+        setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
+        apiRef.current?.setColumnsVisible([key], show);
+      },
+      reset: () => {
+        apiRef.current?.resetColumnState();
+        setHidden([]);
+        setColFilters({});
+      },
+    }),
+    [rows, colFilters, hidden],
+  );
 
   const href = (next) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries({ ...filters, page: String(next) })) if (value) params.set(key, value);
     return `/admin/orders/report?${params.toString()}`;
   };
+  const pageSize = Number(filters?.pageSize) || rows.length || 1;
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(total, (page - 1) * pageSize + rows.length);
 
   const open = useCallback((row) => {
     setLine(row);
@@ -246,7 +352,8 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   }, []);
 
   const columnDefs = useMemo(() => [
-    { ...column("sr"), pinned: "left", width: 80 },
+    // Slim, centred Sr No like the other tables' S.No. (drag the edge to resize).
+    { ...column("sr"), headerComponent: SerialHeader, pinned: "left", width: 56, minWidth: 44, maxWidth: 120, type: undefined, cellClass: "ba-serial text-center", headerClass: "ba-serial", sortable: false, lockPinned: true },
     { ...column("orderId"), pinned: "left", width: 190 },
     ...GROUPS.map(([title, shown, more]) => ({
       groupId: title,
@@ -278,7 +385,7 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="min-w-0 rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
       {/* <div className="border-b border-danger-ink/20 bg-danger-bg px-4 py-2.5 text-sm font-medium text-danger-ink"> */}
         
       {/* </div> */}
@@ -289,22 +396,29 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
         </div>
         <OrderReportExportMenu filters={filters} columns={exportColumns} />
       </div>
-      <div className="hidden h-[70vh] md:block">
-        <AgGridReact
-          theme={gridTheme}
-          rowData={rows}
-          columnDefs={columnDefs}
-          defaultColDef={{ sortable: true, resizable: true, suppressMovable: true }}
-          getRowId={(params) => `${params.data.id}-${params.data.sku}`}
-          tooltipShowDelay={300}
-          suppressCellFocus
-          overlayNoRowsTemplate="No order lines match these filters."
-        />
-      </div>
+      <ReportGrid.Provider value={grid}>
+        <div className="ba-grid ba-report-grid hidden h-[70vh] md:block">
+          <AgGridReact
+            theme={reportTheme}
+            rowData={shownRows}
+            columnDefs={columnDefs}
+            defaultColDef={DEFAULT_COL_DEF}
+            getRowId={(params) => `${params.data.id}-${params.data.sku}`}
+            onGridReady={(params) => {
+              apiRef.current = params.api;
+            }}
+            tooltipShowDelay={300}
+            suppressCellFocus
+            enableCellTextSelection
+            maintainColumnOrder
+            overlayNoRowsTemplate="No order lines match these filters."
+          />
+        </div>
+      </ReportGrid.Provider>
       <div className="space-y-3 bg-surface-muted/60 p-3 md:hidden">
-        {rows.length === 0 ? (
+        {shownRows.length === 0 ? (
           <p className="py-8 text-center text-sm text-ink-muted">No order lines match these filters.</p>
-        ) : rows.map((row) => (
+        ) : shownRows.map((row) => (
           <article key={`${row.id}-${row.sku}`} className="rounded-lg border border-line bg-surface">
             <header className="flex items-start justify-between gap-3 border-b border-line px-3 py-2.5">
               <div className="min-w-0">
@@ -330,15 +444,32 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
           </article>
         ))}
       </div>
-      {pageCount > 1 && (
-        <div className="flex items-center justify-between border-t border-line px-4 py-3 text-small text-ink-muted">
-          <span>Page {formatNumber(page)} of {formatNumber(pageCount)}</span>
-          <div className="flex gap-1.5">
-            {page > 1 && <ButtonLink size="sm" href={href(page - 1)}>Previous</ButtonLink>}
-            {page < pageCount && <ButtonLink size="sm" href={href(page + 1)}>Next</ButtonLink>}
-          </div>
+      {/* Footer as in the other admin tables: "Showing x–y of n" left, paging right, pinned while scrolling. */}
+      <div className="flex flex-col gap-2 rounded-b-xl border-t border-line bg-surface px-3 py-2.5 text-small text-ink-muted sm:sticky sm:bottom-0 sm:z-10 sm:flex-row sm:items-center sm:justify-between">
+        <p className="min-w-0 text-center tabular sm:truncate sm:text-left">
+          {total === 0 ? "No results" : `Showing ${formatNumber(from)}–${formatNumber(to)} of ${formatNumber(total)}`}
+          {filteredCount != null && (
+            <>
+              {" · "}
+              <span className="font-medium text-brand-700">{formatNumber(filteredCount)} match column filters</span>{" "}
+              <button type="button" onClick={() => setColFilters({})} className="font-medium underline hover:text-ink">
+                Reset
+              </button>
+            </>
+          )}
+        </p>
+        <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:justify-between">
+          <Button size="icon-sm" className="max-sm:size-10" disabled={page <= 1} onClick={() => router.push(href(page - 1))} aria-label="Previous page">
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="min-w-20 text-center font-medium text-ink-soft tabular">
+            Page {formatNumber(page)} / {formatNumber(Math.max(1, pageCount))}
+          </span>
+          <Button size="icon-sm" className="max-sm:size-10" disabled={page >= pageCount} onClick={() => router.push(href(page + 1))} aria-label="Next page">
+            <ChevronRight className="size-4" />
+          </Button>
         </div>
-      )}
+      </div>
       <Dialog open={Boolean(line)} onClose={() => setLine(null)} title="Edit financial fields" description={line ? `${line.orderId} · ${line.sku || line.productId} · ${line.vendor}` : undefined} size="lg">
         <div className="grid gap-3 sm:grid-cols-2">
           {[

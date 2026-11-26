@@ -58,7 +58,7 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show.", e
 
   return (
     <div>
-      <div className="hidden justify-end gap-2 px-4 pb-2 print:hidden xl:flex">
+      <div className="hidden justify-end gap-2 px-4 pb-2 print:hidden md:flex">
         {exportName && (
           <ExportButton
             name={exportName}
@@ -75,7 +75,7 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show.", e
           Column filters
         </Button>
       </div>
-      <div className="hidden overflow-x-auto xl:block">
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead className="bg-surface-muted text-left text-xs font-semibold text-ink-muted">
@@ -135,7 +135,7 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show.", e
         </table>
       </div>
 
-      <div className="space-y-3 p-3 xl:hidden">
+      <div className="space-y-3 p-3 md:hidden">
         {visible.map((row, i) => (
           <div key={row.userId ?? start + i} className="rounded-lg border border-line p-3 text-sm">
             <p className="font-medium text-ink">{cellValue(lead, row, i)}</p>

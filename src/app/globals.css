@@ -555,6 +555,82 @@ html {
   width: 100%;
 }
 
+.ba-grid .ag-header-cell-label {
+  width: 100%;
+  overflow: visible;
+}
+
+.ba-grid .ag-header-cell-text {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+/* Tablet widths (grid shown from 768px): tighter cell and header padding so more columns fit before
+   the grid scrolls sideways; desktop keeps the roomier Zoho-style spacing. */
+@media (max-width: 1279px) {
+  .ba-grid .ag-row .ag-cell,
+  .ba-grid .ag-header .ag-header-cell {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* Tablets (and other touch screens): keep the grid's horizontal scrollbar visible while sliding sideways.
+   Touch browsers use overlay scrollbars that AG Grid fades out; this gives it a fixed, visible bar. */
+@media (max-width: 1279px), (hover: none) {
+  .ba-grid .ag-body-horizontal-scroll,
+  .ba-grid .ag-body-horizontal-scroll.ag-scrollbar-invisible {
+    min-height: 10px;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .ba-grid .ag-horizontal-left-spacer,
+  .ba-grid .ag-horizontal-right-spacer {
+    min-height: 10px;
+  }
+
+  .ba-grid .ag-body-horizontal-scroll-viewport {
+    min-height: 10px;
+    overflow-x: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  .ba-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar {
+    -webkit-appearance: none;
+    height: 8px;
+  }
+
+  .ba-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track {
+    background: var(--surface-muted);
+    border-radius: 9999px;
+  }
+
+  .ba-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 9999px;
+  }
+}
+
+/* S.No. column: slim padding so the narrow column still fits "S.No." and 4-digit row numbers. */
+.ba-grid .ag-header .ag-header-cell.ba-serial,
+.ba-grid .ag-row .ag-cell.ba-serial {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.ba-grid .ag-header-cell.ba-serial .ag-header-cell-comp-wrapper {
+  justify-content: center;
+}
+
+/* Header tools — filter (horizontal bars) and column menu (⋮): always visible on every column. */
+.ba-grid .ag-header-cell .ba-col-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Selectors carry ".ag-row" so they outrank AG Grid's theme CSS, which is injected after this file. */
 /* Zoho Books-style rows: every cell top-aligned so multi-line values line up on their first line. */
 .ba-grid .ag-row .ag-cell {
@@ -562,6 +638,12 @@ html {
   align-items: flex-start;
   line-height: 1.45;
   overflow: hidden;
+}
+
+/* Finance Report (orders): fixed-height rows, so values sit in the middle of the row and stay on one line. */
+.ba-grid.ba-report-grid .ag-row .ag-cell {
+  align-items: center;
+  white-space: nowrap;
 }
 
 /* AG Grid wraps auto-height cells in .ag-cell-wrapper/.ag-cell-value: keep them inside the cell. */
@@ -581,7 +663,12 @@ html {
   overflow-wrap: break-word;
 }
 
-/* Resize handle: hidden like Zoho Books, shown only while hovering a header so columns stay resizable. */
+/* Column divider: a short vertical line at every header edge (it is also the resize handle), with the
+   filter / ⋮ buttons beside it; it darkens on hover to show the column can be resized. */
+.ba-grid .ag-header .ag-header-cell .ag-header-cell-resize::after {
+  background-color: var(--line);
+}
+
 .ba-grid .ag-header .ag-header-cell:hover .ag-header-cell-resize::after {
   background-color: var(--line-strong);
 }

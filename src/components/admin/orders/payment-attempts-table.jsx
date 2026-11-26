@@ -429,7 +429,7 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
       {rows.length === 0 && <p className="text-center py-10 text-ink-muted rounded-xl border border-line bg-surface">No payment attempts found.</p>}
 
       {rows.length > 0 && (
-        <div className="space-y-3 xl:hidden">
+        <div className="space-y-3 md:hidden">
           {rows.map((row, i) => (
             <div key={attemptKey(row, i)} className="rounded-lg border border-line bg-surface p-3 text-sm">
               <div className="flex items-start justify-between gap-2">
@@ -462,7 +462,7 @@ export function PaymentAttemptsTable({ initialRows = [], statusCounts = {}, init
       )}
 
       {rows.length > 0 && (
-        <div className="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)] xl:block">
+        <div className="hidden overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)] md:block">
           <GridTable
             rows={rows}
             rowKey={(row, i) => attemptKey(row, i)}

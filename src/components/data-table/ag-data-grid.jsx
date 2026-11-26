@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/form";
 import { Cell, formatCellValue, resolveHref } from "./cells";
-import { ColumnFilter, columnFilterable } from "./column-filter";
+import { ColumnFilter, columnFilterable, columnValueOptions } from "./column-filter";
+import { ColumnMenu } from "./column-menu";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -29,14 +30,17 @@ export const gridTheme = themeQuartz.withParams({
   textColor: "var(--ink)",
   headerBackgroundColor: "var(--surface-muted)",
   headerTextColor: "var(--ink-muted)",
-  headerFontWeight: 500,
+  headerFontWeight: 600,
   headerFontSize: "var(--fs-label)",
   fontSize: "var(--fs-table)",
   borderColor: "var(--line)",
   rowBorder: { color: "var(--line)" },
   headerColumnBorder: false,
   columnBorder: false,
-  headerColumnResizeHandleColor: "transparent",
+  // Short vertical divider at each header edge (also the resize handle); the filter / ⋮ sit beside it.
+  headerColumnResizeHandleColor: "var(--line)",
+  headerColumnResizeHandleHeight: "40%",
+  headerColumnResizeHandleWidth: 2,
   rowHoverColor: "var(--surface-muted)",
   selectedRowBackgroundColor: "var(--brand-50)",
   accentColor: "var(--brand-600)",
@@ -46,46 +50,120 @@ export const gridTheme = themeQuartz.withParams({
   rowHeight: 52,
   wrapperBorder: false,
   wrapperBorderRadius: 0,
-  pinnedColumnBorder: false,
+  pinnedColumnBorder: { color: "var(--line)" },
 });
 
-const MAX_AUTO_WIDTH = 240; // auto-sized columns wrap beyond this (Zoho Books style)
+const MAX_AUTO_WIDTH = 360; // auto-sized columns wrap beyond this (less on smaller screens, see stretch)
+
+/** Determines whether a column can be sorted. Images, avatars, icons, and actions are never sortable. */
+export function isColumnSortable(col) {
+  if (!col) return false;
+  if (col.sortable === false) return false;
+  if (col.type === "image" || col.key === "image" || col.type === "avatar" || col.type === "photo" || col.type === "icon") return false;
+  if (col.type === "actions" || col.key === "actions" || col.key === "__actions" || col.key === "__select" || col.key === "__serial") return false;
+  return true;
+}
+
+/** Computes comfortable minimum width so column header labels and action icons never get truncated. */
+function estimateHeaderWidth(col) {
+  const label = typeof col.label === "string" ? col.label : col.key ?? "";
+  if (col.type === "image" || col.key === "image") return Math.max(64, col.width || 64);
+  const charWidth = label.length * 9;
+  const isSortable = isColumnSortable(col);
+  const sortWidth = isSortable ? 24 : 0;
+  const filterWidth = 24;
+  const menuWidth = 24;
+  const padding = 34;
+  const needed = Math.ceil(charWidth + sortWidth + filterWidth + menuWidth + padding);
+  return Math.max(100, Math.min(360, needed));
+}
+
 // Kept as constants: a fresh object on every render makes AG Grid re-apply the column defaults, which
 // throws away the fitted column widths (the table then shrinks back, leaving an empty band).
-const DEFAULT_COL_DEF = { sortable: false, resizable: true, suppressMovable: true, suppressHeaderMenuButton: true };
+const DEFAULT_COL_DEF = { sortable: false, resizable: true, suppressMovable: false, suppressHeaderMenuButton: true, minWidth: 100 };
 const ROW_SELECTION = { mode: "multiRow", checkboxes: false, headerCheckbox: false, enableClickSelection: false, enableSelectionWithoutKeys: false };
 const GridState = createContext(null);
 const useGrid = () => useContext(GridState);
-const NUMERIC = ["currency", "number", "percent"];
+const NUMERIC = ["currency", "number", "percent", "contributionMargin", "takeRate"];
 const isRight = (col) => NUMERIC.includes(col.type) || col.align === "right";
 
 /* ---------- headers ---------- */
 
-function DataHeader({ col }) {
+function DataHeader({ col, api, column }) {
   const g = useGrid();
   // GridTable columns may draw their own header (e.g. a screen's own "select all" checkbox).
   const custom = g.renderHeader?.(col.key);
   if (custom !== undefined && custom !== null) return <span className={cn("flex w-full min-w-0 items-center", isRight(col) && "justify-end")}>{custom}</span>;
+  return <DataHeaderInner col={col} api={api} column={column} />;
+}
+
+function DataHeaderInner({ col, api, column }) {
+  const g = useGrid();
+  const isSortable = isColumnSortable(col);
   const active = g.sortField === col.key;
   const SortIcon = !active ? ArrowUpDown : g.sortDir === "asc" ? ArrowUp : ArrowDown;
-  const filterable = g.columnFilters && columnFilterable(col);
+  const canFilter = g.columnFilters && columnFilterable(col);
+  const right = isRight(col);
+  // Checklist values come from every loaded row (not only the ones left after other column filters).
+  const source = g.filterRows ?? null;
+  const options = useMemo(() => (canFilter && source ? columnValueOptions(col, source, (row) => formatCellValue(col, row)) : null), [canFilter, source, col]);
+  // Every data column shows its filter; only checkbox / action-button columns have none.
+  const filterable = canFilter && !/^(actions?|select|__\w+)$/i.test(col.key);
+
+  // Filter (horizontal bars) + ⋮ menu: shown on header hover, kept while a panel is open or a filter is on.
+  const tools = (
+    <div className="ml-1 flex shrink-0 items-center gap-0.5">
+      {filterable && <ColumnFilter column={col} filter={g.colFilters[col.key]} options={options} onChange={(value) => g.setColFilter(col.key, value)} />}
+      <ColumnMenu
+        api={api}
+        column={column}
+        col={col}
+        sortable={isSortable && Boolean(g.setSort)}
+        sortDir={active ? g.sortDir : ""}
+        onSort={g.setSort ? (dir) => g.setSort(col.key, dir) : undefined}
+        allColumns={g.allColumns}
+        hiddenKeys={g.hiddenKeys}
+        onToggleColumn={g.onToggleColumn}
+        onReset={g.resetColumns}
+      />
+    </div>
+  );
+
   return (
-    <span
-      className={cn("flex w-full min-w-0 items-center gap-2 text-label font-medium tracking-[0.04em] uppercase", filterable ? "justify-between" : isRight(col) && "justify-end")}
+    <div
+      className="flex w-full min-w-0 items-center gap-1 text-label font-semibold tracking-[0.04em] uppercase select-none"
       aria-sort={active ? (g.sortDir === "asc" ? "ascending" : "descending") : undefined}
     >
-      {col.sortable ? (
-        <button type="button" onClick={() => g.sortBy(col)} title={col.label} className={cn("inline-flex min-w-0 items-center gap-1 tracking-[0.04em] uppercase hover:text-ink", active && "text-ink")}>
-          <span className="truncate">{col.label}</span>
-          <SortIcon className={cn("size-3.5 shrink-0", active && "text-brand-600")} aria-hidden />
+      {/* Every column: name (and sort) on the left, filter + ⋮ on the right edge. */}
+      <div className="mr-auto flex min-w-0">{isSortable ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.currentTarget.blur();
+            g.sortBy(col);
+          }}
+          title={`Sort by ${col.label}`}
+          className={cn(
+            "group inline-flex min-w-0 items-center gap-1.5 tracking-[0.04em] uppercase whitespace-nowrap cursor-pointer transition-colors",
+            active ? "text-ink font-bold" : "text-ink-muted hover:text-ink"
+          )}
+        >
+          <span className="whitespace-nowrap">{col.label}</span>
+          <SortIcon
+            className={cn(
+              "size-3.5 shrink-0 transition-all",
+              active ? "text-brand-600 stroke-[2.5]" : "text-ink-muted/50 group-hover:text-ink group-hover:opacity-100"
+            )}
+            aria-hidden
+          />
         </button>
       ) : (
-        <span className="truncate" title={col.label}>
+        <span className="whitespace-nowrap text-ink-muted" title={col.label}>
           {col.label}
         </span>
-      )}
-      {filterable && <ColumnFilter column={col} filter={g.colFilters[col.key]} onChange={(value) => g.setColFilter(col.key, value)} />}
-    </span>
+      )}</div>
+      {tools}
+    </div>
   );
 }
 
@@ -102,7 +180,10 @@ function SelectAllHeader() {
   );
 }
 
-const SerialHeader = () => <span className="w-full text-right text-label font-medium tracking-[0.04em] uppercase">S.No.</span>;
+const SerialHeader = () => <span className="w-full text-center text-label font-medium tracking-[0.02em] uppercase">S.No.</span>;
+
+/** S.No. column width for the grid's width: slim on tablets, a little roomier on desktop. Draggable wider. */
+const serialWidth = (gridWidth) => (gridWidth < 1024 ? 44 : gridWidth < 1280 ? 48 : 52);
 const ActionsHeader = () => <span className="sr-only">Actions</span>;
 
 /* ---------- cells ---------- */
@@ -111,7 +192,7 @@ function SelectCell({ data }) {
   const g = useGrid();
   const key = data[g.rowKey];
   return (
-    <span className={cn("flex w-full justify-center", g.dense ? "pt-[18px]" : "pt-[22px]")}>
+    <span className={cn("flex w-full justify-center", g.dense ? "pt-[14px] xl:pt-[18px]" : "pt-[18px] xl:pt-[22px]")}>
       <Checkbox aria-label={`Select ${key}`} checked={g.selected.includes(key)} onChange={(e) => g.setSelected((s) => (e.target.checked ? [...s, key] : s.filter((x) => x !== key)))} />
     </span>
   );
@@ -119,7 +200,7 @@ function SelectCell({ data }) {
 
 function SerialCell({ node }) {
   const g = useGrid();
-  return <span className={cn("block w-full text-right text-ink-muted tabular", g.dense ? "py-4" : "py-5")}>{g.serialOf(node.rowIndex ?? 0)}</span>;
+  return <span className={cn("block w-full text-center text-ink-muted tabular", g.dense ? "py-3 xl:py-4" : "py-4 xl:py-5")}>{g.serialOf(node.rowIndex ?? 0)}</span>;
 }
 
 function DataCell({ data, col, lead }) {
@@ -128,7 +209,7 @@ function DataCell({ data, col, lead }) {
   const view = g.viewOf(data);
   const href = lead ? resolveHref(g.rowHref, data) : null;
   return (
-    <div className={cn("w-full min-w-0", g.dense ? "py-4" : "py-5", isRight(col) && "text-right tabular")}>
+    <div className={cn("w-full min-w-0", g.dense ? "py-3 xl:py-4" : "py-4 xl:py-5", isRight(col) && "text-right tabular")}>
       {g.renderCell ? (
         // GridTable: the screen's own cell markup, looked up on every render so it follows live state.
         <div className={cn("min-w-0", !col.wrap && "truncate")}>{g.renderCell(col.key, data)}</div>
@@ -192,7 +273,7 @@ function ActionsCell({ data }) {
   const menuId = `row-actions-${String(key).replace(/[^\w-]/g, "_")}`;
 
   return (
-    <span className={cn("flex w-full justify-end", g.dense ? "pt-3" : "pt-4")}>
+    <span className={cn("flex w-full justify-end", g.dense ? "pt-2 xl:pt-3" : "pt-3 xl:pt-4")}>
       <Button ref={btnRef} variant="ghost" size="icon-sm" onClick={toggle} aria-label={`Actions for ${key}`} aria-haspopup="true" aria-expanded={Boolean(box)} aria-controls={box ? menuId : undefined}>
         <MoreHorizontal className="size-4" />
       </Button>
@@ -258,22 +339,32 @@ export function AgDataGrid({
   renderCell, // optional (GridTable): (columnKey, row) => cell content
   renderHeader, // optional (GridTable): (columnKey) => header content, or undefined for the label
   onRowClicked, // optional (GridTable): (row) => void — whole-row click, as some screens' tables had
+  filterRows, // optional: every loaded row, for the filter checklists (rows may already be filtered)
+  setSort, // optional: (columnKey, "asc" | "desc" | "") => void — column menu Sort Ascending / Descending
+  allColumns, // optional: every column (shown or hidden), for the column menu's Choose Columns
+  hiddenKeys, // optional: keys of the hidden columns
+  onToggleColumn, // optional: (columnKey, show) => void
+  onResetColumns, // optional: () => void — column menu Reset Columns (shows every default column again)
 }) {
   const apiRef = useRef(null);
   const wrapRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [bodyHeight, setBodyHeight] = useState(0);
   const selectedRef = useRef(selected);
+  const serialSized = useRef(false);
 
   const leadKey = columns[0]?.key;
   const columnDefs = useMemo(() => {
     const defs = [];
     if (showSelection)
-      defs.push({ colId: "__select", headerComponent: SelectAllHeader, cellRenderer: SelectCell, width: 52, pinned: "left", resizable: false, suppressSizeToFit: true, suppressAutoSize: true });
+      defs.push({ colId: "__select", headerComponent: SelectAllHeader, cellRenderer: SelectCell, width: 52, pinned: "left", resizable: false, suppressSizeToFit: true, suppressAutoSize: true, lockPosition: "left", lockPinned: true, suppressMovable: true });
     if (showSerial)
-      defs.push({ colId: "__serial", headerComponent: SerialHeader, cellRenderer: SerialCell, width: 64, pinned: "left", resizable: false, suppressSizeToFit: true, suppressAutoSize: true });
+      // Slim S.No.: sized to the screen on every refit (serialWidth) until the user drags it wider or narrower.
+      defs.push({ colId: "__serial", headerComponent: SerialHeader, cellRenderer: SerialCell, width: 52, minWidth: 40, maxWidth: 120, headerClass: "ba-serial", cellClass: "ba-serial", pinned: "left", resizable: true, suppressSizeToFit: true, suppressAutoSize: true, lockPosition: "left", lockPinned: true, suppressMovable: true });
     columns.forEach((col, i) => {
       const lead = col.key === leadKey;
+      const minW = Math.max(estimateHeaderWidth(col), col.minWidth || 100);
+      const explicitWidth = col.width ? Math.max(col.width, minW) : undefined;
       defs.push({
         colId: col.key,
         headerComponent: DataHeader,
@@ -281,55 +372,47 @@ export function AgDataGrid({
         cellRenderer: DataCell,
         cellRendererParams: { col, lead },
         pinned: lead && columns.length > 1 ? "left" : undefined,
+        lockPinned: lead && columns.length > 1 ? true : undefined,
         autoHeight: true,
-        minWidth: 72,
-        ...(col.width ? { width: col.width, maxWidth: col.width, suppressAutoSize: true, suppressSizeToFit: true } : {}),
+        minWidth: minW,
+        ...(explicitWidth ? { width: explicitWidth, maxWidth: explicitWidth, suppressAutoSize: true, suppressSizeToFit: true } : {}),
         cellClass: "ba-cell",
       });
     });
     if (hasRowActions)
-      defs.push({ colId: "__actions", headerComponent: ActionsHeader, cellRenderer: ActionsCell, width: 56, pinned: "right", resizable: false, suppressSizeToFit: true, suppressAutoSize: true });
+      defs.push({ colId: "__actions", headerComponent: ActionsHeader, cellRenderer: ActionsCell, width: 56, pinned: "right", resizable: false, suppressSizeToFit: true, suppressAutoSize: true, lockPosition: "right", lockPinned: true, suppressMovable: true });
     return defs;
   }, [columns, leadKey, showSelection, showSerial, hasRowActions]);
 
-  // Column sizing runs in three steps. AG Grid applies "auto-size" asynchronously, so each step waits
-  // for its columnResized event (source "autosizeColumns") before the next one — otherwise the late
-  // auto-size lands after the stretch and the table shrinks back, leaving an empty band.
-  //   1) size cells only (header ignored) → remember as each column's content width
-  //   2) size including headers, capped at 240px
-  //   3) stretch (or trim) to the table width — see `stretch` below
-  const phaseRef = useRef(null);
-  const contentRef = useRef({});
-  const fit = useCallback(() => {
-    const api = apiRef.current;
-    if (!api || api.isDestroyed?.()) return;
-    phaseRef.current = "content";
-    api.autoSizeAllColumns(true);
-  }, []);
-  // Step 3 (only reads refs, so it is a stable callback).
   const stretch = useCallback(() => {
     const api = apiRef.current;
     const wrap = wrapRef.current;
     if (!api || api.isDestroyed?.() || !wrap) return;
-    const contentWidth = contentRef.current;
-    // Cap auto-sized columns at a Zoho-like 240px so long text wraps. Applied here rather than as a column
-    // maxWidth, so the stretch below can still widen columns to fill the table.
+
     const cols = api.getAllDisplayedColumns();
-    const tooWide = cols.filter((c) => !c.getColDef().suppressAutoSize && c.getActualWidth() > MAX_AUTO_WIDTH);
-    if (tooWide.length) api.setColumnWidths(tooWide.map((c) => ({ key: c.getColId(), newWidth: MAX_AUTO_WIDTH })));
-    const total = cols.reduce((sum, c) => sum + c.getActualWidth(), 0);
-    // Room for columns, measured from the grid itself: the pinned areas plus the visible middle area
-    // (which already leaves out the vertical scrollbar when rows exceed the height cap).
-    const w = (sel, prop = "offsetWidth") => wrap.querySelector(sel)?.[prop] ?? 0;
-    const width = w(".ag-pinned-left-cols-container") + w(".ag-center-cols-viewport", "clientWidth") + w(".ag-pinned-right-cols-container");
+    // Room for the columns: the grid's width less its vertical scrollbar. Measured on the wrapper, so it
+    // follows the screen (desktop, tablet, sidebar open or folded) on every refit.
+    const scrollbar = wrap.querySelector(".ag-body-vertical-scroll")?.offsetWidth ?? 0;
+    const width = wrap.clientWidth - scrollbar;
     if (width <= 0) return;
-    // Widths are set directly with setColumnWidths: AG Grid's sizeColumnsToFit result did not stick
-    // (columns fell back to their content width, leaving an empty band before the actions column).
+
+    const serialCol = api.getColumn("__serial");
+    if (serialCol && !serialSized.current && serialCol.getActualWidth() !== serialWidth(width)) api.setColumnWidths([{ key: "__serial", newWidth: serialWidth(width) }], true);
+
+    // Long auto-sized columns are capped to a share of the screen and wrap their text instead, so one
+    // column (a product name, an address) can't push the rest off a tablet screen.
+    const limit = Math.max(160, Math.min(MAX_AUTO_WIDTH, Math.round(width * (width < 1024 ? 0.34 : 0.3))));
+    const capped = cols
+      .filter((c) => !c.getColDef().suppressSizeToFit && c.getActualWidth() > Math.max(limit, c.getMinWidth()))
+      .map((c) => ({ key: c.getColId(), newWidth: Math.max(limit, c.getMinWidth()) }));
+    if (capped.length) api.setColumnWidths(capped, true);
+
     const stretchable = cols.filter((c) => !c.getColDef().suppressSizeToFit);
+    const total = cols.reduce((sum, c) => sum + c.getActualWidth(), 0);
     const base = stretchable.reduce((sum, c) => sum + c.getActualWidth(), 0);
     if (!stretchable.length || !base) return;
+
     if (total < width) {
-      // Fill the table: share the spare room in proportion to each column's width.
       const extra = width - total;
       let given = 0;
       const next = stretchable.map((c, i) => {
@@ -338,30 +421,25 @@ export function AgDataGrid({
         return { key: c.getColId(), newWidth: c.getActualWidth() + add };
       });
       api.setColumnWidths(next, true);
-    } else if (total < width * 1.35) {
-      // Slightly too wide: trim columns towards a floor (their content, at most 140px — text wraps,
-      // as in Zoho Books). Genuinely wide tables keep their horizontal scroll, as the old table did.
-      const floor = (c) => Math.max(72, Math.min(140, contentWidth[c.getColId()] ?? 72));
-      const spare = stretchable.reduce((sum, c) => sum + Math.max(0, c.getActualWidth() - floor(c)), 0);
-      if (spare > 0) {
-        const ratio = Math.min(1, (total - width) / spare);
-        api.setColumnWidths(stretchable.map((c) => ({ key: c.getColId(), newWidth: Math.round(c.getActualWidth() - Math.max(0, c.getActualWidth() - floor(c)) * ratio) })), true);
-      }
     }
   }, []);
+
+  const fit = useCallback(() => {
+    const api = apiRef.current;
+    if (!api || api.isDestroyed?.()) return;
+    // Auto-size columns with skipHeader=false so every header title is fully legible
+    api.autoSizeAllColumns(false);
+    queueMicrotask(stretch);
+  }, [stretch]);
+
   const onColumnResized = useCallback(
     (e) => {
+      // A drag on the S.No. edge keeps that width; refits stop resizing it.
+      if (e.finished && e.source === "uiColumnResized" && e.columns?.some((c) => c.getColId() === "__serial")) serialSized.current = true;
       if (!e.finished || e.source !== "autosizeColumns") return;
       const api = apiRef.current;
       if (!api || api.isDestroyed?.()) return;
-      if (phaseRef.current === "content") {
-        contentRef.current = Object.fromEntries(api.getAllDisplayedColumns().map((c) => [c.getColId(), c.getActualWidth()]));
-        phaseRef.current = "full";
-        queueMicrotask(() => api.autoSizeAllColumns());
-      } else if (phaseRef.current === "full") {
-        phaseRef.current = null;
-        queueMicrotask(stretch);
-      }
+      queueMicrotask(stretch);
     },
     [stretch],
   );
@@ -398,7 +476,22 @@ export function AgDataGrid({
     syncSelection();
   }, [selected, syncSelection]);
 
+  // Column menu "Reset Columns": original order, pinning and widths, then the default visible columns.
+  const resetColumns = useCallback(() => {
+    const api = apiRef.current;
+    if (api && !api.isDestroyed?.()) api.resetColumnState();
+    serialSized.current = false;
+    onResetColumns?.();
+    fitSoon();
+  }, [onResetColumns, fitSoon]);
+
   const state = {
+    filterRows,
+    setSort,
+    allColumns,
+    hiddenKeys,
+    onToggleColumn,
+    resetColumns,
     rowKey,
     rowHref,
     dense,
@@ -451,6 +544,7 @@ export function AgDataGrid({
           onGridSizeChanged={fitSoon}
           onRowClicked={onRowClicked ? (e) => e.data && onRowClicked(e.data) : undefined}
           rowClass={onRowClicked ? "cursor-pointer" : undefined}
+          maintainColumnOrder
           suppressCellFocus
           enableCellTextSelection
           ensureDomOrder

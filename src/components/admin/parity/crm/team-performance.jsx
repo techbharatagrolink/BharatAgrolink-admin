@@ -186,7 +186,7 @@ function SalesByLeadsDialog({ type, onClose }) {
           <p className="py-6 text-center text-sm text-ink-muted">No sales agents found.</p>
         ) : (
           <>
-          <div className="hidden xl:block">
+          <div className="hidden md:block">
             <GridTable
               rows={d.rows}
               rowKey="id"
@@ -211,7 +211,7 @@ function SalesByLeadsDialog({ type, onClose }) {
             />
           </div>
 
-          <div className="space-y-3 xl:hidden">
+          <div className="space-y-3 md:hidden">
             {d.rows.map((r) => (
               <div key={r.id} className="rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">
@@ -312,7 +312,7 @@ export function TeamPerformance({ rows, summary }) {
             </div>
           }
         />
-        <div className="hidden border-t border-line xl:block">
+        <div className="hidden border-t border-line md:block">
           <GridTable
             rows={visible}
             rowKey="id"
@@ -357,7 +357,7 @@ export function TeamPerformance({ rows, summary }) {
           {visible.length === 0 && <p className="px-4 py-8 text-center text-sm text-ink-muted">No agents found.</p>}
         </div>
 
-        <div className="divide-y divide-line xl:hidden">
+        <div className="divide-y divide-line md:hidden">
           {visible.map((r) => (
             <button key={r.id} type="button" onClick={() => setAgent(r.id)} className="block w-full px-4 py-3 text-left hover:bg-surface-muted">
               <div className="flex items-start justify-between gap-2">

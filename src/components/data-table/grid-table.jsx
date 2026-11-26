@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
-import { AgDataGrid } from "./ag-data-grid";
+import { useMemo, useState } from "react";
+import { AgDataGrid, isColumnSortable } from "./ag-data-grid";
+import { applyColumnFilters } from "./column-filter";
 
 const noop = () => {};
 const none = [];
@@ -26,18 +27,88 @@ const serial = (i) => i + 1;
  * screen, so spinners, permissions and other live state show up as before. `rowKey` is a field name
  * or (row, index) => key; it is combined with the position, so repeated keys never clash.
  */
-export function GridTable({ columns, rows, rowKey = "id", dense = true, onRowClick }) {
+export function GridTable({
+  columns,
+  rows = [],
+  rowKey = "id",
+  dense = true,
+  onRowClick,
+  sortable = true,
+  columnFilters = true,
+}) {
+  const [sortField, setSortField] = useState("");
+  const [sortDir, setSortDir] = useState("");
+  const [colFilters, setColFilters] = useState({});
+
+  const sortBy = (col) => {
+    if (!sortable || !isColumnSortable(col)) return;
+    const key = col.key;
+    if (sortField !== key) {
+      setSortField(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortField("");
+      setSortDir("");
+    }
+  };
+
+  // Column menu Sort Ascending / Descending ("" clears).
+  const setSort = (key, dir) => {
+    setSortField(dir ? key : "");
+    setSortDir(dir || "");
+  };
+
+  const setColFilter = (key, value) => {
+    setColFilters((curr) => ({ ...curr, [key]: value }));
+  };
+
+  const filteredRows = useMemo(() => {
+    if (!columnFilters) return rows ?? [];
+    return applyColumnFilters(rows ?? [], columns, colFilters);
+  }, [rows, columns, colFilters, columnFilters]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortField || !sortDir) return filteredRows;
+    const col = columns.find((c) => c.key === sortField);
+    return [...filteredRows].sort((a, b) => {
+      let va = a[sortField];
+      let vb = b[sortField];
+      if (col?.sortValue) {
+        va = col.sortValue(a);
+        vb = col.sortValue(b);
+      }
+      if (typeof va === "number" && typeof vb === "number") {
+        return sortDir === "asc" ? va - vb : vb - va;
+      }
+      return sortDir === "asc"
+        ? String(va ?? "").localeCompare(String(vb ?? ""), undefined, { numeric: true })
+        : String(vb ?? "").localeCompare(String(va ?? ""), undefined, { numeric: true });
+    });
+  }, [filteredRows, sortField, sortDir, columns]);
+
   const data = useMemo(
     () =>
-      (rows ?? []).map((row, index) => {
+      sortedRows.map((row, index) => {
         const key = typeof rowKey === "function" ? rowKey(row, index) : row?.[rowKey];
         return { __id: `${key ?? ""}|${index}`, __row: row, __index: index };
       }),
-    [rows, rowKey],
+    [sortedRows, rowKey],
   );
 
   // Column layout only changes when keys / labels / widths change — the grid keeps its sizing otherwise.
-  const layout = JSON.stringify(columns.map(({ key, label, align, width, wrap }) => ({ key, label: typeof label === "string" ? label : "", align, width, wrap })));
+  const layout = JSON.stringify(
+    columns.map(({ key, label, align, width, wrap, sortable: colSortable, filter }) => ({
+      key,
+      filter,
+      label: typeof label === "string" ? label : "",
+      align,
+      width,
+      wrap,
+      sortable: colSortable ?? sortable,
+    }))
+  );
   const meta = useMemo(() => JSON.parse(layout), [layout]);
 
   const byKey = new Map(columns.map((c) => [c.key, c]));
@@ -63,12 +134,12 @@ export function GridTable({ columns, rows, rowKey = "id", dense = true, onRowCli
       setSelected={noop}
       pageIds={none}
       allChecked={false}
-      sortField=""
-      sortDir=""
-      sortBy={noop}
-      columnFilters={false}
-      colFilters={empty}
-      setColFilter={noop}
+      sortField={sortField}
+      sortDir={sortDir}
+      sortBy={sortBy}
+      columnFilters={columnFilters}
+      colFilters={colFilters}
+      setColFilter={setColFilter}
       picks={empty}
       pickLine={noop}
       viewOf={same}
@@ -78,6 +149,8 @@ export function GridTable({ columns, rows, rowKey = "id", dense = true, onRowCli
       renderCell={renderCell}
       renderHeader={renderHeader}
       onRowClicked={onRowClick ? (d) => onRowClick(d.__row, d.__index) : undefined}
+      filterRows={columnFilters ? rows : undefined}
+      setSort={sortable ? setSort : undefined}
     />
   );
 }
