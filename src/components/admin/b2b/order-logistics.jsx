@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { bookB2bShipment, loadB2bShipmentOptions, recordB2bShipmentFreight, setB2bShipmentProof, updateB2bShipment } from "@/lib/actions/admin/b2b-screens";
+import { bookB2bShipment, loadB2bShipmentOptions, recordB2bShipmentFreight, setB2bShipmentProof, updateB2bShipment, loadB2bShipmentTracking } from "@/lib/actions/admin/b2b-screens";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ function Band({ ns }) {
  * Logistics of one order (spec §13): booking with rate comparison / transporter quote, pickup,
  * tracking, exceptions, actual freight with net shipping % and realized CM, proof.
  */
+const PROVIDER_LABEL = { rate_card: "rate card", manual: "transporter quote", cargo: "live quote · Shiprocket Cargo", delhivery: "live quote · Delhivery B2B", parcel: "live quote · parcel courier" };
+const LIVE_PROVIDERS = new Set(["cargo", "delhivery", "parcel"]);
+
 export function OrderLogistics({ orderId, logistics }) {
   const router = useRouter();
   const [busy, start] = useTransition();
@@ -49,6 +52,7 @@ export function OrderLogistics({ orderId, logistics }) {
   const [act, setAct] = useState(null); // { shipment, action, note, pickupAt, location }
   const [freight, setFreight] = useState(null); // { shipment, amount, invoiceRef }
   const [proof, setProof] = useState(null); // { shipment, url }
+  const [tracking, setTracking] = useState({}); // shipmentId -> live carrier tracking result
 
   if (!logistics) return null;
   const L = logistics;
@@ -68,13 +72,23 @@ export function OrderLogistics({ orderId, logistics }) {
       const quote = await loadB2bShipmentOptions(orderId, ids);
       if (!quote.ok) return setResult({ tone: "danger", text: quote.message });
       const best = quote.recommended?.bestOverall ?? null;
-      setBooking({ key: newKey(), quote, packageIds: ids, selected: best, manual: !quote.options?.length, carrier: "", mode: "transporter", freightEstimate: "", etaDays: "", awbLr: "", bookingRef: "", pickupAt: "", reviewReason: "" });
+      setBooking({ key: newKey(), quote, packageIds: ids, selected: best, manual: !quote.options?.length, carrier: "", mode: "transporter", freightEstimate: "", etaDays: "", awbLr: "", bookingRef: "", pickupAt: "", reviewReason: "", live: false, fromPincode: "" });
     });
 
-  const reloadOptions = (packageIds) =>
+  const reloadOptions = (packageIds, live = booking?.live, fromPincode = booking?.fromPincode) =>
     start(async () => {
-      const quote = await loadB2bShipmentOptions(orderId, packageIds);
-      if (quote.ok) setBooking((b) => ({ ...b, quote, packageIds, selected: quote.recommended?.bestOverall ?? null }));
+      const quote = await loadB2bShipmentOptions(orderId, packageIds, { live, fromPincode });
+      if (!quote.ok) return setResult({ tone: "danger", text: quote.message });
+      setBooking((b) => ({ ...b, quote, packageIds, live: Boolean(live), selected: quote.recommended?.bestOverall ?? null, manual: quote.options?.length ? false : b.manual }));
+    });
+
+  // Live carrier quotes: a call to Shiprocket Cargo / Delhivery B2B / parcel couriers, only on request.
+  const getLiveRates = () => reloadOptions(booking.packageIds, true, booking.fromPincode);
+
+  const showTracking = (sh) =>
+    start(async () => {
+      const res = await loadB2bShipmentTracking(sh.id);
+      setTracking((t) => ({ ...t, [sh.id]: res.ok ? res : { available: false, message: res.message } }));
     });
 
   const chosen = booking && !booking.manual ? booking.quote.options.find((o) => o.key === booking.selected) : null;
@@ -93,10 +107,12 @@ export function OrderLogistics({ orderId, logistics }) {
         bookB2bShipment(orderId, {
           idempotencyKey: booking.key,
           packageIds: booking.packageIds,
-          provider: booking.manual ? "manual" : "rate_card",
+          provider: booking.manual ? "manual" : chosen.live ? "live" : "rate_card",
           ...(booking.manual
             ? { carrier: booking.carrier.trim(), mode: booking.mode, freightEstimate: Number(booking.freightEstimate), ...(booking.etaDays ? { etaDays: Number(booking.etaDays) } : {}) }
-            : { rateId: chosen.rateId }),
+            : chosen.live
+              ? { liveKey: chosen.liveKey, ...(/^\d{6}$/.test(booking.fromPincode) ? { fromPincode: booking.fromPincode } : {}) }
+              : { rateId: chosen.rateId }),
           awbLr: booking.awbLr.trim(),
           bookingRef: booking.bookingRef.trim(),
           ...(booking.pickupAt ? { pickupAt: booking.pickupAt } : {}),
@@ -153,7 +169,7 @@ export function OrderLogistics({ orderId, logistics }) {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <span className="font-medium text-ink">{sh.carrier || "Carrier"}</span> · {MODE_LABEL[sh.mode] ?? sh.mode}
-                {sh.zone ? ` · zone ${sh.zone}` : ""} · {sh.provider === "rate_card" ? "rate card" : "transporter quote"}
+                {sh.zone ? ` · zone ${sh.zone}` : ""} · {PROVIDER_LABEL[sh.provider] ?? "transporter quote"}
                 <span className="block font-mono text-xs text-ink-muted">{[sh.awbLr && `AWB/LR ${sh.awbLr}`, sh.bookingRef && `Ref ${sh.bookingRef}`].filter(Boolean).join(" · ")}</span>
                 <span className="block text-xs text-ink-muted">
                   {sh.packageCount} package{sh.packageCount === 1 ? "" : "s"} · {formatNumber(sh.chargeableKg)} kg chargeable
@@ -201,7 +217,35 @@ export function OrderLogistics({ orderId, logistics }) {
                   {sh.podUrl ? "Change proof" : "Attach proof"}
                 </Button>
               )}
+              {LIVE_PROVIDERS.has(sh.provider) && sh.awbLr && (
+                <Button size="sm" variant="ghost" disabled={busy} onClick={() => showTracking(sh)}>
+                  Live tracking
+                </Button>
+              )}
             </div>
+            {tracking[sh.id] && (
+              <div className="rounded-md bg-surface-muted p-2 text-xs">
+                {tracking[sh.id].available ? (
+                  <>
+                    <p className="font-medium text-ink">
+                      {tracking[sh.id].courierName || sh.carrier}: {tracking[sh.id].status || "no status yet"}
+                      {tracking[sh.id].edd ? ` · expected ${tracking[sh.id].edd}` : ""}
+                    </p>
+                    <ul className="mt-1 space-y-0.5">
+                      {(tracking[sh.id].events ?? []).slice(0, 12).map((e, i) => (
+                        <li key={i}>
+                          <span className="text-ink-muted">{e.at}</span> · {e.status}
+                          {e.location ? ` @ ${e.location}` : ""}
+                          {e.remark ? ` · ${e.remark}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="text-ink-muted">{tracking[sh.id].message}</p>
+                )}
+              </div>
+            )}
             {sh.events.length > 0 && (
               <details>
                 <summary className="cursor-pointer text-xs text-ink-muted">Tracking history ({sh.events.length})</summary>
@@ -263,6 +307,26 @@ export function OrderLogistics({ orderId, logistics }) {
               <Button size="sm" variant={booking.manual ? "secondary" : "primary"} disabled={!booking.quote.options?.length} onClick={() => setBooking({ ...booking, manual: false })}>Rate options</Button>
               <Button size="sm" variant={booking.manual ? "primary" : "secondary"} onClick={() => setBooking({ ...booking, manual: true })}>Transporter quote</Button>
             </div>
+            <div className="flex flex-wrap items-end gap-2 rounded-md border border-line p-2">
+              <Field label="Pickup pincode (optional)" className="w-44">
+                {({ id }) => <Input id={id} inputMode="numeric" maxLength={6} placeholder="seller's" value={booking.fromPincode} onChange={(e) => setBooking({ ...booking, fromPincode: e.target.value.replace(/\D/g, "") })} />}
+              </Field>
+              <Button size="sm" variant="secondary" loading={busy} disabled={!booking.packageIds.length || (booking.fromPincode !== "" && booking.fromPincode.length !== 6)} onClick={getLiveRates}>
+                {booking.live ? "Refresh live carrier rates" : "Get live carrier rates"}
+              </Button>
+              <span className="text-xs text-ink-muted">Shiprocket Cargo, Delhivery B2B and parcel couriers quote this load. Nothing is booked at the carrier.</span>
+            </div>
+            {booking.quote.live && (
+              <div className="text-xs text-ink-muted">
+                Live from {booking.quote.live.from?.pincode || "?"}
+                {booking.quote.live.from?.source === "seller" ? " (seller address)" : ""}: {booking.quote.live.count} quote{booking.quote.live.count === 1 ? "" : "s"}.
+                {booking.quote.live.notes?.length > 0 && (
+                  <ul className="mt-0.5 list-disc pl-4">
+                    {booking.quote.live.notes.map((n) => <li key={n}>{n}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
             {booking.quote.message && <Notice tone="info">{booking.quote.message}</Notice>}
 
             {!booking.manual && booking.quote.options?.length > 0 && (
@@ -275,6 +339,7 @@ export function OrderLogistics({ orderId, logistics }) {
                         <input type="radio" name="rate" disabled={!o.available} checked={booking.selected === o.key} onChange={() => setBooking({ ...booking, selected: o.key })} />
                         <span>
                           <span className="font-medium text-ink">{o.carrier}</span> · {MODE_LABEL[o.mode] ?? o.mode}
+                          {o.live && <Badge tone="success" className="ml-1">Live</Badge>}
                           <span className="block text-xs text-ink-muted">
                             {formatNumber(o.chargeableKg)} kg chargeable · ETA {o.transitDays ?? "?"} day(s){o.pickupSlaHours ? ` · pickup within ${o.pickupSlaHours} h` : ""}
                             {o.codSupported ? " · COD" : ""}
@@ -289,7 +354,9 @@ export function OrderLogistics({ orderId, logistics }) {
                       </span>
                       <span className="text-right">
                         <span className="block font-medium">{formatINR(o.exGst)}</span>
-                        <span className="block text-xs text-ink-muted">+ GST {formatINR(o.gst)}</span>
+                        <span className="block text-xs text-ink-muted" title={o.live && !o.gstFromCarrier ? "Carrier quoted one amount; GST worked out at the freight GST rate" : undefined}>
+                          + GST {formatINR(o.gst)}{o.live && !o.gstFromCarrier ? " (est.)" : ""}
+                        </span>
                         <span className="block text-xs"><Band ns={o.impact} /></span>
                       </span>
                     </label>

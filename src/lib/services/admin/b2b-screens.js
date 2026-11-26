@@ -155,9 +155,12 @@ export async function recordOrderSeller(id, sellerId, body, user) {
 }
 
 /** Logistics (subtask 10): rate options for the order's unshipped (or chosen) packages. */
-export async function getShipmentOptions(id, packageIds, user) {
+export async function getShipmentOptions(id, packageIds, user, { live = false, fromPincode = "" } = {}) {
   try {
     const query = packageIds?.length ? { packageIds: packageIds.join(",") } : {};
+    // Live carrier quotes (Shiprocket Cargo, Delhivery B2B, parcel couriers) only on request.
+    if (live) query.live = "1";
+    if (/^\d{6}$/.test(String(fromPincode))) query.fromPincode = String(fromPincode);
     const { data } = await api(`admin/b2b/orders/${orderRef(id)}/shipment-options`, { token: user.token, query });
     return { ok: true, ...data };
   } catch (error) {
@@ -454,5 +457,15 @@ export async function saveCaseSlabs(sourceType, sourceId, body, user) {
     return { ok: true, ...data };
   } catch (error) {
     return failure(error, "The case rates could not be saved.");
+  }
+}
+
+/** Live carrier tracking of a B2B shipment booked at a live quote (read-only). */
+export async function getShipmentTracking(shipmentId, user) {
+  try {
+    const { data } = await api(`admin/b2b/shipments/${quoteId(shipmentId)}/tracking`, { token: user.token });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "Tracking could not be loaded.");
   }
 }

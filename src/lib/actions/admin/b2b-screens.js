@@ -128,10 +128,16 @@ export async function transitionB2bOrder(id, action, body = {}) {
 }
 
 /** Logistics (subtask 10). Capabilities (logistics.book / shipment.edit / logistics.freight) are checked by the API. */
-export async function loadB2bShipmentOptions(id, packageIds) {
+export async function loadB2bShipmentOptions(id, packageIds, opts = {}) {
   const gate = await assertPermission("b2b.orders", "view");
   if (!gate.ok) return { ok: false, message: gate.message, details: [] };
-  return getShipmentOptions(id, packageIds, gate.user);
+  return getShipmentOptions(id, packageIds, gate.user, { live: Boolean(opts.live), fromPincode: opts.fromPincode ?? "" });
+}
+
+export async function loadB2bShipmentTracking(shipmentId) {
+  const gate = await assertPermission("b2b.orders", "view");
+  if (!gate.ok) return { ok: false, message: gate.message, details: [] };
+  return rfqApi.getShipmentTracking(shipmentId, gate.user);
 }
 
 export async function bookB2bShipment(id, body) {
