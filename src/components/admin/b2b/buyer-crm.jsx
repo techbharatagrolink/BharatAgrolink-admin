@@ -110,6 +110,8 @@ function ProfileDialog({ buyerId, crm, can, options, onClose }) {
     }
     if (body.segment === null) delete body.segment;
     if (body.stage === "lost") body.lostReason = f.lostReason;
+    // The version the form opened with: a colleague's newer change is refused (409), not overwritten.
+    if (Object.keys(body).length && crm.version) body.version = crm.version;
     run(() => updateB2bBuyerCrm(buyerId, body), onClose);
   };
 
