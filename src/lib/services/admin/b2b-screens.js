@@ -439,3 +439,20 @@ export async function listSupplierAuthorizations(query, user) {
 
 export const createSupplierAuthorization = (body, user) => post("admin/b2b/authorizations", body, user, "The authorization could not be saved.");
 export const decideSupplierAuthorization = (id, body, user) => post(`admin/b2b/authorizations/${quoteId(id)}/decision`, body, user, "The decision could not be saved.");
+
+// Customer case price slabs 1 / 2 / 4 / 8+ (task #107 subtask 3).
+const caseSlabPath = (sourceType, sourceId) => `admin/b2b/case-slabs/${encodeURIComponent(sourceType)}/${quoteId(sourceId)}`;
+
+export async function getCaseSlabs(sourceType, sourceId, user) {
+  const { data } = await api(caseSlabPath(sourceType, sourceId), { token: user.token });
+  return data;
+}
+
+export async function saveCaseSlabs(sourceType, sourceId, body, user) {
+  try {
+    const { data } = await api(caseSlabPath(sourceType, sourceId), { token: user.token, method: "PUT", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The case rates could not be saved.");
+  }
+}

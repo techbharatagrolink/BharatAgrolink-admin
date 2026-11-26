@@ -8,6 +8,22 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { formatINR } from "@/lib/format";
 
+// Case price slab (task #107 subtask 3): the largest 1 / 2 / 4 / 8+ case slab the quantity reaches, else the list price.
+function slabPrice(line, quantity) {
+  const perCase = Number(line.unitsPerCase) || 0;
+  if (!perCase || !line.caseSlabs?.length) return line.listPrice ?? line.unitPrice;
+  const cases = Number(quantity) / perCase;
+  const hit = line.caseSlabs.filter((s) => cases + 1e-9 >= s.minCases).sort((a, b) => b.minCases - a.minCases)[0];
+  return hit ? hit.rate : line.listPrice ?? line.unitPrice;
+}
+
+function CaseHint({ line }) {
+  const perCase = Number(line.unitsPerCase) || 0;
+  if (!perCase) return null;
+  const cases = Math.round((Number(line.quantity) / perCase) * 100) / 100;
+  return <span className="mt-0.5 block text-xs text-ink-muted">{cases} case{cases === 1 ? "" : "s"} of {perCase}{Number.isInteger(cases) ? "" : " · not whole cases"}</span>;
+}
+
 const emptyLine = { productId: 0, variantId: 0, sku: "", name: "", quantity: 1, unitPrice: 0, gstPct: 0, stock: 0 };
 
 /**
@@ -98,7 +114,9 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
   function addProduct(product) {
     setLines((current) => {
       if (current.some((line) => line.productId === product.productId && line.variantId === product.variantId)) return current;
-      return [...current, { ...emptyLine, ...product, quantity: Math.max(1, type?.minMoqBoxes || 1) }];
+      const quantity = Math.max(1, type?.minMoqBoxes || 1);
+      const line = { ...emptyLine, ...product, listPrice: product.unitPrice, quantity };
+      return [...current, { ...line, unitPrice: slabPrice(line, quantity) }];
     });
     setProductQuery("");
     setProducts([]);
@@ -106,6 +124,17 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
 
   function updateLine(index, patch) {
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+
+  // Quantity change re-applies the case slab rate until the user types their own rate on that line.
+  function setQuantity(index, quantity) {
+    setLines((current) =>
+      current.map((line, i) => {
+        if (i !== index) return line;
+        const next = { ...line, quantity };
+        return line.priceEdited || !line.caseSlabs?.length ? next : { ...next, unitPrice: slabPrice(line, quantity) };
+      }),
+    );
   }
 
   function submit(event) {
@@ -279,8 +308,8 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                           <span className="block font-mono text-xs text-ink-muted">{line.sku}</span>
                         </td>
                         <td className="py-2 pr-3 tabular">{line.stock}</td>
-                        <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></td>
-                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="1" className="w-24" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></td>
+                        <td className="py-2 pr-3"><Input type="number" min="0" step="0.01" className="w-32" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></td>
                         <td className="py-2 pr-3 tabular">{line.gstPct}</td>
                         <td className="py-2"><Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button></td>
                       </tr>
@@ -309,8 +338,8 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                         <p className="text-micro font-medium tracking-wide text-ink-muted uppercase">GST %</p>
                         <p className="text-sm text-ink tabular">{line.gstPct}</p>
                       </div>
-                      <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} /></Field>
-                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value })} /></Field>
+                      <Field label="Qty"><Input type="number" min="1" value={line.quantity} onChange={(e) => setQuantity(index, e.target.value)} /><CaseHint line={line} /></Field>
+                      <Field label="Unit rate excl. GST" className="col-span-2 sm:col-span-1"><Input type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => updateLine(index, { unitPrice: e.target.value, priceEdited: true })} /></Field>
                     </div>
                   </div>
                 ))}

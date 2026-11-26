@@ -478,3 +478,14 @@ export async function decideB2bSupplierAuthorization(id, body) {
   if (result.ok) revalidatePath("/admin/b2b/authorizations");
   return result;
 }
+
+export async function saveB2bCaseSlabs(sourceType, sourceId, body) {
+  const gate = await assertPermission("b2b.catalog", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.saveCaseSlabs(sourceType, sourceId, body, gate.user);
+  if (result.ok) {
+    revalidatePath(`/admin/b2b/case-rates/${sourceType}/${sourceId}`);
+    revalidatePath("/admin/b2b/sku-links");
+  }
+  return result;
+}
