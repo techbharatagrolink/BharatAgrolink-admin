@@ -301,3 +301,87 @@ export async function updateBuyerCrm(buyerId, body, user) {
 
 export const logBuyerActivity = (buyerId, body, user) => post(`admin/b2b/buyers/${quoteId(buyerId)}/activities`, body, user, "The activity could not be saved.");
 export const completeFollowupTask = (taskId, body, user) => post(`admin/b2b/followups/${quoteId(taskId)}/done`, body, user, "The follow-up could not be closed.");
+
+// --- Buyer RFQ, seller sourcing (task #107 subtask 4; spec §7, §8, A2).
+const rfqPath = (id) => `admin/b2b/rfqs/${quoteId(id)}`;
+
+export async function getRfqForm(user) {
+  const { data } = await api("admin/b2b/rfqs/form", { token: user.token });
+  return data;
+}
+
+/** RFQ detail: header, lines, invites, quotations, timeline, allowed actions. Null when not found. */
+export async function getRfqDetail(id, user) {
+  try {
+    const { data } = await api(`${rfqPath(id)}/detail`, { token: user.token });
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function getRfqComparison(id, user) {
+  const { data } = await api(`${rfqPath(id)}/comparison`, { token: user.token });
+  return data;
+}
+
+export async function getRfqSellerMatches(id, user) {
+  const { data } = await api(`${rfqPath(id)}/seller-matches`, { token: user.token });
+  return data;
+}
+
+/** Quotation form values from the RFQ sourcing; { error } when the RFQ is not ready for a quotation. */
+export async function getRfqQuotationDraft(id, user) {
+  try {
+    const { data } = await api(`${rfqPath(id)}/quotation-draft`, { token: user.token });
+    return { data };
+  } catch (error) {
+    if (error instanceof ApiError && error.status < 500) return { error: error.message };
+    throw error;
+  }
+}
+
+export async function searchRfqBuyers(q, user) {
+  try {
+    const { data } = await api("admin/b2b/rfqs/buyers", { token: user.token, query: { q } });
+    return { ok: true, buyers: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Buyer search failed."), buyers: [] };
+  }
+}
+
+export async function searchRfqProducts(q, user) {
+  try {
+    const { data } = await api("admin/b2b/rfqs/products", { token: user.token, query: { q } });
+    return { ok: true, products: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Product search failed."), products: [] };
+  }
+}
+
+export async function searchRfqSellerListings(id, sellerId, q, user) {
+  try {
+    const { data } = await api(`${rfqPath(id)}/sellers/${quoteId(sellerId)}/listings`, { token: user.token, query: { q } });
+    return { ok: true, listings: data || [] };
+  } catch (error) {
+    return { ...failure(error, "Listing search failed."), listings: [] };
+  }
+}
+
+export const createRfq = (body, user) => post("admin/b2b/rfqs", body, user, "The RFQ could not be saved.");
+
+export async function updateRfq(id, body, user) {
+  try {
+    const { data } = await api(rfqPath(id), { token: user.token, method: "PATCH", body });
+    return { ok: true, ...data };
+  } catch (error) {
+    return failure(error, "The RFQ could not be updated.");
+  }
+}
+
+export const openRfq = (id, user) => post(`${rfqPath(id)}/open`, {}, user, "The RFQ could not be opened.");
+export const inviteRfqSellers = (id, sellerIds, user) => post(`${rfqPath(id)}/seller-invites`, { sellerIds }, user, "The sellers could not be invited.");
+export const saveRfqSourcing = (id, body, user) => post(`${rfqPath(id)}/sourcing`, body, user, "The sourcing could not be saved.");
+export const setRfqOfferListing = (id, quoteItemId, body, user) =>
+  post(`${rfqPath(id)}/offers/${quoteId(quoteItemId)}/listing`, body, user, "The listing could not be set.");

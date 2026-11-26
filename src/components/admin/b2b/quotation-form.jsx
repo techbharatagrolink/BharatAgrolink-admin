@@ -136,12 +136,15 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
         otherCharges,
         validUntil,
         remarks,
+        // Created from an RFQ (subtask 4): the RFQ and, per sourced line, the chosen seller offer.
+        ...(initial?.rfqId ? { rfqId: initial.rfqId } : {}),
         lines: lines.filter((line) => line.productId > 0).map((line) => ({
           productId: line.productId,
           variantId: line.variantId || 0,
           sku: line.sku || "",
           quantity: Number(line.quantity) || 0,
           unitPrice: Number(line.unitPrice) || 0,
+          ...(line.sellerQuoteItemId ? { sellerQuoteItemId: line.sellerQuoteItemId } : {}),
         })),
       }, reviseOf);
       if (!result.ok) {
@@ -272,6 +275,7 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                       <tr key={`${line.productId}-${line.variantId}`} className="border-b border-line">
                         <td className="py-2 pr-3">
                           <span className="font-medium text-ink">{line.name}</span>
+                          {line.seller && <span className="block text-xs text-ink-muted">Sourced from {line.seller} (RFQ)</span>}
                           <span className="block font-mono text-xs text-ink-muted">{line.sku}</span>
                         </td>
                         <td className="py-2 pr-3 tabular">{line.stock}</td>
@@ -291,6 +295,7 @@ export function QuotationForm({ options, initial = null, reviseOf = null }) {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate font-medium text-ink">{line.name}</p>
+                    {line.seller && <p className="text-xs text-ink-muted">Sourced from {line.seller} (RFQ)</p>}
                         <p className="font-mono text-xs text-ink-muted">{line.sku}</p>
                       </div>
                       <Button type="button" size="xs" variant="ghost" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>Remove</Button>

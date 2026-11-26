@@ -36,6 +36,7 @@ import {
   logBuyerActivity,
   completeFollowupTask,
 } from "@/lib/services/admin/b2b-screens";
+import * as rfqApi from "@/lib/services/admin/b2b-screens";
 
 const quotePaths = (...ids) => {
   revalidatePath("/admin/b2b/quotations");
@@ -306,5 +307,80 @@ export async function completeB2bFollowup(taskId, outcome, buyerId) {
     revalidatePath("/admin/b2b/workspace");
     if (buyerId) buyerPaths(buyerId);
   }
+  return result;
+}
+
+// --- Buyer RFQ, seller sourcing (task #107 subtask 4).
+const rfqPaths = (id) => {
+  revalidatePath("/admin/b2b/rfqs");
+  if (id) revalidatePath(`/admin/b2b/rfqs/${id}`);
+};
+
+export async function searchB2bRfqBuyers(q) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, buyers: [] };
+  return rfqApi.searchRfqBuyers(q, gate.user);
+}
+
+export async function searchB2bRfqProducts(q) {
+  const gate = await assertPermission("b2b.rfqs", "add");
+  if (!gate.ok) return { ok: false, message: gate.message, products: [] };
+  return rfqApi.searchRfqProducts(q, gate.user);
+}
+
+/** Creates an RFQ, or with rfqId saves the edit (the API checks everything again). */
+export async function saveB2bRfq(body, rfqId = null) {
+  const gate = await assertPermission("b2b.rfqs", rfqId ? "edit" : "add");
+  if (!gate.ok) return deny(gate);
+  const result = rfqId ? await rfqApi.updateRfq(rfqId, body, gate.user) : await rfqApi.createRfq(body, gate.user);
+  if (result.ok) rfqPaths(rfqId || result.id);
+  return result;
+}
+
+export async function openB2bRfq(id) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.openRfq(id, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function getB2bRfqSellerMatches(id) {
+  const gate = await assertPermission("b2b.rfqs", "view");
+  if (!gate.ok) return deny(gate);
+  try {
+    return { ok: true, ...(await rfqApi.getRfqSellerMatches(id, gate.user)) };
+  } catch (error) {
+    return { ok: false, message: error?.message || "Could not load the sellers." };
+  }
+}
+
+export async function inviteB2bRfqSellers(id, sellerIds) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.inviteRfqSellers(id, sellerIds, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function saveB2bRfqSourcing(id, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.saveRfqSourcing(id, body, gate.user);
+  if (result.ok) rfqPaths(id);
+  return result;
+}
+
+export async function searchB2bRfqSellerListings(id, sellerId, q) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return { ok: false, message: gate.message, listings: [] };
+  return rfqApi.searchRfqSellerListings(id, sellerId, q, gate.user);
+}
+
+export async function setB2bRfqOfferListing(id, quoteItemId, body) {
+  const gate = await assertPermission("b2b.rfqs", "edit");
+  if (!gate.ok) return deny(gate);
+  const result = await rfqApi.setRfqOfferListing(id, quoteItemId, body, gate.user);
+  if (result.ok) rfqPaths(id);
   return result;
 }
