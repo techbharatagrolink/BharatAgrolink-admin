@@ -13,6 +13,7 @@ import { Input, Select, Switch } from "@/components/ui/form";
 import { PageHeader, StatCard, StatGrid } from "@/components/ui/page";
 import { EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
+import { RouteExportDropdown } from "@/components/data-table/export-button";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { deleteRedirectAction, setRedirectActiveAction } from "@/lib/actions/admin/redirects";
 import { DeleteAllDialog, ImportDialog, LogsDialog, RedirectFormDialog, SAMPLE_HREF, showPath, TestDialog, websiteHref } from "./redirect-dialogs";
@@ -197,9 +198,7 @@ export function RedirectsManager({ title, items, metrics, meta, filters, siteUrl
               <a href={SAMPLE_HREF} className={buttonClasses({ size: "xs" })}>
                 <Download className="size-3.5" aria-hidden /> Sample template
               </a>
-              <a href={`${PATH}/download?file=export`} className={buttonClasses({ size: "xs" })}>
-                <FileText className="size-3.5" aria-hidden /> Export CSV
-              </a>
+              <RouteExportDropdown href={`${PATH}/download?file=export`} size="xs" label="Export" />
               <Button size="xs" onClick={() => open("logs")}>
                 <History className="size-3.5" aria-hidden /> Audit log
               </Button>

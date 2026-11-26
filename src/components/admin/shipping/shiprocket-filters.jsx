@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -53,37 +54,38 @@ export function ShiprocketFilters({ values, statuses }) {
   const filtered = values.q || values.status || values.pickup || values.from || values.to || values.sort !== "DESC";
   const resetHref = `/admin/shipping?tab=shiprocket${values.perPage !== "10" ? `&perPage=${values.perPage}` : ""}`;
   return (
-    <form key={JSON.stringify(values)} onSubmit={submit} className="flex flex-wrap items-end gap-2 border-b border-line px-4 py-3">
-      <label className="min-w-56 flex-1 space-y-1 text-xs text-ink-muted">
+    // Phones: Search full width; Status | Pickup, Order | Per page, From | To, then Filter / Reset.
+    <form key={JSON.stringify(values)} onSubmit={submit} className="grid grid-cols-2 items-end gap-2 border-b border-line px-4 py-3 sm:flex sm:flex-wrap">
+      <label className="col-span-2 min-w-0 space-y-1 text-xs text-ink-muted sm:min-w-56 sm:flex-1">
         Search
         <Input name="q" defaultValue={values.q} placeholder="Order ID, AWB…" />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted">
         Status
         <Select name="status" defaultValue={options.some((o) => o.value === values.status) ? values.status : ""} options={options} placeholder="All Status" />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted">
         Pickup location
         <Input name="pickup" defaultValue={values.pickup} placeholder="Pickup Location" />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted">
         Order
         <Select name="sort" defaultValue={values.sort} options={SORTS} />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted max-sm:order-1">
         From
         <Input type="date" name="from" defaultValue={values.from} />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted max-sm:order-1">
         To
         <Input type="date" name="to" defaultValue={values.to} />
       </label>
-      <label className="space-y-1 text-xs text-ink-muted">
+      <label className="min-w-0 space-y-1 text-xs text-ink-muted">
         Per page
         <Select name="perPage" defaultValue={values.perPage} options={PAGE_SIZES} />
       </label>
-      <Button type="submit" size="md">Filter</Button>
-      {filtered && <ButtonLink href={resetHref} variant="ghost">Reset</ButtonLink>}
+      <Button type="submit" size="md" className={cn("max-sm:order-2", !filtered && "max-sm:col-span-2")}>Filter</Button>
+      {filtered && <ButtonLink href={resetHref} variant="ghost" className="max-sm:order-2 max-sm:border max-sm:border-line-strong">Reset</ButtonLink>}
     </form>
   );
 }

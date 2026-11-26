@@ -6,7 +6,7 @@
  */
 export const resources = {
   "shipping.delhivery": {
-    title: "Delhivery Orders",
+    title: "Delivery Orders",
     description: "Shipments booked on Delhivery. A cancelled_at date shows the shipment as Cancelled.",
     permission: "shipping.delhivery",
     search: "Waybill, order ID, invoice or vendor ID",

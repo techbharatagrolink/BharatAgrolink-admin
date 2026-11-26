@@ -2,9 +2,14 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePhone } from "./use-phone";
 
-export function Popover({ id: idProp, trigger, children, align = "right", className, panelClassName, label }) {
+export function Popover({ id: idProp, trigger, children, align = "right", className, panelClassName, label, sheetOnPhone = false }) {
+  // sheetOnPhone: on phone-width screens the panel opens as a bottom sheet (fits the screen, never overlaps the page).
+  const phone = usePhone();
+  const asSheet = sheetOnPhone && phone;
   const [open, setOpen] = useState(false);
   // Inside a grid table (AG Grid) the cell clips anything that spills out of it, so there the panel is
   // drawn in a layer on <body> at a fixed position under (or above) the trigger. Elsewhere: unchanged.
@@ -32,11 +37,14 @@ export function Popover({ id: idProp, trigger, children, align = "right", classN
     const onKey = (event) => event.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    if (asSheet) document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
+      if (asSheet) document.body.style.overflow = prevOverflow;
     };
-  }, [open]);
+  }, [open, asSheet]);
 
   // Floating panel: place it once drawn (its height decides whether it opens below or above the button).
   useEffect(() => {
@@ -81,10 +89,34 @@ export function Popover({ id: idProp, trigger, children, align = "right", classN
     </div>
   );
 
+  const sheet = (
+    <div className="fixed inset-0 z-[90] flex items-end bg-black/45">
+      <div
+        ref={panelRef}
+        id={id}
+        role="dialog"
+        aria-label={label}
+        className="ui-sheet flex max-h-[78dvh] w-full flex-col rounded-t-2xl bg-surface pb-[env(safe-area-inset-bottom)] shadow-[var(--shadow-pop)]"
+        onClick={(event) => {
+          if (event.target.closest("a,[data-close]")) setOpen(false);
+        }}
+      >
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-line-strong" aria-hidden />
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-2 pb-1">
+          <p className="truncate text-subheading font-semibold text-ink">{label}</p>
+          <button type="button" onClick={() => setOpen(false)} className="flex size-9 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted" aria-label="Close">
+            <X className="size-5" aria-hidden />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      </div>
+    </div>
+  );
+
   return (
     <div ref={ref} className={cn("relative", className)}>
       {trigger({ open, toggle, props: { "aria-expanded": open, "aria-controls": id, "aria-haspopup": "true", "aria-label": label } })}
-      {open && (isFloating ? createPortal(panel, document.body) : panel)}
+      {open && (asSheet ? createPortal(sheet, document.body) : isFloating ? createPortal(panel, document.body) : panel)}
     </div>
   );
 }

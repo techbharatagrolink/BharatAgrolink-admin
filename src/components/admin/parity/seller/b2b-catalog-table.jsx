@@ -9,7 +9,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { formatDateTime, formatNumber } from "@/lib/format";
-import { b2bCatalogAction, vendorCatalogAction } from "@/lib/actions/admin/parity/seller";
+import { b2bCatalogAction, exportB2bCatalogAction, vendorCatalogAction } from "@/lib/actions/admin/parity/seller";
 
 const STOCK_LABEL = { in: "In Stock", low: "Low Stock", out: "Out of Stock" };
 
@@ -159,24 +159,30 @@ function VendorCatalogDialog({ sellers, onClose }) {
   );
 }
 
+/** A catalog row with the display fields the columns read (the table and its Export use the same). */
+function decorate(r) {
+  return {
+    ...r,
+    tags: [r.technicalName, r.variantCount > 0 ? `${r.variantCount} variants` : null, r.pdf ? "PDF attached" : null].filter(Boolean).join(" · "),
+    sellerLabel: r.seller || "—",
+    stockStatus: STOCK_LABEL[r.stockState],
+    stockText: r.stockState === "out" ? "Out" : `${formatNumber(r.stock)} ${r.stockUnit || "pcs"}`,
+    draftNote: r.draftEdits ? "Has unpublished draft changes" : "",
+    hasPdf: Boolean(r.pdf),
+  };
+}
+
+async function exportCatalog(params) {
+  const result = await exportB2bCatalogAction(params);
+  return result.ok ? { ...result, rows: result.rows.map(decorate) } : result;
+}
+
 export function B2bCatalogTable({ data, options, canEdit, canDelete }) {
   const router = useRouter();
   const [attach, setAttach] = useState(null);
   const [vendorOpen, setVendorOpen] = useState(false);
 
-  const rows = useMemo(
-    () =>
-      data.rows.map((r) => ({
-        ...r,
-        tags: [r.technicalName, r.variantCount > 0 ? `${r.variantCount} variants` : null, r.pdf ? "PDF attached" : null].filter(Boolean).join(" · "),
-        sellerLabel: r.seller || "—",
-        stockStatus: STOCK_LABEL[r.stockState],
-        stockText: r.stockState === "out" ? "Out" : `${formatNumber(r.stock)} ${r.stockUnit || "pcs"}`,
-        draftNote: r.draftEdits ? "Has unpublished draft changes" : "",
-        hasPdf: Boolean(r.pdf),
-      })),
-    [data.rows],
-  );
+  const rows = useMemo(() => data.rows.map(decorate), [data.rows]);
 
   const rowActions = [
     { id: "pdf", label: "Open catalog PDF", kind: "form", when: { field: "hasPdf", in: [true] } },
@@ -222,6 +228,8 @@ export function B2bCatalogTable({ data, options, canEdit, canDelete }) {
         bulkActions={bulkActions}
         onAction={(actionId, ids) => b2bCatalogAction(actionId, ids)}
         onCustomAction={onCustomAction}
+        onExport={exportCatalog}
+        exportName="b2b-catalog"
         toolbar={
           <Button size="sm" onClick={() => setVendorOpen(true)}>
             <FileText className="size-4" aria-hidden /> Vendor Catalogs

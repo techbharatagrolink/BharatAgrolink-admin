@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, Eye, FileText, MessageSquare, Trash2 } from "lucide-react";
+import { ChevronDown, Download, Eye, FileSpreadsheet, FileText, MessageSquare, Trash2 } from "lucide-react";
 import { addBulkOrderRemarkAction, bulkOrderLabelAction, deleteBulkOrderAction, exportBulkOrdersAction } from "@/lib/actions/admin/parity/bulk";
 import { formatDateTime, formatNumber, inr } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/badge";
@@ -12,8 +12,11 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Select, Textarea } from "@/components/ui/form";
 import { EmptyState } from "@/components/ui/states";
+import { Popover } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast";
 import { GridTable } from "@/components/data-table/grid-table";
+import { useCanExport } from "@/components/admin/shell/admin-user";
+import { csvText, downloadCsv, downloadXlsx, exportFileName } from "@/lib/csv";
 import { BulkPager } from "./bulk-list";
 
 const CSV_COLUMNS = ["order_id", "customer_name", "product_names", "total_quantity", "invoice_value", "payment_status", "order_status", "responsible", "remark", "salesman_name", "created_at", "source_warehouse"];
@@ -40,15 +43,7 @@ function displayStatus(order) {
 }
 
 function toCsv(rows) {
-  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  return [CSV_COLUMNS.join(","), ...rows.map((r) => CSV_COLUMNS.map((c) => cell(r[c])).join(","))].join("\n");
-}
-
-function download(name, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: name });
-  a.click();
-  URL.revokeObjectURL(url);
+  return csvText(CSV_COLUMNS, rows.map((r) => CSV_COLUMNS.map((c) => r[c])));
 }
 
 const orderHref = (order) => (order.orderId ? `/admin/bulk-orders/orders/${encodeURIComponent(plain(order.orderId))}` : "/admin/bulk-orders/orders");
@@ -60,6 +55,7 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
   "use no memo";
   const router = useRouter();
   const { notify } = useToast();
+  const canExport = useCanExport();
   const [exporting, setExporting] = useState(false);
   const [pending, setPending] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -73,12 +69,18 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
   const pageSize = Number(result?.pageSize) > 0 ? Number(result.pageSize) : rows.length || 1;
   const deleteId = pending == null ? "" : plain(pending.id);
 
-  async function exportCsv() {
+  async function runExport(format = "csv") {
     setExporting(true);
     const res = await exportBulkOrdersAction(query);
     setExporting(false);
     if (!res.ok) return notify({ message: res.message, tone: "error" });
-    download(`bulk_orders_${new Date().toISOString().slice(0, 10)}.csv`, toCsv(res.data.rows));
+    const dataRows = (res.data.rows ?? []).map((r) => CSV_COLUMNS.map((c) => plain(r[c])));
+    if (format === "xlsx") {
+      await downloadXlsx(exportFileName("bulk_orders", "xlsx"), CSV_COLUMNS, dataRows);
+    } else {
+      downloadCsv(exportFileName("bulk_orders", "csv"), toCsv(res.data.rows));
+    }
+    notify({ message: `Exported ${formatNumber(dataRows.length)} rows (${format.toUpperCase()}).`, tone: "success" });
   }
 
   async function confirmDelete() {
@@ -126,9 +128,39 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
       <CardHeader
         title={`Bulk Order Listing (${formatNumber(result?.total ?? rows.length)})`}
         actions={
-          <Button size="sm" onClick={exportCsv} loading={exporting}>
-            <Download className="size-4" aria-hidden /> Export CSV
-          </Button>
+          canExport ? (
+            <Popover
+              panelClassName="w-40"
+              trigger={({ toggle, props }) => (
+                <Button size="sm" onClick={toggle} loading={exporting} {...props}>
+                  {!exporting && <Download className="size-4" aria-hidden />} Export <ChevronDown className="size-3.5 opacity-70" aria-hidden />
+                </Button>
+              )}
+            >
+              <ul className="py-1">
+                <li>
+                  <button
+                    type="button"
+                    data-close
+                    onClick={() => runExport("csv")}
+                    className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                  >
+                    <FileText className="size-4 text-ink-muted" /> CSV (.csv)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    data-close
+                    onClick={() => runExport("xlsx")}
+                    className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-ink hover:bg-surface-muted"
+                  >
+                    <FileSpreadsheet className="size-4 text-success-ink" /> Excel (.xlsx)
+                  </button>
+                </li>
+              </ul>
+            </Popover>
+          ) : null
         }
       />
       {rows.length === 0 ? (

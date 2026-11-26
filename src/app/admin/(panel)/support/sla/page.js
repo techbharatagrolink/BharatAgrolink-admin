@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { checkPermission } from "@/lib/auth/session";
-import { can } from "@/lib/auth/permissions";
+import { can, canExport } from "@/lib/auth/permissions";
 import { getSlaScreen, slaFilters, SLA_STATES } from "@/lib/services/admin/support-sla";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { Notice, PageHeader, StatCard, StatGrid } from "@/components/ui/page";
@@ -59,6 +59,8 @@ export default async function SupportSlaPage({ searchParams }) {
 
   const filters = slaFilters(await searchParams);
   const data = await getSlaScreen(user, filters);
+  // Export bars on the summary tables, super admins only (the ticket list exports from Support Tickets).
+  const allowExport = canExport(user);
   const header = (
     <PageHeader
       title={TITLE}
@@ -139,6 +141,7 @@ export default async function SupportSlaPage({ searchParams }) {
             { key: "met", label: "Closed in SLA", align: "right", render: metCell },
           ]}
           rows={overview.byTeam}
+          exportName={allowExport ? "sla-by-team" : undefined}
         />
       </Card>
 
@@ -154,6 +157,7 @@ export default async function SupportSlaPage({ searchParams }) {
               { key: "met", label: "Closed in SLA", align: "right", render: metCell },
             ]}
             rows={overview.byPriority}
+            exportName={allowExport ? "sla-by-priority" : undefined}
           />
         </Card>
         <Card className="min-w-0">
@@ -178,6 +182,7 @@ export default async function SupportSlaPage({ searchParams }) {
               { key: "met", label: "Closed in SLA", align: "right", render: metCell },
             ]}
             rows={overview.byAssignee}
+            exportName={allowExport ? "sla-by-agent" : undefined}
             empty="No tickets in this range."
           />
         </Card>
@@ -334,6 +339,7 @@ export default async function SupportSlaPage({ searchParams }) {
             { key: "hours", label: "Resolve within", align: "right", render: (r) => `${r.hours} h` },
           ]}
           rows={overview.rules.rules}
+          exportName={allowExport ? "sla-rules" : undefined}
         />
         <p className="border-t border-line px-4 py-3 text-xs text-ink-muted">
           Department to team: {overview.rules.departmentTeams.map((d) => `${d.department} → ${d.teamLabel}`).join(", ")}. Any other department keeps the ticket until it is assigned to Operations or Sales.

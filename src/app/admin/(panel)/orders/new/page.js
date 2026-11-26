@@ -16,9 +16,10 @@ export default async function NewOrderPage({ searchParams }) {
       <PageHeader
         title="Create Manual Order"
         description="Create a customer order quickly. Search the customer, add products, then choose courier and payment."
-        actions={<ButtonLink href="/admin/payment-attempts" variant="secondary" size="sm">Attempts</ButtonLink>}
+        actions={<ButtonLink href="/admin/payment-attempts" variant="secondary" size="sm" className="max-sm:hidden">Attempts</ButtonLink>}
       />
-      <ManualOrderForm leadCode={leadCode} />
+      {/* Phones: "Attempts" sits beside "New customer" instead of on its own line. */}
+      <ManualOrderForm leadCode={leadCode} toolbarStart={<ButtonLink href="/admin/payment-attempts" variant="secondary" size="sm" className="sm:hidden">Attempts</ButtonLink>} />
     </>
   );
 }

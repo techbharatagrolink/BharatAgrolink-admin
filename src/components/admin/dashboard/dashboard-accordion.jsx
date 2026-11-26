@@ -9,7 +9,7 @@ const AccordionContext = createContext(null);
 const sectionDomId = (id) => `dash-section-${id}`;
 
 // Small Zoho-style dropdown: closes on outside click and Escape.
-function Menu({ button, label, align = "right", children }) {
+function Menu({ button, label, align = "right", className, children }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -24,7 +24,7 @@ function Menu({ button, label, align = "right", children }) {
     };
   }, [open]);
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={cn("relative", className)}>
       {button({ open, toggle: () => setOpen((v) => !v), label })}
       {open && (
         <div
@@ -32,7 +32,8 @@ function Menu({ button, label, align = "right", children }) {
           aria-label={label}
           className={cn(
             "absolute top-full z-40 mt-1.5 min-w-[220px] animate-in overflow-hidden rounded-lg duration-150 fade-in-0 zoom-in-95 slide-in-from-top-1 motion-reduce:animate-none bg-[var(--z-card)] py-1 shadow-[0_12px_32px_-8px_rgb(24_39_75/0.3)] ring-1 ring-[var(--z-line)]",
-            align === "right" ? "right-0" : "left-0",
+            // "stretch": on phones exactly as wide as its button (so it stays on screen); wider screens size to content.
+            align === "stretch" ? "right-0 max-sm:left-0" : align === "right" ? "right-0" : "left-0",
           )}
         >
           {children(() => setOpen(false))}
@@ -74,7 +75,7 @@ export function DashboardAccordion({ sections, defaultOpen = [], header, beforeS
     <AccordionContext.Provider value={{ open, toggle, register }}>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">{header}</div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
           <button
             type="button"
             onClick={() => startRefresh(() => router.refresh())}
@@ -87,8 +88,10 @@ export function DashboardAccordion({ sections, defaultOpen = [], header, beforeS
           </button>
           <Menu
             label="Jump to section"
+            align="stretch"
+            className="min-w-0 flex-1 sm:flex-none"
             button={({ open: isOpen, toggle: t, label }) => (
-              <button type="button" onClick={t} aria-haspopup="menu" aria-expanded={isOpen} className={cn(toolButton, "min-w-0 flex-1 px-3.5 sm:w-56 sm:flex-none")}>
+              <button type="button" onClick={t} aria-haspopup="menu" aria-expanded={isOpen} className={cn(toolButton, "w-full min-w-0 px-3.5 sm:w-56")}>
                 <span className="truncate">{label}</span>
                 <ChevronDown className={cn("ml-auto size-4 shrink-0 transition-transform", isOpen && "rotate-180")} aria-hidden />
               </button>

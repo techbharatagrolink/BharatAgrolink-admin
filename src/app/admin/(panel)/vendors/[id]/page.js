@@ -83,6 +83,7 @@ export default async function VendorDetailPage({ params, searchParams }) {
               ]}
               rows={data.recentLines}
               empty="No orders yet."
+              exportName={`vendor-${v.id}-orders`}
             />
           </Card>
           <Card>
@@ -96,6 +97,7 @@ export default async function VendorDetailPage({ params, searchParams }) {
               ]}
               rows={data.products}
               empty="No products listed."
+              exportName={`vendor-${v.id}-products`}
             />
           </Card>
           {data.showFinance && (
@@ -110,6 +112,7 @@ export default async function VendorDetailPage({ params, searchParams }) {
                 ]}
                 rows={data.payouts}
                 empty="No payouts yet."
+                exportName={`vendor-${v.id}-payouts`}
               />
             </Card>
           )}

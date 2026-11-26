@@ -103,6 +103,7 @@ export default async function InventoryActivityPage({ searchParams }) {
           <>
             <MiniTable
               empty="No activity for these filters."
+              exportName="inventory-activity-log"
               columns={[
                 { key: "at", label: "When", render: (r) => <span className="text-xs whitespace-nowrap">{formatDateTime(r.at)}</span> },
                 {

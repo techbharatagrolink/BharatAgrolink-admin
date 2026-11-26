@@ -11,6 +11,7 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
+import { useCanExport } from "@/components/admin/shell/admin-user";
 import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { saveOrderReportOverrideAction } from "@/lib/actions/admin/orders-report";
 
@@ -158,6 +159,7 @@ function orderReportExportHref(filters, format, columns = null) {
 }
 
 export function OrderReportExportMenu({ filters, columns }) {
+  const canExport = useCanExport();
   const allColumns = useMemo(() => {
     if (columns && columns.length) return columns;
     return COLUMNS.map(([value, label]) => ({ value, label }));
@@ -175,6 +177,8 @@ export function OrderReportExportMenu({ filters, columns }) {
       return cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key];
     });
   const chosen = selected.length && selected.length < allKeys.length ? selected : null;
+  // Exports are for super admins only (the download route re-checks).
+  if (!canExport) return null;
 
   return (
     <Popover

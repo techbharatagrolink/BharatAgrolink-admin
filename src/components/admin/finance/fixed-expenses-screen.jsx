@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { DataTable } from "@/components/data-table/data-table";
 import { useQueryState } from "@/components/data-table/use-query-state";
 import { RecordFormDrawer } from "@/components/admin/resource/record-form";
-import { fixedExpenseAction, saveFixedExpenseAction } from "@/lib/actions/admin/fixed-expenses";
+import { exportFixedExpensesAction, fixedExpenseAction, saveFixedExpenseAction } from "@/lib/actions/admin/fixed-expenses";
 
 // fixed_expenses.php category dropdown; categories already in use are added to it.
 const PHP_CATEGORIES = [
@@ -59,6 +59,22 @@ const COLUMNS = [
   { key: "status", label: "Status", type: "status" },
 ];
 
+/** A row with the Notes and Scope text the columns show (the table and its Export use the same). */
+function labelled(row, shortMonth, monthMode) {
+  return {
+    ...row,
+    detail: [row.notes, row.adjustmentNotes].filter(Boolean).join(" · "),
+    scopeLabel:
+      row.kind === "override"
+        ? `Override for ${shortMonth} (Base: ${formatINR(row.baseAmount)})`
+        : row.kind === "monthly"
+          ? `Only ${shortMonth}`
+          : monthMode
+            ? "Every Month (Recurring)"
+            : "Every Month (Recurring Master)",
+  };
+}
+
 /** fixed_expenses.php: month view with adjustments, the master recurring baseline, KPI cards and the year strip. */
 export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
   const router = useRouter();
@@ -68,22 +84,11 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
   const { monthMode, month, currentMonth, kpis, calendar } = view;
   const shortMonth = monthMode ? monthName(month, "short") : "";
 
-  const rows = useMemo(
-    () =>
-      view.rows.map((row) => ({
-        ...row,
-        detail: [row.notes, row.adjustmentNotes].filter(Boolean).join(" · "),
-        scopeLabel:
-          row.kind === "override"
-            ? `Override for ${shortMonth} (Base: ${formatINR(row.baseAmount)})`
-            : row.kind === "monthly"
-              ? `Only ${shortMonth}`
-              : monthMode
-                ? "Every Month (Recurring)"
-                : "Every Month (Recurring Master)",
-      })),
-    [view.rows, shortMonth, monthMode],
-  );
+  const rows = useMemo(() => view.rows.map((row) => labelled(row, shortMonth, monthMode)), [view.rows, shortMonth, monthMode]);
+  const exportRows = async (params) => {
+    const result = await exportFixedExpensesAction(params);
+    return result.ok ? { ...result, rows: result.rows.map((row) => labelled(row, shortMonth, monthMode)) } : result;
+  };
 
   const categoryOptions = useMemo(() => {
     const known = new Set(PHP_CATEGORIES.map((c) => c.value));
@@ -161,30 +166,31 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
   return (
     <>
       <Card className="mb-4 flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium tracking-wide text-ink-muted uppercase">Active Period:</span>
+        {/* Phones: label, then [‹] month [›] in one row, then Jump to Month and the view switch full width. */}
+        <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <span className="text-xs font-medium tracking-wide text-ink-muted uppercase max-sm:col-span-3">Active Period:</span>
           {monthMode ? (
             <>
-              <Button size="sm" variant="secondary" onClick={() => setParams({ month: view.prevMonth })} aria-label="Previous month">
-                <ChevronLeft className="size-4" aria-hidden /> Prev
+              <Button size="sm" variant="secondary" onClick={() => setParams({ month: view.prevMonth })} aria-label="Previous month" className="max-sm:h-9 max-sm:w-9 max-sm:px-0">
+                <ChevronLeft className="size-4" aria-hidden /> <span className="max-sm:sr-only">Prev</span>
               </Button>
-              <span className="inline-flex h-8 items-center rounded-lg bg-brand-600 px-3 text-sm font-semibold text-brand-fg">{monthName(month)}</span>
-              <Button size="sm" variant="secondary" onClick={() => setParams({ month: view.nextMonth })} aria-label="Next month">
-                Next <ChevronRight className="size-4" aria-hidden />
+              <span className="inline-flex h-8 items-center rounded-lg bg-brand-600 px-3 text-sm font-semibold text-brand-fg max-sm:h-9 max-sm:justify-center">{monthName(month)}</span>
+              <Button size="sm" variant="secondary" onClick={() => setParams({ month: view.nextMonth })} aria-label="Next month" className="max-sm:h-9 max-sm:w-9 max-sm:px-0">
+                <span className="max-sm:sr-only">Next</span> <ChevronRight className="size-4" aria-hidden />
               </Button>
               {month !== currentMonth && (
-                <Button size="sm" variant="ghost" onClick={() => setParams({ month: "" })}>
+                <Button size="sm" variant="ghost" onClick={() => setParams({ month: "" })} className="max-sm:col-span-3">
                   Current Month
                 </Button>
               )}
             </>
           ) : (
-            <span className="inline-flex h-8 items-center rounded-lg bg-brand-600 px-3 text-sm font-semibold text-brand-fg">All Months (Recurring Master Baseline)</span>
+            <span className="inline-flex h-8 items-center rounded-lg bg-brand-600 px-3 text-sm font-semibold text-brand-fg max-sm:col-span-3 max-sm:h-auto max-sm:justify-center max-sm:py-2 max-sm:text-center">All Months (Recurring Master Baseline)</span>
           )}
           {/* PHP "Jump to Month": past 6 months, this month, next 6 months. */}
           <Select
             aria-label="Jump to Month"
-            className="w-44"
+            className="w-44 max-sm:col-span-3 max-sm:w-full"
             value=""
             placeholder="Jump to Month"
             options={Array.from({ length: 13 }, (_, i) => {
@@ -194,7 +200,7 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
             onChange={(e) => e.target.value && setParams({ month: e.target.value })}
           />
         </div>
-        <div className="flex rounded-lg border border-line p-0.5" role="tablist" aria-label="View">
+        <div className="flex rounded-lg border border-line p-0.5 max-sm:w-full" role="tablist" aria-label="View">
           {[
             { label: "Specific Month View", active: monthMode, month: monthMode ? month : "" },
             { label: "Master Recurring Baseline", active: !monthMode, month: "all" },
@@ -205,7 +211,7 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
               role="tab"
               aria-selected={tab.active}
               onClick={() => !tab.active && setParams({ month: tab.month })}
-              className={cn("rounded-md px-3 py-1.5 text-small font-medium", tab.active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
+              className={cn("rounded-md px-3 py-1.5 text-small font-medium max-sm:flex-1 max-sm:text-center", tab.active ? "bg-brand-600 text-brand-fg" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
             >
               {tab.label}
             </button>
@@ -260,13 +266,14 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
           <p className="text-sm text-ink-muted">Active expenses are included in Dashboard & Finance Net Profit calculation for this period.</p>
         </div>
         {canAdd && (
-          <div className="flex flex-wrap gap-2">
+          // Phones: both add buttons full width, stacked.
+          <div className="flex flex-wrap gap-2 max-sm:flex-col">
             {monthMode && (
-              <Button size="sm" variant="secondary" onClick={() => open("addMonth")}>
+              <Button size="sm" variant="secondary" onClick={() => open("addMonth")} className="max-sm:h-9">
                 <CalendarPlus className="size-4" aria-hidden /> Add {shortMonth} Expense
               </Button>
             )}
-            <Button size="sm" variant="primary" onClick={() => open("addRecurring")}>
+            <Button size="sm" variant="primary" onClick={() => open("addRecurring")} className="max-sm:h-9">
               <Plus className="size-4" aria-hidden /> Add Base Recurring Expense
             </Button>
           </div>
@@ -280,6 +287,8 @@ export function FixedExpensesScreen({ view, canAdd, canEdit, canDelete }) {
         rowActions={rowActions}
         onAction={onAction}
         onCustomAction={onCustomAction}
+        onExport={exportRows}
+        exportName={monthMode ? `fixed-expenses-${month}` : "fixed-expenses"}
         emptyTitle="No fixed expenses found"
         emptyDescription="Click above to add your first expense."
       />

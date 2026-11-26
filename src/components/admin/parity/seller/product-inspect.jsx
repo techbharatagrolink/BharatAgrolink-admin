@@ -114,16 +114,16 @@ export function ProductActivity({ feed, feedError, range, onOpenProduct }) {
       <CardHeader title="Product activity" description={data?.dateLabel || "Changes recorded on products in this window."} />
       <div className="space-y-3 px-4 py-3">
         <form
-          className="flex flex-wrap items-end gap-3"
+          className="grid grid-cols-2 gap-x-2 gap-y-3 sm:flex sm:flex-wrap sm:items-end sm:gap-3"
           onSubmit={(event) => {
             event.preventDefault();
             load(0, false);
           }}
         >
-          <Field label="Action" className="w-40">
+          <Field label="Action" className="sm:w-40">
             {({ id }) => <Select id={id} value={action} onChange={(event) => setAction(event.target.value)} placeholder="Any action" options={ACTIONS} />}
           </Field>
-          <Field label="Staff" className="w-48">
+          <Field label="Staff" className="sm:w-48">
             {({ id }) => (
               <Select
                 id={id}
@@ -134,10 +134,10 @@ export function ProductActivity({ feed, feedError, range, onOpenProduct }) {
               />
             )}
           </Field>
-          <Field label="Search" className="min-w-48 flex-1">
+          <Field label="Search" className="col-span-2 max-sm:order-first sm:min-w-48 sm:flex-1">
             {({ id }) => <Input id={id} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Product, SKU or summary" maxLength={120} />}
           </Field>
-          <Button type="submit" variant="primary" loading={pending}>Apply</Button>
+          <Button type="submit" variant="primary" loading={pending} className="col-span-2 sm:col-auto">Apply</Button>
         </form>
         {error && <Notice tone="warning">{error}</Notice>}
         {data?.summary && (

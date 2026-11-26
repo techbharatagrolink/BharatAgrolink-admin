@@ -6,6 +6,7 @@ import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
+import { ExportButton } from "@/components/data-table/export-button";
 
 const PAGE_SIZES = [20, 50, 100];
 
@@ -14,7 +15,7 @@ const PAGE_SIZES = [20, 50, 100];
  * sortable and filterable, 20 rows a page. A column with `index` shows the row's
  * position in the current sort, like AG Grid's rowIndex + 1.
  */
-export function DataGrid({ columns, rows, caption, empty = "No rows to show." }) {
+export function DataGrid({ columns, rows, caption, empty = "No rows to show.", exportName }) {
   const [sort, setSort] = useState({ key: null, dir: "asc" });
   const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
@@ -57,7 +58,18 @@ export function DataGrid({ columns, rows, caption, empty = "No rows to show." })
 
   return (
     <div>
-      <div className="hidden justify-end px-4 pb-2 print:hidden xl:flex">
+      <div className="hidden justify-end gap-2 px-4 pb-2 print:hidden xl:flex">
+        {exportName && (
+          <ExportButton
+            name={exportName}
+            columns={columns.filter((c) => !c.index && c.export !== false).map((c) => ({
+              label: typeof c.label === "string" ? c.label : c.key,
+              value: (row) => (c.sortValue ? c.sortValue(row) : c.filterValue ? c.filterValue(row) : (row[c.key] ?? "")),
+            }))}
+            rows={view}
+            size="xs"
+          />
+        )}
         <Button size="xs" variant={showFilters ? "primary" : "ghost"} onClick={() => setShowFilters((v) => !v)} aria-pressed={showFilters}>
           <Filter className="size-3.5" aria-hidden />
           Column filters

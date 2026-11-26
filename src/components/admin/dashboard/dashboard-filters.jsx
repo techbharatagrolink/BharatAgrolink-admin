@@ -114,15 +114,15 @@ export function DashboardFilters({ values, options, label, variant }) {
             </div>
           </div>
           {rangeMode === "month" ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
               <Input type="month" aria-label="From month" value={draft.monthFrom || ""} max={draft.monthTo || undefined} onChange={(e) => setMonthRange("monthFrom", e.target.value)} className="min-w-0" />
-              <span className="shrink-0 text-xs text-ink-muted">to</span>
+              <span className="shrink-0 text-xs text-ink-muted max-sm:hidden">to</span>
               <Input type="month" aria-label="To month" value={draft.monthTo || ""} min={draft.monthFrom || undefined} onChange={(e) => setMonthRange("monthTo", e.target.value)} className="min-w-0" disabled={!draft.monthFrom} />
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
               <Input type="date" aria-label="From date" value={draft.from} max={draft.to || undefined} onChange={(e) => setDate("from", e.target.value)} className="min-w-0" />
-              <span className="shrink-0 text-xs text-ink-muted">to</span>
+              <span className="shrink-0 text-xs text-ink-muted max-sm:hidden">to</span>
               <Input type="date" aria-label="To date" value={draft.to} min={draft.from || undefined} onChange={(e) => setDate("to", e.target.value)} className="min-w-0" />
             </div>
           )}
@@ -145,9 +145,9 @@ export function DashboardFilters({ values, options, label, variant }) {
       </div>
 
       <div className={cn("mt-3 flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-center lg:justify-between", z ? "border-[var(--z-line)]" : "border-line")}>
-        <div className="-mx-1 overflow-x-auto px-1 scrollbar-thin">
-          <nav aria-label="Date presets" className="flex min-w-max items-center gap-1.5">
-            <span className="mr-1 text-micro font-semibold tracking-wide text-ink-muted uppercase">Presets</span>
+        <div className="-mx-1 overflow-x-auto px-1 scrollbar-thin max-sm:overflow-visible">
+          <nav aria-label="Date presets" className="flex min-w-max items-center gap-1.5 max-sm:min-w-0 max-sm:flex-wrap">
+            <span className="mr-1 text-micro font-semibold tracking-wide text-ink-muted uppercase max-sm:w-full">Presets</span>
             {options.presets.map((p) => (
               <Link
                 key={p.value}
@@ -170,11 +170,11 @@ export function DashboardFilters({ values, options, label, variant }) {
             ))}
           </nav>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" variant="ghost" className="md:hidden" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+        <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-2">
+          <Button type="button" size="sm" variant="ghost" className="md:hidden max-sm:border max-sm:border-line-strong" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
             <SlidersHorizontal className="size-4" aria-hidden /> {expanded ? "Fewer filters" : `More filters${extraCount ? ` (${extraCount})` : ""}`}
           </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={reset}>
+          <Button type="button" size="sm" variant="ghost" onClick={reset} className="max-sm:border max-sm:border-line-strong">
             <RotateCcw className="size-4" aria-hidden /> Reset
           </Button>
           <Button
@@ -182,7 +182,7 @@ export function DashboardFilters({ values, options, label, variant }) {
             size="sm"
             variant="primary"
             disabled={Boolean(dateError)}
-            className={z ? "bg-[var(--z-accent)] text-white hover:bg-[var(--z-accent-hover)] active:bg-[var(--z-accent-hover)] dark:text-[#0e131c]" : undefined}
+            className={cn("max-sm:col-span-2 max-sm:h-10", z && "bg-[var(--z-accent)] text-white hover:bg-[var(--z-accent-hover)] active:bg-[var(--z-accent-hover)] dark:text-[#0e131c]")}
           >
             <Filter className="size-4" aria-hidden /> Apply filter
           </Button>

@@ -16,26 +16,17 @@ export const rupees = (v, digits = 0) => `₹${(Number(v) || 0).toLocaleString("
 /** "+12.5%" / "-3%" like the PHP dashboards print their change figures. */
 export const signed = (v, suffix = "%") => `${Number(v) >= 0 ? "+" : ""}${Number(v) || 0}${suffix}`;
 
+import { csvText as sharedCsvText, downloadCsv as sharedDownloadCsv, exportFileName } from "@/lib/csv";
+
 export function csvText(headers, rows) {
-  const cell = (v) => {
-    const s = v == null ? "" : String(v);
-    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return `\uFEFF${[headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n")}`;
+  return sharedCsvText(headers, rows);
 }
 
-export function downloadText(filename, text, type = "text/csv;charset=utf-8") {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+export function downloadText(filename, text) {
+  sharedDownloadCsv(filename, text);
 }
 
 export function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  return date;
 }

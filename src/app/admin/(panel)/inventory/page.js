@@ -100,6 +100,7 @@ export default async function InventoryOverviewPage() {
               },
             ]}
             rows={(sellers.data ?? []).slice(0, 50).map((r) => ({ ...r, id: r.sellerId || "b2b" }))}
+            exportName="inventory-by-seller"
           />
         )}
       </Card>

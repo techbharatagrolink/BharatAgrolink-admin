@@ -13,9 +13,21 @@ import { Notice, ProgressBar } from "@/components/ui/page";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
 import { agentPerformanceAction, salesByLeadsAction } from "@/lib/actions/admin/parity/crm";
 import { GridTable } from "@/components/data-table/grid-table";
+import { ExportButton } from "@/components/data-table/export-button";
 
 const STATUS_TONE = { Excellent: "success", Good: "info", Average: "warning", "Low Performance": "danger" };
 const rateTone = (rate) => (rate >= 20 ? "brand" : rate >= 10 ? "info" : rate >= 5 ? "warning" : "danger");
+
+const AGENT_EXPORT_COLUMNS = [
+  { label: "Agent Name", value: (r) => r.name },
+  { label: "Role", value: (r) => r.role },
+  { label: "Total Leads", value: (r) => r.totalLeads },
+  { label: "Converted Leads", value: (r) => r.converted },
+  { label: "Dead Leads", value: (r) => r.dead },
+  { label: "Total Revenue (₹)", value: (r) => r.revenue },
+  { label: "Conversion Rate (%)", value: (r) => r.rate },
+  { label: "Status", value: (r) => r.status },
+];
 
 function Spinner() {
   return (
@@ -132,21 +144,39 @@ function SalesByLeadsDialog({ type, onClose }) {
             <p className="text-micro font-semibold tracking-wide uppercase opacity-80">Total Sales</p>
             <p className="text-2xl font-bold tabular">{d ? formatINR(d.totalSales) : "—"}</p>
           </div>
-          {type === "total" && (
-            <div className="flex flex-wrap items-end gap-2">
-              <Field label="From Date">
-                {({ id }) => <input id={id} type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
-              </Field>
-              <Field label="To Date">
-                {({ id }) => <input id={id} type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
-              </Field>
-              {(range.from || range.to) && (
-                <Button size="sm" onClick={() => setRange({ from: "", to: "" })}>
-                  Clear
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex flex-wrap items-end gap-2">
+            {type === "total" && (
+              <>
+                <Field label="From Date">
+                  {({ id }) => <input id={id} type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
+                </Field>
+                <Field label="To Date">
+                  {({ id }) => <input id={id} type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
+                </Field>
+                {(range.from || range.to) && (
+                  <Button size="sm" onClick={() => setRange({ from: "", to: "" })}>
+                    Clear
+                  </Button>
+                )}
+              </>
+            )}
+            {d?.rows?.length > 0 && (
+              <ExportButton
+                name={`sales-by-leads-${type}`}
+                columns={[
+                  { label: "Agent Name", value: (r) => r.name },
+                  { label: "Role", value: (r) => r.role },
+                  { label: "Total Leads", value: (r) => r.totalLeads },
+                  { label: "Converted Leads", value: (r) => r.converted },
+                  { label: "Total Revenue (₹)", value: (r) => r.revenue },
+                  { label: "Avg Amount/Lead (₹)", value: (r) => r.avgPerLead },
+                  { label: "Conversion Rate (%)", value: (r) => r.rate },
+                  { label: "Status", value: (r) => r.status },
+                ]}
+                rows={d.rows}
+              />
+            )}
+          </div>
         </div>
         {state.loading ? (
           <Spinner />
@@ -266,16 +296,19 @@ export function TeamPerformance({ rows, summary }) {
           title="Agent Details"
           description="Click an agent for the detailed report."
           actions={
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-              <input
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search agent..."
-                aria-label="Search agent"
-                className="h-8 w-56 rounded-md border border-line-strong bg-surface pr-2 pl-8 text-sm"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search agent..."
+                  aria-label="Search agent"
+                  className="h-8 w-56 rounded-md border border-line-strong bg-surface pr-2 pl-8 text-sm"
+                />
+              </div>
+              <ExportButton name="sales-team-performance" columns={AGENT_EXPORT_COLUMNS} rows={visible} />
             </div>
           }
         />

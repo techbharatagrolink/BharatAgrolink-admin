@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { LinkTabs, Notice, PageHeader } from "@/components/ui/page";
 import { EmptyState, PermissionDenied } from "@/components/ui/states";
 import { Money, ProposalStatus, SCOPE_LABEL } from "@/components/admin/pricing/proposals/proposal-status";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "Pricing Proposals" };
 
@@ -42,7 +43,26 @@ export default async function PricingProposalsPage({ searchParams }) {
       <PageHeader
         title="Pricing Proposals"
         description="Services proposed on product variations. Display prices never change; each variation's NRV changes only after the vendor accepts it, from the effective date."
-        actions={canCreate && <ButtonLink href="/admin/pricing/proposals/new" variant="primary">New proposal</ButtonLink>}
+        actions={
+          <div className="flex items-center gap-2">
+            <ExportButton
+              name={`pricing-proposals-${tab.value}`}
+              columns={[
+                { label: "Proposal No", value: (p) => p.proposalNo },
+                { label: "Version", value: (p) => p.version },
+                { label: "Product", value: (p) => p.productName ?? p.productId },
+                { label: "Vendor", value: (p) => p.vendorName ?? p.vendorId },
+                { label: "Services", value: (p) => p.services.map((s) => s.name).join("; ") },
+                { label: "Variations", value: (p) => p.totals.variations },
+                { label: "Status", value: (p) => p.status },
+                { label: "Effective Date", value: (p) => p.effectiveDate || "" },
+                { label: "Created Date", value: (p) => p.createdAt || "" },
+              ]}
+              rows={result.rows}
+            />
+            {canCreate && <ButtonLink href="/admin/pricing/proposals/new" variant="primary">New proposal</ButtonLink>}
+          </div>
+        }
       />
       <LinkTabs tabs={TABS.map((t) => ({ value: t.value, label: t.label, href: `/admin/pricing/proposals?tab=${t.value}` }))} active={tab.value} />
       {!result.ok && <Notice tone="danger" className="mb-4">{result.message}</Notice>}

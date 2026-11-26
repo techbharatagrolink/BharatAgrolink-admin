@@ -131,6 +131,7 @@ export default async function InventoryExceptionsPage() {
         <CardHeader title="Stuck reservations" description="Checkout holds still open 30+ minutes after they should have expired." />
         <MiniTable
           empty="No stuck reservations."
+          exportName="stuck-reservations"
           columns={[
             { key: "order_ref", label: "Order ref", render: (r) => <span className="font-mono text-xs">{r.order_ref}</span> },
             { key: "sku", label: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
@@ -160,6 +161,7 @@ export default async function InventoryExceptionsPage() {
         <Card className="mt-4">
           <CardHeader title="Failed alert messages" description="Stock alert emails / SMS / WhatsApp that could not be delivered after every retry. The in-app alert still shows to the seller." />
           <MiniTable
+            exportName="failed-stock-alerts"
             columns={[
               { key: "updated_at", label: "Last try", render: (r) => <span className="text-xs whitespace-nowrap">{formatDateTime(r.updated_at)}</span> },
               { key: "channel", label: "Channel" },

@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ApiUnavailable, PermissionDenied } from "@/components/ui/states";
 import { BarChart } from "@/components/charts/charts";
 import { RangeSwitch } from "@/components/admin/dashboard/range-switch";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "Profit & Loss" };
 
@@ -43,7 +44,19 @@ export default async function ProfitLossPage({ searchParams }) {
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-3">
         <Card id="cm_margin" className="scroll-mt-24 xl:col-span-2">
-          <CardHeader title={`Statement · ${d.period.label}`} />
+          <CardHeader
+            title={`Statement · ${d.period.label}`}
+            actions={
+              <ExportButton
+                name={`profit-loss-statement-${d.period.value}`}
+                headers={["Group", "Line Item", "Amount (₹)"]}
+                matrix={[
+                  ...d.lines.map((l) => [l.group, l.label, l.value]),
+                  ["Net", "Net contribution", d.net],
+                ]}
+              />
+            }
+          />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">Profit and loss statement</caption>

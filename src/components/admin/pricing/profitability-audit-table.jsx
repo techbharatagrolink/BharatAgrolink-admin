@@ -6,27 +6,23 @@ import { loadProductPricingAction, previewProductPricingAction } from "@/lib/act
 import { Badge } from "@/components/ui/badge";
 import { formatINR, formatNumber } from "@/lib/format";
 import { GridTable } from "@/components/data-table/grid-table";
+import { ExportButton } from "@/components/data-table/export-button";
 
 const VERDICT_LABEL = { loss: "Loss-making", below_floor: "Below floor CM" };
 const VERDICT_TONE = { loss: "danger", below_floor: "warning" };
 
-function csvCell(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function downloadCsv(rows) {
-  const header = ["Product ID", "Name", "SKU", "Vendor", "Category", "Verdict", "Contribution Margin", "Take Rate %", "Display Price", "Stock"];
-  const lines = [header, ...rows.map((r) => [r.id, r.name, r.sku, r.vendor, r.category, r.verdict, r.contributionMargin, r.takeRate, r.display, r.stock])];
-  const csv = lines.map((line) => line.map(csvCell).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `profitability-audit-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const EXPORT_COLUMNS = [
+  { label: "Product ID", value: (r) => r.id },
+  { label: "Name", value: (r) => r.name },
+  { label: "SKU", value: (r) => r.sku },
+  { label: "Vendor", value: (r) => r.vendor },
+  { label: "Category", value: (r) => r.category },
+  { label: "Verdict", value: (r) => VERDICT_LABEL[r.verdict] ?? r.verdict },
+  { label: "Contribution Margin (₹)", value: (r) => r.contributionMargin },
+  { label: "Take Rate %", value: (r) => r.takeRate },
+  { label: "Display Price (₹)", value: (r) => r.display },
+  { label: "Stock", value: (r) => r.stock },
+];
 
 /** Asks the pricing engine's own FROM_ACTUALS solve what take rate would hit the live target margin — never saves anything. */
 async function suggestCorrection(id) {
@@ -93,9 +89,7 @@ export function ProfitabilityAuditTable({ rows }) {
   return (
     <div>
       <div className="flex justify-end border-b border-line p-3">
-        <button type="button" onClick={() => downloadCsv(rows)} className="text-xs font-medium text-brand-700 hover:underline">
-          Download CSV
-        </button>
+        <ExportButton name="profitability-audit" columns={EXPORT_COLUMNS} rows={rows} size="xs" />
       </div>
       <div className="hidden border-t border-line md:block">
         <GridTable

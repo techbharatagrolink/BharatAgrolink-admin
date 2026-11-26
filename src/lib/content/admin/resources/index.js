@@ -9,12 +9,7 @@ import { parityResources, parityRoutes } from "./parity";
 import { portResources, portRoutes } from "./port";
 import { sellerServiceResources } from "./seller-services";
 
-/**
- * Declarative list screens. A resource describes columns, filters, actions and
- * forms; the generic ResourcePage renders it and the resource service applies
- * actions on the server, so the client only ever sends an action id.
- */
-export const resources = {
+const registry = {
   ...coreResources,
   ...catalogResources,
   ...orderResources,
@@ -26,6 +21,19 @@ export const resources = {
   ...portResources,
   ...sellerServiceResources,
 };
+
+/**
+ * Declarative list screens. A resource describes columns, filters, actions and
+ * forms; the generic ResourcePage renders it and the resource service applies
+ * actions on the server, so the client only ever sends an action id.
+ *
+ * Every list is exportable (CSV of all rows matching the filters, for super admins
+ * only): the admin API's resource engine serves GET <path>/export for each of them.
+ * A resource opts out with `exportable: false`.
+ */
+export const resources = Object.fromEntries(
+  Object.entries(registry).map(([key, resource]) => [key, resource.exportable === undefined ? { ...resource, exportable: true } : resource]),
+);
 
 /** Admin route → resource key, for routes rendered by the generic page. */
 export const resourceRoutes = {

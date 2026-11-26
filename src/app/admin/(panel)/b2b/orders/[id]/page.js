@@ -271,6 +271,7 @@ export default async function B2BOrderPage({ params }) {
                     { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
                   ]}
                   rows={legacy.settlements}
+                  exportName={`b2b-order-${id}-settlements`}
                 />
               </Card>
             )}
@@ -284,6 +285,7 @@ export default async function B2BOrderPage({ params }) {
                     { key: "status", label: "Status", render: (r) => <StatusBadge status={r.status} /> },
                   ]}
                   rows={legacy.claims}
+                  exportName={`b2b-order-${id}-claims`}
                 />
               </Card>
             )}
@@ -297,6 +299,7 @@ export default async function B2BOrderPage({ params }) {
                     { key: "receivedAt", label: "Received", render: (r) => formatDate(r.receivedAt) },
                   ]}
                   rows={d.payments}
+                  exportName={`b2b-order-${id}-payments`}
                 />
               </Card>
             )}

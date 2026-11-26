@@ -8,6 +8,21 @@ import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/form";
+import { ExportButton } from "@/components/data-table/export-button";
+
+const BEFORE_STATE_COLUMNS = [
+  { label: "Product ID", value: (r) => r.id },
+  { label: "Variant ID", value: (r) => r.variantId || "" },
+  { label: "Name", value: (r) => r.name },
+  { label: "SKU", value: (r) => r.sku },
+  { label: "Vendor", value: (r) => r.vendor },
+  { label: "Category", value: (r) => r.category },
+  { label: "Status", value: (r) => r.status },
+  { label: "Tier", value: (r) => r.tier ?? "" },
+  { label: "Current take rate %", value: (r) => r.takeRate ?? "" },
+  { label: "Proposed take rate %", value: (r) => r.proposedTakeRate ?? "" },
+  { label: "Services being added", value: (r) => (r.addingServiceNames ?? []).join(" + ") },
+];
 
 const STATUS_LABEL = {
   "blocked-seller-inactive": "Seller hasn't activated the service",
@@ -37,11 +52,6 @@ function RowMeta({ row }) {
 function TierBadge({ tier }) {
   if (!tier) return null;
   return <Badge tone={tier === "tier2" ? "danger" : "warning"}>{tier === "tier2" ? ">45%" : "40–45%"}</Badge>;
-}
-
-function csvCell(value) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 const PAGE_SIZE = 25;
@@ -79,23 +89,6 @@ function Pager({ page, setPage, total }) {
       </div>
     </div>
   );
-}
-
-/** Before-state snapshot so an Apply run has a record to revert from by hand if needed. */
-function downloadBeforeStateCsv(rows) {
-  const header = ["Product ID", "Variant ID", "Name", "SKU", "Vendor", "Category", "Status", "Tier", "Current take rate %", "Proposed take rate %", "Services being added"];
-  const lines = [
-    header,
-    ...rows.map((r) => [r.id, r.variantId || "", r.name, r.sku, r.vendor, r.category, r.status, r.tier ?? "", r.takeRate ?? "", r.proposedTakeRate ?? "", (r.addingServiceNames ?? []).join(" + ")]),
-  ];
-  const csv = lines.map((line) => line.map(csvCell).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `take-rate-service-rule-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 export function TakeRateRulePanel({ rows, canApply }) {
@@ -144,9 +137,7 @@ export function TakeRateRulePanel({ rows, canApply }) {
           actions={
             rows.length > 0 ? (
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => downloadBeforeStateCsv(rows)} className="text-xs font-medium text-brand-700 hover:underline">
-                  Download CSV (before state)
-                </button>
+                <ExportButton name="take-rate-service-rule" label="Export before state" columns={BEFORE_STATE_COLUMNS} rows={rows} size="xs" />
                 {canApply && ready.length > 0 && (
                   <button type="button" onClick={toggleAll} className="text-xs font-medium text-brand-700 hover:underline">
                     {selected.size === ready.length ? "Clear selection" : "Select all"}

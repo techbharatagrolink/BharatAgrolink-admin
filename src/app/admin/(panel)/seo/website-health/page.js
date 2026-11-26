@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { SeoLoadState, Unavailable, seoPage } from "@/components/admin/seo/seo-parts";
 import { AuditRunButton } from "@/components/admin/seo/audit-run-button";
 import { NewTaskButton } from "@/components/admin/seo/task-editor";
+import { ExportButton } from "@/components/data-table/export-button";
 
 export const metadata = { title: "Website Health" };
 
@@ -171,7 +172,26 @@ export default async function SeoWebsiteHealthPage({ searchParams }) {
       )}
 
       <Card className="mt-4">
-        <CardHeader title="Issues" description={`${formatNumber(d.total)} ${filters.status === "ALL" ? "" : (filters.status ?? "OPEN").toLowerCase()} issues${filters.type ? ` · ${TYPE_LABEL[filters.type] ?? filters.type}` : ""}${filters.severity ? ` · ${filters.severity}` : ""}`} />
+        <CardHeader
+          title="Issues"
+          description={`${formatNumber(d.total)} ${filters.status === "ALL" ? "" : (filters.status ?? "OPEN").toLowerCase()} issues${filters.type ? ` · ${TYPE_LABEL[filters.type] ?? filters.type}` : ""}${filters.severity ? ` · ${filters.severity}` : ""}`}
+          actions={
+            <ExportButton
+              name={`seo-website-health-issues-${(filters.status ?? "open").toLowerCase()}`}
+              columns={[
+                { label: "Issue", value: (i) => TYPE_LABEL[i.issue_type] ?? i.issue_type },
+                { label: "Severity", value: (i) => i.severity },
+                { label: "Status", value: (i) => i.status },
+                { label: "URL", value: (i) => i.url },
+                { label: "Recommended Fix", value: (i) => i.recommended_fix || "" },
+                { label: "First Seen", value: (i) => i.first_seen_at || "" },
+                { label: "Last Seen", value: (i) => i.last_seen_at || "" },
+                { label: "Resolved At", value: (i) => i.resolved_at || "" },
+              ]}
+              rows={d.issues}
+            />
+          }
+        />
         <div className="flex flex-wrap gap-1.5 border-b border-line px-4 py-2.5 text-xs">
           <Link href={href({ type: undefined, page: undefined })} className={cn("rounded-full border px-2.5 py-1", !filters.type ? "border-brand-600 text-brand-700" : "border-line text-ink-muted hover:text-ink")}>
             All types

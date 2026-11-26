@@ -5,13 +5,13 @@ import { PageHeader } from "@/components/ui/page";
 import { PermissionDenied } from "@/components/ui/states";
 import { LinkFailed } from "@/components/admin/parity/ops/link-failed";
 
-export const metadata = { title: "Delhivery Label" };
+export const metadata = { title: "Delivery Label" };
 
 export default async function DelhiveryLabelPage({ params }) {
   const { waybill } = await params;
   const { user, allowed } = await checkPermission("shipping.delhivery");
-  if (!allowed) return (<><PageHeader title="Delhivery Label" /><PermissionDenied module="Delhivery orders" /></>);
+  if (!allowed) return (<><PageHeader title="Delivery Label" /><PermissionDenied module="delivery orders" /></>);
   const result = await getDelhiveryLabel(waybill, user);
   if (result.ok && /^https?:\/\//i.test(result.data.labelUrl ?? "")) redirect(result.data.labelUrl);
-  return <LinkFailed title="Delhivery Label" message={result.ok ? "Delhivery did not return a label link." : result.message} backHref="/admin/shipping/delhivery" backLabel="Back to Delhivery orders" />;
+  return <LinkFailed title="Delivery Label" message={result.ok ? "Delhivery did not return a label link." : result.message} backHref="/admin/shipping/delhivery" backLabel="Back to Delivery orders" />;
 }

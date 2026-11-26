@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { useToast } from "@/components/ui/toast";
+import { exportCrmListAction } from "@/lib/actions/admin/parity/crm";
 import { CustomerReportDialog, LeadActionDialog, LeadReportsDialog, LeadTimelineDialog } from "./lead-dialogs";
 
 const VIEW_ACTIONS = [
@@ -78,6 +79,8 @@ export function LeadTable({ id, scope, permission, columns, data, agents = [], c
         rowActions={[...buttons.row, ...VIEW_ACTIONS]}
         bulkActions={buttons.bulk}
         onCustomAction={onCustomAction}
+        onExport={(params) => exportCrmListAction(scope, params)}
+        exportName={id}
         toolbar={toolbar}
         emptyTitle={emptyTitle}
       />

@@ -3,15 +3,21 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Bell, BookOpen, ChevronDown, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftOpen, Plus, PlusCircle, Search, Sun, UserRound } from "lucide-react";
+import { flushSync } from "react-dom";
+import { ArrowLeft, ArrowUpRight, Bell, BookOpen, ChevronDown, ChevronRight, CircleHelp, CornerDownLeft, Keyboard, LogOut, Mail, Menu, Moon, PanelLeftOpen, Plus, PlusCircle, Search, Sun, UserRound } from "lucide-react";
 import { getBreadcrumbs } from "@/lib/content/admin/navigation";
 import { initials } from "@/lib/format";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Popover } from "@/components/ui/popover";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { logoutAction } from "@/lib/actions/admin/auth";
 import { RouteProgress, startRouteProgress } from "./route-progress";
 import { NavIcon } from "./icons";
+
+// On phones the header panels (notifications, help, account) span the screen width just below the bar,
+// instead of hanging off their button and running past the left edge.
+const PHONE_PANEL = "max-sm:fixed max-sm:top-[62px] max-sm:right-3 max-sm:left-3 max-sm:mt-0 max-sm:w-auto max-sm:max-w-none max-sm:max-h-[calc(100dvh-5rem)] max-sm:overflow-y-auto";
 
 const pathOf = (href) => String(href ?? "").split(/[?#]/)[0];
 
@@ -241,7 +247,7 @@ function GlobalSearch({ navigation }) {
         onBlur={() => setOpen(false)}
         onKeyDown={onKeyDown}
         placeholder="Search pages, order ID, AWB, product, vendor…"
-        className="h-9 w-full rounded-md border border-line bg-surface-muted pr-12 pl-9 text-sm text-ink transition-colors placeholder:text-ink-muted hover:border-line-strong focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 focus:outline-none"
+        className="h-9 w-full rounded-md border border-line bg-surface-muted pr-3 pl-9 lg:pr-12 text-sm text-ink transition-colors placeholder:text-ink-muted hover:border-line-strong focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 focus:outline-none"
         autoComplete="off"
       />
       <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-line bg-surface px-1.5 text-micro text-ink-muted lg:block">Ctrl K</kbd>
@@ -436,7 +442,7 @@ function Notifications({ items }) {
     <Popover
       id="admin-notifications-panel"
       label={`Notifications${count ? `, ${count} need attention` : ""}`}
-      panelClassName="w-80"
+      panelClassName={cn("w-80", PHONE_PANEL)}
       trigger={({ toggle, props }) => (
         <button type="button" onClick={toggle} {...props} className="relative flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink">
           <Bell className="size-[18px]" aria-hidden />
@@ -474,8 +480,9 @@ function Help() {
     <Popover
       id="admin-help-panel"
       label="Help"
+      panelClassName={PHONE_PANEL}
       trigger={({ toggle, props }) => (
-        <button type="button" onClick={toggle} {...props} className="hidden size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink sm:flex">
+        <button type="button" onClick={toggle} {...props} className="flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink">
           <CircleHelp className="size-[18px]" aria-hidden />
         </button>
       )}
@@ -506,7 +513,7 @@ function AccountMenu({ user }) {
     <Popover
       id="admin-account-panel"
       label="Account menu"
-      panelClassName="w-64"
+      panelClassName={cn("w-64", PHONE_PANEL)}
       trigger={({ toggle, props }) => (
         <button type="button" onClick={toggle} {...props} className="flex items-center gap-2 rounded-lg py-1 pr-1.5 pl-1 hover:bg-neutral-bg">
           <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-brand-fg">{initials(user.name)}</span>
@@ -538,6 +545,12 @@ function AccountMenu({ user }) {
 
 export function Header({ user, navigation = [], notifications, badges = {}, rail, onToggleRail, onOpenMobile }) {
   const [scrolled, setScrolled] = useState(false);
+  // Phones: search hides behind an icon in the bar and opens over it, full width.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const openSearch = () => {
+    flushSync(() => setSearchOpen(true));
+    document.getElementById("admin-global-search")?.focus();
+  };
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
     onScroll();
@@ -552,10 +565,14 @@ export function Header({ user, navigation = [], notifications, badges = {}, rail
       )}
     >
       <div className="flex h-14 items-center gap-2 px-3 sm:gap-3 sm:px-5">
-        <div className="flex shrink-0 items-center lg:min-w-0 lg:flex-1 lg:basis-0">
+        <div className="flex shrink-0 items-center gap-1.5 lg:min-w-0 lg:flex-1 lg:basis-0">
           <button type="button" onClick={onOpenMobile} className="flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg md:hidden" aria-label="Open menu">
             <Menu className="size-5" />
           </button>
+          {/* On desktop the logo lives in the sidebar; phones and tablets hide the sidebar, so show it here. */}
+          <Link href="/admin/dashboard" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm ring-1 ring-line md:hidden" aria-label={`${site.name} admin home`}>
+            <BrandLogo variant="icon" className="size-7" />
+          </Link>
           {/* Collapsing lives in the sidebar's own header; this button brings a collapsed sidebar back. */}
           {rail && (
             <button
@@ -572,14 +589,28 @@ export function Header({ user, navigation = [], notifications, badges = {}, rail
             <Breadcrumbs wide navigation={navigation} />
           </div>
         </div>
-        <div className="flex min-w-0 flex-1 justify-center lg:w-[min(36rem,32vw)] lg:flex-none">
+        <div
+          className={cn(
+            searchOpen ? "absolute inset-x-0 top-0 z-10 flex h-14 items-center gap-2 bg-surface px-3" : "hidden",
+            "min-w-0 sm:static sm:flex sm:h-auto sm:flex-1 sm:justify-center sm:bg-transparent sm:px-0 lg:w-[min(36rem,32vw)] lg:flex-none",
+          )}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setSearchOpen(false);
+          }}
+        >
+          <button type="button" onClick={() => setSearchOpen(false)} className="flex size-9 shrink-0 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg sm:hidden" aria-label="Close search">
+            <ArrowLeft className="size-5" aria-hidden />
+          </button>
           <GlobalSearch navigation={navigation} />
         </div>
-        <div className="flex shrink-0 items-center justify-end gap-0.5 lg:flex-1 lg:basis-0">
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-0.5 sm:ml-0 lg:flex-1 lg:basis-0">
+          <button type="button" onClick={openSearch} className="flex size-9 items-center justify-center rounded-md text-ink-soft hover:bg-neutral-bg hover:text-ink sm:hidden" aria-label="Search">
+            <Search className="size-[18px]" aria-hidden />
+          </button>
           <QuickCreate navigation={navigation} badges={badges} />
           <Notifications items={notifications} />
           <Help />
-          <ThemeToggle className="hidden sm:flex" />
+          <ThemeToggle className="max-[359px]:hidden" />
           <AccountMenu user={user} />
         </div>
       </div>

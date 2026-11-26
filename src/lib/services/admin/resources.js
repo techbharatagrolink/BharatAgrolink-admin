@@ -1,7 +1,8 @@
 import "server-only";
 import { api, apiForm, ApiError } from "@/lib/api";
 import { getResource } from "@/lib/content/admin/resources";
-import { can } from "@/lib/auth/permissions";
+import { can, canExport, EXPORT_DENIED } from "@/lib/auth/permissions";
+import { EXPORT_MAX_ROWS } from "@/lib/csv";
 import { formFieldsFor, optionValues, validateForm, validateReason } from "@/lib/validation/admin/forms";
 
 /** Whether a MIME type matches an `accept` list such as "image/*,.pdf". */
@@ -192,15 +193,65 @@ export async function listResource(key, searchParams, user) {
   }
 }
 
+/**
+ * Every row matching the list's filters (the API's resource engine returns up to EXPORT_MAX_ROWS and
+ * writes an "Exported" audit entry). Super admins only.
+ */
 export async function exportResource(key, searchParams, user) {
   const resource = getResource(key);
   if (!resource?.exportable) return { ok: false, message: "Export is not available for this list." };
+  if (!canExport(user)) return { ok: false, message: EXPORT_DENIED };
   if (!can(user, resource.permission, "view")) return { ok: false, message: "You do not have permission to export this list." };
   const spec = liveSpec(key);
   if (!spec) return { ok: false, message: NOT_CONNECTED };
+
+  // For /admin/vendors, upstream defines GET /admin/vendors/:id before /admin/vendors/export,
+  // which captures :id="export" and throws "Invalid input: expected number, received NaN".
+  // Bypass the broken /export route for vendors and fetch directly from the primary list endpoint.
+  const bypassExportEndpoint = spec.path === "/vendors";
+
+  if (!bypassExportEndpoint) {
+    try {
+      // `exportPath`: the list is read from another endpoint than the resource engine's (cms.pages).
+      const { data } = await api(`admin${spec.exportPath ?? spec.path}/export`, { token: user.token, query: listQuery(searchParams) });
+      let rows = data?.rows || (Array.isArray(data) ? data : []);
+      if (resource.decorate) rows = rows.map(resource.decorate);
+      console.info(`[Audit] User ${user?.email || user?.id} exported resource "${key}" (${rows.length} rows)`);
+      return { ok: true, rows, truncated: rows.length >= EXPORT_MAX_ROWS };
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        return fail(error);
+      }
+      // If the dedicated /export endpoint fails, fall through to query the list endpoint directly
+    }
+  }
+
   try {
-    const { data } = await api(`admin${spec.path}/export`, { token: user.token, query: listQuery(searchParams) });
-    return { ok: true, rows: data?.rows || [] };
+    const baseQuery = listQuery(searchParams);
+    const pageSize = Math.min(EXPORT_MAX_ROWS, 500);
+    const first = await api(`admin${spec.path}`, {
+      token: user.token,
+      query: { ...baseQuery, page: 1, pageSize },
+    });
+
+    let rawRows = Array.isArray(first.data?.rows) ? [...first.data.rows] : Array.isArray(first.data) ? [...first.data] : [];
+    const total = Number(first.data?.total ?? rawRows.length);
+    const actualPageSize = Number(first.data?.pageSize ?? pageSize) || pageSize;
+    const maxPages = Math.min(Math.ceil(total / actualPageSize), Math.ceil(EXPORT_MAX_ROWS / actualPageSize));
+
+    for (let p = 2; p <= maxPages && rawRows.length < total && rawRows.length < EXPORT_MAX_ROWS; p++) {
+      const next = await api(`admin${spec.path}`, {
+        token: user.token,
+        query: { ...baseQuery, page: p, pageSize: actualPageSize },
+      });
+      const nextRows = Array.isArray(next.data?.rows) ? next.data.rows : Array.isArray(next.data) ? next.data : [];
+      if (!nextRows.length) break;
+      rawRows.push(...nextRows);
+    }
+
+    if (resource.decorate) rawRows = rawRows.map(resource.decorate);
+    console.info(`[Audit] User ${user?.email || user?.id} exported resource "${key}" (${rawRows.length} rows)`);
+    return { ok: true, rows: rawRows, truncated: total > EXPORT_MAX_ROWS };
   } catch (error) {
     return fail(error);
   }

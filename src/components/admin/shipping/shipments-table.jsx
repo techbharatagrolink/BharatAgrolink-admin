@@ -15,6 +15,9 @@ import { cancelShipmentsAction, markCancelledAction, syncStatusAction } from "@/
 import { BulkCreateDialog } from "./bulk-create-dialog";
 import { ShipmentActions, syncSummary } from "./shipment-actions";
 import { TrackingCell } from "./tracking-cell";
+import { useCanExport } from "@/components/admin/shell/admin-user";
+import { ExportButton } from "@/components/data-table/export-button";
+import { PARCEL_COLUMNS } from "./shipments-export";
 
 const keyOf = (r) => `${r.orderId}|${r.vendorId}`;
 
@@ -30,6 +33,7 @@ function CardField({ label, value }) {
 export function ShipmentsTable({ rows, canAdd, canEdit }) {
   const router = useRouter();
   const { notify } = useToast();
+  const canExport = useCanExport();
   const [selected, setSelected] = useState([]);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -69,6 +73,16 @@ export function ShipmentsTable({ rows, canAdd, canEdit }) {
           )}
           {canEdit && <Button size="xs" variant="danger-outline" disabled={!cancellable.length} onClick={() => setConfirm("cancel")}>Cancel ({cancellable.length})</Button>}
           {canEdit && <Button size="xs" variant="danger-outline" disabled={!withAwb.length} onClick={() => setConfirm("mark")}>Mark cancelled ({withAwb.length})</Button>}
+          {canExport && (
+            <ExportButton
+              name="shipments-selected"
+              label="Export selected"
+              columns={PARCEL_COLUMNS}
+              rows={picked}
+              size="xs"
+              variant="secondary"
+            />
+          )}
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
         </div>
       )}

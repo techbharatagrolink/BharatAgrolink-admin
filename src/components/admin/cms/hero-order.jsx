@@ -58,16 +58,22 @@ export function HeroOrder({ items, canEdit }) {
           disabled={!canEdit}
           onChange={setOrder}
           renderItem={(item, index) => (
+            // Phones: picture + two lines (name with type badge, then link). Wider screens: one row as before.
             <div className="flex min-w-0 items-center gap-3">
-              <span className="w-20 shrink-0 text-sm font-medium text-ink">Banner {index + 1}</span>
               {item.image ? (
                 // eslint-disable-next-line @next/next/no-img-element -- arbitrary/preview URLs, not optimisable by next/image
-                <img src={item.image} alt="" className="h-10 w-16 shrink-0 rounded border border-line object-contain" />
+                <img src={item.image} alt="" className="h-9 w-14 shrink-0 rounded border border-line object-contain sm:order-2 sm:h-10 sm:w-16" />
               ) : (
-                <span className="w-16 shrink-0 text-xs text-ink-muted">Empty</span>
+                <span className="flex h-9 w-14 shrink-0 items-center justify-center rounded border border-dashed border-line text-micro text-ink-muted sm:order-2 sm:h-auto sm:w-16 sm:justify-start sm:border-0 sm:text-xs">Empty</span>
               )}
-              <span className="min-w-0 flex-1 truncate text-xs text-ink-muted">{item.link || "No link"}</span>
-              <span className="shrink-0 text-xs text-ink-muted">{item.type}</span>
+              <div className="min-w-0 flex-1 overflow-hidden sm:contents">
+                <p className="truncate text-sm font-medium text-ink sm:order-1 sm:w-20 sm:shrink-0">Banner {index + 1}</p>
+                <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-ink-muted sm:order-3 sm:mt-0 sm:flex-1">
+                  <span className="shrink-0 rounded bg-surface-muted px-1.5 text-micro sm:hidden">{item.type}</span>
+                  <span className="min-w-0 truncate">{item.link || "No link"}</span>
+                </p>
+              </div>
+              <span className="hidden shrink-0 text-xs text-ink-muted sm:order-4 sm:inline">{item.type}</span>
             </div>
           )}
         />
