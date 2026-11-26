@@ -82,6 +82,22 @@ export function OrderActions({ id, actions, packageTypes = [], suggestion = null
         }),
       () => setOpen(null),
     );
+  // Package rows from the suggestion (spec §12): original cases with their size, then one row per
+  // suggested carton / bag. Weight stays empty: the packer enters the actual weight.
+  const applySuggestion = () => {
+    const rows = [];
+    const dims = (cm) => (cm ? { lengthCm: String(cm[0]), widthCm: String(cm[1]), heightCm: String(cm[2]) } : {});
+    for (const c of suggestion?.originalCases ?? []) {
+      for (let n = 0; n < Math.min(c.cases, 50); n++) rows.push({ ...BLANK_PACKAGE, originalPack: true, ...dims(c.caseCm), contents: `${c.unitsPerCase} × ${c.name}` });
+    }
+    for (const g of suggestion?.groups ?? []) {
+      const type = packageTypes.find((t) => t.code === g.packageCode);
+      for (let n = 0; n < Math.min(g.packages || 1, 50); n++) {
+        rows.push({ ...BLANK_PACKAGE, packageCode: g.packageCode || "", ...(type?.type === "Bag" ? {} : dims(type?.cm ?? g.cm)), contents: (g.items ?? []).join(", ").slice(0, 400) });
+      }
+    }
+    if (rows.length) setPackages(rows.slice(0, 200));
+  };
   const setPackage = (i, patch) => setPackages((list) => list.map((p, j) => (j === i ? { ...p, ...patch } : p)));
 
   if (!visible.length) return <p className="text-sm text-ink-muted">This order is closed: no further steps.</p>;
@@ -149,20 +165,40 @@ export function OrderActions({ id, actions, packageTypes = [], suggestion = null
         <div className="space-y-3">
           {current?.packing && (
             <div className="space-y-3">
-              {suggestion && (suggestion.originalCases?.length > 0 || suggestion.loose) && (
+              {suggestion && (suggestion.originalCases?.length > 0 || suggestion.groups?.length > 0 || suggestion.loose) && (
                 <Notice tone="info" title="Suggested packing">
-                  <ul className="list-disc pl-5">
+                  <ul className="list-disc space-y-1 pl-5">
                     {suggestion.originalCases?.map((c) => (
-                      <li key={c.name}>{c.name}: {c.cases} original case{c.cases === 1 ? "" : "s"} of {c.unitsPerCase}</li>
+                      <li key={`case-${c.name}`}>
+                        {c.name}: {c.cases} original case{c.cases === 1 ? "" : "s"} of {c.unitsPerCase} (no repacking)
+                        {c.caseCm ? ` · ${c.caseCm.join(" × ")} cm` : ""}
+                        {c.caseKg ? ` · about ${c.caseKg} kg each` : ""}
+                        {c.liquid ? " · liquid: keep upright" : ""}
+                        {c.hazardous ? " · hazardous: label it" : ""}
+                      </li>
                     ))}
-                    {suggestion.loose && (
+                    {(suggestion.groups ?? []).map((g) => (
+                      <li key={`group-${g.kind}`}>
+                        {g.kind === "liquid" ? "Loose liquids" : "Loose dry goods"} ({g.lines} line{g.lines === 1 ? "" : "s"}{g.weightKg ? `, about ${g.weightKg} kg` : ""})
+                        {g.packageCode ? `: ${g.packages} × ${g.packageCode}${g.perPackageKg && g.packages > 1 ? ` (about ${g.perPackageKg} kg each)` : ""}` : ": weigh, then choose a carton or bag"}
+                        {g.notes?.length > 0 && (
+                          <ul className="mt-0.5 list-none pl-0 text-xs text-ink-soft">
+                            {g.notes.map((n) => <li key={n}>{n}</li>)}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                    {!suggestion.groups && suggestion.loose && (
                       <li>
                         Loose items ({suggestion.loose.lines} line{suggestion.loose.lines === 1 ? "" : "s"}{suggestion.loose.weightKg ? `, about ${suggestion.loose.weightKg} kg` : ""})
                         {suggestion.loose.packageCode ? `: ${suggestion.loose.packages} × ${suggestion.loose.packageCode}` : ": choose a carton or bag"}
                       </li>
                     )}
                   </ul>
-                  <p className="mt-1 text-xs">Record what was really packed. Do not pack liquids with seeds in the same carton.</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={applySuggestion}>Use suggestion</Button>
+                    <span className="text-xs">Fills the package rows. Weigh each package and enter its actual weight.</span>
+                  </div>
                 </Notice>
               )}
               {packages.map((p, i) => (
