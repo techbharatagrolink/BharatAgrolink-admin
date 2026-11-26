@@ -151,6 +151,8 @@ export function CatalogGenerator({ boot }) {
   const [language, setLanguage] = useState("en");
   const [perPageInput, setPerPageInput] = useState(String(PRODUCTS_PER_PAGE));
   const [perPage, setPerPage] = useState(PRODUCTS_PER_PAGE);
+  // Buyer-facing rates (spec §5): on by default; off for a specification-only catalogue.
+  const [showRates, setShowRates] = useState(true);
   const [title, setTitle] = useState(boot.defaultTitle || "Product Catalogue");
   const [subtitle, setSubtitle] = useState(boot.defaultSubtitle || "Agriculture Products & Solutions");
   const [date, setDate] = useState(() => todayIso());
@@ -232,6 +234,7 @@ export function CatalogGenerator({ boot }) {
         boot: { coverTagline: boot.coverTagline, coverImage: assetUrl(boot.coverImage) },
         language,
         perPage,
+        showRates,
         vendors,
       },
       root,
@@ -245,7 +248,7 @@ export function CatalogGenerator({ boot }) {
     draw(selectedProducts);
     translateRef.current?.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frameReady, selectedProducts, title, subtitle, date, agentName, agentPhone, agentEmail, perPage, language]);
+  }, [frameReady, selectedProducts, title, subtitle, date, agentName, agentPhone, agentEmail, perPage, language, showRates]);
 
   // Language: script font, watermark and Google Translate inside the frame.
   useEffect(() => {
@@ -451,6 +454,10 @@ export function CatalogGenerator({ boot }) {
               <label className="flex items-center justify-between gap-3 text-xs font-semibold text-ink-muted">
                 Products per page
                 <Input type="number" min={2} max={12} step={1} value={perPageInput} onChange={(e) => setPerPageInput(e.target.value)} onBlur={onPerPage} onKeyDown={(e) => e.key === "Enter" && onPerPage()} className="h-8 w-16 text-center" />
+              </label>
+              <label className="flex items-center justify-between gap-3 text-xs font-semibold text-ink-muted">
+                Show B2B rates and case rates
+                <input type="checkbox" checked={showRates} onChange={(e) => setShowRates(e.target.checked)} className="h-4 w-4" />
               </label>
               <Button variant="primary" className="w-full" loading={generating} onClick={generate}>Generate catalogue</Button>
               {/* Phones: Print and WhatsApp side by side to keep this pinned panel short. */}
