@@ -61,7 +61,7 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
         <p className="px-4 py-8 text-center text-sm text-ink-muted">No quotations match the filters.</p>
       ) : (
         <>
-          <div className="hidden xl:block">
+          <div className="hidden md:block">
             <GridTable
               rows={rows}
               rowKey="id"
@@ -126,7 +126,7 @@ export function BulkQuotationsTable({ result, query, canEdit, canDelete }) {
             />
           </div>
 
-          <div className="space-y-3 p-3 xl:hidden">
+          <div className="space-y-3 p-3 md:hidden">
             {rows.map((q) => (
               <div key={q.id} className="space-y-2.5 rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">

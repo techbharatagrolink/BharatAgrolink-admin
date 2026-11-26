@@ -161,7 +161,7 @@ export function ShiprocketOrdersTable({ rows, canEdit }) {
           <Button size="xs" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
         </div>
       )}
-      <div className="space-y-3 p-3 xl:hidden">
+      <div className="space-y-3 p-3 md:hidden">
         {rows.map((r) => (
           <div key={r.key} className="rounded-lg border border-line p-3 text-sm">
             <div className="flex items-start gap-2.5">
@@ -187,7 +187,7 @@ export function ShiprocketOrdersTable({ rows, canEdit }) {
         ))}
       </div>
 
-      <div className="hidden xl:block">
+      <div className="hidden md:block">
         <GridTable
           rows={rows}
           rowKey="key"

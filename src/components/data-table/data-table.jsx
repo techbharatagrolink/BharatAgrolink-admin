@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startRouteProgress } from "@/components/admin/shell/route-progress";
 import { useMemo, useState, useTransition } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Copy, Download, FileSpreadsheet, FileText, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Copy, Download, FileSpreadsheet, FileText, LayoutGrid, LayoutList, Loader2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { Cell, formatCellValue, resolveHref } from "./cells";
 import { ClearFiltersButton, FilterBar } from "./filter-bar";
 import { applyColumnFilters, columnFilterActive } from "./column-filter";
 import { useQueryState } from "./use-query-state";
-import { AgDataGrid } from "./ag-data-grid";
+import { AgDataGrid, isColumnSortable } from "./ag-data-grid";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
@@ -104,7 +104,7 @@ export function DataTable({
   dense = true,
   pageSizes = PAGE_SIZES,
   serial = true,
-  columnFilters = false,
+  columnFilters = true,
   // Row checkboxes on every table (bulk export / copy IDs work everywhere). Pass false to hide them.
   selectable = true,
   // Resource lists: also offer the safe row actions in bulk (see `promoted` below).
@@ -122,12 +122,16 @@ export function DataTable({
   const [confirm, setConfirm] = useState(null);
   const [running, startRunning] = useTransition();
   const [exporting, setExporting] = useState(false);
+  const [viewMode, setViewMode] = useState("auto");
   const [colFilters, setColFilters] = useState({});
+
+  const activeColFilterCount = useMemo(() => Object.values(colFilters).filter(columnFilterActive).length, [colFilters]);
+  const isColFiltersEnabled = Boolean(columnFilters) || activeColFilterCount > 0;
 
   const visible = useMemo(() => columns.filter((c) => !hidden.includes(c.key)), [columns, hidden]);
   // Header filters match the loaded rows in the browser, so typing never reloads the page.
-  const rows = useMemo(() => (columnFilters ? applyColumnFilters(data.rows, columns, colFilters) : data.rows), [columnFilters, data.rows, columns, colFilters]);
-  const filteredCount = columnFilters && columns.some((c) => columnFilterActive(colFilters[c.key])) ? rows.length : null;
+  const rows = useMemo(() => (isColFiltersEnabled ? applyColumnFilters(data.rows, columns, colFilters) : data.rows), [isColFiltersEnabled, data.rows, columns, colFilters]);
+  const filteredCount = isColFiltersEnabled && columns.some((c) => columnFilterActive(colFilters[c.key])) ? rows.length : null;
   const setColFilter = (key, value) => setColFilters((current) => ({ ...current, [key]: value }));
   const pageIds = rows.map((r) => r[rowKey]);
   const selectedOnPage = selected.filter((sid) => pageIds.includes(sid));
@@ -245,13 +249,21 @@ export function DataTable({
     }
   };
 
+  // Column menu: explicit sort direction ("" clears), Choose Columns and Reset Columns.
+  const setSort = (key, dir) => setParams({ sort: dir ? `${key}:${dir}` : "" }, { resetPage: false });
+  const toggleColumn = (key, show) => setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
+  const resetColumns = () => {
+    setHidden(columns.filter((c) => c.hidden).map((c) => c.key));
+    setShowSerial(serial);
+  };
+
   const sortBy = (column) => {
-    if (!column.sortable) return;
+    if (!isColumnSortable(column)) return;
     const next = sortField !== column.key ? "desc" : sortDir === "desc" ? "asc" : "";
     setParams({ sort: next ? `${column.key}:${next}` : "" }, { resetPage: false });
   };
 
-  const sortable = visible.filter((c) => c.sortable);
+  const sortable = visible.filter(isColumnSortable);
   const sortOptions = sortable.flatMap((c) => [
     { value: `${c.key}:desc`, label: `${c.label} ↓` },
     { value: `${c.key}:asc`, label: `${c.label} ↑` },
@@ -293,10 +305,11 @@ export function DataTable({
   return (
     <div className="min-w-0 rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]">
       {(search || filters.length > 0 || dateRange || toolbar || onExport !== undefined) && (
-        <div className={cn("flex flex-col gap-2 border-b border-line p-3 xl:flex-row xl:items-start", inlineToolbar ? "xl:flex-wrap" : "xl:justify-between")}>
+        // Tablet and up: filters and buttons share one row and wrap onto the next when the screen is narrow.
+        <div className={cn("flex flex-col gap-2 border-b border-line p-3 md:flex-row md:flex-wrap md:items-start", !inlineToolbar && "md:justify-between")}>
           {/* inlineToolbar: the toolbar sits right after the filters and "Clear filters" gets its own line */}
           {(search || filters.length > 0 || dateRange || !inlineToolbar) && (
-            <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1")} />
+            <FilterBar search={search} filters={filters} dateRange={dateRange} hideClear={inlineToolbar} className={cn("min-w-0", !inlineToolbar && "flex-1 md:min-w-[18rem]")} />
           )}
           {/* Phones: the action buttons form one even row of equal-width buttons (wrapping to a second row only
               when there are many). Wider custom toolbar pieces (filter groups, inputs) take a full row. */}
@@ -330,6 +343,32 @@ export function DataTable({
                 ))}
               </div>
             </Popover>
+            <div className="hidden items-center rounded-lg border border-line bg-surface-muted p-0.5 sm:inline-flex" role="group" aria-label="View mode">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                  viewMode === "grid" || viewMode === "auto" ? "bg-surface text-ink shadow-xs" : "text-ink-muted hover:text-ink"
+                )}
+                title="AG Grid table view"
+              >
+                <LayoutGrid className="size-3.5" />
+                <span>Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("cards")}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                  viewMode === "cards" ? "bg-surface text-ink shadow-xs" : "text-ink-muted hover:text-ink"
+                )}
+                title="Cards view"
+              >
+                <LayoutList className="size-3.5" />
+                <span>Cards</span>
+              </button>
+            </div>
             {toolbarEnd}
             {onExport !== undefined && canExport && (
               <Popover
@@ -365,7 +404,22 @@ export function DataTable({
               </Popover>
             )}
           </div>
-          {inlineToolbar && <ClearFiltersButton className="xl:basis-full" />}
+          {inlineToolbar && <ClearFiltersButton className="md:basis-full" />}
+        </div>
+      )}
+
+      {activeColFilterCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-brand-50/70 px-3 py-1.5 text-xs text-brand-800" role="status">
+          <span>
+            Filtered: <strong>{formatNumber(rows.length)}</strong> of {formatNumber(data.rows.length)} rows match {activeColFilterCount} column filter{activeColFilterCount === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setColFilters({})}
+            className="font-medium text-brand-700 underline hover:text-brand-900"
+          >
+            Clear column filters
+          </button>
         </div>
       )}
 
@@ -455,8 +509,8 @@ export function DataTable({
             </span>
           </div>
         )}
-        {/* Desktop: AG Grid. All state below stays in this component; the grid only renders it. */}
-        <div className="hidden xl:block">
+        {/* AG Grid: interactive table view with column pinning, sorting, resizing, and filters. */}
+        <div className={cn(viewMode === "grid" ? "block" : viewMode === "cards" ? "hidden" : "hidden md:block")}>
           <AgDataGrid
             rows={rows}
             columns={visible}
@@ -474,7 +528,7 @@ export function DataTable({
             sortField={sortField}
             sortDir={sortDir}
             sortBy={sortBy}
-            columnFilters={columnFilters}
+            columnFilters={isColFiltersEnabled}
             colFilters={colFilters}
             setColFilter={setColFilter}
             picks={picks}
@@ -483,10 +537,16 @@ export function DataTable({
             serialOf={serialOf}
             actionsFor={(row) => rowActions.filter((a) => matchesWhen(a, row))}
             onTrigger={trigger}
+            filterRows={data.rows}
+            setSort={setSort}
+            allColumns={columns}
+            hiddenKeys={hidden}
+            onToggleColumn={toggleColumn}
+            onResetColumns={resetColumns}
           />
         </div>
 
-        <div className={cn("xl:hidden", pending && "opacity-55")}>
+        <div className={cn(viewMode === "cards" ? "block" : viewMode === "grid" ? "hidden" : "md:hidden", pending && "opacity-55")}>
           {(showSelection || sortOptions.length > 0) && rows.length > 0 && (
             <div className="flex items-center gap-3 border-b border-line bg-surface-muted px-3 py-2">
               {showSelection && (
@@ -599,8 +659,10 @@ export function DataTable({
           ))}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-line px-3 py-2.5 text-small text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-center tabular sm:text-left">
+      {/* Footer: "Showing x–y of n" on the left, Rows + paging on the right, on one line from tablets up; it stays
+          pinned to the bottom of the screen while a long table scrolls, so paging is always in reach. */}
+      <div className="flex flex-col gap-2 rounded-b-xl border-t border-line bg-surface px-3 py-2.5 text-small text-ink-muted sm:sticky sm:bottom-0 sm:z-10 sm:flex-row sm:flex-nowrap sm:items-center sm:justify-between">
+        <p className="min-w-0 text-center tabular sm:truncate sm:text-left">
           {data.total === 0 ? "No results" : `Showing ${formatNumber(from)}–${formatNumber(to)} of ${formatNumber(data.total)}`}
           {filteredCount != null && (
             <>
@@ -612,7 +674,7 @@ export function DataTable({
             </>
           )}
         </p>
-        <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
+        <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:justify-between">
           <label className="hidden items-center gap-2 sm:flex">
             <span>Rows</span>
             <Select aria-label="Rows per page" className="w-20" value={String(data.pageSize)} options={pageSizes.map(String)} onChange={(e) => setParams({ pageSize: e.target.value })} />

@@ -166,7 +166,7 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
       {rows.length === 0 ? (
         <EmptyState title="No bulk orders" description="No orders match these filters. Clear the filters to see every bulk order." />
       ) : (
-        <div className="hidden xl:block">
+        <div className="hidden md:block">
           <GridTable
             rows={rows}
             rowKey={(order) => plain(order.id) || plain(order.orderId)}
@@ -276,7 +276,7 @@ export function BulkOrdersTable({ result, query, canEdit, canDelete }) {
         </div>
       )}
       {rows.length > 0 && (
-        <div className="space-y-3 p-3 xl:hidden">
+        <div className="space-y-3 p-3 md:hidden">
           {rows.map((order, index) => {
             const orderId = plain(order.orderId) || "—";
             const href = order.orderId ? `/admin/bulk-orders/orders/${encodeURIComponent(plain(order.orderId))}` : "/admin/bulk-orders/orders";

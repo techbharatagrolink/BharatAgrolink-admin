@@ -176,7 +176,7 @@ function CustomersDialog({ target, sources, onClose }) {
         <p className="py-6 text-center text-sm text-ink-muted">No customers found.</p>
       ) : (
         <>
-          <div className="hidden xl:block">
+          <div className="hidden md:block">
             <GridTable
               rows={rows}
               rowKey={(r, i) => i}
@@ -201,7 +201,7 @@ function CustomersDialog({ target, sources, onClose }) {
             />
           </div>
 
-          <div className="space-y-3 xl:hidden">
+          <div className="space-y-3 md:hidden">
             {rows.map((r, i) => (
               <div key={i} className="rounded-lg border border-line p-3 text-small">
                 <div className="flex items-start justify-between gap-2">

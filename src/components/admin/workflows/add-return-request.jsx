@@ -167,7 +167,7 @@ export function AddReturnRequest({ reasons }) {
               {orders.message && <Notice tone={orders.message.startsWith("Error") ? "danger" : "info"}>{orders.message}</Notice>}
               {orders.list.length > 0 && (
                 <div className="max-h-80 overflow-auto rounded-lg border border-line scrollbar-thin">
-                  <div className="hidden xl:block">
+                  <div className="hidden md:block">
                     <table className="w-full text-sm">
                       <thead className="border-b border-line bg-surface-muted text-left text-xs text-ink-muted">
                         <tr>
@@ -205,7 +205,7 @@ export function AddReturnRequest({ reasons }) {
                     </table>
                   </div>
 
-                  <div className="divide-y divide-line xl:hidden">
+                  <div className="divide-y divide-line md:hidden">
                     {orders.list.map((o) => (
                       <div key={o.orderId}>
                         <div className="bg-surface-muted/60 px-3 py-2 text-xs text-ink-muted">

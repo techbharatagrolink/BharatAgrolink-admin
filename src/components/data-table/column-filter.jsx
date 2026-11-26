@@ -65,12 +65,42 @@ function conditionActive(c) {
   return c.value !== "";
 }
 
+/** A filter is on when its condition is set or its value checklist leaves some values out. */
 export function columnFilterActive(filter) {
-  return conditionActive(filter?.first);
+  return conditionActive(filter?.first) || Array.isArray(filter?.values);
 }
 
 function isBlank(value) {
   return value == null || value === "" || (Array.isArray(value) && value.length === 0);
+}
+
+/** The checklist key of a row's value in a column ("" = blank). */
+export function columnValueKey(column, row) {
+  const value = row?.[column.key];
+  if (isBlank(value)) return "";
+  if (Array.isArray(value)) return value.map((item) => (item && typeof item === "object" ? item.text ?? item.name ?? item.label ?? "" : String(item))).join(", ");
+  if (typeof value === "object") return String(value.name ?? value.label ?? value.text ?? value.id ?? "");
+  return String(value);
+}
+
+const MAX_OPTIONS = 1000;
+
+/**
+ * Distinct values of a column in `rows`, for the filter checklist: [{ value, label }] sorted by label,
+ * "(Blanks)" last. `label(row)` gives the text the table shows for the value.
+ */
+export function columnValueOptions(column, rows, label) {
+  const seen = new Map();
+  for (const row of rows ?? []) {
+    const key = columnValueKey(column, row);
+    if (seen.has(key)) continue;
+    const text = key === "" ? "" : String(label?.(row) ?? "");
+    seen.set(key, key === "" ? "(Blanks)" : text && text !== "—" ? text : key);
+    if (seen.size >= MAX_OPTIONS) break;
+  }
+  return [...seen.entries()]
+    .map(([value, text]) => ({ value, label: text }))
+    .sort((a, b) => (a.value === "" ? 1 : b.value === "" ? -1 : a.label.localeCompare(b.label, "en-IN", { numeric: true, sensitivity: "base" })));
 }
 
 function istDay(value) {
@@ -145,8 +175,11 @@ export function applyColumnFilters(rows, columns, filters) {
     .filter((column) => columnFilterActive(filters[column.key]))
     .map((column) => ({ column, kind: kindOf(column), filter: filters[column.key] }));
   if (!active.length) return rows;
+  const sets = new Map(active.filter(({ filter }) => Array.isArray(filter.values)).map(({ column, filter }) => [column.key, new Set(filter.values)]));
   return rows.filter((row) =>
     active.every(({ column, kind, filter }) => {
+      if (sets.has(column.key) && !sets.get(column.key).has(columnValueKey(column, row))) return false;
+      if (!conditionActive(filter.first)) return true;
       const first = testCondition(column, kind, filter.first, row);
       if (!conditionActive(filter.second)) return first;
       const second = testCondition(column, kind, filter.second, row);
@@ -190,15 +223,91 @@ function ConditionEditor({ kind, condition, onChange, autoFocus, label }) {
   );
 }
 
-/** Funnel button for a header; the panel is portalled so the scrolling table does not clip it. */
-export function ColumnFilter({ column, filter, onChange }) {
+/**
+ * AG Grid-style value checklist: search, "(Select All)" and one checkbox per distinct value.
+ * `selected` null = every value; a change back to every value clears it to null again.
+ */
+function ValueChecklist({ label, options, selected, onChange }) {
+  const [search, setSearch] = useState("");
+  const all = options.map((o) => o.value);
+  const chosen = new Set(selected ?? all);
+  const needle = search.trim().toLowerCase();
+  const shown = needle ? options.filter((o) => o.label.toLowerCase().includes(needle)) : options;
+  const shownAll = shown.length > 0 && shown.every((o) => chosen.has(o.value));
+  const shownSome = shown.some((o) => chosen.has(o.value));
+  const commit = (next) => onChange(all.every((v) => next.has(v)) ? null : all.filter((v) => next.has(v)));
+  const toggle = (value, on) => {
+    const next = new Set(chosen);
+    if (on) next.add(value);
+    else next.delete(value);
+    commit(next);
+  };
+  const toggleShown = (on) => {
+    // While searching, "(Select All)" acts on the matching values only (as AG Grid does).
+    const next = needle ? new Set(chosen) : new Set();
+    for (const o of shown) on ? next.add(o.value) : next.delete(o.value);
+    commit(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+        <input autoFocus value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." aria-label={`Search ${label} values`} className={cn(inputClass, "pr-2 pl-8")} />
+      </div>
+      <ul className="max-h-52 overflow-y-auto rounded-lg border border-line py-1" aria-label={`${label} values`}>
+        {shown.length === 0 ? (
+          <li className="px-3 py-2 text-small text-ink-muted">No matching values</li>
+        ) : (
+          <>
+            <li>
+              <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm text-ink hover:bg-surface-muted">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-brand-600"
+                  checked={shownAll}
+                  ref={(el) => el && (el.indeterminate = !shownAll && shownSome)}
+                  onChange={(e) => toggleShown(e.target.checked)}
+                />
+                (Select All)
+              </label>
+            </li>
+            {shown.map((o) => (
+              <li key={o.value}>
+                <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm text-ink hover:bg-surface-muted">
+                  <input type="checkbox" className="size-4 accent-brand-600" checked={chosen.has(o.value)} onChange={(e) => toggle(o.value, e.target.checked)} />
+                  <span className={cn("min-w-0 truncate", o.value === "" && "text-ink-muted italic")} title={o.label}>
+                    {o.label}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Filter button (horizontal bars) for a header; the panel is portalled so the scrolling table does not
+ * clip it. With `options` (the column's distinct values) it opens on a value checklist, with the
+ * condition filter (contains / greater than / between …) below it.
+ */
+export function ColumnFilter({ column, filter, onChange, options, onOpenChange }) {
   const kind = kindOf(column);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
+  const [showCondition, setShowCondition] = useState(false);
   const button = useRef(null);
   const panel = useRef(null);
   const value = filter ?? { first: emptyCondition(kind), join: "and", second: emptyCondition(kind) };
   const active = columnFilterActive(filter);
+  const hasList = Array.isArray(options) && options.length > 0;
+  const conditionOpen = !hasList || showCondition || conditionActive(value.first);
+  const update = (patch) => onChange({ ...value, ...patch });
+
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   useLayoutEffect(() => {
     if (!open || !button.current) return;
@@ -232,22 +341,24 @@ export function ColumnFilter({ column, filter, onChange }) {
 
   return (
     <>
-      <button
-        ref={button}
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={`Filter ${column.label}${active ? " (active)" : ""}`}
-        aria-expanded={open}
-        title={`Filter ${column.label}`}
-        className={cn(
-          "relative inline-flex size-6 shrink-0 items-center justify-center rounded hover:bg-surface hover:text-ink",
-          active ? "bg-brand-50 text-brand-700" : "text-ink-muted",
-          open && "bg-surface text-ink",
-        )}
-      >
-        <ListFilter className="size-4" aria-hidden />
-        {active && <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-brand-600" aria-hidden />}
-      </button>
+      <div className={cn("ba-col-menu inline-flex shrink-0 items-center", (active || open) && "is-active", open && "is-open")}>
+        <button
+          ref={button}
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={`Filter ${column.label}${active ? " (active)" : ""}`}
+          aria-expanded={open}
+          title={`Filter ${column.label}`}
+          className={cn(
+            "relative inline-flex size-6 shrink-0 items-center justify-center rounded transition-colors hover:bg-surface hover:text-ink cursor-pointer",
+            active ? "bg-brand-50 text-brand-700 font-semibold" : "text-ink-muted hover:text-ink",
+            open && "bg-surface text-ink shadow-xs",
+          )}
+        >
+          <ListFilter className="size-3.5" aria-hidden />
+          {active && <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-brand-600 ring-2 ring-surface" aria-hidden />}
+        </button>
+      </div>
       {open &&
         pos &&
         createPortal(
@@ -256,20 +367,36 @@ export function ColumnFilter({ column, filter, onChange }) {
             role="dialog"
             aria-label={`Filter ${column.label}`}
             style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-            className="z-[60] space-y-2.5 rounded-xl border border-line bg-surface p-3 text-left text-sm font-normal shadow-xl"
+            className="z-[60] space-y-2.5 rounded-xl border border-line bg-surface p-3 text-left text-sm font-normal normal-case tracking-normal shadow-xl"
           >
-            <ConditionEditor kind={kind} label={column.label} condition={value.first} autoFocus onChange={(first) => onChange({ ...value, first })} />
-            {conditionActive(value.first) && (
+            {hasList && <ValueChecklist label={column.label} options={options} selected={Array.isArray(value.values) ? value.values : null} onChange={(values) => update({ values: values ?? undefined })} />}
+            {hasList && (
+              <button
+                type="button"
+                onClick={() => setShowCondition((s) => !s)}
+                aria-expanded={conditionOpen}
+                className="flex w-full items-center justify-between border-t border-line pt-2 text-small font-medium text-ink-soft hover:text-ink"
+              >
+                Filter by condition
+                <span aria-hidden>{conditionOpen ? "−" : "+"}</span>
+              </button>
+            )}
+            {conditionOpen && (
               <>
-                <div className="flex items-center justify-center gap-5 text-small text-ink">
-                  {["and", "or"].map((join) => (
-                    <label key={join} className="inline-flex cursor-pointer items-center gap-1.5">
-                      <input type="radio" name={`join-${column.key}`} checked={value.join === join} onChange={() => onChange({ ...value, join })} className="size-4 accent-brand-600" />
-                      {join.toUpperCase()}
-                    </label>
-                  ))}
-                </div>
-                <ConditionEditor kind={kind} label={column.label} condition={value.second} onChange={(second) => onChange({ ...value, second })} />
+                <ConditionEditor kind={kind} label={column.label} condition={value.first} autoFocus={!hasList} onChange={(first) => update({ first })} />
+                {conditionActive(value.first) && (
+                  <>
+                    <div className="flex items-center justify-center gap-5 text-small text-ink">
+                      {["and", "or"].map((join) => (
+                        <label key={join} className="inline-flex cursor-pointer items-center gap-1.5">
+                          <input type="radio" name={`join-${column.key}`} checked={value.join === join} onChange={() => update({ join })} className="size-4 accent-brand-600" />
+                          {join.toUpperCase()}
+                        </label>
+                      ))}
+                    </div>
+                    <ConditionEditor kind={kind} label={column.label} condition={value.second} onChange={(second) => update({ second })} />
+                  </>
+                )}
               </>
             )}
             {active && (
