@@ -54,10 +54,13 @@ export function RecordFormDrawer({ open, onClose, title, description, fields: al
   };
 
   /** With file fields the values travel as JSON in a FormData next to the files. */
+  // __version: the record version this form was opened with, so the API refuses the save if someone
+  // else changed the record in the meantime (edit-conflict check).
   const payload = () => {
-    if (!fields.some((f) => f.type === "file")) return values;
+    const sent = record?._version ? { ...values, __version: record._version } : values;
+    if (!fields.some((f) => f.type === "file")) return sent;
     const body = new FormData();
-    body.set("__values", JSON.stringify(values));
+    body.set("__values", JSON.stringify(sent));
     for (const [name, file] of Object.entries(files)) if (file) body.set(name, file, file.name);
     return body;
   };

@@ -335,6 +335,7 @@ export async function saveResourceRecord(key, id, input, user, rawReason) {
       files.push([field.name, file]);
     }
   }
+  const version = !isNew && typeof raw?.__version === "string" ? raw.__version : undefined;
   const { ok, values, errors } = validateForm(fields, raw, optionSets);
   if (!ok) return { ok: false, message: "Please fix the highlighted fields.", fieldErrors: errors };
 
@@ -359,13 +360,14 @@ export async function saveResourceRecord(key, id, input, user, rawReason) {
       const form = new FormData();
       form.set("values", JSON.stringify(payload));
       if (reasonCheck.reason) form.set("reason", reasonCheck.reason);
+      if (version) form.set("version", version);
       for (const [name, file] of files) form.set(name, file, file.name || name);
       ({ data } = await apiForm(path, { token: user.token, method: isNew ? "POST" : "PUT", formData: form }));
     } else {
       ({ data } = await api(path, {
         method: isNew ? "POST" : "PUT",
         token: user.token,
-        body: { values: payload, reason: reasonCheck.reason || undefined },
+        body: { values: payload, reason: reasonCheck.reason || undefined, version },
       }));
     }
     return { ok: true, message: isNew ? `${resource.title}: record created.` : `${resource.title}: changes saved.`, id: data?.id ?? id };
