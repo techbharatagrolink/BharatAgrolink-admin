@@ -243,6 +243,9 @@ export function SourcingBoard({ rfqId, comparison, canSource }) {
       />
       <CardBody className="space-y-5">
         {cost && !comparison.freightConfigured && <Notice tone="warning">No freight rate card is configured, so landed cost is the seller rate alone. Add rate cards under Logistics to include freight.</Notice>}
+        {cost && comparison.freightSource === "courier_slabs" && (
+          <Notice tone="info">No B2B freight rate card yet: freight is an estimate from the courier cost slabs (the B2C master) by courier zone. Add rate cards under Logistics for real B2B freight.</Notice>
+        )}
         {!cost && <Notice tone="info">Seller rates and landed cost are visible to managers only. A manager chooses the sourcing.</Notice>}
         {!anyOffers && <p className="text-sm text-ink-muted">No seller has quoted yet. Invited sellers answer from their B2B panel.</p>}
         {comparison.lines.map((line) => {
@@ -295,6 +298,7 @@ export function SourcingBoard({ rfqId, comparison, canSource }) {
                               {o.batchNo && ` · batch ${o.batchNo}`}
                               {o.expiryDate && ` · exp ${o.expiryDate}`}
                               {o.taxTreatment && ` · ${o.taxTreatment}`}
+                              {o.zoneLabel && ` · ${o.zoneLabel}`}
                             </p>
                             {!o.eligible && <p className="text-xs text-danger-ink">{o.reasons.map((r) => r.message).join(" ")}</p>}
                             {o.terms && <p className="text-xs text-ink-muted">Terms: {o.terms}</p>}

@@ -328,6 +328,20 @@ export function OrderLogistics({ orderId, logistics }) {
               </div>
             )}
             {booking.quote.message && <Notice tone="info">{booking.quote.message}</Notice>}
+            {booking.quote.zoneEstimate && (
+              <Notice tone="info" title="Estimate from courier cost slabs">
+                {booking.quote.zoneEstimate.amount != null ? (
+                  <>
+                    {booking.quote.zoneEstimate.zoneLabel} ({booking.quote.zoneEstimate.fromPincode} → {booking.quote.pincode}), {booking.quote.zoneEstimate.chargeableKg} kg: about {formatINR(booking.quote.zoneEstimate.amount)}
+                    {booking.quote.zoneEstimate.impact?.pct != null ? ` · net shipping ${formatPercent(booking.quote.zoneEstimate.impact.pct)}` : ""}.
+                    <span className="mt-1 block text-xs">The B2C courier master, not a carrier quote. Book with the transporter&apos;s real quote.</span>
+                    <Button size="sm" variant="secondary" className="mt-2" onClick={() => setBooking({ ...booking, manual: true, freightEstimate: String(booking.quote.zoneEstimate.amount) })}>Use as freight estimate</Button>
+                  </>
+                ) : (
+                  <>No courier slab covers this weight{booking.quote.zoneEstimate.zone ? "" : ", or a pincode is not in the pincode master"}.</>
+                )}
+              </Notice>
+            )}
 
             {!booking.manual && booking.quote.options?.length > 0 && (
               <div className="space-y-1.5">
