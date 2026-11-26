@@ -120,6 +120,9 @@ export const resourceRoutes = {
   "/admin/b2b/pricing-rules": "b2b.pricingRules",
   "/admin/b2b/approval-tiers": "b2b.approvalTiers",
   "/admin/b2b/pricing-rule-history": "b2b.pricingRuleVersions",
+  "/admin/b2b/policy-decisions": "b2b.policyDecisions",
+  "/admin/b2b/packing-versions": "b2b.packagingVersions",
+  "/admin/b2b/jobs": "b2b.jobs",
   "/admin/bulk-orders": "bulk",
   "/admin/bulk-orders/warehouses": "bulk.warehouses",
 
