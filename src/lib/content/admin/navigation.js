@@ -306,6 +306,7 @@ export const navigation = [
           { key: "b2b-authorizations", label: "Seller Authorizations", href: "/admin/b2b/authorizations", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
           { key: "b2b-orders", label: "B2B Orders List", href: "/admin/b2b/orders", page: "b2b_orders/b2b_order_list.php", permission: "b2b.orders" },
           { key: "b2b-approvals", label: "Approvals", href: "/admin/b2b/approvals", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
+          { key: "b2b-audit-log", label: "B2B Audit Log", href: "/admin/b2b/audit-log", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
           { key: "b2b-reports", label: "B2B Reports", href: "/admin/b2b/reports", page: "b2b_orders/reports.php", permission: "b2b.reports" },
           { key: "b2b-payments", label: "Payments & Credit", href: "/admin/b2b/payments", permission: "b2b.finance" },
           { key: "b2b-receivables", label: "Receivables (Aging)", href: "/admin/b2b/receivables", permission: "b2b.finance" },

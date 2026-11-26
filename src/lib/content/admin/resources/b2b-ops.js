@@ -279,6 +279,28 @@ export const b2bOpsResources = {
       { id: "resolve", label: "Resolve", permission: "edit", effect: { set: { status: "Resolved" } }, when: { field: "status", notIn: ["Resolved"] } },
     ],
   },
+  "b2b.auditLog": {
+    title: "B2B Audit Log",
+    description: "Every B2B change: who did what, on which record, when. Read-only.",
+    permission: "b2b.approvals",
+    collection: "b2bAuditLog",
+    api: "GET /api/admin/b2b/audit-log",
+    search: "Search person, module, action, record or text",
+    searchFields: ["actor", "module", "action", "record", "description"],
+    filterFields: ["module"],
+    filters: [{ key: "module", label: "Module", options: ["quotation", "order", "catalog", "case_slabs", "procurement", "authorization", "rfq", "buyer", "shipment", "finance"] }],
+    defaultSort: "createdAt:desc",
+    exportable: true,
+    columns: [
+      { key: "createdAt", label: "When", type: "datetime", sortable: true },
+      { key: "actor", label: "Who", emphasis: true },
+      { key: "module", label: "Module", type: "status" },
+      { key: "action", label: "Action" },
+      { key: "record", label: "Record", type: "mono" },
+      { key: "description", label: "What", width: 420 },
+      { key: "ip", label: "IP", type: "mono" },
+    ],
+  },
   "b2b.skuLinks": {
     title: "SKU Links & Case Sizes",
     description:

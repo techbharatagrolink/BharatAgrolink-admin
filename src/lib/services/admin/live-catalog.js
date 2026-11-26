@@ -92,6 +92,7 @@ export const LIVE_RESOURCES = {
   "b2b.claims": { path: "/b2b/claims", page: "b2b_orders/claims.php", permission: "b2b.orders" },
   "b2b.alerts": { path: "/b2b/alerts", page: "b2b_orders/alerts.php", permission: "b2b" },
   "b2b.skuLinks": { path: "/b2b/sku-links", page: "b2b_orders/catalog.php", permission: "b2b.catalog" },
+  "b2b.auditLog": { path: "/b2b/audit-log", page: "b2b_orders/approvals.php", permission: "b2b.approvals" },
   bulk: { path: "/bulk-orders/inquiries", page: "bulk_orders/bulk_inquiry.php", permission: "bulk" },
   "bulk.warehouses": { path: "/bulk-orders/warehouses", page: "bulk_orders/warehouses.php", permission: "bulk" },
   "operations.ndr": { path: "/operations/ndr", page: "operations_center/ndr_escalations.php", permission: "operations.center" },
