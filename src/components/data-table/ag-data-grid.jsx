@@ -104,16 +104,19 @@ function DataHeaderInner({ col, api, column }) {
   const SortIcon = !active ? ArrowUpDown : g.sortDir === "asc" ? ArrowUp : ArrowDown;
   const canFilter = g.columnFilters && columnFilterable(col);
   const right = isRight(col);
+  // Server-filtered columns (e.g. orders' Pincode) filter every page through the URL, so they get no
+  // checklist of the loaded page's values.
+  const server = col.serverFilter && g.setServerFilter ? { value: g.serverFilterValue?.(col) ?? "", apply: (value) => g.setServerFilter(col, value) } : null;
   // Checklist values come from every loaded row (not only the ones left after other column filters).
   const source = g.filterRows ?? null;
-  const options = useMemo(() => (canFilter && source ? columnValueOptions(col, source, (row) => formatCellValue(col, row)) : null), [canFilter, source, col]);
+  const options = useMemo(() => (canFilter && source && !col.serverFilter ? columnValueOptions(col, source, (row) => formatCellValue(col, row)) : null), [canFilter, source, col]);
   // Every data column shows its filter; only checkbox / action-button columns have none.
   const filterable = canFilter && !/^(actions?|select|__\w+)$/i.test(col.key);
 
   // Filter (horizontal bars) + ⋮ menu: shown on header hover, kept while a panel is open or a filter is on.
   const tools = (
     <div className="ml-1 flex shrink-0 items-center gap-0.5">
-      {filterable && <ColumnFilter column={col} filter={g.colFilters[col.key]} options={options} onChange={(value) => g.setColFilter(col.key, value)} />}
+      {filterable && <ColumnFilter column={col} filter={g.colFilters[col.key]} options={options} server={server} onChange={(value) => g.setColFilter(col.key, value)} />}
       <ColumnMenu
         api={api}
         column={column}
@@ -345,6 +348,8 @@ export function AgDataGrid({
   hiddenKeys, // optional: keys of the hidden columns
   onToggleColumn, // optional: (columnKey, show) => void
   onResetColumns, // optional: () => void — column menu Reset Columns (shows every default column again)
+  serverFilterValue, // optional: (column) => its URL filter value, for columns with `serverFilter`
+  setServerFilter, // optional: (column, value) => void — sets that URL filter (the API filters every page)
 }) {
   const apiRef = useRef(null);
   const wrapRef = useRef(null);
@@ -487,6 +492,8 @@ export function AgDataGrid({
 
   const state = {
     filterRows,
+    serverFilterValue,
+    setServerFilter,
     setSort,
     allColumns,
     hiddenKeys,

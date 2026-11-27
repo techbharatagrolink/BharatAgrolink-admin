@@ -290,11 +290,55 @@ function ValueChecklist({ label, options, selected, onChange }) {
 }
 
 /**
+ * Filter for a column the API filters (`server` = { value, apply }): the typed text goes to the URL and
+ * every page is searched, not only the loaded rows. Applied on Enter or "Apply".
+ */
+function ServerFilter({ column, server, onDone }) {
+  const [draft, setDraft] = useState(server.value);
+  const apply = (value) => {
+    server.apply(value);
+    onDone();
+  };
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        apply(draft);
+      }}
+    >
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={column.serverFilterPlaceholder || "Filter..."}
+          aria-label={`Filter ${column.label}`}
+          className={cn(inputClass, "pr-2 pl-8")}
+        />
+      </div>
+      {column.serverFilterHint && <p className="text-small text-ink-muted">{column.serverFilterHint}</p>}
+      <div className="flex justify-end gap-2 border-t border-line pt-2">
+        {server.value !== "" && (
+          <button type="button" onClick={() => apply("")} className="rounded-lg px-2 py-1 text-small font-medium text-ink-muted hover:bg-neutral-bg hover:text-ink">
+            Reset
+          </button>
+        )}
+        <button type="submit" className="rounded-lg bg-brand-600 px-2.5 py-1 text-small font-medium text-white hover:bg-brand-700">
+          Apply
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/**
  * Filter button (horizontal bars) for a header; the panel is portalled so the scrolling table does not
  * clip it. With `options` (the column's distinct values) it opens on a value checklist, with the
- * condition filter (contains / greater than / between …) below it.
+ * condition filter (contains / greater than / between …) below it. With `server` it filters on the API.
  */
-export function ColumnFilter({ column, filter, onChange, options, onOpenChange }) {
+export function ColumnFilter({ column, filter, onChange, options, onOpenChange, server }) {
   const kind = kindOf(column);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
@@ -302,7 +346,7 @@ export function ColumnFilter({ column, filter, onChange, options, onOpenChange }
   const button = useRef(null);
   const panel = useRef(null);
   const value = filter ?? { first: emptyCondition(kind), join: "and", second: emptyCondition(kind) };
-  const active = columnFilterActive(filter);
+  const active = server ? server.value !== "" : columnFilterActive(filter);
   const hasList = Array.isArray(options) && options.length > 0;
   const conditionOpen = !hasList || showCondition || conditionActive(value.first);
   const update = (patch) => onChange({ ...value, ...patch });
@@ -369,7 +413,11 @@ export function ColumnFilter({ column, filter, onChange, options, onOpenChange }
             style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
             className="z-[60] space-y-2.5 rounded-xl border border-line bg-surface p-3 text-left text-sm font-normal normal-case tracking-normal shadow-xl"
           >
-            {hasList && <ValueChecklist label={column.label} options={options} selected={Array.isArray(value.values) ? value.values : null} onChange={(values) => update({ values: values ?? undefined })} />}
+            {server ? (
+              <ServerFilter column={column} server={server} onDone={() => setOpen(false)} />
+            ) : (
+            <>
+            {hasList &&<ValueChecklist label={column.label} options={options} selected={Array.isArray(value.values) ? value.values : null} onChange={(values) => update({ values: values ?? undefined })} />}
             {hasList && (
               <button
                 type="button"
@@ -405,6 +453,8 @@ export function ColumnFilter({ column, filter, onChange, options, onOpenChange }
                   Reset
                 </button>
               </div>
+            )}
+            </>
             )}
           </div>,
           document.body,
