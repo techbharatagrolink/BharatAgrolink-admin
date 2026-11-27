@@ -42,8 +42,8 @@ export const coreResources = {
     permission: "orders",
     collection: "orders",
     api: "GET /api/admin/orders",
-    search: "Search order, customer, product, invoice or AWB",
-    searchFields: ["id", "customer", "mobile", "email", "platformInvoice", "invoiceNumber", "paymentId", "productName", "trackingId"],
+    search: "Search order, customer, product, invoice, AWB or pincode",
+    searchFields: ["id", "customer", "mobile", "email", "platformInvoice", "invoiceNumber", "paymentId", "productName", "trackingId", "pincode"],
     filterFields: ["status", "paymentMode", "channel", "dateOn"],
     filters: [
       { key: "status", label: "Status", options: orderStatuses },
@@ -96,7 +96,12 @@ export const coreResources = {
       { key: "remarks", label: "Remarks", type: "remarks", width: 240 },
       { key: "verification", label: "Verification", type: "status" },
       { key: "state", label: "State" },
-      { key: "pincode", label: "Pincode", type: "mono" },
+      // Filtered on the API (?pincode=), so it searches every page, not only the rows loaded here.
+      {
+        key: "pincode", label: "Pincode", type: "mono", sortable: true,
+        serverFilter: true, serverFilterPlaceholder: "e.g. 141001, 1410",
+        serverFilterHint: "Separate pincodes with commas. A partial pincode matches every pincode starting with it.",
+      },
       { key: "district", label: "District", hidden: true },
       { key: "landHolding", label: "Land holding", hidden: true },
       { key: "season", label: "Season", hidden: true },

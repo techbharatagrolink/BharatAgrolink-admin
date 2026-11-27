@@ -251,6 +251,11 @@ export function DataTable({
 
   // Column menu: explicit sort direction ("" clears), Choose Columns and Reset Columns.
   const setSort = (key, dir) => setParams({ sort: dir ? `${key}:${dir}` : "" }, { resetPage: false });
+  // Columns with `serverFilter: "<param>"`: the header filter sets that URL param and the API filters every
+  // page (back to page 1), instead of matching only the rows loaded on this page.
+  const serverFilterParam = (column) => (column.serverFilter === true ? column.key : column.serverFilter);
+  const serverFilterValue = (column) => get(serverFilterParam(column)) || "";
+  const setServerFilter = (column, value) => setParams({ [serverFilterParam(column)]: String(value ?? "").trim() });
   const toggleColumn = (key, show) => setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
   const resetColumns = () => {
     setHidden(columns.filter((c) => c.hidden).map((c) => c.key));
@@ -538,6 +543,8 @@ export function DataTable({
             actionsFor={(row) => rowActions.filter((a) => matchesWhen(a, row))}
             onTrigger={trigger}
             filterRows={data.rows}
+            serverFilterValue={serverFilterValue}
+            setServerFilter={setServerFilter}
             setSort={setSort}
             allColumns={columns}
             hiddenKeys={hidden}
