@@ -89,8 +89,13 @@ const TOTALS = {
   "top-products": (d) => [{ label: "Top product (units)", value: formatNumber(d.marketplace.topProduct?.units ?? 0), hint: d.marketplace.topProduct?.name }],
   "top-locations": (d) => [{ label: "Top location (orders)", value: formatNumber(d.marketplace.topLocation?.orders ?? 0), hint: d.marketplace.topLocation ? `${d.marketplace.topLocation.city}, ${d.marketplace.topLocation.state}` : undefined }],
   "unique-visitors": (d) => [{ label: "Unique visitors", value: formatNumber(d.customers.uniqueVisitors), delta: d.customers.uniqueVisitorsPct }],
-  "web-visitors": (d) => [{ label: "Web unique visitors", value: formatNumber(d.customers.webUniqueVisitors ?? d.customers.uniqueVisitors), delta: d.customers.webUniqueVisitorsPct ?? d.customers.uniqueVisitorsPct }],
-  "page-views": (d) => [{ label: "Total page views", value: formatNumber(d.customers.totalPageViews ?? 0), delta: d.customers.totalPageViewsPct }],
+  // visitorTracking.tracked === false: the period is before visitor tracking started (no data, not 0 visitors).
+  "web-visitors": (d) => d.customers.visitorTracking?.tracked === false
+    ? [{ label: "Web unique visitors", value: "Not tracked", hint: d.customers.visitorTracking.since ? `Visitor tracking started ${d.customers.visitorTracking.since}` : undefined }]
+    : [{ label: "Web unique visitors", value: formatNumber(d.customers.visitorTracking ? d.customers.webUniqueVisitors : (d.customers.webUniqueVisitors ?? d.customers.uniqueVisitors)), delta: d.customers.visitorTracking ? d.customers.webUniqueVisitorsPct : (d.customers.webUniqueVisitorsPct ?? d.customers.uniqueVisitorsPct) }],
+  "page-views": (d) => d.customers.visitorTracking?.tracked === false
+    ? [{ label: "Total page views", value: "Not tracked", hint: d.customers.visitorTracking.since ? `Visitor tracking started ${d.customers.visitorTracking.since}` : undefined }]
+    : [{ label: "Total page views", value: formatNumber(d.customers.totalPageViews ?? 0), delta: d.customers.totalPageViewsPct }],
   "new-registrations": (d) => [{ label: "New registrations", value: formatNumber(d.customers.registrations), delta: d.customers.registrationsPct }],
   "ordering-customers": (d) => [{ label: "Ordering customers", value: formatNumber(d.customers.ordering) }],
   "prepaid-orders": (d) => modeTotals(mode(d, "Prepaid")),
