@@ -45,7 +45,7 @@ import { checkPermission } from "@/lib/auth/session";
 import { can, canCard, canPage, SALES_CARD_SLUGS } from "@/lib/auth/permissions";
 import { dashboardFilterHref, getMainDashboard } from "@/lib/services/admin/main-dashboard";
 import { getFixedExpenses } from "@/lib/services/admin/fixed-expenses";
-import { formatDateTime, formatINR, formatNumber } from "@/lib/format";
+import { formatDate, formatDateTime, formatINR, formatNumber } from "@/lib/format";
 import { PageHeader } from "@/components/ui/page";
 import { KpiCard as StatCard, Widget, WidgetLink, ZohoTable } from "@/components/admin/dashboard/zoho";
 import { StatusBadge } from "@/components/ui/badge";
@@ -88,6 +88,19 @@ export default async function MainDashboardPage({ searchParams }) {
   if (result.error) return (<><PageHeader title="Main Dashboard" /><ApiUnavailable error={result.error} what="the main dashboard" /></>);
   const d = result.data;
   const { sales, orders, shipping, marketplace, customers, finance, deltas } = d;
+  // Visitor tracking (visitor_sessions) only exists from its first tracked day. For periods before that the API
+  // sends null and visitorTracking.tracked = false: show "Not tracked", never 0 or the old orders + registrations
+  // count (uniqueVisitors), which is only the fallback for an API that has no visitor tracking at all.
+  const visitorInfo = customers.visitorTracking;
+  const visitorsTracked = visitorInfo?.tracked !== false;
+  const visitorCount = visitorInfo ? customers.webUniqueVisitors : (customers.webUniqueVisitors ?? customers.uniqueVisitors);
+  const visitorDelta = visitorInfo ? customers.webUniqueVisitorsPct : (customers.webUniqueVisitorsPct ?? customers.uniqueVisitorsPct);
+  const trackingNote = !visitorInfo?.since
+    ? (visitorsTracked ? "" : "Visitor tracking has not recorded any visits yet")
+    : !visitorsTracked
+      ? `Visitor tracking started ${formatDate(visitorInfo.since)}`
+      : visitorInfo.partial ? `counted from ${formatDate(visitorInfo.since)}` : "";
+  const conversionRate = customers.funnel?.conversionRate;
   const fixed = fixedResult?.ok ? fixedResult.data : null;
   const fixedMonth = fixed ? new Date(`${fixed.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }) : "";
   const fixedShort = fixed ? new Date(`${fixed.month}-01T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
@@ -248,23 +261,30 @@ export default async function MainDashboardPage({ searchParams }) {
         index={indexOf("customers")}
         title="Customer & visitor analytics"
         note={customers.activeNow > 0 ? `🟢 ${formatNumber(customers.activeNow)} online right now` : undefined}
-        summary={`${formatNumber(customers.webUniqueVisitors ?? customers.uniqueVisitors)} visitors · 🌐 ${formatNumber(customers.platformSplit?.web ?? (customers.webUniqueVisitors ?? customers.uniqueVisitors))} Web · 📱 ${formatNumber(customers.platformSplit?.app ?? 0)} App · ${formatNumber(customers.totalPageViews ?? 0)} views`}
+        summary={visitorsTracked
+          ? `${formatNumber(visitorCount)} visitors · 🌐 ${formatNumber(customers.platformSplit?.web ?? visitorCount)} Web · 📱 ${formatNumber(customers.platformSplit?.app ?? 0)} App · ${formatNumber(customers.totalPageViews ?? 0)} views${visitorInfo?.partial ? ` · ${trackingNote}` : ""}`
+          : `Visitors not tracked for this period · ${trackingNote}`}
       >
         <Grid className="lg:grid-cols-4 2xl:grid-cols-4">
           <StatCard
             label="Total visitors"
-            value={formatNumber(customers.webUniqueVisitors ?? customers.uniqueVisitors)}
-            delta={customers.webUniqueVisitorsPct ?? customers.uniqueVisitorsPct}
-            hint={customers.platformSplit?.app ? `🌐 ${formatNumber(customers.platformSplit.web)} web · 📱 ${formatNumber(customers.platformSplit.app)} app` : (customers.newVisitors != null ? `${formatNumber(customers.newVisitors)} new · ${formatNumber(customers.returningVisitors)} returning` : "Distinct browsing visitors")}
+            value={visitorsTracked ? formatNumber(visitorCount) : "Not tracked"}
+            delta={visitorsTracked ? visitorDelta : null}
+            hint={!visitorsTracked
+              ? trackingNote
+              : [
+                customers.platformSplit?.app ? `🌐 ${formatNumber(customers.platformSplit.web)} web · 📱 ${formatNumber(customers.platformSplit.app)} app` : (customers.newVisitors != null ? `${formatNumber(customers.newVisitors)} new · ${formatNumber(customers.returningVisitors)} returning` : "Distinct browsing visitors"),
+                visitorInfo?.partial ? trackingNote : "",
+              ].filter(Boolean).join(" · ")}
             icon={Eye}
             tone="neutral"
             href={card("web-visitors")}
           />
           <StatCard
             label="Total page & screen views"
-            value={formatNumber(customers.totalPageViews ?? 0)}
-            delta={customers.totalPageViewsPct}
-            hint="Storefront & mobile app impressions"
+            value={visitorsTracked ? formatNumber(customers.totalPageViews ?? 0) : "Not tracked"}
+            delta={visitorsTracked ? customers.totalPageViewsPct : null}
+            hint={visitorsTracked ? "Storefront & mobile app impressions" : trackingNote}
             icon={MousePointerClick}
             tone="brand"
             href={card("page-views")}
@@ -281,7 +301,7 @@ export default async function MainDashboardPage({ searchParams }) {
           <StatCard
             label="Ordering customers"
             value={formatNumber(customers.ordering)}
-            hint={customers.funnel ? `${customers.funnel.conversionRate}% visitor conversion` : "Placed at least one order"}
+            hint={customers.funnel && conversionRate != null ? `${conversionRate}% visitor conversion` : "Placed at least one order"}
             icon={ShoppingCart}
             tone="warning"
             href={card("ordering-customers")}
@@ -298,7 +318,7 @@ export default async function MainDashboardPage({ searchParams }) {
                     <p className="text-xs text-[var(--z-muted)]">Visitors to completed orders</p>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
-                    {customers.funnel.conversionRate}% overall
+                    {conversionRate != null ? `${conversionRate}% overall` : "No visitor data"}
                   </span>
                 </div>
                 <div className="space-y-2.5">
@@ -332,10 +352,10 @@ export default async function MainDashboardPage({ searchParams }) {
                   <div>
                     <div className="flex justify-between text-xs font-medium text-[var(--z-ink)] mb-1">
                       <span>4. Ordering Customers</span>
-                      <span className="font-mono">{formatNumber(customers.funnel.buyers)} ({customers.funnel.conversionRate}%)</span>
+                      <span className="font-mono">{formatNumber(customers.funnel.buyers)}{conversionRate != null ? ` (${conversionRate}%)` : ""}</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, customers.funnel.conversionRate)}%` }} />
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, conversionRate ?? 0)}%` }} />
                     </div>
                   </div>
                 </div>
@@ -359,14 +379,14 @@ export default async function MainDashboardPage({ searchParams }) {
                       Website (Storefront)
                     </span>
                     <span className="font-mono text-[var(--z-muted)]">
-                      {formatNumber(customers.platformSplit?.web ?? (customers.webUniqueVisitors ?? customers.uniqueVisitors))} visitors · {formatNumber(customers.platformSplit?.webViews ?? customers.totalPageViews)} views
+                      {formatNumber(customers.platformSplit?.web ?? visitorCount)} visitors · {formatNumber(customers.platformSplit?.webViews ?? customers.totalPageViews)} views
                     </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-[var(--z-surface-muted)] overflow-hidden">
                     <div
                       className="h-full bg-blue-600 rounded-full"
                       style={{
-                        width: `${Math.round(((customers.platformSplit?.web ?? 1) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100)}%`,
+                        width: `${Math.min(100, Math.round(((customers.platformSplit?.web ?? 0) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100))}%`,
                       }}
                     />
                   </div>
@@ -386,7 +406,7 @@ export default async function MainDashboardPage({ searchParams }) {
                     <div
                       className="h-full bg-emerald-600 rounded-full"
                       style={{
-                        width: `${Math.round(((customers.platformSplit?.app ?? 0) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100)}%`,
+                        width: `${Math.min(100, Math.round(((customers.platformSplit?.app ?? 0) / Math.max(1, (customers.webUniqueVisitors ?? 1))) * 100))}%`,
                       }}
                     />
                   </div>
