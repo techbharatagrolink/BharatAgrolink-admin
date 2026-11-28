@@ -34,6 +34,7 @@ export const LIVE_RESOURCES = {
   support: { path: "/support/tickets", page: "admin_dashboard.php", permission: "support" },
   "finance.wallet": { path: "/finance/wallet-withdrawals", page: "finance_payout_dashboard.php", permission: "finance.wallet" },
   "cms.blogs": { path: "/cms/blogs", page: "blogs.php", permission: "cms" },
+  "cms.blogPerformance": { path: "/cms/blog-performance", page: "blogs.php", permission: "cms" },
   "cms.faqs": { path: "/cms/faqs", page: "manage_product.php", permission: "cms" },
   "cms.footer": { path: "/cms/footer", page: "system_settings.php", permission: "cms" },
   "cms.events": { path: "/cms/events", page: "blogs.php", permission: "cms" },
@@ -154,6 +155,7 @@ const EXTRA_PAGES = {
   "cms.redirects": ["redirects.php"],
   "operations.center": ["ndr_escalations.php"],
   "support.settings": ["admin_dashboard.php"],
+  app_release: ["app_version_policy.php"],
 };
 
 /** permission key -> PHP menu filenames that grant it. */
