@@ -257,6 +257,7 @@ export const LIVE_ADMIN_PATHS = new Set([
   "/admin/sales/prepaid-incentive",
   "/admin/sales/team",
   "/admin/cms/blogs",
+  "/admin/cms/blog-performance",
   "/admin/cms/events",
   "/admin/cms/faqs",
   "/admin/cms/footer",
