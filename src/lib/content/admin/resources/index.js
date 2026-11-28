@@ -123,6 +123,7 @@ export const resourceRoutes = {
   "/admin/cms/banners": "cms.banners",
   "/admin/cms/home-sections": "cms.homeSections",
   "/admin/cms/blogs": "cms.blogs",
+  "/admin/cms/blog-performance": "cms.blogPerformance",
   "/admin/cms/events": "cms.events",
   "/admin/cms/faqs": "cms.faqs",
   "/admin/cms/pages": "cms.pages",

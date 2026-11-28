@@ -232,6 +232,7 @@ export const navigation = [
         children: [
           { key: "cms-home-sections", label: "Home Banner", href: "/admin/cms/home-sections", page: "newhomepage_website.php", permission: "cms" },
           { key: "cms-blogs", label: "Blogs", href: "/admin/cms/blogs", page: "blogs.php", permission: "cms" },
+          { key: "cms-blog-performance", label: "Blog Performance", href: "/admin/cms/blog-performance", permission: "cms" },
           { key: "cms-seo", label: "Custom Page", href: "/admin/cms/seo", page: "meta.php", permission: "cms.seo" },
           { key: "cms-pages", label: "Custom Add Pages", href: "/admin/cms/pages", page: "pages_custom.php", permission: "cms.pages" },
           { key: "cms-redirects", label: "301 URL Redirects", href: "/admin/cms/redirects", page: "redirects.php", permission: "cms.redirects" },
@@ -632,6 +633,7 @@ export const navigation = [
         sensitive: true,
         children: [
           { key: "settings-system", label: "General Settings", href: "/admin/settings", page: "system_settings.php", permission: "settings" },
+          { key: "settings-app-release", label: "App Version & Update Management", href: "/admin/mobile/app-release", page: "app_version_policy.php", permission: "app_release" },
           { key: "settings-languages", label: "Language Settings", href: "/admin/settings/languages", page: "language_settings.php", permission: "settings" },
           { key: "masters-currency", label: "Currency Settings", href: "/admin/masters/currency", page: "currency_settings.php", permission: "masters" },
           { key: "masters-geography", label: "Country / State / City", href: "/admin/masters/geography", permission: "masters" },
