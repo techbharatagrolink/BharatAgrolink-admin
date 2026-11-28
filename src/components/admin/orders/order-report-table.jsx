@@ -11,6 +11,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, F
 import { gridTheme } from "@/components/data-table/ag-data-grid";
 import { ColumnFilter, applyColumnFilters, columnFilterActive, columnValueOptions } from "@/components/data-table/column-filter";
 import { ColumnMenu } from "@/components/data-table/column-menu";
+import { useTableColumns } from "@/components/data-table/use-table-columns";
 import { cn } from "@/lib/utils";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox, Field, Input } from "@/components/ui/form";
@@ -126,6 +127,8 @@ function cellText(row, key) {
 }
 
 const ReportGrid = createContext(null);
+// Every report column, for the session's column choice (none hidden by default).
+const REPORT_COLUMN_KEYS = COLUMNS.map(([key]) => ({ key }));
 // Kept constant: a new object each render would make AG Grid re-apply the defaults and lose column widths.
 const DEFAULT_COL_DEF = { sortable: true, resizable: true, suppressMovable: false, suppressHeaderMenuButton: true };
 
@@ -304,7 +307,8 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const { rows, total, page, pageCount } = report;
   const apiRef = useRef(null);
   const [colFilters, setColFilters] = useState({});
-  const [hidden, setHidden] = useState([]);
+  // Columns shown (⋮ Choose Columns), kept for this session like every admin table.
+  const { hidden, setHidden, reset: resetSavedColumns } = useTableColumns("order-report", REPORT_COLUMN_KEYS);
 
   // Header filters work on the loaded page, instantly (as in the other admin tables).
   const shownRows = useMemo(() => applyColumnFilters(rows, Object.values(FILTER_COLUMNS), colFilters), [rows, colFilters]);
@@ -317,17 +321,15 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
       setColFilter: (key, value) => setColFilters((current) => ({ ...current, [key]: value })),
       allColumns: COLUMNS.filter(([key]) => key !== "sr").map(([key, label]) => ({ key, label })),
       hidden,
-      toggleColumn: (key, show) => {
-        setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
-        apiRef.current?.setColumnsVisible([key], show);
-      },
+      // The column definitions take `hide` from `hidden`, so a choice (and the session's saved one) applies itself.
+      toggleColumn: (key, show) => setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])])),
       reset: () => {
         apiRef.current?.resetColumnState();
-        setHidden([]);
+        resetSavedColumns();
         setColFilters({});
       },
     }),
-    [rows, colFilters, hidden],
+    [rows, colFilters, hidden, setHidden, resetSavedColumns],
   );
 
   const href = (next) => {
@@ -354,11 +356,11 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
   const columnDefs = useMemo(() => [
     // Slim, centred Sr No like the other tables' S.No. (drag the edge to resize).
     { ...column("sr"), headerComponent: SerialHeader, pinned: "left", width: 56, minWidth: 44, maxWidth: 120, type: undefined, cellClass: "ba-serial text-center", headerClass: "ba-serial", sortable: false, lockPinned: true },
-    { ...column("orderId"), pinned: "left", width: 190 },
+    { ...column("orderId"), pinned: "left", width: 190, hide: hidden.includes("orderId") },
     ...GROUPS.map(([title, shown, more]) => ({
       groupId: title,
       headerName: title,
-      children: [...shown, ...more].map(column),
+      children: [...shown, ...more].map((key) => ({ ...column(key), hide: hidden.includes(key) })),
     })),
     ...(canEdit
       ? [{
@@ -371,7 +373,7 @@ export function OrderReportTable({ report, filters, exportColumns, canEdit }) {
           cellRenderer: (params) => (params.data.b2b ? <span className="text-xs text-ink-muted">—</span> : <Button size="xs" onClick={() => open(params.data)}>Edit</Button>),
         }]
       : []),
-  ], [canEdit, open]);
+  ], [canEdit, open, hidden]);
 
   const save = () => {
     startTransition(async () => {
