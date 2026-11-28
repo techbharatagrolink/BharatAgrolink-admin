@@ -19,6 +19,7 @@ import { Cell, formatCellValue, resolveHref } from "./cells";
 import { ClearFiltersButton, FilterBar } from "./filter-bar";
 import { applyColumnFilters, columnFilterActive } from "./column-filter";
 import { useQueryState } from "./use-query-state";
+import { useTableColumns } from "./use-table-columns";
 import { AgDataGrid, isColumnSortable } from "./ag-data-grid";
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -117,8 +118,9 @@ export function DataTable({
   const { get, setParams, pending } = useQueryState();
   const [selected, setSelected] = useState([]);
   const [picks, setPicks] = useState({});
-  const [hidden, setHidden] = useState(() => columns.filter((c) => c.hidden).map((c) => c.key));
-  const [showSerial, setShowSerial] = useState(serial);
+  // Column choices (Columns picker / ⋮ Choose Columns, S.No.) are kept per table in this browser, so they are
+  // still there after opening a record (e.g. an order) and coming back.
+  const { hidden, setHidden, showSerial, setShowSerial, reset: resetSavedColumns } = useTableColumns(id, columns, serial);
   const [confirm, setConfirm] = useState(null);
   const [running, startRunning] = useTransition();
   const [exporting, setExporting] = useState(false);
@@ -253,8 +255,7 @@ export function DataTable({
   const setSort = (key, dir) => setParams({ sort: dir ? `${key}:${dir}` : "" }, { resetPage: false });
   const toggleColumn = (key, show) => setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
   const resetColumns = () => {
-    setHidden(columns.filter((c) => c.hidden).map((c) => c.key));
-    setShowSerial(serial);
+    resetSavedColumns();
   };
 
   const sortBy = (column) => {

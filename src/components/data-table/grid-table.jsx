@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AgDataGrid, isColumnSortable } from "./ag-data-grid";
 import { applyColumnFilters } from "./column-filter";
+import { useTableColumns } from "./use-table-columns";
 
 const noop = () => {};
 const none = [];
@@ -28,6 +29,7 @@ const serial = (i) => i + 1;
  * or (row, index) => key; it is combined with the position, so repeated keys never clash.
  */
 export function GridTable({
+  id, // optional: names this table on its page for the session's column choice (defaults to its column keys)
   columns,
   rows = [],
   rowKey = "id",
@@ -99,9 +101,10 @@ export function GridTable({
 
   // Column layout only changes when keys / labels / widths change — the grid keeps its sizing otherwise.
   const layout = JSON.stringify(
-    columns.map(({ key, label, align, width, wrap, sortable: colSortable, filter }) => ({
+    columns.map(({ key, label, align, width, wrap, sortable: colSortable, filter, pin }) => ({
       key,
       filter,
+      pin,
       label: typeof label === "string" ? label : "",
       align,
       width,
@@ -109,7 +112,18 @@ export function GridTable({
       sortable: colSortable ?? sortable,
     }))
   );
-  const meta = useMemo(() => JSON.parse(layout), [layout]);
+  const allMeta = useMemo(() => JSON.parse(layout), [layout]);
+
+  // Columns shown (⋮ Choose Columns / Reset Columns), kept for this session like every admin table. A page can
+  // have several hand-built tables, so each one is told apart by its column keys unless the screen passes `id`.
+  const { hidden, setHidden, reset } = useTableColumns(id ?? `cols:${allMeta.map((c) => c.key).join(",")}`, allMeta);
+  const meta = useMemo(() => {
+    const shown = allMeta.filter((c) => !hidden.includes(c.key));
+    return shown.length ? shown : allMeta;
+  }, [allMeta, hidden]);
+  // Checkbox and action-button columns always stay; the rest can be hidden.
+  const choosable = useMemo(() => allMeta.filter((c) => c.label && !/^(actions?|select)$/i.test(c.key)), [allMeta]);
+  const toggleColumn = (key, show) => setHidden((h) => (show ? h.filter((k) => k !== key) : [...new Set([...h, key])]));
 
   const byKey = new Map(columns.map((c) => [c.key, c]));
   const renderHeader = (key) => byKey.get(key)?.header?.();
@@ -151,6 +165,10 @@ export function GridTable({
       onRowClicked={onRowClick ? (d) => onRowClick(d.__row, d.__index) : undefined}
       filterRows={columnFilters ? rows : undefined}
       setSort={sortable ? setSort : undefined}
+      allColumns={choosable.length > 1 ? choosable : undefined}
+      hiddenKeys={hidden}
+      onToggleColumn={toggleColumn}
+      onResetColumns={reset}
     />
   );
 }
