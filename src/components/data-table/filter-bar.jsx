@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { CalendarRange, Check, ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
+import { Check, ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/form";
 import { Popover } from "@/components/ui/popover";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useQueryState } from "./use-query-state";
 
 const DATE_PRESETS = [
@@ -92,36 +93,23 @@ export function SearchInput({ placeholder = "Search…", className }) {
   );
 }
 
+/** List date filter: one box for a day range, a month / span of months, a year / span of years, or a quick pick. */
 export function DateRangeFilter({ label = "Date" }) {
   const { get, setParams } = useQueryState();
-  const preset = get("range") || (get("from") || get("to") ? "custom" : "");
+  const presets = DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => ({ ...p, ...presetRange(p.value) }));
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <div className="relative w-full lg:w-auto">
-        <CalendarRange className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-        <Select
-          aria-label={`${label} range`}
-          className="w-full lg:w-44 [&_select]:pl-8 [&>button]:pl-8"
-          value={preset}
-          placeholder={`${label}: all time`}
-          options={DATE_PRESETS}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (!value) return setParams({ range: "", from: "", to: "" });
-            if (value === "custom") return setParams({ range: "custom" });
-            const r = presetRange(value);
-            setParams({ range: value, from: r.from, to: r.to });
-          }}
-        />
-      </div>
-      {preset === "custom" && (
-        <div className="flex items-center gap-1.5">
-          <input type="date" aria-label="From date" value={get("from")} onChange={(e) => setParams({ from: e.target.value })} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-          <span className="text-xs text-ink-muted">to</span>
-          <input type="date" aria-label="To date" value={get("to")} min={get("from") || undefined} onChange={(e) => setParams({ to: e.target.value })} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-        </div>
-      )}
-    </div>
+    <DateRangePicker
+      label={`${label} range`}
+      placeholder={`${label}: all time`}
+      className="w-full lg:w-60"
+      from={get("from")}
+      to={get("to")}
+      presets={presets}
+      onChange={({ from, to, preset }) => {
+        if (!from && !to) return setParams({ range: "", from: "", to: "" });
+        setParams({ range: presets.some((p) => p.value === preset) ? preset : "custom", from, to });
+      }}
+    />
   );
 }
 

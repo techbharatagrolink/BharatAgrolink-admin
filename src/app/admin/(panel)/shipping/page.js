@@ -11,6 +11,7 @@ import { PermissionDenied } from "@/components/ui/states";
 import { ShipmentsTable } from "@/components/admin/shipping/shipments-table";
 import { ShiprocketFilters } from "@/components/admin/shipping/shiprocket-filters";
 import { ShiprocketOrdersTable } from "@/components/admin/shipping/shiprocket-orders-table";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Shipments" };
 
@@ -69,14 +70,10 @@ export default async function ShipmentsPage({ searchParams }) {
               Search
               <Input name="q" defaultValue={q} placeholder="Order ID, AWB, invoice, customer, mobile" />
             </label>
-            <label className="min-w-0 space-y-1 text-xs text-ink-muted">
-              From
-              <Input type="date" name="from" defaultValue={dateFrom} />
-            </label>
-            <label className="min-w-0 space-y-1 text-xs text-ink-muted">
-              To
-              <Input type="date" name="to" defaultValue={dateTo} />
-            </label>
+            <div className="col-span-2 min-w-0 space-y-1 text-xs text-ink-muted sm:w-64">
+              Date range
+              <DateRangePicker fromName="from" toName="to" defaultFrom={dateFrom} defaultTo={dateTo} applyLabel="Done" />
+            </div>
             <Button type="submit" size="md" className={q || dateFrom || dateTo ? undefined : "col-span-2 sm:col-span-1"}>Filter</Button>
             {(q || dateFrom || dateTo) && <ButtonLink href={`/admin/shipping?tab=${tab}`} variant="ghost">Reset</ButtonLink>}
           </form>

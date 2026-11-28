@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { LinkTabs } from "@/components/ui/page";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { monetizationPage, LoadError } from "@/components/admin/monetization/monetization-page";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Banner Orders" };
 
@@ -85,14 +86,10 @@ export default async function BannerOrdersPage({ searchParams }) {
           {select("orderStatus", f.orderStatus, ORDER_STATUS, "Payment")}
           {select("approvalStatus", f.approvalStatus, APPROVAL_STATUS, "Review")}
           {select("adStatus", f.adStatus, AD_STATUS, "Ad")}
-          <label className="flex flex-col gap-1 text-xs text-ink-muted">
-            Bought from
-            <input type="date" name="from" defaultValue={f.from} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-ink-muted">
-            Bought to
-            <input type="date" name="to" defaultValue={f.to} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-          </label>
+          <div className="flex w-full flex-col gap-1 text-xs text-ink-muted sm:w-64">
+            Bought
+            <DateRangePicker fromName="from" toName="to" defaultFrom={f.from ?? ""} defaultTo={f.to ?? ""} label="Bought" applyLabel="Done" />
+          </div>
           <label className="flex flex-col gap-1 text-xs text-ink-muted">
             Running from
             <input type="date" name="scheduledFrom" defaultValue={f.scheduledFrom} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />

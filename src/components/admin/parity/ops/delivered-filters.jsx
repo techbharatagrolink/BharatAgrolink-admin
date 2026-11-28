@@ -7,6 +7,7 @@ import { localIso } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const FIELDS = ["from", "to", "orderType", "vendorId", "categoryId", "state", "paymentMode", "minValue", "maxValue", "search"];
 
@@ -99,8 +100,9 @@ export function DeliveredFilters({ query, options }) {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Field label="From" className={cn(fold)}>{({ id }) => <Input id={id} type="date" value={values.from} onChange={set("from")} />}</Field>
-        <Field label="To" className={cn(fold)}>{({ id }) => <Input id={id} type="date" value={values.to} onChange={set("to")} />}</Field>
+        <Field label="Date range" className={cn("col-span-2", fold)}>
+          {() => <DateRangePicker label="Date range" from={values.from} to={values.to} onChange={({ from, to }) => setValues((v) => ({ ...v, from, to }))} />}
+        </Field>
         <Field label="Order Type" className={cn(fold)}>
           {({ id }) => <Select id={id} value={values.orderType} onChange={set("orderType")} placeholder="All" options={[{ value: "B2C", label: "B2C" }, { value: "B2B", label: "B2B" }]} />}
         </Field>

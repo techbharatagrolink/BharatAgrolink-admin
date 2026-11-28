@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
 import { startRouteProgress } from "@/components/admin/shell/route-progress";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const PAGE_SIZES = ["10", "20", "50", "100"];
 const SORTS = [
@@ -72,14 +73,10 @@ export function ShiprocketFilters({ values, statuses }) {
         Order
         <Select name="sort" defaultValue={values.sort} options={SORTS} />
       </label>
-      <label className="min-w-0 space-y-1 text-xs text-ink-muted max-sm:order-1">
-        From
-        <Input type="date" name="from" defaultValue={values.from} />
-      </label>
-      <label className="min-w-0 space-y-1 text-xs text-ink-muted max-sm:order-1">
-        To
-        <Input type="date" name="to" defaultValue={values.to} />
-      </label>
+      <div className="col-span-2 min-w-0 space-y-1 text-xs text-ink-muted max-sm:order-1 sm:w-64">
+        Date range
+        <DateRangePicker fromName="from" toName="to" defaultFrom={values.from ?? ""} defaultTo={values.to ?? ""} applyLabel="Done" />
+      </div>
       <label className="min-w-0 space-y-1 text-xs text-ink-muted">
         Per page
         <Select name="perPage" defaultValue={values.perPage} options={PAGE_SIZES} />

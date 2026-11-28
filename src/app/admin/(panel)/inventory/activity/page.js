@@ -10,6 +10,7 @@ import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { inventoryPage, LoadError } from "@/components/admin/inventory/inventory-page";
 import { Pager, itemHref } from "@/components/admin/inventory/stock-views";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Activity Log" };
 
@@ -78,14 +79,10 @@ export default async function InventoryActivityPage({ searchParams }) {
               <span>Product or SKU</span>
               <Input type="search" name="search" defaultValue={filters.search ?? ""} placeholder="Name or SKU" />
             </label>
-            <label className={label}>
-              <span>From</span>
-              <Input type="date" name="from" defaultValue={filters.from ?? ""} />
-            </label>
-            <label className={label}>
-              <span>To</span>
-              <Input type="date" name="to" defaultValue={filters.to ?? ""} />
-            </label>
+            <div className={label}>
+              <span>Date range</span>
+              <DateRangePicker fromName="from" toName="to" defaultFrom={filters.from ?? ""} defaultTo={filters.to ?? ""} applyLabel="Done" />
+            </div>
             <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3 2xl:col-span-5">
               <button type="submit" className={buttonClasses({ variant: "primary", size: "sm" })}>
                 Apply filters

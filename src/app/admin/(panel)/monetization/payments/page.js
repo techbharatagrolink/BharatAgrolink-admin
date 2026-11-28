@@ -9,6 +9,7 @@ import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { monetizationPage, LoadError } from "@/components/admin/monetization/monetization-page";
 import { ReconcilePayment } from "@/components/admin/monetization/reconcile-payment";
 import { InvoiceProfileEditor } from "@/components/admin/monetization/invoice-profile";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Payments & Invoices" };
 
@@ -27,14 +28,10 @@ function Filters({ tab, values }) {
         Search
         <input name="search" defaultValue={values.search} placeholder={tab === "invoices" ? "Invoice / order no / seller" : "Order / seller / payment id"} className="h-9 w-64 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink" />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-ink-muted">
-        From
-        <input type="date" name="from" defaultValue={values.from} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-ink-muted">
-        To
-        <input type="date" name="to" defaultValue={values.to} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-      </label>
+      <div className="flex w-full flex-col gap-1 text-xs text-ink-muted sm:w-64">
+        Date range
+        <DateRangePicker fromName="from" toName="to" defaultFrom={values.from ?? ""} defaultTo={values.to ?? ""} applyLabel="Done" />
+      </div>
       {tab === "payments" ? (
         <label className="flex flex-col gap-1 text-xs text-ink-muted">
           Status

@@ -12,6 +12,7 @@ import { ApiUnavailable, EmptyState, PermissionDenied } from "@/components/ui/st
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { SlaTicketActions } from "@/components/admin/workflows/sla-actions";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Departments & SLA" };
 
@@ -212,14 +213,10 @@ export default async function SupportSlaPage({ searchParams }) {
               <span>Status</span>
               <Select name="status" defaultValue={filters.status ?? ""} placeholder="All" options={teams.statuses} />
             </label>
-            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
-              <span>Created from</span>
-              <Input type="date" name="from" defaultValue={filters.from ?? ""} />
-            </label>
-            <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
-              <span>Created to</span>
-              <Input type="date" name="to" defaultValue={filters.to ?? ""} />
-            </label>
+            <div className="min-w-0 space-y-1 text-small font-medium text-ink-soft sm:col-span-2">
+              <span>Created</span>
+              <DateRangePicker fromName="from" toName="to" defaultFrom={filters.from ?? ""} defaultTo={filters.to ?? ""} label="Created" applyLabel="Done" />
+            </div>
             <label className="min-w-0 space-y-1 text-small font-medium text-ink-soft">
               <span>Search</span>
               <Input type="search" name="q" defaultValue={filters.q ?? ""} placeholder="Ticket #, subject, requester" />

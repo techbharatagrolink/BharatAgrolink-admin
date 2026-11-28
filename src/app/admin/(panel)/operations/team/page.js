@@ -12,6 +12,7 @@ import { LineChart } from "@/components/charts/charts";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { KpiTargets } from "@/components/admin/dashboard/kpi-targets";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Team Dashboard" };
 
@@ -47,17 +48,10 @@ export default async function OperationsTeamPage({ searchParams }) {
   const header = <PageHeader title="Team Dashboard" description="Workload and KPI performance per operations agent." />;
   const filterForm = (
     <form method="get" className="mb-4 grid grid-cols-2 items-end gap-3 rounded-xl border border-line bg-surface p-4 sm:flex sm:flex-wrap">
-      <div className="min-w-0 space-y-1.5 sm:w-44">
-        <label htmlFor="team-from" className="block text-small font-medium text-ink-soft">
-          From Date
-        </label>
-        <Input id="team-from" type="date" name="from" defaultValue={filters.from} required />
-      </div>
-      <div className="min-w-0 space-y-1.5 sm:w-44">
-        <label htmlFor="team-to" className="block text-small font-medium text-ink-soft">
-          To Date
-        </label>
-        <Input id="team-to" type="date" name="to" defaultValue={filters.to} required />
+      <div className="col-span-2 min-w-0 space-y-1.5 sm:w-64">
+        <span className="block text-small font-medium text-ink-soft">Date range</span>
+        {/* Both dates are required here, so the box has no Clear. */}
+        <DateRangePicker fromName="from" toName="to" defaultFrom={filters.from ?? ""} defaultTo={filters.to ?? ""} clearable={false} applyLabel="Done" />
       </div>
       <div className="col-span-2 min-w-0 space-y-1.5 sm:w-44">
         <label htmlFor="team-days" className="block text-small font-medium text-ink-soft">
