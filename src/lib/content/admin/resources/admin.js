@@ -1,6 +1,20 @@
 const deleteAction = { id: "delete", label: "Delete", permission: "delete", tone: "danger", effect: { remove: true }, confirm: { title: "Delete permanently?", description: "This cannot be undone." } };
 const HOME_PRODUCT_SECTIONS = ["prod_section_1", "prod_section_2", "prod_section_3", ...Array.from({ length: 13 }, (_, i) => `prod_section_${i + 10}`)];
 const HOME_BANNER_IMAGE = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/svg+xml";
+// Gardening & Farming Knowledge Hub sections - mirrors KNOWLEDGE_HUB_SECTIONS in
+// BharatAgrolink-api-backend/src/modules/blogs/blog.service.js (keep both in sync).
+const KNOWLEDGE_HUB_SECTIONS = [
+  "Kitchen Gardening",
+  "Terrace Gardening",
+  "Home & Balcony Gardening",
+  "Polyhouse & Greenhouse",
+  "Hydroponics",
+  "Nursery Management",
+  "Organic Farming",
+  "Commercial Farming",
+  "Crop Problems & Solutions",
+  "Product Buying Guides",
+];
 const editAction = { id: "edit", label: "Edit", kind: "form", permission: "edit" };
 const toggle = (field, on, off) => [
   { id: "enable", label: `Set ${on}`, permission: "edit", effect: { set: { [field]: on } }, when: { field, notIn: [on] } },
@@ -151,13 +165,14 @@ export const adminResources = {
     api: "GET/POST /api/admin/cms/blogs",
     search: "Search title",
     searchFields: ["title", "author", "category"],
-    filterFields: ["status"],
+    filterFields: ["status", "category"],
+    filters: [{ key: "category", label: "Section", options: KNOWLEDGE_HUB_SECTIONS }],
     tabs: { field: "status", values: ["Published", "Draft"] },
     defaultSort: "publishedAt:desc",
     columns: [
       { key: "title", label: "Title", emphasis: true, width: 320 },
       { key: "author", label: "Author" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Section" },
       { key: "publishedAt", label: "Date", type: "date", sortable: true },
       { key: "status", label: "Status", type: "status" },
     ],
@@ -166,12 +181,14 @@ export const adminResources = {
       fields: [
         { name: "title", label: "Title", type: "text", required: true, maxLength: 255 },
         { name: "slug", label: "Slug", type: "text", maxLength: 200, hint: "Leave blank to build it from the title. It stays unique." },
-        { name: "category", label: "Category", type: "text", maxLength: 100, default: "Agriculture", hint: "For example Crop Protection, Irrigation, Seeds." },
+        { name: "category", label: "Knowledge Hub section", type: "select", options: KNOWLEDGE_HUB_SECTIONS, required: true, default: KNOWLEDGE_HUB_SECTIONS[0] },
         { name: "excerpt", label: "Short description", type: "textarea", required: true, maxLength: 500, rows: 3 },
         { name: "body", label: "Content", type: "html", required: true, maxLength: 500000 },
         { name: "image", label: "Featured image", type: "file", accept: "image/jpeg,image/png,image/webp,image/gif" },
         { name: "imageAlt", label: "Image alt text", type: "text", maxLength: 255 },
         { name: "tags", label: "Tags", type: "text", maxLength: 255, hint: "Comma-separated." },
+        { name: "relatedCategory", label: "Related category", type: "select", optionsFrom: "lookup:categories", options: [{ value: "", label: "— None —" }], hint: "Links this article to a marketplace category page." },
+        { name: "relatedProduct", label: "Related product", type: "text", maxLength: 50, hint: "Product SKU / ID to feature as \"Shop this\". Leave blank for none." },
         { name: "metaTitle", label: "Meta title", type: "text", maxLength: 255, hint: "Uses the title when left blank." },
         { name: "metaDescription", label: "Meta description", type: "textarea", maxLength: 255, rows: 2, hint: "Uses the short description when left blank." },
         { name: "metaKeywords", label: "Meta keywords", type: "text", maxLength: 255 },
