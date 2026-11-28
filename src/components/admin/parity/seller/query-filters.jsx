@@ -6,6 +6,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
+import { DateRangePicker, pairDateFields } from "@/components/ui/date-range-picker";
 
 /**
  * A small GET filter form (the PHP b2bp_toolbar): fields write to the URL on Apply; Reset clears them.
@@ -79,7 +80,21 @@ export function QueryFilters({ fields }) {
       </div>
 
       <div className={cn("grid grid-cols-2 gap-3 max-sm:mt-3 sm:flex sm:flex-wrap sm:items-end", open ? "ui-pop" : "max-sm:hidden")}>
-        {fields.map((f) => {
+        {pairDateFields(fields).map((f) => {
+          // A From / To pair is one date range box (day range, month, year or quick pick).
+          if (f.type === "dateRange")
+            return (
+              <Field key={`${f.from.name}-${f.to.name}`} label={f.label} className="col-span-2 sm:w-64">
+                {() => (
+                  <DateRangePicker
+                    label={f.label}
+                    from={values[f.from.name]}
+                    to={values[f.to.name]}
+                    onChange={({ from, to }) => setValues((v) => ({ ...v, [f.from.name]: from, [f.to.name]: to }))}
+                  />
+                )}
+              </Field>
+            );
           const isSearch = f === searchField;
           const lone = !isSearch && others.length % 2 === 1 && f === others[others.length - 1];
           return (

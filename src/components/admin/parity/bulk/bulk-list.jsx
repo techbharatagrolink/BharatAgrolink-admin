@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react";
 import { formatNumber } from "@/lib/format";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
+import { DateRangePicker, pairDateFields } from "@/components/ui/date-range-picker";
 import { cn } from "@/lib/utils";
 
 /** Filter bar of the bulk_orders list pages: every field is a query-string parameter. */
@@ -37,7 +38,20 @@ export function BulkFilters({ fields, values }) {
   return (
     // Phones / tablets: fields pair up two per row (see fullRow above), then a full-width Filter / Clear row.
     <form onSubmit={apply} className="grid grid-cols-2 gap-2 rounded-xl border border-line bg-surface p-3 max-lg:grid-flow-row-dense lg:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
-      {fields.map((f) => (
+      {pairDateFields(fields).map((f) =>
+        f.type === "dateRange" ? (
+          // A From / To pair is one date range box (day range, month, year or quick pick).
+          <div key={`${f.from.key}-${f.to.key}`} className="col-span-2 min-w-0 text-xs font-medium text-ink-muted">
+            {f.label}
+            <DateRangePicker
+              className="mt-1"
+              label={f.label}
+              from={draft[f.from.key]}
+              to={draft[f.to.key]}
+              onChange={({ from, to }) => setDraft((d) => ({ ...d, [f.from.key]: from, [f.to.key]: to }))}
+            />
+          </div>
+        ) : (
         <label key={f.key} className={cn("min-w-0 text-xs font-medium text-ink-muted", fullRow.has(f) && "max-lg:col-span-2")}>
           {f.label}
           {f.type === "select" ? (
@@ -46,7 +60,8 @@ export function BulkFilters({ fields, values }) {
             <Input className="mt-1 w-full" type={f.type === "date" ? "date" : "text"} value={draft[f.key]} placeholder={f.placeholder} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
           )}
         </label>
-      ))}
+        ),
+      )}
       <div className="col-span-2 flex items-end gap-2 lg:col-span-1 max-sm:[&>*]:flex-1">
         <Button type="submit" variant="primary" size="sm" className="h-9">
           <Search className="size-4" aria-hidden /> Filter

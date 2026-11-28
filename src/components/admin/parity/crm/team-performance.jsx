@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/form";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Notice, ProgressBar } from "@/components/ui/page";
 import { formatDate, formatINR, formatNumber } from "@/lib/format";
 import { agentPerformanceAction, salesByLeadsAction } from "@/lib/actions/admin/parity/crm";
@@ -147,17 +148,9 @@ function SalesByLeadsDialog({ type, onClose }) {
           <div className="flex flex-wrap items-end gap-2">
             {type === "total" && (
               <>
-                <Field label="From Date">
-                  {({ id }) => <input id={id} type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
+                <Field label="Date range" className="w-60">
+                  {() => <DateRangePicker size="sm" align="right" label="Date range" from={range.from} to={range.to} onChange={({ from, to }) => setRange({ from, to })} />}
                 </Field>
-                <Field label="To Date">
-                  {({ id }) => <input id={id} type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm" />}
-                </Field>
-                {(range.from || range.to) && (
-                  <Button size="sm" onClick={() => setRange({ from: "", to: "" })}>
-                    Clear
-                  </Button>
-                )}
               </>
             )}
             {d?.rows?.length > 0 && (

@@ -8,6 +8,7 @@ import { LinkTabs, StatCard, StatGrid } from "@/components/ui/page";
 import { MiniTable } from "@/components/admin/dashboard/range-switch";
 import { RouteExportDropdown } from "@/components/data-table/export-button";
 import { monetizationPage, LoadError } from "@/components/admin/monetization/monetization-page";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export const metadata = { title: "Ad Performance" };
 
@@ -76,14 +77,10 @@ export default async function AdPerformancePage({ searchParams }) {
       <LinkTabs active={groupBy} tabs={GROUPS.map(([value, label]) => ({ value, label, href: `/admin/monetization/analytics?${qs({ groupBy: value })}` }))} />
       <form className="mb-4 flex flex-wrap items-end gap-2" action="/admin/monetization/analytics">
         <input type="hidden" name="groupBy" value={groupBy} />
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          From
-          <input type="date" name="from" defaultValue={f.from || r?.range.from} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          To
-          <input type="date" name="to" defaultValue={f.to || r?.range.to} className="h-9 rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-        </label>
+        <div className="flex w-full flex-col gap-1 text-xs text-ink-muted sm:w-64">
+          Date range
+          <DateRangePicker fromName="from" toName="to" defaultFrom={f.from || r?.range.from || ""} defaultTo={f.to || r?.range.to || ""} applyLabel="Done" />
+        </div>
         <label className="flex flex-col gap-1 text-xs text-ink-muted">
           Seller ID
           <input name="sellerId" defaultValue={f.sellerId} placeholder="All sellers" className="h-9 w-44 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink" />

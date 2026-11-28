@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/form";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const PRESETS = [
   { days: 7, label: "Last 7 days" },
@@ -21,54 +19,38 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0
 export function SeoRange({ range }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [custom, setCustom] = useState(false);
-  const [value, setValue] = useState({ from: range?.from ?? "", to: range?.to ?? "" });
-  const [error, setError] = useState("");
-
   const go = (from, to) => router.push(`${pathname}?${new URLSearchParams({ from, to }).toString()}`);
 
   function preset(days) {
-    setCustom(false);
-    setError("");
     const end = new Date();
     const start = new Date(end);
     start.setDate(end.getDate() - (days - 1));
     go(ymd(start), ymd(end));
   }
 
-  function apply() {
-    if (!value.from || !value.to) return setError("Choose both dates.");
-    if (value.from > value.to) return setError("The start date must be on or before the end date.");
-    setError("");
-    go(value.from, value.to);
-  }
-
-  const activeDays = !custom && range?.to === ymd(new Date()) ? range?.days : null;
+  const activeDays = range?.to === ymd(new Date()) ? range?.days : null;
+  const customActive = Boolean(range?.from && range?.to) && !PRESETS.some((p) => p.days === activeDays);
 
   return (
-    <div className="flex flex-col items-end gap-1 print:hidden">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {PRESETS.map((p) => (
-          <Button key={p.days} size="sm" variant={activeDays === p.days ? "primary" : "outline"} onClick={() => preset(p.days)}>
-            {p.label}
-          </Button>
-        ))}
-        <Button size="sm" variant={custom || (range && activeDays == null) ? "primary" : "outline"} onClick={() => setCustom(true)}>
-          <CalendarDays className="size-4" aria-hidden />
-          Custom
+    <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
+      {PRESETS.map((p) => (
+        <Button key={p.days} size="sm" variant={activeDays === p.days ? "primary" : "outline"} onClick={() => preset(p.days)}>
+          {p.label}
         </Button>
-      </div>
-      {custom && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Input type="date" aria-label="From date" value={value.from} max={value.to || undefined} onChange={(e) => setValue((v) => ({ ...v, from: e.target.value }))} className="h-8 w-auto" />
-          <span className="text-sm text-ink-muted">to</span>
-          <Input type="date" aria-label="To date" value={value.to} min={value.from || undefined} max={ymd(new Date())} onChange={(e) => setValue((v) => ({ ...v, to: e.target.value }))} className="h-8 w-auto" />
-          <Button size="sm" variant="primary" onClick={apply}>
-            Apply
-          </Button>
-        </div>
-      )}
-      {error && <p className="text-xs text-danger-ink" role="alert">{error}</p>}
+      ))}
+      {/* Any other range: day range, a month / span of months or a year / span of years. */}
+      <DateRangePicker
+        size="sm"
+        align="right"
+        className="w-60"
+        label="Date range"
+        placeholder="Custom dates, month or year"
+        presets={[]}
+        clearable={false}
+        from={customActive ? range.from : ""}
+        to={customActive ? range.to : ""}
+        onChange={({ from, to }) => from && to && go(from, to)}
+      />
     </div>
   );
 }

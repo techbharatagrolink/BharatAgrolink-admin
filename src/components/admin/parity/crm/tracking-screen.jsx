@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { exportTrackingAction, trackingCustomersAction } from "@/lib/actions/admin/parity/crm";
 import { UrlInput } from "./url-input";
 import { GridTable } from "@/components/data-table/grid-table";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const productHref = `${storefrontUrl.replace(/\/$/, "")}/product/{product_url}`;
 const CUSTOMER_360_HREF = "/admin/crm/customer-360/{c360_id}";
@@ -140,13 +141,12 @@ function CardField({ label, value }) {
   );
 }
 
-function ParamDate({ name, label }) {
+/** From / To in the URL as one box: a day range, a month / span of months, a year / span, or a quick pick. */
+function ParamRange({ label }) {
   const { get, setParams } = useQueryState();
   return (
-    <Field label={label}>
-      {({ id }) => (
-        <input id={id} type="date" value={get(name)} onChange={(e) => setParams({ [name]: e.target.value })} className="h-9 w-full rounded-lg border border-line-strong bg-surface px-2 text-sm text-ink" />
-      )}
+    <Field label={label} className="sm:col-span-2">
+      {() => <DateRangePicker label={label} from={get("from")} to={get("to")} onChange={({ from, to }) => setParams({ from, to })} />}
     </Field>
   );
 }
@@ -292,8 +292,7 @@ export function TrackingScreen({ view, data, sources }) {
           {show("activity") && <ParamSelect name="device" label="Device" options={DEVICES} placeholder="All Devices" />}
           {show("activity") && <ParamText name="city" label="City" placeholder="City" />}
           <ParamText name="minTimes" label={MIN_LABEL[view]} placeholder="1" type="number" />
-          <ParamDate name="from" label="From Date" />
-          <ParamDate name="to" label="To Date" />
+          <ParamRange label="Date range" />
           <div className="flex items-end">
             <Button size="md" className="w-full" onClick={clearFilters}>
               Clear Filters
